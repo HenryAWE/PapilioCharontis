@@ -13,6 +13,11 @@
 
 namespace papilio::script
 {
+    namespace detailed
+    {
+        using namespace papilio::detailed;
+    }
+
     enum class lexeme_type
     {
         keyword,

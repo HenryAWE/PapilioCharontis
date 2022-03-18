@@ -7,7 +7,7 @@
 #include <span>
 #include "utility.hpp"
 #include "block.hpp"
-#include "script/lexer.hpp"
+#include "script/compiler.hpp"
 
 
 namespace papilio
