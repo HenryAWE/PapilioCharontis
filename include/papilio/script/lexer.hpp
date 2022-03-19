@@ -60,12 +60,12 @@ namespace papilio::script
             while(it != src.end())
             {
                 value_type c = *it;
-                if(is_whitespace(c))
+                if(is_whitespace(c)) // Whitespace
                 {
                     ++it;
                     continue;
                 }
-                else if(c == value_type('@'))
+                else if(c == value_type('@')) // Identifier
                 {
                     ++it;
                     if(it == src.end())
@@ -84,7 +84,7 @@ namespace papilio::script
                         continue;
                     }    
                 }
-                else if(is_keyword_char(c))
+                else if(is_keyword_char(c)) // Keyword
                 {
                     auto keyword_end = std::find_if_not(
                         it, src.end(),
@@ -105,7 +105,7 @@ namespace papilio::script
                         throw syntax_error();
                     }
                 }
-                else if(is_operator_char(c))
+                else if(is_operator_char(c)) // Operator
                 {
                     auto operator_end = std::find_if_not(
                         it, src.end(),
@@ -126,18 +126,46 @@ namespace papilio::script
                         throw syntax_error();
                     }
                 }
-                else if(c == value_type('"'))
+                else if(c == value_type('"')) // String literal
                 {
-                    std::string literal;
+                    std::string string_literal;
                     it = read_string_literal(
                         it, src.end(),
-                        std::back_inserter(literal)
+                        std::back_inserter(string_literal)
                     );
-                    ++it; // Skip quote at the end
 
                     m_lexemes.emplace_back(
                         lexeme_type::literal,
-                        std::move(literal)
+                        std::move(string_literal)
+                    );
+                }
+                else if(is_digit(c) || c == value_type('.')) // Numeric literal
+                {
+                    auto literal_end = std::find_if_not(
+                        it, src.end(),
+                        [floating_point = false](value_type v) mutable->bool
+                        {
+                            if(is_digit(v))
+                                return true;
+                            if(v == value_type('.'))
+                            {
+                                if(floating_point)
+                                    return false;
+                                else
+                                {
+                                    floating_point = true;
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        }
+                    );
+                    string_view_type num_sv(it, literal_end);
+                    it = literal_end;
+                    m_lexemes.emplace_back(
+                        lexeme_type::literal,
+                        string_type(num_sv)
                     );
                 }
                 else
@@ -147,9 +175,14 @@ namespace papilio::script
             }
         }
 
-        std::span<lexeme> lexemes() noexcept
+        std::span<const lexeme> lexemes() const noexcept
         {
             return m_lexemes;
+        }
+
+        void clear() noexcept
+        {
+            m_lexemes.clear();
         }
 
     private:
@@ -182,6 +215,7 @@ namespace papilio::script
         {
             assert(*begin == value_type('"'));
 
+            *out = value_type('"');
             ++begin; // Skip the quote at the beginning
 
             bool escaping = false;
@@ -194,7 +228,8 @@ namespace papilio::script
                 }
                 else if(*it == value_type('"') && !escaping)
                 {
-                    return it;
+                    *out = value_type('"');
+                    return ++it;
                 }
 
                 *out = *it;

@@ -7,10 +7,9 @@ using namespace papilio;
 TEST(TestLexer, Lexemes)
 {
     script::lexer lex;
-    const char src[] = R"(if @0: "2\"\"@" else: "")";
-    lex.parse(src);
+    lex.parse(R"(if @0: "2\"\"@" else: "" end)");
     auto lexemes = lex.lexemes();
-
+    EXPECT_EQ(lexemes.size(), 8);
     EXPECT_EQ(lexemes[0].type(), script::lexeme_type::keyword);
     EXPECT_EQ(lexemes[0].str(), "if");
     EXPECT_EQ(lexemes[1].type(), script::lexeme_type::identifier);
@@ -18,7 +17,25 @@ TEST(TestLexer, Lexemes)
     EXPECT_EQ(lexemes[2].type(), script::lexeme_type::operator_);
     EXPECT_EQ(lexemes[2].str(), ":");
     EXPECT_EQ(lexemes[3].type(), script::lexeme_type::literal);
-    EXPECT_EQ(lexemes[3].str(), R"(2""@)");
+    EXPECT_EQ(lexemes[3].str(), R"("2""@")");
+
+    lex.clear();
+    lex.parse(R"(if @0 == 1: "is" end)");
+    lexemes = lex.lexemes();
+    EXPECT_EQ(lexemes.size(), 7);
+    EXPECT_EQ(lexemes[2].type(), script::lexeme_type::operator_);
+    EXPECT_EQ(lexemes[2].str(), "==");
+    EXPECT_EQ(lexemes[3].type(), script::lexeme_type::literal);
+    EXPECT_EQ(lexemes[3].str(), "1");
+    EXPECT_EQ(lexemes[6].type(), script::lexeme_type::keyword);
+    EXPECT_EQ(lexemes[6].str(), "end");
+
+    lex.clear();
+    lex.parse(R"(1.1)");
+    lexemes = lex.lexemes();
+    EXPECT_EQ(lexemes.size(), 1);
+    EXPECT_EQ(lexemes[0].type(), script::lexeme_type::literal);
+    EXPECT_EQ(lexemes[0].str(), "1.1");
 }
 
 int main(int argc, char* argv[])

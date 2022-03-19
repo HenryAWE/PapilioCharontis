@@ -15,6 +15,7 @@ TEST(TestMsic, Keywords)
     EXPECT_TRUE(script::is_keyword("if"));
     EXPECT_TRUE(script::is_keyword("elif"));
     EXPECT_TRUE(script::is_keyword("else"));
+    EXPECT_TRUE(script::is_keyword("end"));
     EXPECT_TRUE(script::is_keyword("and"));
     EXPECT_TRUE(script::is_keyword("or"));
 }

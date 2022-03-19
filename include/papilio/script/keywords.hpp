@@ -46,6 +46,17 @@ namespace papilio::script
 
             return string_view_type(str, std::size(str));
         }
+        static string_view_type end() noexcept
+        {
+            static constexpr const value_type str[] =
+            {
+                value_type('e'),
+                value_type('n'),
+                value_type('d')
+            };
+
+            return string_view_type(str, std::size(str));
+        }
         static string_view_type and_() noexcept
         {
             static constexpr const value_type str[] =
@@ -83,6 +94,7 @@ namespace papilio::script
             word == K::if_() ||
             word == K::else_() ||
             word == K::elif() ||
+            word == K::end() ||
             word == K::and_() ||
             word == K::or_();
     }
