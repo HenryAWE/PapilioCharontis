@@ -371,6 +371,9 @@ namespace papilio::script
             typedef variable_impl_base<CharT>::string_type string_type;
             typedef nullvar_t value_type;
 
+            value_impl() noexcept = default;
+            value_impl(nullvar_t) noexcept : value_impl() {}
+
             constexpr value_type get() const noexcept { return nullvar; }
 
             void duplicate(void* output) const final

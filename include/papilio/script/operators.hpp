@@ -88,7 +88,7 @@ namespace papilio::script
     typedef basic_operators<char8_t> u8operators;
 
     template <typename CharT>
-    bool is_operator(std::basic_string_view<CharT> word) noexcept
+    bool is_comparator(std::basic_string_view<CharT> word) noexcept
     {
         using Op = basic_operators<CharT>;
         return
@@ -97,11 +97,28 @@ namespace papilio::script
             word == Op::op_greater_than() ||
             word == Op::op_greater_equal() ||
             word == Op::op_less_than() ||
-            word == Op::op_less_equal() ||
+            word == Op::op_less_equal();
+    }
+    template <typename CharT>
+    bool is_comparator(const std::basic_string<CharT>& word) noexcept
+    {
+        return is_comparator(std::basic_string_view<CharT>(word));
+    }
+    template <typename CharT>
+    bool is_comparator(const CharT* word) noexcept
+    {
+        return is_comparator(std::basic_string_view<CharT>(word));
+    }
+    template <typename CharT>
+    bool is_operator(std::basic_string_view<CharT> word) noexcept
+    {
+        using Op = basic_operators<CharT>;
+        return
+            is_comparator(word) ||
             word == Op::op_condition_end();
     }
     template <typename CharT>
-    bool is_operator(const CharT* word)
+    bool is_operator(const CharT* word) noexcept
     {
         return is_operator(std::basic_string_view<CharT>(word));
     }

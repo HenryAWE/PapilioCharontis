@@ -185,10 +185,7 @@ namespace papilio::script
             m_lexemes.clear();
         }
 
-    private:
-        std::vector<lexeme> m_lexemes;
-
-        static bool is_whitespace(value_type c)
+        static bool is_whitespace(value_type c) noexcept
         {
             return detailed::is_whitespace(c);
         }
@@ -209,6 +206,9 @@ namespace papilio::script
                 c == value_type('>') ||
                 c == value_type('!');
         }
+
+    private:
+        std::vector<lexeme> m_lexemes;
 
         template <typename InputIt, typename OutputIt>
         InputIt read_string_literal(InputIt begin, InputIt end, OutputIt out)
