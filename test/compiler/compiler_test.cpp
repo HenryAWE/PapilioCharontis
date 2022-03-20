@@ -28,6 +28,20 @@ TEST(TestCompiler, Compile)
     EXPECT_FALSE(script->invoke(ctx).as<bool>());
 
     lex.clear();
+    lex.parse(R"(@0)");
+    script = cl.compile(lex.lexemes());
+    ctx.clear_arg();
+    ctx.push_arg(context::argument(1));
+    EXPECT_EQ(script->invoke(ctx).as<int>(), 1);
+
+    lex.clear();
+    lex.parse(R"(@str)");
+    script = cl.compile(lex.lexemes());
+    ctx.clear_arg();
+    ctx.set_named_arg("str", context::argument("string value"));
+    EXPECT_EQ(script->invoke(ctx).as<std::string>(), "string value");
+
+    lex.clear();
     lex.parse(R"(@0 > 2)");
     script = cl.compile(lex.lexemes());
     ctx.clear_arg();

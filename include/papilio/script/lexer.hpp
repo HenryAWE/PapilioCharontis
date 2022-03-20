@@ -82,7 +82,20 @@ namespace papilio::script
                         );
                         it = identifier_end;
                         continue;
-                    }    
+                    }
+                    else if(is_named_identifer_char(*it))
+                    {
+                        auto identifier_end = std::find_if_not(
+                            std::next(it), src.end(),
+                            [](value_type v) { return is_named_identifer_char(v, false); }
+                        );
+                        m_lexemes.emplace_back(
+                            lexeme_type::identifier,
+                            string_type(it, identifier_end)
+                        );
+                        it = identifier_end;
+                        continue;
+                    }
                 }
                 else if(is_keyword_char(c)) // Keyword
                 {
@@ -205,6 +218,13 @@ namespace papilio::script
                 c == value_type('<') ||
                 c == value_type('>') ||
                 c == value_type('!');
+        }
+        static bool is_named_identifer_char(value_type c, bool is_start = true) noexcept
+        {
+            return
+                (c >= value_type('A') && c <= value_type('z')) ||
+                (c == value_type('_')) ||
+                (!is_start && is_digit(c));
         }
 
     private:

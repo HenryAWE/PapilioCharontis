@@ -178,7 +178,13 @@ namespace papilio::script
         std::unique_ptr<typename context::script_argument_any> compile_identifier(const lexeme& l)
         {
             assert(l.type() == lexeme_type::identifier);
-            if (l.str()[0])
+
+            if(l.str().empty())
+            { // Empty identifier
+                throw syntax_error();
+            }
+
+            if(lexer::is_digit(l.str()[0]))
             { // Indexed argument
                 std::basic_stringstream<char_type> ss;
                 ss << l.str();

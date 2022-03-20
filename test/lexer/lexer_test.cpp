@@ -36,6 +36,13 @@ TEST(TestLexer, Lexemes)
     EXPECT_EQ(lexemes.size(), 1);
     EXPECT_EQ(lexemes[0].type(), script::lexeme_type::literal);
     EXPECT_EQ(lexemes[0].str(), "1.1");
+
+    lex.clear();
+    lex.parse(R"(@number)");
+    lexemes = lex.lexemes();
+    EXPECT_EQ(lexemes.size(), 1);
+    EXPECT_EQ(lexemes[0].type(), script::lexeme_type::identifier);
+    EXPECT_EQ(lexemes[0].str(), "number");
 }
 
 int main(int argc, char* argv[])
