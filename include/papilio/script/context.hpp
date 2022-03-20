@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <utility>
+#include <numeric>
 #include <type_traits>
 #include <typeinfo>
 #include <string>
@@ -65,6 +66,15 @@ namespace papilio::script
 
     namespace detailed
     {
+        template <typename T, std::size_t bits, bool signed_>
+        struct int_
+        {
+            static constexpr bool value = std::is_integral_v<T> && (sizeof(T) == bits / 8) &&
+                ((signed_ && std::is_signed_v<T>) || (!signed_ && std::is_unsigned_v<T>));
+        };
+        template <typename T, std::size_t bits, bool signed_>
+        inline constexpr bool int_v = int_<T, bits, signed_>::value;
+
         template <typename CharT>
         class variable_impl_base
         {
@@ -75,33 +85,37 @@ namespace papilio::script
             virtual ~variable_impl_base() = default;
 
             template <typename T>
-            T to() const noexcept = delete;
-            template <>
-            string_type to<string_type>() const { return to_string(); }
-            template <>
-            std::uint64_t to<std::uint64_t>() const { return to_uint64_t(); }
-            template <>
-            std::int64_t to<std::int64_t>() const { return to_int64_t(); }
-            template <>
-            std::uint32_t to<std::uint32_t>() const { return to_uint32_t(); }
-            template <>
-            std::int32_t to<std::int32_t>() const { return to_int32_t(); }
-            template <>
-            std::uint16_t to<std::uint16_t>() const { return to_uint16_t(); }
-            template <>
-            std::int16_t to<std::int16_t>() const { return to_int16_t(); }
-            template <>
-            std::uint8_t to<std::uint8_t>() const { return to_uint8_t(); }
-            template <>
-            std::int8_t to<std::int8_t>() const { return to_int8_t(); }
-            template <>
-            char_type to<char_type>() const { return to_char(); }
-            template <>
-            bool to<bool>() const { return to_char(); }
-            template <>
-            float to<float>() const { return to_float(); }
-            template <>
-            double to<double>() const { return to_double(); }
+            T to() const
+            {
+                using std::is_same_v;
+
+                if constexpr(is_same_v<T, string_type>)
+                    return to_string();
+                else if constexpr(int_v<T, 64, false>)
+                    return to_uint64_t();
+                else if constexpr(int_v<T, 64, true>)
+                    return to_int64_t();
+                else if constexpr(int_v<T, 32, false>)
+                    return to_uint32_t();
+                else if constexpr(int_v<T, 32, true>)
+                    return to_int32_t();
+                else if constexpr(int_v<T, 16, false>)
+                    return to_uint16_t();
+                else if constexpr(int_v<T, 16, true>)
+                    return to_int16_t();
+                else if constexpr(int_v<T, 8, false>)
+                    return to_uint8_t();
+                else if constexpr(int_v<T, 8, true>)
+                    return to_int8_t();
+                else if constexpr(is_same_v<T, char_type>)
+                    return to_char();
+                else if constexpr(is_same_v<T, bool>)
+                    return to_bool();
+                else if constexpr(is_same_v<T, float>)
+                    return to_float();
+                else if constexpr(is_same_v<T, double>)
+                    return to_double();
+            }
 
             virtual const std::type_info& type() const noexcept = 0;
 
@@ -183,12 +197,12 @@ namespace papilio::script
             std::partial_ordering compare(const variable_impl_base<CharT>& other) const
             {
                 using value_type = std::remove_cvref_t<decltype(derived().get())>;
-                return derived().get() <=> other.to<value_type>();
+                return derived().get() <=> other.template to<value_type>();
             }
             bool equal(const variable_impl_base<CharT>& var) const final
             {
                 using value_type = std::remove_cvref_t<decltype(derived().get())>;
-                return derived().get() == var.to<value_type>();
+                return derived().get() == var.template to<value_type>();
             }
 
         private:
@@ -261,11 +275,11 @@ namespace papilio::script
 
             std::partial_ordering compare(const variable_impl_base<CharT>& other) const
             {
-                return derived().get() <=> other.to<string_type>();
+                return derived().get() <=> other.template to<string_type>();
             }
             bool equal(const variable_impl_base<CharT>& var) const final
             {
-                return derived().get() == var.to<string_type>();
+                return derived().get() == var.template to<string_type>();
             }
 
         private:
@@ -524,7 +538,7 @@ namespace papilio::script
             template <typename T>
             argument& operator=(const T& value) noexcept
             {
-                *this = value;
+                assign(value);
                 return *this;
             }
 
@@ -604,12 +618,12 @@ namespace papilio::script
             }
 
             template <typename T>
-            T as() const { return get().to<T>(); }
+            T as() const { return get().template to<T>(); }
 
             const std::type_info& type() const noexcept { return get().type();  }
 
         private:
-            std::aligned_storage_t<cache_size> m_buf;
+            std::aligned_storage_t<cache_size> m_buf{};
 
             impl_base& get() noexcept
             {
@@ -762,7 +776,7 @@ namespace papilio::script
             }
 
             template <typename T>
-            T as() const { return get().to<T>(); }
+            T as() const { return get().template to<T>(); }
 
             const std::type_info& type() const noexcept { return get().type(); }
 
@@ -833,7 +847,7 @@ namespace papilio::script
         public:
             value invoke(basic_context& ctx) override
             {
-                if(condition->invoke(ctx).as<bool>())
+                if(condition->invoke(ctx).template as<bool>())
                 {
                     return on_true->invoke(ctx);
                 }
@@ -862,7 +876,7 @@ namespace papilio::script
             value invoke(basic_context& ctx)
             {
                 return value(
-                    std::visit([&ctx](auto& id) { return ctx.arg(id); }, m_id).as<T>()
+                    std::visit([&ctx](auto& id) { return ctx.arg(id); }, m_id).template as<T>()
                 );
             }
 

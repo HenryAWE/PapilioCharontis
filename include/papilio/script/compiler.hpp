@@ -155,23 +155,23 @@ namespace papilio::script
                 assert(view.size() >= 2);
                 // Strip quotes on each side
                 view = string_view_type(view.begin() + 1, view.end() - 1);
-                return std::make_unique<context::script_literal>(string_type(view));
+                return std::make_unique<typename context::script_literal>(string_type(view));
             }
             else
             { // Numeric literal
                 std::basic_stringstream<char_type> ss;
                 ss << view;
-                if(view.find(char_type(".")) == view.npos)
+                if(view.find(char_type('.')) == view.npos)
                 { // Interger
                     int val;
                     ss >> val;
-                    return std::make_unique<context::script_literal>(val);
+                    return std::make_unique<typename context::script_literal>(val);
                 }
                 else
                 { // Floating point
                     float val;
                     ss >> val;
-                    return std::make_unique<context::script_literal>(val);
+                    return std::make_unique<typename context::script_literal>(val);
                 }
             }
         }
