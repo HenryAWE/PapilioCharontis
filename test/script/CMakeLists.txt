@@ -1,6 +1,6 @@
 add_subdirectory(block)
 add_subdirectory(compiler)
-add_subdirectory(context)
+add_subdirectory(exec)
 add_subdirectory(lexer)
 add_subdirectory(misc)
 
@@ -9,7 +9,7 @@ add_dependencies(
     all_script_tests
     block_test
     compiler_test
-    context_test
+    exec_test
     lexer_test
     misc_test
 )
