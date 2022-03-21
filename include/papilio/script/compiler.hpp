@@ -81,15 +81,15 @@ namespace papilio::script
         typedef basic_keywords<char_type> keywords;
         typedef basic_operators<char_type> operators;
         typedef basic_lexer<char_type> lexer;
-        typedef basic_context<char_type> context;
+        typedef basic_exec<char_type> exec;
         typedef basic_lexeme<char_type> lexeme;
 
         template <typename Iterator>
-        std::unique_ptr<typename context::script> compile(Iterator begin, Iterator end)
+        std::unique_ptr<typename exec::script> compile(Iterator begin, Iterator end)
         {
             if(begin == end)
             {
-                return std::make_unique<typename context::script_literal>(nullvar);
+                return std::make_unique<typename exec::script_literal>(nullvar);
             }
 
             // First non-value lexeme
@@ -140,13 +140,13 @@ namespace papilio::script
 
             throw syntax_error();
         }
-        std::unique_ptr<typename context::script> compile(std::span<const lexeme> lexemes)
+        std::unique_ptr<typename exec::script> compile(std::span<const lexeme> lexemes)
         {
             return compile(lexemes.begin(), lexemes.end());
         }
 
      private:
-        std::unique_ptr<typename context::script_literal> compile_literal(const lexeme& l)
+        std::unique_ptr<typename exec::script_literal> compile_literal(const lexeme& l)
         {
             assert(l.type() == lexeme_type::literal);
             string_view_type view = l.str();
@@ -155,7 +155,7 @@ namespace papilio::script
                 assert(view.size() >= 2);
                 // Strip quotes on each side
                 view = string_view_type(view.begin() + 1, view.end() - 1);
-                return std::make_unique<typename context::script_literal>(string_type(view));
+                return std::make_unique<typename exec::script_literal>(string_type(view));
             }
             else
             { // Numeric literal
@@ -165,17 +165,17 @@ namespace papilio::script
                 { // Interger
                     int val;
                     ss >> val;
-                    return std::make_unique<typename context::script_literal>(val);
+                    return std::make_unique<typename exec::script_literal>(val);
                 }
                 else
                 { // Floating point
                     float val;
                     ss >> val;
-                    return std::make_unique<typename context::script_literal>(val);
+                    return std::make_unique<typename exec::script_literal>(val);
                 }
             }
         }
-        std::unique_ptr<typename context::script_argument_any> compile_identifier(const lexeme& l)
+        std::unique_ptr<typename exec::script_argument_any> compile_identifier(const lexeme& l)
         {
             assert(l.type() == lexeme_type::identifier);
 
@@ -191,17 +191,17 @@ namespace papilio::script
                 std::size_t idx;
                 ss >> idx;
 
-                return std::make_unique<typename context::script_argument_any>(idx);
+                return std::make_unique<typename exec::script_argument_any>(idx);
             }
             else
             { // Named argument
-                return std::make_unique<typename context::script_argument_any>(l.str());
+                return std::make_unique<typename exec::script_argument_any>(l.str());
             }
         }
-        std::unique_ptr<typename context::script> compile_comp(
+        std::unique_ptr<typename exec::script> compile_comp(
             const lexeme& l,
-            std::unique_ptr<typename context::script> left,
-            std::unique_ptr<typename context::script> right
+            std::unique_ptr<typename exec::script> left,
+            std::unique_ptr<typename exec::script> right
         ) {
             if(l.str() == operators::op_greater_than())
             {
@@ -247,7 +247,7 @@ namespace papilio::script
 
         template <typename Iterator>
         auto compile_if(Iterator begin, Iterator end)->
-             std::pair<std::unique_ptr<typename context::script_if>, Iterator>
+             std::pair<std::unique_ptr<typename exec::script_if>, Iterator>
         {
             assert(begin != end);
             assert(
@@ -263,7 +263,7 @@ namespace papilio::script
                 detailed::is_end()
             );
 
-            auto if_ = std::make_unique<typename context::script_if>();
+            auto if_ = std::make_unique<typename exec::script_if>();
             auto cond_end = std::find_if(
                 begin, control_flow_end,
                 detailed::is_op_condition_end()
@@ -280,14 +280,14 @@ namespace papilio::script
             );
             if_->on_true = compile(cond_end, true_block_end);
 
-            typename context::script_if* chain = if_.get();
+            typename exec::script_if* chain = if_.get();
 
             auto elif_begin = true_block_end;
             while(detailed::is_elif()(*elif_begin))
             {
                 std::tie(chain->on_false, elif_begin) = compile_elif(elif_begin, control_flow_end);
-                assert(dynamic_cast<typename context::script_if*>(chain->on_false.get()));
-                chain = static_cast<typename context::script_if*>(chain->on_false.get());
+                assert(dynamic_cast<typename exec::script_if*>(chain->on_false.get()));
+                chain = static_cast<typename exec::script_if*>(chain->on_false.get());
             }
 
             auto else_begin = std::find_if(
@@ -313,7 +313,7 @@ namespace papilio::script
         }
         template <typename Iterator>
         auto compile_elif(Iterator begin, Iterator end)->
-            std::pair<std::unique_ptr<typename context::script_if>, Iterator>
+            std::pair<std::unique_ptr<typename exec::script_if>, Iterator>
         {
             using namespace detailed;
 
@@ -335,7 +335,7 @@ namespace papilio::script
                 throw syntax_error();
             }
 
-            auto if_ = std::make_unique<typename context::script_if>();
+            auto if_ = std::make_unique<typename exec::script_if>();
             if_->condition = compile(begin, cond_end);
 
             ++cond_end;
@@ -362,11 +362,11 @@ namespace papilio::script
 
         // Auxiliary function
         template <typename Comp>
-        static std::unique_ptr<typename context::script> make_comp(
-            std::unique_ptr<typename context::script> left,
-            std::unique_ptr<typename context::script> right
+        static std::unique_ptr<typename exec::script> make_comp(
+            std::unique_ptr<typename exec::script> left,
+            std::unique_ptr<typename exec::script> right
         ) {
-            using script_comp = context::template script_compare<Comp>;
+            using script_comp = exec::template script_compare<Comp>;
             auto comp = std::make_unique<script_comp>();
             comp->left_operand = std::move(left);
             comp->right_operand = std::move(right);

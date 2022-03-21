@@ -10,8 +10,8 @@ TEST(TestCompiler, Compile)
 
     lexer lex;
     compiler cl;
-    context ctx;
-    std::unique_ptr<context::script> script;
+    exec ctx;
+    std::unique_ptr<exec::script> script;
 
     lex.clear();
     script = cl.compile(lex.lexemes());
@@ -31,34 +31,34 @@ TEST(TestCompiler, Compile)
     lex.parse(R"(@0)");
     script = cl.compile(lex.lexemes());
     ctx.clear_arg();
-    ctx.push_arg(context::argument(1));
+    ctx.push_arg(exec::argument(1));
     EXPECT_EQ(script->invoke(ctx).as<int>(), 1);
 
     lex.clear();
     lex.parse(R"(@str)");
     script = cl.compile(lex.lexemes());
     ctx.clear_arg();
-    ctx.set_named_arg("str", context::argument("string value"));
+    ctx.set_named_arg("str", exec::argument("string value"));
     EXPECT_EQ(script->invoke(ctx).as<std::string>(), "string value");
 
     lex.clear();
     lex.parse(R"(@0 > 2)");
     script = cl.compile(lex.lexemes());
     ctx.clear_arg();
-    ctx.push_arg(context::argument(1));
+    ctx.push_arg(exec::argument(1));
     EXPECT_FALSE(script->invoke(ctx).as<bool>());
     ctx.clear_arg();
-    ctx.push_arg(context::argument(3));
+    ctx.push_arg(exec::argument(3));
     EXPECT_TRUE(script->invoke(ctx).as<bool>());
 
     lex.clear();
     lex.parse(R"(if @0 == 1: "is" else: "are" end)");
     script = cl.compile(lex.lexemes());
     ctx.clear_arg();
-    ctx.push_arg(context::argument(1));
+    ctx.push_arg(exec::argument(1));
     EXPECT_EQ(script->invoke(ctx).as<std::string>(), "is");
     ctx.clear_arg();
-    ctx.push_arg(context::argument(2));
+    ctx.push_arg(exec::argument(2));
     EXPECT_EQ(script->invoke(ctx).as<std::string>(), "are");
 
     lex.clear();
@@ -71,16 +71,16 @@ TEST(TestCompiler, Compile)
     );
     script = cl.compile(lex.lexemes());
     ctx.clear_arg();
-    ctx.push_arg(context::argument(0));
+    ctx.push_arg(exec::argument(0));
     EXPECT_EQ(script->invoke(ctx).as<std::string>(), "zero");
     ctx.clear_arg();
-    ctx.push_arg(context::argument(2));
+    ctx.push_arg(exec::argument(2));
     EXPECT_EQ(script->invoke(ctx).as<std::string>(), "more than one");
     ctx.clear_arg();
-    ctx.push_arg(context::argument(1));
+    ctx.push_arg(exec::argument(1));
     EXPECT_EQ(script->invoke(ctx).as<std::string>(), "one");
     ctx.clear_arg();
-    ctx.push_arg(context::argument(-1));
+    ctx.push_arg(exec::argument(-1));
     EXPECT_EQ(script->invoke(ctx).as<std::string>(), "other");
 }
 

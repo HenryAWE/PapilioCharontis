@@ -476,7 +476,7 @@ namespace papilio::script
     }
 
     template <typename CharT>
-    class basic_context
+    class basic_exec
     {
     public:
         typedef CharT char_type;
@@ -823,13 +823,13 @@ namespace papilio::script
         public:
             virtual ~script() = default;
 
-            virtual value invoke(basic_context& ctx) = 0;
+            virtual value invoke(basic_exec& ctx) = 0;
         };
         template <typename Comp>
         class script_compare final : public script
         {
         public:
-            value invoke(basic_context& ctx) override
+            value invoke(basic_exec& ctx) override
             {
                 return value(static_cast<bool>(m_comp(
                     left_operand->invoke(ctx) <=> right_operand->invoke(ctx)
@@ -845,7 +845,7 @@ namespace papilio::script
         class script_if : public script
         {
         public:
-            value invoke(basic_context& ctx) override
+            value invoke(basic_exec& ctx) override
             {
                 if(condition->invoke(ctx).template as<bool>())
                 {
@@ -873,7 +873,7 @@ namespace papilio::script
             script_argument(std::size_t idx) : m_id(idx) {}
             script_argument(string_type name) : m_id(std::move(name)) {}
 
-            value invoke(basic_context& ctx)
+            value invoke(basic_exec& ctx)
             {
                 return value(
                     std::visit([&ctx](auto& id) { return ctx.arg(id); }, m_id).template as<T>()
@@ -890,7 +890,7 @@ namespace papilio::script
             script_argument_any(std::size_t idx) : m_id(idx) {}
             script_argument_any(string_type name) : m_id(std::move(name)) {}
 
-            value invoke(basic_context& ctx)
+            value invoke(basic_exec& ctx)
             {
                 return value(
                     std::visit([&ctx](auto& id) { return ctx.arg(id); }, m_id)
@@ -907,7 +907,7 @@ namespace papilio::script
             script_literal(T val) : m_val(std::move(val)) {}
             script_literal(value val) : m_val(val) {}
 
-            value invoke(basic_context& ctx) override
+            value invoke(basic_exec& ctx) override
             {
                 return m_val;
             }
@@ -962,9 +962,9 @@ namespace papilio::script
         std::map<string_type, argument, named_args_comp> m_named_args;
     };
 
-    typedef basic_context<char> context;
-    typedef basic_context<wchar_t> wcontext;
-    typedef basic_context<char16_t> u16context;
-    typedef basic_context<char32_t> u32context;
-    typedef basic_context<char8_t> u8context;
+    typedef basic_exec<char> exec;
+    typedef basic_exec<wchar_t> wexec;
+    typedef basic_exec<char16_t> u16exec;
+    typedef basic_exec<char32_t> u32exec;
+    typedef basic_exec<char8_t> u8exec;
 }
