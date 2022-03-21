@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include "exec.hpp"
 #include "lexer.hpp"
 

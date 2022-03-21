@@ -66,15 +66,6 @@ namespace papilio::script
 
     namespace detailed
     {
-        template <typename T, std::size_t bits, bool signed_>
-        struct int_
-        {
-            static constexpr bool value = std::is_integral_v<T> && (sizeof(T) == bits / 8) &&
-                ((signed_ && std::is_signed_v<T>) || (!signed_ && std::is_unsigned_v<T>));
-        };
-        template <typename T, std::size_t bits, bool signed_>
-        inline constexpr bool int_v = int_<T, bits, signed_>::value;
-
         template <typename CharT>
         class variable_impl_base
         {
@@ -87,34 +78,39 @@ namespace papilio::script
             template <typename T>
             T to() const
             {
-                using std::is_same_v;
+                using namespace std;
 
                 if constexpr(is_same_v<T, string_type>)
                     return to_string();
-                else if constexpr(int_v<T, 64, false>)
-                    return to_uint64_t();
-                else if constexpr(int_v<T, 64, true>)
-                    return to_int64_t();
-                else if constexpr(int_v<T, 32, false>)
-                    return to_uint32_t();
-                else if constexpr(int_v<T, 32, true>)
-                    return to_int32_t();
-                else if constexpr(int_v<T, 16, false>)
-                    return to_uint16_t();
-                else if constexpr(int_v<T, 16, true>)
-                    return to_int16_t();
-                else if constexpr(int_v<T, 8, false>)
-                    return to_uint8_t();
-                else if constexpr(int_v<T, 8, true>)
-                    return to_int8_t();
+                else if constexpr(is_same_v<T, unsigned long long>)
+                    return to_ulong_long();
+                else if constexpr(is_same_v<T, long long>)
+                    return to_long_long();
+                else if constexpr(is_same_v<T, unsigned long>)
+                    return to_ulong();
+                else if constexpr(is_same_v<T, long>)
+                    return to_long();
+                else if constexpr(is_same_v<T, unsigned int>)
+                    return to_uint();
+                else if constexpr(is_same_v<T, int>)
+                    return to_int();
                 else if constexpr(is_same_v<T, char_type>)
                     return to_char();
                 else if constexpr(is_same_v<T, bool>)
                     return to_bool();
+                else if constexpr(is_integral_v<T>)
+                {
+                    if constexpr(is_unsigned_v<T>)
+                        return to_uint();
+                    else // is_signed_v<T>
+                        return to_int();
+                }
                 else if constexpr(is_same_v<T, float>)
                     return to_float();
                 else if constexpr(is_same_v<T, double>)
                     return to_double();
+                else if constexpr(is_same_v<T, long double>)
+                    return to_long_double();
             }
 
             virtual const std::type_info& type() const noexcept = 0;
@@ -142,18 +138,17 @@ namespace papilio::script
 
         private:
             virtual string_type to_string() const = 0;
-            virtual std::uint64_t to_uint64_t() const = 0;
-            virtual std::int64_t to_int64_t() const = 0;
-            virtual std::uint32_t to_uint32_t() const = 0;
-            virtual std::int32_t to_int32_t() const = 0;
-            virtual std::uint16_t to_uint16_t() const = 0;
-            virtual std::int16_t to_int16_t() const = 0;
-            virtual std::uint8_t to_uint8_t() const = 0;
-            virtual std::int8_t to_int8_t() const = 0;
+            virtual unsigned long long to_ulong_long() const = 0;
+            virtual long long to_long_long() const = 0;
+            virtual unsigned long to_ulong() const = 0;
+            virtual long to_long() const = 0;
+            virtual unsigned int to_uint() const = 0;
+            virtual int to_int() const = 0;
             virtual char_type to_char() const = 0;
             virtual bool to_bool() const = 0;
             virtual float to_float() const = 0;
             virtual double to_double() const = 0;
+            virtual long double to_long_double() const { return to_double(); }
         };
 
         template <typename CharT>
@@ -172,17 +167,15 @@ namespace papilio::script
 
         private:
             string_type to_string() const final { return string_type(); }
-            std::uint64_t to_uint64_t() const final { return 0; }
-            std::int64_t to_int64_t() const final { return 0; }
-            std::uint32_t to_uint32_t() const final { return 0; }
-            std::int32_t to_int32_t() const final { return 0; }
-            std::uint16_t to_uint16_t() const final { return 0; }
-            std::int16_t to_int16_t() const final { return 0; }
-            std::uint8_t to_uint8_t() const final { return 0; }
-            std::int8_t to_int8_t() const final { return 0; }
+            unsigned long long to_ulong_long() const final { return 0; }
+            long long to_long_long() const final { return 0; }
+            unsigned long to_ulong() const final { return 0; }
+            long to_long() const final { return 0; }
+            unsigned int to_uint() const final { return 0; }
+            int to_int() const final { return 0; }
             char_type to_char() const final { return char_type('\0'); }
             bool to_bool() const final { return false; }
-            float to_float() const final { return std::numeric_limits<double>::quiet_NaN(); }
+            float to_float() const final { return std::numeric_limits<float>::quiet_NaN(); }
             double to_double() const final { return std::numeric_limits<double>::quiet_NaN(); }
         };
         template <typename Derived, typename CharT>
@@ -214,37 +207,29 @@ namespace papilio::script
                 ss << derived().get();
                 return ss.str();
             }
-            std::uint64_t to_uint64_t() const final
+            unsigned long long to_ulong_long() const final
             {
-                return static_cast<std::uint64_t>(derived().get());
+                return static_cast<unsigned long long>(derived().get());
             }
-            std::int64_t to_int64_t() const final
+            long long to_long_long() const final
             {
-                return static_cast<std::int64_t>(derived().get());
+                return static_cast<long long>(derived().get());
             }
-            std::uint32_t to_uint32_t() const final
+            unsigned long to_ulong() const final
             {
-                return static_cast<std::uint32_t>(derived().get());
+                return static_cast<unsigned long>(derived().get());
             }
-            std::int32_t to_int32_t() const final
+            long to_long() const final
             {
-                return static_cast<std::int32_t>(derived().get());
+                return static_cast<long>(derived().get());
             }
-            std::uint16_t to_uint16_t() const final
+            unsigned int to_uint() const final
             {
-                return static_cast<std::uint16_t>(derived().get());
+                return static_cast<unsigned int>(derived().get());
             }
-            std::int16_t to_int16_t() const final
+            int to_int() const final
             {
-                return static_cast<std::int16_t>(derived().get());
-            }
-            std::uint8_t to_uint8_t() const final
-            {
-                return static_cast<std::uint8_t>(derived().get());
-            }
-            std::int8_t to_int8_t() const final
-            {
-                return static_cast<std::int8_t>(derived().get());
+                return static_cast<int>(derived().get());
             }
             char_type to_char() const final
             {
@@ -286,49 +271,14 @@ namespace papilio::script
             constexpr const Derived& derived() const { return static_cast<const Derived&>(*this); }
 
             string_type to_string() const final { return string_type(derived().get()); }
-            std::uint64_t to_uint64_t() const final { return std::stoull(string_type(derived().get())); }
-            std::int64_t to_int64_t() const final { return std::stoll(string_type(derived().get())); }
-            std::uint32_t to_uint32_t() const final { return std::stoul(string_type(derived().get())); }
-            std::int32_t to_int32_t() const final { return std::stol(string_type(derived().get())); }
-            std::uint16_t to_uint16_t() const final
-            {
-                auto v = std::stoi(string_type(derived().get()));
-                if(v > UINT16_MAX)
-                    throw std::out_of_range("out of range");
-                return static_cast<std::int16_t>(v);
-            }
-            std::int16_t to_int16_t() const final
-            {
-                auto v = std::stoi(string_type(derived().get()));
-                if(v > INT16_MAX)
-                    throw std::out_of_range("out of range");
-                return static_cast<std::int16_t>(v);
-            }
-            std::uint8_t to_uint8_t() const final
-            {
-                auto v = std::stoi(string_type(derived().get()));
-                if(v > INT8_MAX)
-                    throw std::out_of_range("out of range");
-                return static_cast<std::uint8_t>(v);
-            }
-            std::int8_t to_int8_t() const final
-            {
-                auto v = std::stoi(string_type(derived().get()));
-                if(v > UINT8_MAX)
-                    throw std::out_of_range("out of range");
-                return static_cast<std::int8_t>(v);
-            }
-            char_type to_char() const final
-            {
-                string_view_type sv = derived().get();
-                if(sv.size() > 1)
-                    throw std::out_of_range("out of range");
-                return sv.empty() ? char_type('\0') : sv[0];
-            }
-            bool to_bool() const final
-            {
-                return !derived().get().empty();
-            }
+            unsigned long long to_ulong_long() const final { return std::stoull(string_type(derived().get())); }
+            long long to_long_long() const final { return std::stoll(string_type(derived().get())); }
+            unsigned long to_ulong() const final { return std::stoul(string_type(derived().get())); }
+            long to_long() const final { return std::stol(string_type(derived().get())); }
+            unsigned int to_uint() const final { return std::stoul(string_type(derived().get())); }
+            int to_int() const final { return std::stoi(string_type(derived().get())); }
+            char_type to_char() const final { return static_cast<char_type>(to_int()); }
+            bool to_bool() const final { return !derived().get().empty(); }
             float to_float() const final { return std::stof(string_type(derived().get())); }
             double to_double() const final { return std::stod(string_type(derived().get())); }
         };

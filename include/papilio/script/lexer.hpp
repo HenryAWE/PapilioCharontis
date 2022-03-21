@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <span>
 #include "error.hpp"
-#include "literal.hpp"
 #include "keywords.hpp"
 #include "operators.hpp"
 #include "../utility.hpp"
