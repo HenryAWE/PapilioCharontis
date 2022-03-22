@@ -838,7 +838,7 @@ namespace papilio::script
             typedef std::variant<std::size_t, string_type> id_t;
         public:
             script_argument_any(std::size_t idx) : m_id(idx) {}
-            script_argument_any(string_type name) : m_id(std::move(name)) {}
+            script_argument_any(string_view_type name) : m_id(string_type(name)) {}
 
             value invoke(basic_exec& ctx)
             {

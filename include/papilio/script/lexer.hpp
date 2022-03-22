@@ -34,15 +34,15 @@ namespace papilio::script
         typedef std::basic_string<value_type> string_type;
         typedef std::basic_string_view<value_type> string_view_type;
 
-        basic_lexeme(lexeme_type type_, string_type str_) noexcept
-            : m_type(type_), m_str(std::move(str_)) {}
+        constexpr basic_lexeme(lexeme_type type_, string_view_type str_) noexcept
+            : m_type(type_), m_str(str_) {}
 
         constexpr lexeme_type type() const noexcept { return m_type; }
-        constexpr const string_type& str() const noexcept { return m_str; }
+        constexpr string_view_type str() const noexcept { return m_str; }
 
     private:
         lexeme_type m_type;
-        string_type m_str;
+        string_view_type m_str;
     };
 
     template <typename CharT>
@@ -78,7 +78,7 @@ namespace papilio::script
                         );
                         m_lexemes.emplace_back(
                             lexeme_type::identifier,
-                            string_type(it, identifier_end)
+                            string_view_type(it, identifier_end)
                         );
                         it = identifier_end;
                         continue;
@@ -91,7 +91,7 @@ namespace papilio::script
                         );
                         m_lexemes.emplace_back(
                             lexeme_type::identifier,
-                            string_type(it, identifier_end)
+                            string_view_type(it, identifier_end)
                         );
                         it = identifier_end;
                         continue;
@@ -110,7 +110,7 @@ namespace papilio::script
                     {
                         m_lexemes.emplace_back(
                             lexeme_type::keyword,
-                            string_type(kw_sv)
+                            kw_sv
                         );
                     }
                     else
@@ -131,7 +131,7 @@ namespace papilio::script
                     {
                         m_lexemes.emplace_back(
                             lexeme_type::operator_,
-                            string_type(op_sv)
+                            op_sv
                         );
                     }
                     else
@@ -141,15 +141,34 @@ namespace papilio::script
                 }
                 else if(c == value_type('"')) // String literal
                 {
-                    std::string string_literal;
-                    it = read_string_literal(
-                        it, src.end(),
-                        std::back_inserter(string_literal)
-                    );
+                    auto literal_end = std::find_if_not(
+                        std::next(it), src.end(),
+                        [escaping = false](value_type ch) mutable
+                        {
+                            if(ch == value_type('\\') && !escaping)
+                            {
+                                escaping = true;
+                                return true;
+                            }
+                            else if(ch == value_type('"') && !escaping)
+                            {
+                                return false;
+                            }
 
+                            escaping = false;
+                            return true;
+                        }
+                    );
+                    if(*literal_end != value_type('"'))
+                    {
+                        throw syntax_error();
+                    }
+                    ++literal_end;
+                    string_view_type str_sv(it, literal_end);
+                    it = literal_end;
                     m_lexemes.emplace_back(
                         lexeme_type::literal,
-                        std::move(string_literal)
+                        str_sv
                     );
                 }
                 else if(is_digit(c) || c == value_type('.')) // Numeric literal
@@ -178,7 +197,7 @@ namespace papilio::script
                     it = literal_end;
                     m_lexemes.emplace_back(
                         lexeme_type::literal,
-                        string_type(num_sv)
+                        num_sv
                     );
                 }
                 else

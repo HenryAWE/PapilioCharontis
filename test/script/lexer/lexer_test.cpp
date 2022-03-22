@@ -17,7 +17,8 @@ TEST(TestLexer, Lexemes)
     EXPECT_EQ(lexemes[2].type(), script::lexeme_type::operator_);
     EXPECT_EQ(lexemes[2].str(), ":");
     EXPECT_EQ(lexemes[3].type(), script::lexeme_type::literal);
-    EXPECT_EQ(lexemes[3].str(), R"("2""@")");
+    const char str_literal[] = R"("2\"\"@")";
+    EXPECT_EQ(lexemes[3].str(), str_literal);
 
     lex.clear();
     lex.parse(R"(if @0 == 1: "is" end)");
