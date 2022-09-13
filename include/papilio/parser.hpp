@@ -5,6 +5,7 @@
 #include <iterator>
 #include <vector>
 #include <span>
+#include "common/common.hpp"
 #include "utility.hpp"
 #include "block.hpp"
 #include "script/compiler.hpp"
