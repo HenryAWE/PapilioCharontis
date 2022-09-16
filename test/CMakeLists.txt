@@ -1,15 +1,14 @@
+enable_testing()
+
 find_package(GTest CONFIG REQUIRED)
+include(GoogleTest)
 
-add_subdirectory(common)
-add_subdirectory(format)
-add_subdirectory(script)
-add_subdirectory(utility)
+add_executable(test_core test_core.cpp)
+target_link_libraries(test_core PRIVATE papilio)
+target_link_libraries(test_core PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+gtest_discover_tests(test_core)
 
-add_custom_target(all_tests)
-add_dependencies(
-    all_tests
-    all_common_tests
-    all_format_tests
-    all_script_tests
-    utility_test
-)
+add_executable(test_utf8 test_utf8.cpp)
+target_link_libraries(test_utf8 PRIVATE papilio)
+target_link_libraries(test_utf8 PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+gtest_discover_tests(test_utf8)
