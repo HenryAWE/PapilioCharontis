@@ -9,6 +9,7 @@
 #include <map>
 #include <charconv>
 #include "utf8.hpp"
+#include "error.hpp"
 
 
 namespace papilio
