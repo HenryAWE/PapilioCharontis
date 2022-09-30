@@ -1,13 +1,12 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <ranges>
-#include <papilio/script.hpp>
+#include <papilio/papilio.hpp>
 
 
 TEST(TestScript, Utilities)
 {
-    using namespace papilio;
-    using namespace script;
+    using namespace papilio::script;
 
     static_assert(is_lexeme<lexeme::argument>);
     static_assert(is_lexeme<lexeme::identifier>);
@@ -85,6 +84,67 @@ TEST(TestScript, Lexer)
 
         EXPECT_EQ(lexemes[6].type(), lexeme_type::constant);
         EXPECT_EQ(lexemes[6].as<lexeme::constant>().get_string(), "(empty)");
+    }
+}
+TEST(TestScript, Executor)
+{
+    using namespace papilio;
+    using namespace script;
+
+    {
+        executor::context ctx;
+
+        ctx.push<executor::int_type>(1);
+        ctx.push<executor::float_type>(2.0L);
+        ctx.push<executor::string_type>("string");
+
+        EXPECT_EQ(ctx.top<executor::int_type>(), 1);
+        EXPECT_DOUBLE_EQ(ctx.top<executor::float_type>(), 2.0L);
+        EXPECT_EQ(ctx.top<executor::string_type>(), "string");
+    }
+
+    {
+        executor::context ctx;
+
+        executor ex(std::in_place_type<executor::constant<executor::int_type>>, 2);
+        ex(ctx);
+
+        auto i = ctx.copy_and_pop<executor::int_type>();
+        EXPECT_EQ(i, 2);
+    }
+
+    {
+        using namespace std::literals;
+
+        int a1 = 1;
+        float a2 = 2.0f;
+        std::string a3 = "test";
+
+        executor::context ctx(dynamic_format_arg_store(a1, a2, "string"_a = a3));
+
+        executor ex1(std::in_place_type<executor::argument>, 0);
+        ex1(ctx);
+
+        EXPECT_EQ(ctx.copy_and_pop<executor::int_type>(), 1);
+
+        executor ex2(std::in_place_type<executor::argument>, 1);
+        ex2(ctx);
+
+        EXPECT_DOUBLE_EQ(ctx.copy_and_pop<executor::float_type>(), 2.0);
+
+        executor ex3(std::in_place_type<executor::argument>, "string"s);
+        ex3(ctx);
+
+        EXPECT_EQ(ctx.copy_and_pop<executor::string_type>(), "test");
+
+        executor ex4(
+            std::in_place_type<executor::argument>,
+            "string"s,
+            std::vector<executor::argument::member_type>{ attribute_name("length") }
+        );
+        ex4(ctx);
+
+        EXPECT_EQ(ctx.copy_and_pop<executor::int_type>(), std::string("test").length());
     }
 }
 

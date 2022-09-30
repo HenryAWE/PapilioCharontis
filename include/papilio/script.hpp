@@ -4,12 +4,16 @@
 #include <memory>
 #include <vector>
 #include <variant>
+#include <stack>
 #include <span>
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <cassert>
 #include <charconv>
 #include <optional>
+#include <sstream>
+#include "core.hpp"
 #include "error.hpp"
 
 
@@ -699,6 +703,295 @@ namespace papilio
             }
         };
 
+
+
+        class executor
+        {
+        public:
+            using char_type = variable::char_type;
+            using int_type = variable::int_type;
+            using float_type = variable::float_type;
+            using string_type = std::basic_string<char_type>;
+
+            class context
+            {
+            public:
+                context() = default;
+                context(dynamic_format_arg_store arg_store)
+                    : m_arg_store(std::move(arg_store)) {}
+
+                template <typename T>
+                [[nodiscard]]
+                std::stack<T>& get_stack() noexcept
+                {
+                    using std::is_same_v;
+                    if constexpr(is_same_v<T, bool>)
+                    {
+                        return m_bool_stack;
+                    }
+                    else if constexpr(is_same_v<T, int_type>)
+                    {
+                        return m_int_stack;
+                    }
+                    else if constexpr(is_same_v<T, float_type>)
+                    {
+                        return m_float_stack;
+                    }
+                    else if constexpr(is_same_v<T, string_type>)
+                    {
+                        return m_str_stack;
+                    }
+                    else
+                    {
+                        static_assert(!sizeof(T), "invalid type");
+                    }
+                }
+                template <typename T>
+                [[nodiscard]]
+                const std::stack<T>& get_stack() const noexcept
+                {
+                    using std::is_same_v;
+                    if constexpr(is_same_v<T, bool>)
+                    {
+                        return m_bool_stack;
+                    }
+                    else if constexpr(is_same_v<T, int_type>)
+                    {
+                        return m_int_stack;
+                    }
+                    else if constexpr(is_same_v<T, float_type>)
+                    {
+                        return m_float_stack;
+                    }
+                    else if constexpr(is_same_v<T, string_type>)
+                    {
+                        return m_str_stack;
+                    }
+                    else
+                    {
+                        static_assert(!sizeof(T), "invalid type");
+                    }
+                }
+
+                [[nodiscard]]
+                const dynamic_format_arg_store& get_store() const noexcept
+                {
+                    return m_arg_store;
+                }
+
+                template <typename T>
+                const T& top() const
+                {
+                    auto& s = get_stack<T>();
+                    assert(!s.empty());
+                    return s.top();
+                }
+
+                template <typename T>
+                void pop() noexcept
+                {
+                    auto& s = get_stack<T>();
+                    assert(!s.empty());
+                    s.pop();
+                }
+                template <typename T>
+                T copy_and_pop()
+                {
+                    auto& s = get_stack<T>();
+                    assert(!s.empty());
+                    T tmp = s.top();
+                    s.pop();
+                    return tmp;
+                }
+
+                template <typename T>
+                void push(const T& val)
+                {
+                    get_stack<T>().push(val);
+                }
+                void push_variable(const variable& var)
+                {
+                    auto visitor = [&](auto&& v)
+                    {
+                        using T = std::remove_cvref_t<decltype(v)>;
+                        push<T>(v);
+                    };
+
+                    std::visit(visitor, var.to_underlying());
+                }
+
+            private:
+                std::stack<bool> m_bool_stack;
+                std::stack<int_type> m_int_stack;
+                std::stack<float_type> m_float_stack;
+                std::stack<string_type> m_str_stack;
+
+                dynamic_format_arg_store m_arg_store;
+            };
+
+            class base
+            {
+            public:
+                virtual void execute(context& ctx) = 0;
+            };
+
+            template <typename T>
+            class result : public base
+            {
+            public:
+                using value_type = T;
+            };
+
+            template <typename T>
+            class constant final : public result<T>
+            {
+            public:
+                using value_type = result<T>::value_type;
+
+                constant() = default;
+                constant(const constant&) = default;
+                constant(constant&&) = default;
+                constant(const value_type& val)
+                    : m_val(val) {}
+                constant(value_type&& val)
+                    : m_val(std::move(val)) {}
+                template <typename... Args>
+                constant(std::in_place_t, Args&&... args)
+                    : m_val(std::forward<Args>(args)...) {}
+
+                void execute(context& ctx) override
+                {
+                    ctx.push(m_val);
+                }
+
+            private:
+                value_type m_val;
+            };
+
+            class selection final : public base
+            {
+            public:
+                selection() = delete;
+                selection(const selection&) = delete;
+                selection(selection&&) = delete;
+                selection(
+                    std::unique_ptr<result<bool>> cond,
+                    std::unique_ptr<base> on_true,
+                    std::unique_ptr<base> on_false = nullptr
+                ) : m_cond(std::move(cond)), m_on_true(std::move(on_true)), m_on_false(std::move(on_false)) {}
+
+                void execute(context& ctx) override
+                {
+                    assert(m_cond);
+                    m_cond->execute(ctx);
+                    bool result = ctx.copy_and_pop<bool>();
+                    if(result)
+                    {
+                        m_on_true->execute(ctx);
+                    }
+                    else if(m_on_false)
+                    { // this branch could be empty
+                        m_on_false->execute(ctx);
+                    }
+                }
+
+            private:
+                std::unique_ptr<result<bool>> m_cond;
+                std::unique_ptr<base> m_on_true;
+                std::unique_ptr<base> m_on_false;
+            };
+
+            class argument final : public base
+            {
+            public:
+                using member_type = std::variant<
+                    indexing_value,
+                    attribute_name
+                >;
+
+                argument() = delete;
+                argument(indexing_value arg_id)
+                    : m_arg_id(std::move(arg_id)), m_members() {}
+                argument(indexing_value arg_id, std::vector<member_type> members)
+                    : m_arg_id(std::move(arg_id)), m_members(std::move(members)) {}
+
+                void execute(context& ctx) override
+                {
+                    format_arg arg = ctx.get_store().get(m_arg_id);
+                    auto visitor = [&](auto&& v)->format_arg
+                    {
+                        using std::is_same_v;
+                        using T = std::remove_cvref_t<decltype(v)>;
+
+                        if constexpr(is_same_v<T, indexing_value>)
+                        {
+                            return arg.index(v);
+                        }
+                        else if constexpr(is_same_v<T, attribute_name>)
+                        {
+                            return arg.attribute(v);
+                        }
+                    };
+
+                    for(const auto& i : m_members)
+                    {
+                        arg = std::visit(visitor, i);
+                    }
+
+                    auto var = arg.as_variable();
+                    ctx.push_variable(var);
+                }
+
+            private:
+                indexing_value m_arg_id;
+                std::vector<member_type> m_members;
+            };
+
+            executor() = default;
+            executor(const executor&) = delete;
+            executor(executor&&) noexcept = default;
+            executor(std::unique_ptr<base> ex)
+                : m_ex(std::move(ex)) {}
+            template <std::derived_from<base> T, typename... Args>
+            executor(std::in_place_type_t<T>, Args&&... args)
+                : executor(std::make_unique<T>(std::forward<Args>(args)...)) {}
+
+            [[nodiscard]]
+            bool empty() const noexcept
+            {
+                return m_ex == nullptr;
+            }
+            [[nodiscard]]
+            operator bool() const noexcept
+            {
+                return !empty();
+            }
+
+            void operator()(context& ctx)
+            {
+                assert(!empty());
+                m_ex->execute(ctx);
+            }
+
+            void reset(std::unique_ptr<base> ex = nullptr)
+            {
+                m_ex.swap(ex);
+            }
+            template <std::derived_from<base> T, typename... Args>
+            void emplace(Args&&... args)
+            {
+                m_ex = std::make_unique<T>(std::forward<Args>(args)...);
+            }
+
+            std::unique_ptr<base> release() noexcept
+            {
+                return std::move(m_ex);
+            }
+
+        private:
+            std::unique_ptr<base> m_ex;
+        };
+
         class script_parse_context
         {
         public:
@@ -707,6 +1000,12 @@ namespace papilio
             using string_view_type = std::basic_string_view<char_type>;
 
             void parse(string_view_type src);
+        };
+
+        class interpreter
+        {
+        public:
+        private:
         };
     }
 }
