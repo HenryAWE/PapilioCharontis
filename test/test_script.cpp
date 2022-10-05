@@ -93,14 +93,18 @@ TEST(TestScript, Executor)
 
     {
         executor::context ctx;
-
-        ctx.push<executor::int_type>(1);
-        ctx.push<executor::float_type>(2.0L);
-        ctx.push<executor::string_type>("string");
-
-        EXPECT_EQ(ctx.top<executor::int_type>(), 1);
-        EXPECT_DOUBLE_EQ(ctx.top<executor::float_type>(), 2.0L);
-        EXPECT_EQ(ctx.top<executor::string_type>(), "string");
+        ctx.push(1);
+        EXPECT_EQ(ctx.top().get<executor::int_type>(), 1);
+    }
+    {
+        executor::context ctx;
+        ctx.push(2.0L);
+        EXPECT_DOUBLE_EQ(ctx.top().get<executor::float_type>(), 2.0L);
+    }
+    {
+        executor::context ctx;
+        ctx.push("string");
+        EXPECT_EQ(ctx.top().get<executor::string_type>(), "string");
     }
 
     {
@@ -109,7 +113,7 @@ TEST(TestScript, Executor)
         executor ex(std::in_place_type<executor::constant<executor::int_type>>, 2);
         ex(ctx);
 
-        auto i = ctx.copy_and_pop<executor::int_type>();
+        auto i = ctx.copy_and_pop().get<executor::int_type>();
         EXPECT_EQ(i, 2);
     }
 
@@ -125,17 +129,17 @@ TEST(TestScript, Executor)
         executor ex1(std::in_place_type<executor::argument>, 0);
         ex1(ctx);
 
-        EXPECT_EQ(ctx.copy_and_pop<executor::int_type>(), 1);
+        EXPECT_EQ(ctx.copy_and_pop().get<executor::int_type>(), 1);
 
         executor ex2(std::in_place_type<executor::argument>, 1);
         ex2(ctx);
 
-        EXPECT_DOUBLE_EQ(ctx.copy_and_pop<executor::float_type>(), 2.0);
+        EXPECT_DOUBLE_EQ(ctx.copy_and_pop().get<executor::float_type>(), 2.0);
 
         executor ex3(std::in_place_type<executor::argument>, "string"s);
         ex3(ctx);
 
-        EXPECT_EQ(ctx.copy_and_pop<executor::string_type>(), "test");
+        EXPECT_EQ(ctx.copy_and_pop().get<executor::string_type>(), "test");
 
         executor ex4(
             std::in_place_type<executor::argument>,
@@ -144,7 +148,54 @@ TEST(TestScript, Executor)
         );
         ex4(ctx);
 
-        EXPECT_EQ(ctx.copy_and_pop<executor::int_type>(), std::string("test").length());
+        EXPECT_EQ(ctx.copy_and_pop().get<executor::int_type>(), std::string("test").length());
+    }
+}
+TEST(TestScript, Interpreter)
+{
+    using namespace papilio;
+    using namespace script;
+
+    {
+        interpreter intp;
+        std::string result = intp.run("'hello'", {});
+        EXPECT_EQ(result, "hello");
+    }
+
+    {
+        interpreter intp;
+
+        std::string src = "if $0: 'hello'";
+        std::string result = intp.run(src, true);
+        EXPECT_EQ(result, "hello");
+
+        result = intp.run(src, false);
+        EXPECT_EQ(result, "");
+    }
+
+    {
+        interpreter intp;
+
+        std::string src = "if $0: 'a' else: 'b'";
+        std::string result = intp.run(src, true);
+        EXPECT_EQ(result, "a");
+
+        result = intp.run(src, false);
+        EXPECT_EQ(result, "b");
+    }
+
+    {
+        interpreter intp;
+
+        std::string src = "if $0: 'a' elif $1: 'b' else: 'c'";
+        std::string result = intp.run(src, true, false);
+        EXPECT_EQ(result, "a");
+
+        result = intp.run(src, false, true);
+        EXPECT_EQ(result, "b");
+
+        result = intp.run(src, false, false);
+        EXPECT_EQ(result, "c");
     }
 }
 

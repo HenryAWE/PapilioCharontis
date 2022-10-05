@@ -315,6 +315,12 @@ namespace papilio
                     return *std::get_if<string_type>(&m_const);
                 }
 
+                [[nodiscard]]
+                const underlying_type& to_underlying() const noexcept
+                {
+                    return m_const;
+                }
+
             private:
                 underlying_type m_const;
             };
@@ -433,9 +439,13 @@ namespace papilio
 
             void parse(string_view_type src);
 
-            std::span<const lexeme> lexemes() const noexcept
+            const std::vector<lexeme>& lexemes() const& noexcept
             {
                 return m_lexemes;
+            }
+            std::vector<lexeme>&& lexemes() && noexcept
+            {
+                return std::move(m_lexemes);
             }
 
             void clear() noexcept
@@ -720,57 +730,15 @@ namespace papilio
                 context(dynamic_format_arg_store arg_store)
                     : m_arg_store(std::move(arg_store)) {}
 
-                template <typename T>
                 [[nodiscard]]
-                std::stack<T>& get_stack() noexcept
+                std::stack<variable>& get_stack() noexcept
                 {
-                    using std::is_same_v;
-                    if constexpr(is_same_v<T, bool>)
-                    {
-                        return m_bool_stack;
-                    }
-                    else if constexpr(is_same_v<T, int_type>)
-                    {
-                        return m_int_stack;
-                    }
-                    else if constexpr(is_same_v<T, float_type>)
-                    {
-                        return m_float_stack;
-                    }
-                    else if constexpr(is_same_v<T, string_type>)
-                    {
-                        return m_str_stack;
-                    }
-                    else
-                    {
-                        static_assert(!sizeof(T), "invalid type");
-                    }
+                    return m_var_stack;
                 }
-                template <typename T>
                 [[nodiscard]]
-                const std::stack<T>& get_stack() const noexcept
+                const std::stack<variable>& get_stack() const noexcept
                 {
-                    using std::is_same_v;
-                    if constexpr(is_same_v<T, bool>)
-                    {
-                        return m_bool_stack;
-                    }
-                    else if constexpr(is_same_v<T, int_type>)
-                    {
-                        return m_int_stack;
-                    }
-                    else if constexpr(is_same_v<T, float_type>)
-                    {
-                        return m_float_stack;
-                    }
-                    else if constexpr(is_same_v<T, string_type>)
-                    {
-                        return m_str_stack;
-                    }
-                    else
-                    {
-                        static_assert(!sizeof(T), "invalid type");
-                    }
+                    return m_var_stack;
                 }
 
                 [[nodiscard]]
@@ -779,52 +747,46 @@ namespace papilio
                     return m_arg_store;
                 }
 
-                template <typename T>
-                const T& top() const
+                [[nodiscard]]
+                bool empty() const noexcept
                 {
-                    auto& s = get_stack<T>();
-                    assert(!s.empty());
-                    return s.top();
+                    return m_var_stack.empty();
                 }
 
-                template <typename T>
+                const variable& top() const
+                {
+                    assert(!m_var_stack.empty());
+                    return m_var_stack.top();
+                }
+
                 void pop() noexcept
                 {
-                    auto& s = get_stack<T>();
-                    assert(!s.empty());
-                    s.pop();
+                    assert(!m_var_stack.empty());
+                    m_var_stack.pop();
                 }
-                template <typename T>
-                T copy_and_pop()
+                variable copy_and_pop()
                 {
-                    auto& s = get_stack<T>();
-                    assert(!s.empty());
-                    T tmp = s.top();
-                    s.pop();
+                    assert(!m_var_stack.empty());
+                    variable tmp = std::move(m_var_stack.top());
+                    m_var_stack.pop();
                     return tmp;
                 }
 
-                template <typename T>
-                void push(const T& val)
+                void push(const variable& var)
                 {
-                    get_stack<T>().push(val);
+                    m_var_stack.push(var);
                 }
-                void push_variable(const variable& var)
-                {
-                    auto visitor = [&](auto&& v)
-                    {
-                        using T = std::remove_cvref_t<decltype(v)>;
-                        push<T>(v);
-                    };
 
-                    std::visit(visitor, var.to_underlying());
+                string_type get_result()
+                {
+                    if(empty())
+                        return string_type();
+                    else
+                        return top().as<string_type>();
                 }
 
             private:
-                std::stack<bool> m_bool_stack;
-                std::stack<int_type> m_int_stack;
-                std::stack<float_type> m_float_stack;
-                std::stack<string_type> m_str_stack;
+                std::stack<variable> m_var_stack;
 
                 dynamic_format_arg_store m_arg_store;
             };
@@ -875,7 +837,7 @@ namespace papilio
                 selection(const selection&) = delete;
                 selection(selection&&) = delete;
                 selection(
-                    std::unique_ptr<result<bool>> cond,
+                    std::unique_ptr<base> cond,
                     std::unique_ptr<base> on_true,
                     std::unique_ptr<base> on_false = nullptr
                 ) : m_cond(std::move(cond)), m_on_true(std::move(on_true)), m_on_false(std::move(on_false)) {}
@@ -884,7 +846,7 @@ namespace papilio
                 {
                     assert(m_cond);
                     m_cond->execute(ctx);
-                    bool result = ctx.copy_and_pop<bool>();
+                    bool result = ctx.copy_and_pop().as<bool>();
                     if(result)
                     {
                         m_on_true->execute(ctx);
@@ -896,7 +858,7 @@ namespace papilio
                 }
 
             private:
-                std::unique_ptr<result<bool>> m_cond;
+                std::unique_ptr<base> m_cond;
                 std::unique_ptr<base> m_on_true;
                 std::unique_ptr<base> m_on_false;
             };
@@ -939,7 +901,7 @@ namespace papilio
                     }
 
                     auto var = arg.as_variable();
-                    ctx.push_variable(var);
+                    ctx.push(std::move(var));
                 }
 
             private:
@@ -1005,7 +967,22 @@ namespace papilio
         class interpreter
         {
         public:
+            using char_type = char;
+            using string_type = std::basic_string<char_type>;
+            using string_view_type = std::basic_string_view<char_type>;
+
+            string_type run(string_view_type src, dynamic_format_arg_store args);
+            template <typename... Args>
+            string_type run(string_view_type src, Args&&... args)
+            {
+                return run(
+                    src, dynamic_format_arg_store(std::forward<Args>(args)...)
+                );
+            }
+
         private:
+            std::vector<lexeme> to_lexemes(string_view_type src);
+            executor to_executor(std::span<const lexeme> lexemes);
         };
     }
 }
