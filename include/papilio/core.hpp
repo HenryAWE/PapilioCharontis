@@ -525,10 +525,15 @@ namespace papilio
                         invalid_index();
                     auto i = idx.as_index();
 
-                    string_view_type sv(v);
-                    if(i >= sv.size())
-                        invalid_index();
-                    return format_arg(sv[i]);
+                    if constexpr(std::is_same_v<T, string_type>)
+                    {
+                        return format_arg(utf8::index(v, i));
+                    }
+                    else
+                    {
+                        string_view_type sv(v);
+                        return format_arg(utf8::index(sv, i));
+                    }
                 }
 
                 invalid_index();

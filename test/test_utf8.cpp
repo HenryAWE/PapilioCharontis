@@ -28,7 +28,30 @@ TEST(TestUTF8, Utilities)
 {
     using namespace papilio;
 
-    EXPECT_EQ(utf8::strlen((const char*)u8"你好，世界"), 5);
+    // length
+    {
+        EXPECT_EQ(utf8::strlen((const char*)u8"你好，世界"), 5);
+    }
+    
+    // substring
+    {
+        std::string src = (const char*)u8"你好，世界！";
+        EXPECT_EQ(utf8::substr(src, 1), (const char*)u8"好，世界！");
+        EXPECT_EQ(utf8::substr(src, 3, 2), (const char*)u8"世界");
+        EXPECT_EQ(utf8::substr(src, 0, 1), (const char*)u8"你");
+    }
+
+    // indexing
+    {
+        std::string src = (const char*)u8"你好，世界！";
+        EXPECT_EQ(utf8::index(src, 0), (const char*)u8"你");
+        EXPECT_EQ(utf8::index(src, 1), (const char*)u8"好");
+        EXPECT_EQ(utf8::index(src, 2), (const char*)u8"，");
+        EXPECT_EQ(utf8::index(src, 3), (const char*)u8"世");
+        EXPECT_EQ(utf8::index(src, 4), (const char*)u8"界");
+        EXPECT_EQ(utf8::index(src, 5), (const char*)u8"！");
+        EXPECT_EQ(utf8::index(src, 6), std::string());
+    }
 }
 
 int main(int argc, char* argv[])

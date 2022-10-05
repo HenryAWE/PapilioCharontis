@@ -60,6 +60,17 @@ TEST(TestScript, Lexer)
     }
 
     l.clear();
+    l.parse((const char*)u8R"('非ASCII字符串')");
+    {
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::constant);
+        EXPECT_EQ(
+            lexemes[0].as<lexeme::constant>().get_string(),
+            (const char*)u8"非ASCII字符串"
+        );
+    }
+
+    l.clear();
     l.parse(R"(if $name: {name} else: '(empty)')");
     {
         auto lexemes = l.lexemes();
@@ -156,12 +167,14 @@ TEST(TestScript, Interpreter)
     using namespace papilio;
     using namespace script;
 
+    // constant value
     {
         interpreter intp;
         std::string result = intp.run("'hello'", {});
         EXPECT_EQ(result, "hello");
     }
 
+    // if
     {
         interpreter intp;
 
@@ -173,6 +186,7 @@ TEST(TestScript, Interpreter)
         EXPECT_EQ(result, "");
     }
 
+    // if-else
     {
         interpreter intp;
 
@@ -184,6 +198,7 @@ TEST(TestScript, Interpreter)
         EXPECT_EQ(result, "b");
     }
 
+    // if-elif-else
     {
         interpreter intp;
 
@@ -196,6 +211,35 @@ TEST(TestScript, Interpreter)
 
         result = intp.run(src, false, false);
         EXPECT_EQ(result, "c");
+    }
+
+    // indexing
+    {
+        interpreter intp;
+
+        std::string result = intp.run("$0[0]", "hello");
+        EXPECT_EQ(result, "h");
+        result = intp.run("$0[4]", "hello");
+        EXPECT_EQ(result, "o");
+
+        std::string str = "argument";
+        result = intp.run("$0[0]", str);
+        EXPECT_EQ(result, "a");
+    }
+
+    // indexing for non-ASCII characters
+    {
+        using namespace std::literals;
+        interpreter intp;
+
+        std::string result = intp.run("$0[0]", (const char*)u8"这是一个测试字符串");
+        EXPECT_EQ(result, (const char*)u8"这");
+
+        std::string str = (const char*)u8"参数";
+        result = intp.run("$0[0]", str);
+        EXPECT_EQ(result, (const char*)u8"参");
+        result = intp.run("$0[1]", str);
+        EXPECT_EQ(result, (const char*)u8"数");
     }
 }
 

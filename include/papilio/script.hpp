@@ -713,8 +713,6 @@ namespace papilio
             }
         };
 
-
-
         class executor
         {
         public:
@@ -952,16 +950,6 @@ namespace papilio
 
         private:
             std::unique_ptr<base> m_ex;
-        };
-
-        class script_parse_context
-        {
-        public:
-            using char_type = char;
-            using string_type = std::basic_string<char_type>;
-            using string_view_type = std::basic_string_view<char_type>;
-
-            void parse(string_view_type src);
         };
 
         class interpreter

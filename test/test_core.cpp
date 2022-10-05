@@ -109,11 +109,20 @@ TEST(TestCore, FormatArg)
         papilio::format_arg fmt_arg("test");
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), std::string("test").length());
-        EXPECT_EQ(get<char>(fmt_arg.index(0)), 't');
-        EXPECT_EQ(get<char>(fmt_arg.index(1)), 'e');
-        EXPECT_EQ(get<char>(fmt_arg.index(2)), 's');
-        EXPECT_EQ(get<char>(fmt_arg.index(3)), 't');
-        EXPECT_THROW(get<char>(fmt_arg.index(4)), std::out_of_range);
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(0)), "t");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(1)), "e");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(2)), "s");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(3)), "t");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(4)), std::string_view());
+    }
+
+    {
+        papilio::format_arg fmt_arg((const char*)u8"测试");
+
+        EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), 2);
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(0)), (const char*)u8"测");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(1)), (const char*)u8"试");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(2)), std::string_view());
     }
 
     {

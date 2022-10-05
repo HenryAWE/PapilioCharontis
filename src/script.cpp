@@ -284,9 +284,10 @@ namespace papilio
                     iterator begin, iterator end
                 ) {
                     const std::size_t count = std::distance(begin, end);
+                    auto& l = *begin;
+
                     if(count == 1)
                     {
-                        auto& l = *begin;
                         if(l.type() == lexeme_type::constant)
                         {
                             auto& c = l.as<lexeme::constant>();
@@ -301,9 +302,93 @@ namespace papilio
                                 end
                             );
                         }
+                        
+                    }
+                    if(l.type() == lexeme_type::argument)
+                    {
+                        auto result = build_argument(begin, end);
+                        return std::move(result);
                     }
 
                     raise_syntax_error("failed to build string expression");
+                }
+
+                std::pair<std::unique_ptr<executor::argument>, iterator> build_argument(
+                    iterator begin, iterator end
+                ) {
+                    assert(begin->type() == lexeme_type::argument);
+
+                    auto& a = begin->as<lexeme::argument>();
+                    std::vector<executor::argument::member_type> members;
+
+                    ++begin;
+                    auto it = begin;
+                    for(; it != end;)
+                    {
+                        if(it->type() == lexeme_type::operator_)
+                        {
+                            auto& op = it->as<lexeme::operator_>();
+                            if(op.get() == operator_type::bracket_l)
+                            {
+                                auto [idx, next_it] = build_index(std::next(it), end);
+                                members.push_back(std::move(idx));
+                                it = next_it;
+                            }
+                        }
+                        else
+                            break;
+                    }
+
+                    std::unique_ptr<executor::argument> ex;
+                    if(a.is_indexed())
+                        ex = std::make_unique<executor::argument>(a.get_index(), std::move(members));
+                    else if(a.is_named())
+                        ex = std::make_unique<executor::argument>(a.get_string(), std::move(members));
+                    return std::make_pair(std::move(ex), it);
+                }
+
+                // this function assumes that *--begin == '[' and begin != end
+                std::pair<indexing_value, iterator> build_index(
+                    iterator begin, iterator end
+                ) {
+                    assert(begin != end);
+
+                    if(begin->type() == lexeme_type::constant)
+                    {
+                        auto& c = begin->as<lexeme::constant>();
+                        if(c.holds<lexeme::constant::float_type>())
+                        {
+                            raise_syntax_error("the type of index cannot be float");
+                        }
+                        else
+                        {
+                            auto pred = [](const lexeme& l)->bool
+                            {
+                                return
+                                    l.type() == lexeme_type::operator_ &&
+                                    l.as<lexeme::operator_>().get() == operator_type::bracket_r;
+                            };
+                            auto right_bracket = std::find_if(
+                                std::next(begin), end, pred
+                            );
+
+                            if(right_bracket == end)
+                            {
+                                raise_syntax_error("missing right bracket (']')");
+                            }
+                            else if(std::distance(begin, right_bracket) > 1)
+                            {
+                                raise_syntax_error("too many values for index");
+                            }
+
+                            if(c.holds<string_type>())
+                                return std::make_pair(c.get_string(), std::next(right_bracket));
+                            else
+                                return std::make_pair(c.get_int(), std::next(right_bracket));
+                        }
+                    }
+
+                    raise_syntax_error("invalid index");
                 }
 
             private:
@@ -356,10 +441,19 @@ namespace papilio
                         break;
                     }
                 }
+                else if(it->type() == lexeme_type::argument)
+                {
+                    std::tie(result, it) = builder.build_argument(it, lexemes.end());
+                    break;
+                }
                 else if(it->type() == lexeme_type::constant)
                 {
                     std::tie(result, it) = builder.build_string_expression(it, lexemes.end());
                     break;
+                }
+                else
+                {
+                    throw std::runtime_error("syntax error");
                 }
             }
 
