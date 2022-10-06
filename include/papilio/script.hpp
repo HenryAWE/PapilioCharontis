@@ -907,6 +907,32 @@ namespace papilio
                 std::vector<member_type> m_members;
             };
 
+            template <typename Compare>
+            class comparator final : public base
+            {
+            public:
+                comparator(
+                    std::unique_ptr<base> lhs,
+                    std::unique_ptr<base> rhs
+                ) : m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_comp() {}
+
+                virtual void execute(context& ctx) override
+                {
+                    m_lhs->execute(ctx);
+                    m_rhs->execute(ctx);
+                    auto rhs_result = ctx.copy_and_pop();
+                    auto lhs_result = ctx.copy_and_pop();
+                    
+                    bool result = m_comp(lhs_result, rhs_result);
+                    ctx.push(result);
+                }
+
+            private:
+                std::unique_ptr<base> m_lhs;
+                std::unique_ptr<base> m_rhs;
+                Compare m_comp;
+            };
+
             executor() = default;
             executor(const executor&) = delete;
             executor(executor&&) noexcept = default;

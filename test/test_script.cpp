@@ -96,6 +96,27 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[6].type(), lexeme_type::constant);
         EXPECT_EQ(lexemes[6].as<lexeme::constant>().get_string(), "(empty)");
     }
+
+    l.clear();
+    l.parse(R"(if $0 == 0: 'zero')");
+    {
+        auto lexemes = l.lexemes();
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::keyword);
+        EXPECT_EQ(lexemes[0].as<lexeme::keyword>().get(), keyword_type::if_);
+
+        EXPECT_EQ(lexemes[1].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[1].as<lexeme::argument>().get_index(), 0);
+
+        EXPECT_EQ(lexemes[2].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[2].as<lexeme::operator_>().get(), operator_type::equal);
+
+        EXPECT_EQ(lexemes[3].type(), lexeme_type::constant);
+        EXPECT_EQ(lexemes[3].as<lexeme::constant>().get_int(), 0);
+
+        EXPECT_EQ(lexemes[4].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[4].as<lexeme::operator_>().get(), operator_type::colon);
+    }
 }
 TEST(TestScript, Executor)
 {
@@ -160,6 +181,19 @@ TEST(TestScript, Executor)
         ex4(ctx);
 
         EXPECT_EQ(ctx.copy_and_pop().get<executor::int_type>(), std::string("test").length());
+    }
+
+    {
+        executor::context ctx;
+
+        executor ex(
+            std::in_place_type<executor::comparator<std::less<>>>,
+            std::make_unique<executor::constant<executor::int_type>>(1),
+            std::make_unique<executor::constant<executor::int_type>>(2)
+        );
+        ex(ctx);
+
+        EXPECT_TRUE(ctx.copy_and_pop().as<bool>());
     }
 }
 TEST(TestScript, Interpreter)
@@ -240,6 +274,17 @@ TEST(TestScript, Interpreter)
         EXPECT_EQ(result, (const char*)u8"参");
         result = intp.run("$0[1]", str);
         EXPECT_EQ(result, (const char*)u8"数");
+    }
+
+    // comparing
+    {
+        interpreter intp;
+
+        std::string src = "if $0 == 0: 'zero'";
+        std::string result = intp.run(src, 0);
+        EXPECT_EQ(result, "zero");
+        result = intp.run(src, 1);
+        EXPECT_EQ(result, "");
     }
 }
 

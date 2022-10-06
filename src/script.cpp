@@ -1,4 +1,5 @@
 #include <papilio/script.hpp>
+#include <algorithm>
 #include <papilio/core.hpp>
 
 
@@ -132,8 +133,11 @@ namespace papilio
                 using char_type = char;
                 using string_type = std::basic_string<char_type>;
 
-                using iterator = std::span<const lexeme>::iterator;
+                using span_type = std::span<const lexeme>;
+                using iterator = span_type::iterator;
+                using reverse_iterator = span_type::reverse_iterator;
                 using pointer = std::span<const lexeme>::const_pointer;
+                using operator_position_data = std::pair<operator_type, iterator>;
 
                 struct operator_finder
                 {
@@ -276,8 +280,40 @@ namespace papilio
                             return std::make_pair(std::move(ex), end);
                         }
                     }
+                    else
+                    {
+                        auto comp_pred = [](const lexeme& l)->bool
+                        {
+                            if(l.type() != lexeme_type::operator_)
+                                return false;
 
-                    raise_syntax_error("failed to build Boolean expression");
+                            using T = std::underlying_type_t<operator_type>;
+                            T val = static_cast<T>(l.as<lexeme::operator_>().get());
+                            return
+                                static_cast<T>(operator_type::equal) <= val &&
+                                val <= static_cast<T>(operator_type::less_equal);
+                        };
+
+                        iterator comp_it = std::find_if(
+                            begin, end,
+                            comp_pred
+                        );
+                        if(comp_it == end)
+                        {
+                            raise_syntax_error("invalid Boolean expression");
+                        }
+                        auto lhs = build_input(begin, comp_it);
+                        auto rhs = build_input(std::next(comp_it), end);
+
+                        auto ex = get_comparator(
+                            comp_it->as<lexeme::operator_>().get(),
+                            std::move(lhs.first), std::move(rhs.first)
+                        );
+
+                        return std::make_pair(std::move(ex), rhs.second);
+                    }
+
+                    raise_syntax_error("invalid Boolean expression");
                 }
 
                 std::pair<std::unique_ptr<executor::base>, iterator> build_string_expression(
@@ -313,6 +349,36 @@ namespace papilio
                     raise_syntax_error("failed to build string expression");
                 }
 
+                std::pair<std::unique_ptr<executor::base>, iterator> build_input(
+                    iterator begin, iterator end
+                ) {
+                    if(begin->type() == lexeme_type::constant)
+                    {
+                        return build_constant(begin, end);
+                    }
+                    else if(begin->type() == lexeme_type::argument)
+                    {
+                        return build_argument(begin, end);
+                    }
+
+                    raise_syntax_error("invalid input");
+                }
+                std::pair<std::unique_ptr<executor::base>, iterator> build_constant(
+                    iterator begin, iterator end
+                ) {
+                    assert(begin->type() == lexeme_type::constant);
+                    auto& c = begin->as<lexeme::constant>();
+
+                    auto visitor = [](auto&& v)->std::unique_ptr<executor::base>
+                    {
+                        using T = std::remove_cvref_t<decltype(v)>;
+
+                        return std::make_unique<executor::constant<T>>(v);
+                    };
+                    auto ex = std::visit(visitor, c.to_underlying());
+
+                    return std::make_pair(std::move(ex), std::next(begin));
+                }
                 std::pair<std::unique_ptr<executor::argument>, iterator> build_argument(
                     iterator begin, iterator end
                 ) {
@@ -391,36 +457,50 @@ namespace papilio
                     raise_syntax_error("invalid index");
                 }
 
-            private:
                 [[noreturn]]
                 void raise_syntax_error(const std::string& msg)
                 {
                     throw std::runtime_error(msg);
                 }
 
-                // WARNING:
-                // This function doesn't handle operator precedence, parentheses and syntax error
-                std::pair<std::unique_ptr<executor::base>, iterator> build_math_expression(
+            private:
+                // This function assumes that every element in range [begin, end)
+                // WARNING: This function CAN NOT handle operator precedence
+                // Note: This function can not handle empty input range
+                void handle_logical_expression(
+                    operator_type op,
                     iterator begin, iterator end
                 ) {
                     assert(begin != end);
-                    pointer left_operand = std::to_address(begin);
-                    ++begin;
-                    assert(begin != end);
-                    pointer operator_ = std::to_address(begin);
-                    ++begin;
-                    assert(begin != end);
-                    if(std::next(begin) == end)
-                    {
-                        switch(operator_->as<lexeme::operator_>().get())
-                        {
-                            using enum operator_type;                            
-                        }
-                    }
-                    else
-                    {
 
+                    raise_syntax_error("bad logical expression");
+                }
+
+                std::unique_ptr<executor::base> get_comparator(
+                    operator_type op,
+                    std::unique_ptr<executor::base> lhs,
+                    std::unique_ptr<executor::base> rhs
+                ) {
+#define PAPILIO_MAKE_COMPARATOR(comp) std::make_unique<executor::comparator<comp>>(std::move(lhs), std::move(rhs))
+
+                    switch(op)
+                    {
+                        using enum operator_type;
+                    case equal:
+                        return PAPILIO_MAKE_COMPARATOR(std::equal_to<>);
+                    case not_equal:
+                        return PAPILIO_MAKE_COMPARATOR(std::not_equal_to<>);;
+                    case greater_than:
+                        return PAPILIO_MAKE_COMPARATOR(std::greater<>);;
+                    case less_than:
+                        return PAPILIO_MAKE_COMPARATOR(std::less<>);;
+                    case greater_equal:
+                        return PAPILIO_MAKE_COMPARATOR(std::greater_equal<>);;
+                    case less_equal:
+                        return PAPILIO_MAKE_COMPARATOR(std::less_equal<>);;
                     }
+
+                    raise_syntax_error("invalid comparator");
                 }
             };
         }
