@@ -111,6 +111,31 @@ namespace papilio
                     return result;
                 }
             };
+
+            [[nodiscard]]
+            constexpr bool is_single_byte_operator_ch(char ch) noexcept
+            {
+                return
+                    ch == ':' ||
+                    ch == ',' ||
+                    ch == '.' ||
+                    ch == '(' ||
+                    ch == ')' ||
+                    ch == '[' ||
+                    ch == ']' ||
+                    ch == '!' ||
+                    ch == '<' ||
+                    ch == '>';
+            }
+            [[nodiscard]]
+            constexpr bool is_operator_ch(char ch) noexcept
+            {
+                return
+                    is_single_byte_operator_ch(ch) ||
+                    ch == '=' ||
+                    ch == '|' ||
+                    ch == '&';
+            }
             
             class script_op_base
             {
@@ -597,7 +622,7 @@ namespace papilio
                     }
                 }
 
-                return std::make_pair(std::move(result), std::next(it));
+                throw std::runtime_error("missing quote (\"'\")");
             }
 
             // Note: this function assumes that *--being == '$'
@@ -655,7 +680,7 @@ namespace papilio
             }
 
             [[nodiscard]]
-            std::optional<operator_type> get_operator(string_view_type str)
+            static std::optional<operator_type> get_operator(string_view_type str) noexcept
             {
                 using enum operator_type;
 

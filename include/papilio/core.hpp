@@ -344,16 +344,16 @@ namespace papilio
         using char_type = char;
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
-        using size_type = std::size_t;
+        using index_type = std::make_signed_t<std::size_t>; // ssize_t
         using underlying_type = std::variant<
-            size_type,
+            index_type,
             string_type
         >;
 
         indexing_value() = delete;
         indexing_value(const indexing_value&) = default;
         indexing_value(indexing_value&&) = default;
-        indexing_value(size_type index)
+        indexing_value(index_type index)
             : m_val(index) {}
         indexing_value(string_type key)
             : m_val(std::move(key)) {}
@@ -367,10 +367,10 @@ namespace papilio
             return m_val.index() == 1;
         }
 
-        std::size_t as_index() const noexcept
+        index_type as_index() const noexcept
         {
             // use std::get_if to avoid exception
-            return *std::get_if<size_type>(&m_val);
+            return *std::get_if<index_type>(&m_val);
         }
         const std::string& as_key() const noexcept
         {
@@ -527,12 +527,18 @@ namespace papilio
 
                     if constexpr(std::is_same_v<T, string_type>)
                     {
-                        return format_arg(utf8::index(v, i));
+                        if(i < 0)
+                            return format_arg(utf8::rindex(v, -(i + 1)));
+                        else
+                            return format_arg(utf8::index(v, i));
                     }
                     else
                     {
                         string_view_type sv(v);
-                        return format_arg(utf8::index(sv, i));
+                        if(i < 0)
+                            return format_arg(utf8::rindex(sv, -(i + 1)));
+                        else
+                            return format_arg(utf8::index(sv, i));
                     }
                 }
 
@@ -672,9 +678,9 @@ namespace papilio
                 using std::is_same_v;
                 using T = std::remove_cvref_t<decltype(v)>;
 
-                if constexpr(is_same_v<T, size_type>)
+                if constexpr(is_same_v<T, indexing_value::index_type>)
                 {
-                    return m_args[v];
+                    return m_args[static_cast<size_type>(v)];
                 }
                 else if constexpr(is_same_v<T, string_type>)
                 {

@@ -75,6 +75,22 @@ namespace papilio
 
                     it = next;
                 }
+                else if(detail::is_operator_ch(ch))
+                {
+                    iterator next = std::find_if_not(
+                        std::next(it), src.end(),
+                        detail::is_operator_ch
+                    );
+
+                    string_view_type sv(it, next);
+                    auto op = get_operator(sv);
+                    if(op.has_value())
+                    {
+                        push_lexeme<lexeme::operator_>(*op);
+                    }
+
+                    it = next;
+                }
                 else if(ch <= '~')
                 {
                     iterator next = std::find_if(
@@ -87,18 +103,10 @@ namespace papilio
                                 detail::is_digit(ch);
                         }
                     );
-                    string_view_type sv(it, next);
-                    auto op = get_operator(sv);
-                    if(op.has_value())
-                    {
-                        push_lexeme<lexeme::operator_>(*op);
-                    }
-                    else
-                    {
-                        throw lexer_error("lexer error");
-                    }
-
-                    it = next;
+                    
+                    // TODO: Better error information
+                    (void)next;
+                    throw lexer_error("lexer error");
                 }
                 else
                 {

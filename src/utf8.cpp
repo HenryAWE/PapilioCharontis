@@ -56,6 +56,25 @@ namespace papilio
 
             return std::make_pair(U'\0', 0);
         }
+        std::pair<char32_t, std::uint8_t> rdecode(const char* src, std::size_t size) noexcept
+        {
+            if(size == 0)
+                size = std::string_view(src).size();
+            
+            const char* start = nullptr;
+            for(const char* it = src + size; it != src; --it)
+            {
+                if((*(it - 1) & 0b1100'0000) != 0b1000'0000)
+                {
+                    start = it - 1;
+                    break;
+                }
+            }
+            if(!start)
+                return std::pair(U'\0', 0);
+
+            return decode(start);
+        }
 
         std::size_t strlen(std::string_view str) noexcept
         {
@@ -90,6 +109,33 @@ namespace papilio
         {
             return std::string(
                 index(std::string_view(str), idx)
+            );
+        }
+
+        std::string_view rindex(std::string_view str, std::size_t idx) noexcept
+        {
+            std::size_t i = str.size();
+            std::size_t ch_count = 0;
+
+            ch_count = rdecode(str.data(), str.size()).second;
+            i -= ch_count;
+            assert(idx != -1);
+            for(std::size_t n = 0; n < idx; ++n)
+            {
+                if(i < ch_count)
+                    return std::string_view();
+                ch_count = rdecode(str.data(), str.size() - i).second;
+                i -= ch_count;
+                if(i == 0)
+                    return std::string_view();
+            }
+
+            return std::string_view(str.data() + i, ch_count);
+        }
+        std::string rindex(const std::string& str, std::size_t idx)
+        {
+            return std::string(
+                rindex(std::string_view(str), idx)
             );
         }
 

@@ -60,6 +60,24 @@ TEST(TestScript, Lexer)
     }
 
     l.clear();
+    l.parse(R"($0[-1])");
+    {
+        auto lexemes = l.lexemes();
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[0].as<lexeme::argument>().get_index(), 0);
+
+        EXPECT_EQ(lexemes[1].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[1].as<lexeme::operator_>().get(), operator_type::bracket_l);
+
+        EXPECT_EQ(lexemes[2].type(), lexeme_type::constant);
+        EXPECT_EQ(lexemes[2].as<lexeme::constant>().get_int(), -1);
+
+        EXPECT_EQ(lexemes[3].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[3].as<lexeme::operator_>().get(), operator_type::bracket_r);
+    }
+
+    l.clear();
     l.parse((const char*)u8R"('非ASCII字符串')");
     {
         auto lexemes = l.lexemes();
@@ -259,6 +277,8 @@ TEST(TestScript, Interpreter)
         std::string str = "argument";
         result = intp.run("$0[0]", str);
         EXPECT_EQ(result, "a");
+        result = intp.run("$0[-1]", str);
+        EXPECT_EQ(result, "t");
     }
 
     // indexing for non-ASCII characters
@@ -285,6 +305,16 @@ TEST(TestScript, Interpreter)
         EXPECT_EQ(result, "zero");
         result = intp.run(src, 1);
         EXPECT_EQ(result, "");
+    }
+
+    {
+        interpreter intp;
+
+        std::string src = "if $0[-1] == 's': 'plural' else: 'single'";
+        std::string result = intp.run(src, "students");
+        EXPECT_EQ(result, "plural");
+        result = intp.run(src, "student");
+        EXPECT_EQ(result, "single");
     }
 }
 
