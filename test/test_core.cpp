@@ -131,6 +131,15 @@ TEST(TestCore, FormatArg)
         auto var = fmt_arg.as_variable();
         EXPECT_EQ(var.as<std::string>(), "test");
     }
+
+    {
+        papilio::format_arg fmt_arg("long sentence for testing slicing");
+
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(0, 4))), "long");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(14, -16))), "for");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(-slice::npos, -20))), "long sentence");
+    }
 }
 TEST(TestCore, DynamicFormatArgStore)
 {

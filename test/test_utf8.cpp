@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/utf8.hpp>
+#include <papilio/core.hpp> // slice
 
 
 TEST(TestUTF8, Decode)
@@ -74,6 +75,26 @@ TEST(TestUTF8, Utilities)
         EXPECT_EQ(utf8::rindex(src, 1), (const char*)u8"界");
         EXPECT_EQ(utf8::rindex(src, 2), (const char*)u8"世");
         EXPECT_EQ(utf8::rindex(src, 6), std::string());
+    }
+
+    // slicing
+    {
+        std::string str = "hello world!";
+
+        EXPECT_EQ(utf8::substr(str, slice(0, 5)), "hello");
+        EXPECT_EQ(utf8::substr(str, slice(6, 13)), "world!");
+        EXPECT_EQ(utf8::substr(str, slice(6, slice::npos)), "world!");
+        EXPECT_EQ(utf8::substr(str, slice(-6, 13)), "world!");
+        EXPECT_EQ(utf8::substr(str, slice(-6, -1)), "world");
+        EXPECT_EQ(utf8::substr(str, slice(-slice::npos, -1)), "hello world");
+    }
+
+    // slicing for non-ASCII characters
+    {
+        std::string str = (const char*)u8"你好，世界！";
+
+        EXPECT_EQ(utf8::substr(str, slice(0, 2)), (const char*)u8"你好");
+        EXPECT_EQ(utf8::substr(str, slice(-slice::npos, -1)), (const char*)u8"你好，世界");
     }
 }
 

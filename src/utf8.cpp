@@ -1,5 +1,7 @@
 #include <papilio/utf8.hpp>
 #include <cassert>
+#include <optional>
+#include <papilio/core.hpp> // slice
 
 
 namespace papilio
@@ -88,10 +90,10 @@ namespace papilio
             return result;
         }
 
-        std::string_view index(std::string_view str, std::size_t idx) noexcept
+        std::optional<std::pair<std::size_t, std::uint8_t>> byte_index(std::string_view str, std::size_t idx) noexcept
         {
             std::size_t i = 0;
-            std::size_t ch_count = 0;
+            std::uint8_t ch_count = 0;
 
             ch_count = decode(str.data()).second;
             assert(idx != -1);
@@ -99,10 +101,20 @@ namespace papilio
             {
                 i += ch_count;
                 if(i >= str.size())
-                    return std::string_view();
+                    return std::nullopt;
                 ch_count = decode(str.data() + i).second;
             }
 
+            return std::make_pair(i, ch_count);
+        }
+
+        std::string_view index(std::string_view str, std::size_t idx) noexcept
+        {
+            auto result = byte_index(str, idx);
+            if(!result.has_value())
+                return std::string_view();
+
+            auto& [i, ch_count] = *result;
             return std::string_view(str.data() + i, ch_count);
         }
         std::string index(const std::string& str, std::size_t idx)
@@ -112,10 +124,10 @@ namespace papilio
             );
         }
 
-        std::string_view rindex(std::string_view str, std::size_t idx) noexcept
+        std::optional<std::pair<std::size_t, std::uint8_t>> rbyte_index(std::string_view str, std::size_t idx) noexcept
         {
             std::size_t i = str.size();
-            std::size_t ch_count = 0;
+            std::uint8_t ch_count = 0;
 
             ch_count = rdecode(str.data(), str.size()).second;
             i -= ch_count;
@@ -123,13 +135,23 @@ namespace papilio
             for(std::size_t n = 0; n < idx; ++n)
             {
                 if(i < ch_count)
-                    return std::string_view();
+                    return std::nullopt;
                 ch_count = rdecode(str.data(), str.size() - i).second;
                 i -= ch_count;
                 if(i == 0)
-                    return std::string_view();
+                    return std::nullopt;
             }
 
+            return std::make_pair(i, ch_count);
+        }
+
+        std::string_view rindex(std::string_view str, std::size_t idx) noexcept
+        {
+            auto result = rbyte_index(str, idx);
+            if(!result.has_value())
+                return std::string_view();
+
+            auto& [i, ch_count] = *result;
             return std::string_view(str.data() + i, ch_count);
         }
         std::string rindex(const std::string& str, std::size_t idx)
@@ -181,6 +203,70 @@ namespace papilio
                 count
             );
             return std::string(sv);
+        }
+
+        std::pair<std::size_t, std::size_t> get_slice_byte_range(
+            std::string_view str,
+            const slice& s
+        ) noexcept {
+            std::pair<std::size_t, std::size_t> result;
+
+            if(s.begin() < 0)
+            {
+                auto begin_index = rbyte_index(str, -(s.begin() + 1));
+                if(begin_index.has_value())
+                    result.first = begin_index->first;
+                else
+                    result.first = 0;
+            }
+            else
+            {
+                auto begin_index = byte_index(str, s.begin());
+                if(begin_index.has_value())
+                    result.first = begin_index->first;
+                else
+                    return std::make_pair(0, 0);
+            }
+
+            if(s.end() < 0)
+            {
+                auto end_index = rbyte_index(str, -(s.end() + 1));
+                if(end_index.has_value())
+                    result.second = end_index->first;
+                else
+                    return std::make_pair(0, 0);
+            }
+            else
+            {
+                auto end_index = byte_index(str, s.end());
+                if(end_index.has_value())
+                    result.second = end_index->first;
+                else
+                    result.second = str.size();
+            }
+
+            if(result.first > result.second)
+                return std::make_pair(0, 0);
+            return result;
+        }
+
+        std::string_view substr(
+            std::string_view str,
+            const slice& s
+        ) noexcept {
+            auto r = get_slice_byte_range(str, s);
+
+            if(r.first == r.second)
+                return std::string_view();
+            return std::string_view(str.data() + r.first, str.data() + r.second);
+        }
+        std::string substr(
+            const std::string& str,
+            const slice& s
+        ) {
+            return std::string(
+                substr(std::string_view(str), s)
+            );
         }
     }
 }

@@ -5,6 +5,8 @@
 
 namespace papilio
 {
+    class slice;
+
     namespace utf8
     {
         std::pair<char32_t, std::uint8_t> decode(const char* src) noexcept;
@@ -27,6 +29,15 @@ namespace papilio
             const std::string& str,
             std::size_t off,
             std::size_t count = std::string_view::npos
+        );
+
+        std::string_view substr(
+            std::string_view str,
+            const slice& s
+        ) noexcept;
+        std::string substr(
+            const std::string& str,
+            const slice& s
         );
     }
 }

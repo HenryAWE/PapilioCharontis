@@ -338,6 +338,43 @@ namespace papilio
         }
     }
 
+    class slice
+    {
+    public:
+        using index_type = std::make_signed_t<std::size_t>; // ssize_t
+
+        static constexpr index_type npos = std::numeric_limits<index_type>::max();
+
+        constexpr slice() noexcept
+            : m_begin(0), m_end(npos) {}
+        constexpr slice(const slice&) noexcept = default;
+        constexpr explicit slice(index_type begin_, index_type end_) noexcept
+            : m_begin(begin_), m_end(end_) {}
+
+        slice& operator=(const slice&) noexcept = default;
+
+        constexpr void normalize(index_type length) noexcept
+        {
+            if(m_begin < 0)
+                m_begin = length + m_begin;
+            if(m_end)
+                m_end = length + m_end;
+        }
+
+        index_type begin() const noexcept
+        {
+            return m_begin;
+        }
+        index_type end() const noexcept
+        {
+            return m_end;
+        }
+
+    private:
+        index_type m_begin;
+        index_type m_end;
+    };
+
     class indexing_value
     {
     public:
@@ -347,6 +384,7 @@ namespace papilio
         using index_type = std::make_signed_t<std::size_t>; // ssize_t
         using underlying_type = std::variant<
             index_type,
+            slice,
             string_type
         >;
 
@@ -355,16 +393,28 @@ namespace papilio
         indexing_value(indexing_value&&) = default;
         indexing_value(index_type index)
             : m_val(index) {}
+        indexing_value(slice s)
+            : m_val(s) {}
         indexing_value(string_type key)
             : m_val(std::move(key)) {}
 
-        bool is_index() const
+        template <typename T>
+        bool holds() const noexcept
         {
-            return m_val.index() == 0;
+            return std::holds_alternative<T>(m_val);
         }
-        bool is_key() const
+
+        bool is_index() const noexcept
         {
-            return m_val.index() == 1;
+            return holds<index_type>();
+        }
+        bool is_slice() const noexcept
+        {
+            return holds<slice>();
+        }
+        bool is_key() const noexcept
+        {
+            return holds<string_type>();
         }
 
         index_type as_index() const noexcept
@@ -372,18 +422,22 @@ namespace papilio
             // use std::get_if to avoid exception
             return *std::get_if<index_type>(&m_val);
         }
+        const slice& as_slice() const noexcept
+        {
+            return *std::get_if<slice>(&m_val);
+        }
         const std::string& as_key() const noexcept
         {
             return *std::get_if<string_type>(&m_val);
         }
 
         [[nodiscard]]
-        underlying_type& get() noexcept
+        underlying_type& to_underlying() noexcept
         {
             return m_val;
         }
         [[nodiscard]]
-        const underlying_type& get() const noexcept
+        const underlying_type& to_underlying() const noexcept
         {
             return m_val;
         }
@@ -521,24 +575,39 @@ namespace papilio
 
                 if constexpr(string_like<T>)
                 {
-                    if(!idx.is_index())
-                        invalid_index();
-                    auto i = idx.as_index();
+                    if(idx.is_index())
+                    {
+                        auto i = idx.as_index();
 
-                    if constexpr(std::is_same_v<T, string_type>)
-                    {
-                        if(i < 0)
-                            return format_arg(utf8::rindex(v, -(i + 1)));
+                        if constexpr(std::is_same_v<T, string_type>)
+                        {
+                            if(i < 0)
+                                return format_arg(utf8::rindex(v, -(i + 1)));
+                            else
+                                return format_arg(utf8::index(v, i));
+                        }
                         else
-                            return format_arg(utf8::index(v, i));
+                        {
+                            string_view_type sv(v);
+                            if(i < 0)
+                                return format_arg(utf8::rindex(sv, -(i + 1)));
+                            else
+                                return format_arg(utf8::index(sv, i));
+                        }
                     }
-                    else
+                    else if(idx.is_slice())
                     {
-                        string_view_type sv(v);
-                        if(i < 0)
-                            return format_arg(utf8::rindex(sv, -(i + 1)));
+                        const auto& s = idx.as_slice();
+
+                        if constexpr(std::is_same_v<T, string_type>)
+                        {
+                            return format_arg(utf8::substr(v, s));
+                        }
                         else
-                            return format_arg(utf8::index(sv, i));
+                        {
+                            string_view_type sv(v);
+                            return format_arg(utf8::substr(sv, s));
+                        }
                     }
                 }
 
@@ -689,9 +758,13 @@ namespace papilio
                         throw std::out_of_range("invalid named argument");
                     return it->second;
                 }
+                else
+                {
+                    throw std::invalid_argument("invalid indexing value");
+                }
             };
 
-            return std::visit(visitor, idx.get());
+            return std::visit(visitor, idx.to_underlying());
         }
 
         const format_arg& operator[](size_type i) const

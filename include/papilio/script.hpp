@@ -170,7 +170,7 @@ namespace papilio
 
         enum class lexeme_type
         {
-            argument,
+            argument = 1,
             identifier,
             constant,
             keyword,
@@ -180,14 +180,14 @@ namespace papilio
 
         enum class keyword_type
         {
-            if_,
+            if_ = 1,
             elif,
             else_
         };
 
         enum class operator_type
         {
-            colon,  // :
+            colon = 1,  // :
             comma,  // ,
             dot,    // .
             parenthesis_l,  // (
@@ -680,61 +680,72 @@ namespace papilio
             }
 
             [[nodiscard]]
-            static std::optional<operator_type> get_operator(string_view_type str) noexcept
+            static std::pair<operator_type, std::size_t> get_operator(string_view_type str) noexcept
             {
                 using enum operator_type;
 
-                if(str.length() == 1)
+                if(detail::is_single_byte_operator_ch(str[0]))
                 {
+                    operator_type op;
                     switch(str[0])
                     {
                     case ':':
-                        return colon;
-
+                        op = colon;
+                        break;
                     case ',':
-                        return comma;
-
+                        op = comma;
+                        break;
                     case '.':
-                        return dot;
-
+                        op = dot;
+                        break;
                     case '(':
-                        return parenthesis_l;
+                        op = parenthesis_l;
+                        break;
                     case ')':
-                        return parenthesis_r;
-
+                        op = parenthesis_r;
+                        break;
                     case '[':
-                        return bracket_l;
+                        op = bracket_l;
+                        break;
                     case ']':
-                        return bracket_r;
-
+                        op = bracket_r;
+                        break;
                     case '!':
-                        return not_;
-
+                        op = not_;
+                        break;
                     case '<':
-                        return less_than;
+                        op = less_than;
+                        break;
                     case '>':
-                        return greater_than;
+                        op = greater_than;
+                        break;
                     }
+
+                    return std::make_pair(op, 1);
                 }
-                else if(str.length() == 2)
+                else
                 {
                     using namespace std::literals;
 
+                    str = str.substr(0, 2);
+                    operator_type op;
                     if(str == "=="sv)
-                        return equal;
+                        op = equal;
                     else if(str == "!="sv)
-                        return not_equal;
+                        op = not_equal;
                     else if(str == "<="sv)
-                        return less_equal;
+                        op = less_equal;
                     else if(str == ">="sv)
-                        return greater_equal;
+                        op = greater_equal;
                     else if(str == "&&"sv)
-                        return and_;
+                        op = and_;
                     else if(str == "||"sv)
-                        return or_;
+                        op = or_;
+                    
+                    return std::make_pair(op, 2);
                 }
 
-                return std::nullopt;
+                return std::make_pair(static_cast<operator_type>(0), 0);
             }
         };
 

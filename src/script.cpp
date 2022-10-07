@@ -83,10 +83,19 @@ namespace papilio
                     );
 
                     string_view_type sv(it, next);
-                    auto op = get_operator(sv);
-                    if(op.has_value())
+                    while(!sv.empty())
                     {
-                        push_lexeme<lexeme::operator_>(*op);
+                        auto op = get_operator(sv);
+                        if(op.second == 0)
+                            break;
+                        sv = sv.substr(op.second);
+
+                        push_lexeme<lexeme::operator_>(op.first);
+                    }
+
+                    if(!sv.empty())
+                    {
+                        throw lexer_error("unknown operator \"" + std::string(sv) + '\"');
                     }
 
                     it = next;
@@ -427,39 +436,58 @@ namespace papilio
                 ) {
                     assert(begin != end);
 
-                    if(begin->type() == lexeme_type::constant)
+                    iterator slice_op = end;
+                    iterator right_bracket = begin;
+                    for(; right_bracket != end; ++right_bracket)
                     {
-                        auto& c = begin->as<lexeme::constant>();
-                        if(c.holds<lexeme::constant::float_type>())
+                        const lexeme& l = *right_bracket;
+                        if(l.type() == lexeme_type::operator_)
                         {
-                            raise_syntax_error("the type of index cannot be float");
+                            auto& op = l.as<lexeme::operator_>();
+                            if(op.get() == operator_type::colon)
+                            {
+                                if(slice_op != end)
+                                    raise_syntax_error("too many colons for a slice");
+                                slice_op = right_bracket;
+                            }
+                            if(op.get() == operator_type::bracket_r)
+                                break;
                         }
-                        else
+                    }
+                    if(right_bracket == end)
+                    {
+                        raise_syntax_error("missing right bracket (']')");
+                    }
+
+                    if(slice_op == end)
+                    {
+                        if(begin->type() == lexeme_type::constant)
                         {
-                            auto pred = [](const lexeme& l)->bool
+                            auto& c = begin->as<lexeme::constant>();
+                            if(c.holds<lexeme::constant::float_type>())
                             {
-                                return
-                                    l.type() == lexeme_type::operator_ &&
-                                    l.as<lexeme::operator_>().get() == operator_type::bracket_r;
-                            };
-                            auto right_bracket = std::find_if(
-                                std::next(begin), end, pred
-                            );
-
-                            if(right_bracket == end)
-                            {
-                                raise_syntax_error("missing right bracket (']')");
+                                raise_syntax_error("the type of index cannot be float");
                             }
-                            else if(std::distance(begin, right_bracket) > 1)
-                            {
-                                raise_syntax_error("too many values for index");
-                            }
-
-                            if(c.holds<string_type>())
-                                return std::make_pair(c.get_string(), std::next(right_bracket));
                             else
-                                return std::make_pair(c.get_int(), std::next(right_bracket));
+                            {
+                                if(std::distance(begin, right_bracket) > 1)
+                                {
+                                    raise_syntax_error("too many values for index");
+                                }
+
+                                if(c.holds<string_type>())
+                                    return std::make_pair(c.get_string(), std::next(right_bracket));
+                                else
+                                    return std::make_pair(c.get_int(), std::next(right_bracket));
+                            }
                         }
+                    }
+                    else
+                    {
+                        return std::make_pair(
+                            handle_slice_expression(begin, right_bracket, slice_op),
+                            std::next(right_bracket)
+                        );
                     }
 
                     raise_syntax_error("invalid index");
@@ -472,16 +500,70 @@ namespace papilio
                 }
 
             private:
-                // This function assumes that every element in range [begin, end)
-                // WARNING: This function CAN NOT handle operator precedence
-                // Note: This function can not handle empty input range
-                void handle_logical_expression(
-                    operator_type op,
-                    iterator begin, iterator end
+                slice handle_slice_expression(
+                    iterator begin, iterator end,
+                    iterator slice_op
                 ) {
                     assert(begin != end);
 
-                    raise_syntax_error("bad logical expression");
+                    std::pair<slice::index_type, slice::index_type> result;;
+
+                    std::size_t slice_begin_lexeme_count = std::distance(begin, slice_op);
+                    if(slice_begin_lexeme_count == 0)
+                    {
+                        result.first = 0;
+                    }
+                    else if(slice_begin_lexeme_count == 1)
+                    {
+                        if(begin->type() == lexeme_type::constant)
+                        {
+                            auto& c = begin->as<lexeme::constant>();
+                            if(!c.holds<lexeme::constant::int_type>())
+                            {
+                                raise_syntax_error("value for slicing must be integer");
+                            }
+
+                            result.first = c.get_int();
+                        }
+                        else
+                        {
+                            raise_syntax_error("invalid index value");
+                        }
+                    }
+                    else
+                    {
+                        raise_syntax_error("too many arguments for slicing");
+                    }
+
+                    iterator slice_end_it = std::next(slice_op);
+                    std::size_t slice_end_lexeme_count = std::distance(slice_end_it, end);
+                    if(slice_end_lexeme_count == 0)
+                    {
+                        result.second = slice::npos;
+                    }
+                    else if(slice_end_lexeme_count == 1)
+                    {
+                        if(slice_end_it->type() == lexeme_type::constant)
+                        {
+                            auto& c = slice_end_it->as<lexeme::constant>();
+                            if(!c.holds<lexeme::constant::int_type>())
+                            {
+                                raise_syntax_error("value for slicing must be integer");
+                            }
+
+                            result.second = c.get_int();
+                        }
+                        else
+                        {
+                            raise_syntax_error("invalid index value");
+                        }
+                    }
+                    else
+                    {
+                        raise_syntax_error("too many arguments for slicing");
+                    }
+
+                    return slice(result.first, result.second);
                 }
 
                 std::unique_ptr<executor::base> get_comparator(
