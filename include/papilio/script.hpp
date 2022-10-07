@@ -23,8 +23,6 @@ namespace papilio
 
     namespace script
     {
-        class script_context;
-
         class error : public std::runtime_error
         {
         public:
@@ -119,8 +117,6 @@ namespace papilio
                     ch == ':' ||
                     ch == ',' ||
                     ch == '.' ||
-                    ch == '(' ||
-                    ch == ')' ||
                     ch == '[' ||
                     ch == ']' ||
                     ch == '!' ||
@@ -136,37 +132,7 @@ namespace papilio
                     ch == '|' ||
                     ch == '&';
             }
-            
-            class script_op_base
-            {
-            public:
-                virtual ~script_op_base() = default;
-
-                virtual void execute(script_context& ctx);
-            };
         }
-
-        class script_context
-        {
-        public:
-            using char_type = char;
-            using string_type = std::basic_string<char_type>;
-
-        private:
-        };
-
-        class script
-        {
-        public:
-            using char_type = char;
-            using string_type = std::basic_string<char_type>;
-            using string_view_type = std::basic_string_view<char_type>;
-
-            void execute(script_context& ctx);
-
-        private:
-            std::unique_ptr<detail::script_op_base> m_scirpt_ops;
-        };
 
         enum class lexeme_type
         {
@@ -190,13 +156,9 @@ namespace papilio
             colon = 1,  // :
             comma,  // ,
             dot,    // .
-            parenthesis_l,  // (
-            parenthesis_r,  // )
             bracket_l,  // [
             bracket_r,   // ]
             not_,   // !
-            and_,   // &&
-            or_,    // ||
             equal, // ==
             not_equal,  // !=
             greater_than,   // >
@@ -698,12 +660,6 @@ namespace papilio
                     case '.':
                         op = dot;
                         break;
-                    case '(':
-                        op = parenthesis_l;
-                        break;
-                    case ')':
-                        op = parenthesis_r;
-                        break;
                     case '[':
                         op = bracket_l;
                         break;
@@ -737,10 +693,6 @@ namespace papilio
                         op = less_equal;
                     else if(str == ">="sv)
                         op = greater_equal;
-                    else if(str == "&&"sv)
-                        op = and_;
-                    else if(str == "||"sv)
-                        op = or_;
                     
                     return std::make_pair(op, 2);
                 }
@@ -832,17 +784,10 @@ namespace papilio
             };
 
             template <typename T>
-            class result : public base
+            class constant final : public base
             {
             public:
                 using value_type = T;
-            };
-
-            template <typename T>
-            class constant final : public result<T>
-            {
-            public:
-                using value_type = result<T>::value_type;
 
                 constant() = default;
                 constant(const constant&) = default;
