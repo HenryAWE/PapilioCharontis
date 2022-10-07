@@ -297,6 +297,18 @@ namespace papilio
                             return std::make_pair(std::move(ex), end);
                         }
                     }
+                    else if(
+                        begin->type() == lexeme_type::operator_ &&
+                        begin->as<lexeme::operator_>().get() == operator_type::not_
+                    ) {
+                        auto input = build_input(std::next(begin), end);
+                        assert(input.second == end);
+
+                        return std::make_pair(
+                            std::make_unique<executor::logical_not>(std::move(input.first)),
+                            end
+                        );
+                    }
                     else
                     {
                         auto comp_pred = [](const lexeme& l)->bool
@@ -417,6 +429,20 @@ namespace papilio
                                 members.push_back(std::move(idx));
                                 it = next_it;
                             }
+                            else if(op.get() == operator_type::dot)
+                            {
+                                iterator identifier_it = std::next(it);
+                                if(identifier_it == end || identifier_it->type() != lexeme_type::identifier)
+                                {
+                                    raise_syntax_error("invalid member");
+                                }
+
+                                auto& id = identifier_it->as<lexeme::identifier>();
+                                members.push_back(attribute_name(std::move(id).get()));
+                                it = std::next(identifier_it);
+                            }
+                            else
+                                break;
                         }
                         else
                             break;

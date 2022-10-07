@@ -245,7 +245,7 @@ namespace papilio
                     : m_str(sv) {}
 
                 [[nodiscard]]
-                const string_type& get() const noexcept
+                const string_type& get() const& noexcept
                 {
                     return m_str;
                 }
@@ -645,12 +645,17 @@ namespace papilio
             static std::pair<operator_type, std::size_t> get_operator(string_view_type str) noexcept
             {
                 using enum operator_type;
+                using namespace std::literals;
 
                 if(detail::is_single_byte_operator_ch(str[0]))
                 {
                     operator_type op;
                     switch(str[0])
                     {
+                    default:
+                        // jump to the end of this function to report an error
+                        goto unknown_operator;
+
                     case ':':
                         op = colon;
                         break;
@@ -667,6 +672,9 @@ namespace papilio
                         op = bracket_r;
                         break;
                     case '!':
+                        // avoid ambiguity
+                        if(str.substr(0, 2) == "!="sv)
+                            return std::make_pair(not_equal, 2);
                         op = not_;
                         break;
                     case '<':
@@ -681,22 +689,22 @@ namespace papilio
                 }
                 else
                 {
-                    using namespace std::literals;
-
+                    // not equal (!=) is handled in the above code to avoid ambiguity
                     str = str.substr(0, 2);
                     operator_type op;
                     if(str == "=="sv)
                         op = equal;
-                    else if(str == "!="sv)
-                        op = not_equal;
                     else if(str == "<="sv)
                         op = less_equal;
                     else if(str == ">="sv)
                         op = greater_equal;
+                    else
+                        goto unknown_operator;
                     
                     return std::make_pair(op, 2);
                 }
 
+            unknown_operator:
                 return std::make_pair(static_cast<operator_type>(0), 0);
             }
         };
@@ -912,6 +920,24 @@ namespace papilio
                 std::unique_ptr<base> m_lhs;
                 std::unique_ptr<base> m_rhs;
                 Compare m_comp;
+            };
+
+            class logical_not : public base
+            {
+            public:
+                logical_not() = delete;
+                logical_not(std::unique_ptr<base> input)
+                    : m_input(std::move(input)) {}
+
+                void execute(context& ctx)
+                {
+                    m_input->execute(ctx);
+                    bool input = ctx.copy_and_pop().as<bool>();
+                    ctx.push(!input);
+                }
+
+            private:
+                std::unique_ptr<base> m_input;
             };
 
             executor() = default;

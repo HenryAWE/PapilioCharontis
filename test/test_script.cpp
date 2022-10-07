@@ -60,6 +60,18 @@ TEST(TestScript, Lexer)
     }
 
     l.clear();
+    l.parse("if !$0: 'false'");
+    {
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 5);
+
+        EXPECT_EQ(lexemes[1].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[1].as<lexeme::operator_>().get(), operator_type::not_);
+
+        EXPECT_EQ(lexemes[2].type(), lexeme_type::argument);
+    }
+
+    l.clear();
     l.parse(R"($0[-1])");
     {
         auto lexemes = l.lexemes();
@@ -123,6 +135,7 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[4].as<lexeme::operator_>().get(), operator_type::bracket_r);
     }
 
+    // non-ASCII characters
     l.clear();
     l.parse((const char*)u8R"('非ASCII字符串')");
     {
@@ -132,6 +145,19 @@ TEST(TestScript, Lexer)
             lexemes[0].as<lexeme::constant>().get_string(),
             (const char*)u8"非ASCII字符串"
         );
+    }
+
+    l.clear();
+    l.parse("$0.length");
+    {
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 3);
+
+        EXPECT_EQ(lexemes[1].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[1].as<lexeme::operator_>().get(), operator_type::dot);
+
+        EXPECT_EQ(lexemes[2].type(), lexeme_type::identifier);
+        EXPECT_EQ(lexemes[2].as<lexeme::identifier>().get(), "length");
     }
 
     l.clear();
@@ -318,6 +344,41 @@ TEST(TestScript, Interpreter)
         EXPECT_EQ(result, "c");
     }
 
+    // logical not
+    {
+        interpreter intp;
+
+        std::string src = "if !$0: 'false'";
+        std::string result = intp.run(src, false);
+        EXPECT_EQ(result, "false");
+    }
+
+    {
+        interpreter intp;
+
+        std::string src = "if $0.length == 2: 'two'";
+        std::string result = intp.run(src, "12");
+        EXPECT_EQ(result, "two");
+        result = intp.run(src, "123");
+        EXPECT_EQ(result, "");
+
+        src = "if $0.size == 2: 'two byte'";
+        result = intp.run(src, "12");
+        EXPECT_EQ(result, "two byte");
+    }
+
+    {
+        interpreter intp;
+
+        std::string src = "if $0.length != $0.size: 'multibyte'";
+        std::string result = intp.run(src, "ASCII string");
+        EXPECT_EQ(result, "");
+        // non-ASCII
+        std::string non_ascii = (const char*)u8"非ASCII字符串";
+        result = intp.run(src, non_ascii);
+        EXPECT_EQ(result, "multibyte");
+    }
+
     // indexing
     {
         interpreter intp;
@@ -382,6 +443,16 @@ TEST(TestScript, Interpreter)
         EXPECT_EQ(result, "zero");
         result = intp.run(src, 1);
         EXPECT_EQ(result, "");
+    }
+
+    {
+        interpreter intp;
+
+        std::string src = "if $0 == $0: 'always true'";
+        std::string result = intp.run(src, 0);
+        EXPECT_EQ(result, "always true");
+        result = intp.run(src, "string");
+        EXPECT_EQ(result, "always true");
     }
 
     {
