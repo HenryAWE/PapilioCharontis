@@ -180,10 +180,20 @@ TEST(TestCore, DynamicFormatArgStore)
         EXPECT_FLOAT_EQ(get<float>(store[indexing_value(1)]), 2.0f);
         EXPECT_STREQ(get<const char*>(store[indexing_value("named")]), "named");
     }
-}
-TEST(TestCore, FormatContext)
-{
 
+    {
+        dynamic_format_arg_store store(0, 1, 2, "test1"_a = "test 1", "test2"_a = "test 2");
+        EXPECT_EQ(store.size(), 3);
+        EXPECT_EQ(store.named_size(), 2);
+
+        for(std::size_t i : { 0, 1, 2 })
+            EXPECT_TRUE(store.check(i));
+        EXPECT_FALSE(store.check(3));
+
+        EXPECT_TRUE(store.check("test1"));
+        EXPECT_TRUE(store.check("test2"));
+        EXPECT_FALSE(store.check("test3"));
+    }
 }
 
 int main(int argc, char* argv[])

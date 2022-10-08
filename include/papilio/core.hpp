@@ -9,6 +9,7 @@
 #include <map>
 #include <charconv>
 #include <limits>
+#include <iterator>
 #include "utf8.hpp"
 #include "error.hpp"
 
@@ -307,6 +308,8 @@ namespace papilio
         constexpr named_arg(const named_arg&) noexcept = default;
         constexpr named_arg(const char* name_, const T& value_) noexcept
             : name(name_), value(value_) {}
+
+        named_arg& operator=(const named_arg&) = delete;
     };
 
     template <typename T>
@@ -321,6 +324,8 @@ namespace papilio
         {
             const char* name;
 
+            named_arg_proxy() = delete;
+            named_arg_proxy(const named_arg_proxy&) = delete;
             constexpr named_arg_proxy(const char* name_) noexcept
                 : name(name_) {}
 
@@ -487,47 +492,6 @@ namespace papilio
         string_type m_name;
     };
 
-
-    class format_parse_context
-    {
-    public:
-        using char_type = char;
-
-    private:
-    };
-
-    template <std::integral T>
-    class formatter
-    {
-    public:
-        using value_type = T;
-        using char_type = char;
-        using iterator = std::basic_string_view<char_type>::iterator;
-        using const_iterator = std::basic_string_view<char_type>::const_iterator;
-
-        void parse(format_parse_context ctx)
-        {
-
-        }
-
-        template <typename FormatContext>
-        void format(T val, FormatContext& ctx)
-        {
-            char_type buf[100];
-            auto result = std::to_chars(buf, buf + 100, 10);
-
-            if(result.ec)
-            {
-                throw std::system_error(result.ec);
-            }
-
-            ctx.advance_to(std::copy(buf, result.ptr, ctx.out()));
-        }
-
-    private:
-        int m_base;
-    };
-
     class format_arg
     {
     public:
@@ -651,6 +615,7 @@ namespace papilio
         }
 
         template <typename T>
+        [[nodiscard]]
         friend const T& get(const format_arg& val)
         {
             return std::get<T>(val.m_val);
@@ -702,6 +667,7 @@ namespace papilio
         using size_type = std::size_t;
 
         dynamic_format_arg_store() = default;
+        dynamic_format_arg_store(const dynamic_format_arg_store&) = delete;
         dynamic_format_arg_store(dynamic_format_arg_store&&) = default;
         template <typename... Args>
         dynamic_format_arg_store(Args&&... args)
@@ -727,12 +693,14 @@ namespace papilio
             (helper(std::forward<Args>(args)), ...);
         }
 
+        [[nodiscard]]
         const format_arg& get(size_type i) const
         {
             if(i >= m_args.size())
                 throw std::out_of_range("index out of range");
             return m_args[i];
         }
+        [[nodiscard]]
         const format_arg& get(string_view_type key) const
         {
             auto it = m_named_args.find(key);
@@ -740,6 +708,7 @@ namespace papilio
                 throw std::out_of_range("invalid named argument");
             return it->second;
         }
+        [[nodiscard]]
         const format_arg& get(const indexing_value& idx) const
         {
             auto visitor = [&](auto&& v)->const format_arg&
@@ -767,23 +736,57 @@ namespace papilio
             return std::visit(visitor, idx.to_underlying());
         }
 
+        [[nodiscard]]
+        bool check(size_type i) const noexcept
+        {
+            return i < m_args.size();
+        }
+        [[nodiscard]]
+        bool check(string_view_type key) const noexcept
+        {
+            return m_named_args.contains(key);
+        }
+        [[nodiscard]]
+        bool check(const indexing_value& idx) const noexcept
+        {
+            auto visitor = [this](auto&& v)->bool
+            {
+                using std::is_same_v;
+                using T = std::remove_cvref_t<decltype(v)>;
+
+                if constexpr(is_same_v<T, indexing_value::index_type>)
+                    return check(v);
+                else if constexpr(is_same_v<T, string_type>)
+                    return check(string_view_type(v));
+                else
+                    return false;
+            };
+
+            return std::visit(visitor, idx.to_underlying());
+        }
+
+        [[nodiscard]]
         const format_arg& operator[](size_type i) const
         {
             return get(i);
         }
+        [[nodiscard]]
         const format_arg& operator[](string_view_type key) const
         {
             return get(key);
         }
+        [[nodiscard]]
         const format_arg& operator[](const indexing_value& idx) const
         {
             return get(idx);
         }
 
+        [[nodiscard]]
         size_type size() const noexcept
         {
             return m_args.size();
         }
+        [[nodiscard]]
         size_type named_size() const noexcept
         {
             return m_named_args.size();
@@ -799,44 +802,4 @@ namespace papilio
         std::vector<format_arg> m_args;
         std::map<string_type, format_arg, std::less<>> m_named_args;
     };
-
-
-    template <typename OutputIt>
-    class format_context
-    {
-    public:
-        using char_type = char;
-        using string_type = std::basic_string<char_type>;
-        using string_view_type = std::basic_string_view<char_type>;
-        using iterator = OutputIt;
-
-        iterator out()
-        {
-            return std::move(m_out);
-        }
-        void advance_to(iterator it)
-        {
-            m_out = it;
-        }
-
-    private:
-        iterator m_out;
-        
-    };
-
-    namespace detail
-    {
-        template <typename T, typename CharT = char>
-        concept has_std_formatter = requires
-        {
-            typename std::formatter<T, CharT>;
-        };
-
-        struct format_spec
-        {
-
-        };
-    }
-
-    
 }

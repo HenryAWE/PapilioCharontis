@@ -8,6 +8,11 @@ target_link_libraries(test_core PRIVATE papilio)
 target_link_libraries(test_core PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
 gtest_discover_tests(test_core)
 
+add_executable(test_format test_format.cpp)
+target_link_libraries(test_format PRIVATE papilio)
+target_link_libraries(test_format PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+gtest_discover_tests(test_format)
+
 add_executable(test_script test_script.cpp)
 target_link_libraries(test_script PRIVATE papilio)
 target_link_libraries(test_script PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)

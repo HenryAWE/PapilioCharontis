@@ -7,9 +7,12 @@ namespace papilio
 {
     namespace script
     {
-        void lexer::parse(string_view_type src)
+        std::size_t lexer::parse(string_view_type src)
         {
-            for(auto it = src.begin(); it != src.end();)
+            std::size_t bracket_counter = 0;
+
+            auto it = src.begin();
+            for(; it != src.end();)
             {
                 char_type ch = *it;
 
@@ -88,6 +91,20 @@ namespace papilio
                         auto op = get_operator(sv);
                         if(op.second == 0)
                             break;
+                        if(op.first == operator_type::bracket_l)
+                            ++bracket_counter;
+                        if(op.first == operator_type::bracket_r)
+                        {
+                            // this right bracket indicates the end of script block
+                            if(bracket_counter == 0)
+                            {
+                                // parsed characters don't include the ending bracket
+                                return std::distance(src.begin(), it);
+                            }
+
+                            // normal right bracket for indexing
+                            --bracket_counter;
+                        }
                         sv = sv.substr(op.second);
 
                         push_lexeme<lexeme::operator_>(op.first);
@@ -122,17 +139,27 @@ namespace papilio
                     throw lexer_error("lexer error");
                 }
             }
+
+            return std::distance(src.begin(), it);
         }
 
         interpreter::string_type interpreter::run(string_view_type src, dynamic_format_arg_store args)
         {
-            auto lexemes = to_lexemes(src);
-            auto ex = to_executor(lexemes);
+            auto ex = compile(src);
 
             executor::context ctx(std::move(args));
             ex(ctx);
 
             return ctx.get_result();
+        }
+        executor interpreter::compile(string_view_type src)
+        {
+            auto lexemes = to_lexemes(src);
+            return compile(lexemes);
+        }
+        executor interpreter::compile(std::span<const lexeme> lexemes)
+        {
+            return to_executor(lexemes);
         }
 
         std::vector<lexeme> interpreter::to_lexemes(string_view_type src)

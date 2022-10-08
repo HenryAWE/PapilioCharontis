@@ -424,7 +424,8 @@ namespace papilio
             using const_iterator =  string_view_type::const_iterator;
             using iterator = const_iterator;
 
-            void parse(string_view_type src);
+            // parse string and return parsed characters count
+            std::size_t parse(string_view_type src);
 
             const std::vector<lexeme>& lexemes() const& noexcept
             {
@@ -788,7 +789,7 @@ namespace papilio
             class base
             {
             public:
-                virtual void execute(context& ctx) = 0;
+                virtual void execute(context& ctx) const = 0;
             };
 
             template <typename T>
@@ -808,7 +809,7 @@ namespace papilio
                 constant(std::in_place_t, Args&&... args)
                     : m_val(std::forward<Args>(args)...) {}
 
-                void execute(context& ctx) override
+                void execute(context& ctx) const override
                 {
                     ctx.push(m_val);
                 }
@@ -829,7 +830,7 @@ namespace papilio
                     std::unique_ptr<base> on_false = nullptr
                 ) : m_cond(std::move(cond)), m_on_true(std::move(on_true)), m_on_false(std::move(on_false)) {}
 
-                void execute(context& ctx) override
+                void execute(context& ctx) const override
                 {
                     assert(m_cond);
                     m_cond->execute(ctx);
@@ -864,7 +865,7 @@ namespace papilio
                 argument(indexing_value arg_id, std::vector<member_type> members)
                     : m_arg_id(std::move(arg_id)), m_members(std::move(members)) {}
 
-                void execute(context& ctx) override
+                void execute(context& ctx) const override
                 {
                     format_arg arg = ctx.get_store().get(m_arg_id);
                     auto visitor = [&](auto&& v)->format_arg
@@ -905,7 +906,7 @@ namespace papilio
                     std::unique_ptr<base> rhs
                 ) : m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_comp() {}
 
-                virtual void execute(context& ctx) override
+                virtual void execute(context& ctx) const override
                 {
                     m_lhs->execute(ctx);
                     m_rhs->execute(ctx);
@@ -929,7 +930,7 @@ namespace papilio
                 logical_not(std::unique_ptr<base> input)
                     : m_input(std::move(input)) {}
 
-                void execute(context& ctx)
+                void execute(context& ctx) const override
                 {
                     m_input->execute(ctx);
                     bool input = ctx.copy_and_pop().as<bool>();
@@ -960,7 +961,7 @@ namespace papilio
                 return !empty();
             }
 
-            void operator()(context& ctx)
+            void operator()(context& ctx) const
             {
                 assert(!empty());
                 m_ex->execute(ctx);
@@ -1000,6 +1001,9 @@ namespace papilio
                     src, dynamic_format_arg_store(std::forward<Args>(args)...)
                 );
             }
+
+            executor compile(string_view_type src);
+            executor compile(std::span<const lexeme> lexemes);
 
         private:
             std::vector<lexeme> to_lexemes(string_view_type src);

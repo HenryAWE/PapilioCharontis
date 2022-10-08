@@ -207,6 +207,28 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[4].type(), lexeme_type::operator_);
         EXPECT_EQ(lexemes[4].as<lexeme::operator_>().get(), operator_type::colon);
     }
+
+    {
+        std::string src = "[]";
+        l.clear();
+        // skip '['
+        std::size_t parsed = l.parse(std::string_view(src).substr(1));
+        EXPECT_EQ(parsed, 0);
+
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 0);
+    }
+
+    {
+        std::string src = "[if $0: 'test']";
+        l.clear();
+        // skip '['
+        std::size_t parsed = l.parse(std::string_view(src).substr(1));
+        EXPECT_EQ(parsed, src.size() - 2);
+
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 4);
+    }
 }
 TEST(TestScript, Executor)
 {
