@@ -1,6 +1,5 @@
 #pragma once
 
-#include <format>
 #include <string>
 #include <variant>
 #include <concepts>
@@ -146,12 +145,7 @@ namespace papilio
                     {
                         if constexpr(is_same_v<U, string_type>)
                         {
-                            std::basic_stringstream<char_type> ss;
-                            ss << v;
-                            T result;
-                            ss >> result;
-
-                            return result;
+                            invalid_conversion();
                         }
                         else // ind_type and float_type
                         {
@@ -166,8 +160,7 @@ namespace papilio
                         }
                         else
                         {
-                            using std::to_string;
-                            return to_string(v);
+                            invalid_conversion();
                         }
                     }
                     else
@@ -188,83 +181,29 @@ namespace papilio
                 return m_var;
             }
 
-            std::partial_ordering compare(const variable& var) const
-            {
-                auto visitor = [](auto&& lhs, auto&& rhs)->std::partial_ordering
-                {
-                    using std::is_same_v;
-                    using T = std::remove_cvref_t<decltype(lhs)>;
-                    using U = std::remove_cvref_t<decltype(rhs)>;
-
-                    if constexpr(is_same_v<T, U>)
-                    {
-                        return lhs <=> rhs;
-                    }
-                    else if constexpr(is_same_v<T, string_type> || is_same_v<U, string_type>)
-                    {
-                        throw std::invalid_argument("invalid argument");
-                    }
-                    else
-                    {
-                        using R = std::common_type_t<T, U>;
-                        return static_cast<R>(lhs) <=> static_cast<R>(rhs);
-                    }
-                };
-
-                return std::visit(visitor, m_var, var.to_underlying());
-            }
+            [[nodiscard]]
+            std::partial_ordering compare(const variable& var) const;
+            [[nodiscard]]
             std::partial_ordering operator<=>(const variable& rhs) const
             {
                 return compare(rhs);
             }
 
+            [[nodiscard]]
             bool equal(
                 const variable& var,
                 float_type epsilon = std::numeric_limits<float_type>::epsilon()
-            ) const noexcept {
-                auto visitor = [epsilon](auto&& lhs, auto&& rhs)->bool
-                {
-                    using std::is_same_v;
-                    using T = std::remove_cvref_t<decltype(lhs)>;
-                    using U = std::remove_cvref_t<decltype(rhs)>;
-
-                    if constexpr(is_same_v<T, U>)
-                    {
-                        if constexpr(std::floating_point<T>)
-                        {
-                            return std::abs(lhs - rhs) < epsilon;
-                        }
-                        else
-                        {
-                            return lhs == rhs;
-                        }
-                    }
-                    else
-                    {
-                        if constexpr(is_same_v<T, string_type> || is_same_v<U, string_type>)
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            using R = std::common_type_t<T, U>;
-                            if constexpr(std::floating_point<R>)
-                            {
-                                return std::abs(static_cast<R>(lhs) - static_cast<R>(rhs)) < epsilon;
-                            }
-                            else
-                            {
-                                return static_cast<R>(lhs) == static_cast<R>(rhs);
-                            }
-                        }
-                    }
-                };
-
-                return std::visit(visitor, m_var, var.to_underlying());
-            }
+            ) const noexcept;
+            [[nodiscard]]
             bool operator==(const variable& rhs) const noexcept
             {
                 return equal(rhs);
+            }
+
+            [[noreturn]]
+            static void invalid_conversion()
+            {
+                throw std::runtime_error("invalid conversion");
             }
 
         private:
@@ -366,11 +305,13 @@ namespace papilio
                 m_end = length + m_end;
         }
 
-        index_type begin() const noexcept
+        [[nodiscard]]
+        constexpr index_type begin() const noexcept
         {
             return m_begin;
         }
-        index_type end() const noexcept
+        [[nodiscard]]
+        constexpr index_type end() const noexcept
         {
             return m_end;
         }
@@ -404,33 +345,40 @@ namespace papilio
             : m_val(std::move(key)) {}
 
         template <typename T>
+        [[nodiscard]]
         bool holds() const noexcept
         {
             return std::holds_alternative<T>(m_val);
         }
 
+        [[nodiscard]]
         bool is_index() const noexcept
         {
             return holds<index_type>();
         }
+        [[nodiscard]]
         bool is_slice() const noexcept
         {
             return holds<slice>();
         }
+        [[nodiscard]]
         bool is_key() const noexcept
         {
             return holds<string_type>();
         }
 
+        [[nodiscard]]
         index_type as_index() const noexcept
         {
             // use std::get_if to avoid exception
             return *std::get_if<index_type>(&m_val);
         }
+        [[nodiscard]]
         const slice& as_slice() const noexcept
         {
             return *std::get_if<slice>(&m_val);
         }
+        [[nodiscard]]
         const std::string& as_key() const noexcept
         {
             return *std::get_if<string_type>(&m_val);
@@ -464,29 +412,21 @@ namespace papilio
         attribute_name(Args&&... args)
             : m_name(std::forward<Args>(args)...) {}
 
-        friend bool operator==(const attribute_name& lhs, string_view_type rhs)
+        [[nodiscard]]
+        bool operator==(const attribute_name& rhs) const noexcept = default;
+        [[nodiscard]]
+        friend bool operator==(const attribute_name& lhs, string_view_type rhs) noexcept
         {
             return lhs.m_name == rhs;
         }
-        friend bool operator==(string_view_type lhs, const attribute_name& rhs)
+        [[nodiscard]]
+        friend bool operator==(string_view_type lhs, const attribute_name& rhs) noexcept
         {
             return lhs == rhs.m_name;
         }
 
         [[nodiscard]]
-        static bool validate(string_view_type name) noexcept
-        {
-            bool first = true;
-            for(char_type c : name)
-            {
-                if(!detail::is_identifier_ch(c, first))
-                    return false;
-                if(first)
-                    first = false;
-            }
-
-            return true;
-        }
+        static bool validate(string_view_type name) noexcept;
 
     private:
         string_type m_name;
@@ -525,83 +465,19 @@ namespace papilio
 
         format_arg()
             : m_val() {}
+        format_arg(const format_arg&) = default;
+        format_arg(format_arg&&) noexcept = default;
         format_arg(underlying_type val)
             : m_val(std::move(val)) {}
         template <typename T, typename... Args>
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
 
-        format_arg index(const indexing_value& idx) const
-        {
-            auto visitor = [&](auto&& v)->format_arg
-            {
-                using T = std::remove_cvref_t<decltype(v)>;
+        format_arg& operator=(const format_arg&) = default;
+        format_arg& operator=(format_arg&&) noexcept = default;
 
-                if constexpr(string_like<T>)
-                {
-                    if(idx.is_index())
-                    {
-                        auto i = idx.as_index();
-
-                        if constexpr(std::is_same_v<T, string_type>)
-                        {
-                            if(i < 0)
-                                return format_arg(utf8::rindex(v, -(i + 1)));
-                            else
-                                return format_arg(utf8::index(v, i));
-                        }
-                        else
-                        {
-                            string_view_type sv(v);
-                            if(i < 0)
-                                return format_arg(utf8::rindex(sv, -(i + 1)));
-                            else
-                                return format_arg(utf8::index(sv, i));
-                        }
-                    }
-                    else if(idx.is_slice())
-                    {
-                        const auto& s = idx.as_slice();
-
-                        if constexpr(std::is_same_v<T, string_type>)
-                        {
-                            return format_arg(utf8::substr(v, s));
-                        }
-                        else
-                        {
-                            string_view_type sv(v);
-                            return format_arg(utf8::substr(sv, s));
-                        }
-                    }
-                }
-
-                invalid_index();
-            };
-            return std::visit(visitor, m_val);
-        }
-        format_arg attribute(attribute_name name) const
-        {
-            auto visitor = [&](auto&& v)->format_arg
-            {
-                using T = std::remove_cvref_t<decltype(v)>;
-
-                if constexpr(string_like<T>)
-                {
-                    string_view_type sv(v);
-                    if(name == "length")
-                    {
-                        return format_arg(utf8::strlen(sv));
-                    }
-                    else if(name == "size")
-                    {
-                        return format_arg(sv.size());
-                    }
-                }
-
-                invalid_attribute();
-            };
-            return std::visit(visitor, m_val);
-        }
+        format_arg index(const indexing_value& idx) const;
+        format_arg attribute(attribute_name name) const;
 
         [[noreturn]]
         static void invalid_index()
@@ -621,41 +497,37 @@ namespace papilio
             return std::get<T>(val.m_val);
         }
 
-        script::variable as_variable() const
-        {
-            using script::variable;
-
-            auto visitor = [](auto&& v)->script::variable
-            {
-                using T = std::remove_cvref_t<decltype(v)>;
-                
-                if constexpr(std::is_same_v<T, char_type>)
-                {
-                    return string_type(1, v);
-                }
-                if constexpr(std::integral<T>)
-                {
-                    return static_cast<variable::int_type>(v);
-                }
-                else if constexpr(std::floating_point<T>)
-                {
-                    return static_cast<variable::float_type>(v);
-                }
-                else if constexpr(string_like<T>)
-                {
-                    return string_view_type(v);
-                }
-                else
-                {
-                    throw std::invalid_argument("invalid type");
-                }
-            };
-
-            return std::visit(visitor, m_val);
-        }
+        script::variable as_variable() const;
 
     private:
         underlying_type m_val;
+    };
+
+    // access members of format argument
+    class format_arg_access
+    {
+    public:
+        using member_type = std::variant<
+            indexing_value,
+            attribute_name
+        >;
+
+        format_arg_access() noexcept : m_members() {}
+        format_arg_access(const format_arg_access&) = delete;
+        format_arg_access(std::vector<member_type> members)
+            : m_members(std::move(members)) {}
+
+        [[nodiscard]]
+        format_arg access(format_arg arg) const;
+
+        [[nodiscard]]
+        bool empty() const noexcept
+        {
+            return m_members.empty();
+        }
+
+    private:
+        std::vector<member_type> m_members;
     };
 
     class dynamic_format_arg_store
@@ -694,47 +566,11 @@ namespace papilio
         }
 
         [[nodiscard]]
-        const format_arg& get(size_type i) const
-        {
-            if(i >= m_args.size())
-                throw std::out_of_range("index out of range");
-            return m_args[i];
-        }
+        const format_arg& get(size_type i) const;
         [[nodiscard]]
-        const format_arg& get(string_view_type key) const
-        {
-            auto it = m_named_args.find(key);
-            if(it == m_named_args.end())
-                throw std::out_of_range("invalid named argument");
-            return it->second;
-        }
+        const format_arg& get(string_view_type key) const;
         [[nodiscard]]
-        const format_arg& get(const indexing_value& idx) const
-        {
-            auto visitor = [&](auto&& v)->const format_arg&
-            {
-                using std::is_same_v;
-                using T = std::remove_cvref_t<decltype(v)>;
-
-                if constexpr(is_same_v<T, indexing_value::index_type>)
-                {
-                    return m_args[static_cast<size_type>(v)];
-                }
-                else if constexpr(is_same_v<T, string_type>)
-                {
-                    auto it = m_named_args.find(v);
-                    if(it == m_named_args.end())
-                        throw std::out_of_range("invalid named argument");
-                    return it->second;
-                }
-                else
-                {
-                    throw std::invalid_argument("invalid indexing value");
-                }
-            };
-
-            return std::visit(visitor, idx.to_underlying());
-        }
+        const format_arg& get(const indexing_value& idx) const;
 
         [[nodiscard]]
         bool check(size_type i) const noexcept
@@ -747,23 +583,7 @@ namespace papilio
             return m_named_args.contains(key);
         }
         [[nodiscard]]
-        bool check(const indexing_value& idx) const noexcept
-        {
-            auto visitor = [this](auto&& v)->bool
-            {
-                using std::is_same_v;
-                using T = std::remove_cvref_t<decltype(v)>;
-
-                if constexpr(is_same_v<T, indexing_value::index_type>)
-                    return check(v);
-                else if constexpr(is_same_v<T, string_type>)
-                    return check(string_view_type(v));
-                else
-                    return false;
-            };
-
-            return std::visit(visitor, idx.to_underlying());
-        }
+        bool check(const indexing_value& idx) const noexcept;
 
         [[nodiscard]]
         const format_arg& operator[](size_type i) const

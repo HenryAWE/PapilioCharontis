@@ -88,6 +88,29 @@ TEST(TestFormat, FormatParser)
             "true"
         );
     }
+
+    {
+        format_parser p;
+        p.parse("{} apple[if $0 != 1: 's']");
+
+        auto seg = p.segments();
+        EXPECT_EQ(seg.size(), 3);
+
+        EXPECT_TRUE(std::holds_alternative<format_parser::replacement_field>(seg[0]));
+
+        EXPECT_TRUE(std::holds_alternative<format_parser::plain_text>(seg[1]));
+        EXPECT_EQ(
+            std::get<format_parser::plain_text>(seg[1]).get(),
+            " apple"
+        );
+
+        script::executor::context ctx(dynamic_format_arg_store(0));
+        EXPECT_TRUE(std::holds_alternative<format_parser::script_block>(seg[2]));
+        EXPECT_EQ(
+            std::get<format_parser::script_block>(seg[2])(ctx),
+            "s"
+        );
+    }
 }
 
 int main(int argc, char* argv[])

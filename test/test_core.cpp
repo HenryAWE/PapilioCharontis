@@ -22,9 +22,6 @@ TEST(TestCore, Variable)
         EXPECT_TRUE(var.holds<std::string>());
         EXPECT_EQ(var.get<std::string>(), "test");
         EXPECT_TRUE(var.as<bool>());
-
-        var = "123";
-        EXPECT_EQ(var.as<int>(), 123);
     }
 
     {
