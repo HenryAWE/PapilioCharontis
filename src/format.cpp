@@ -97,7 +97,7 @@ namespace papilio
                     }
 
                     string_view_type src(next_it, str.end());
-                    std::size_t parsed = lex.parse(src);
+                    std::size_t parsed = lex.parse(src, script::lexer_mode::script_block);
                     iterator script_end = std::next(next_it, parsed);
                     if(script_end == str.end() || *script_end != ']')
                     {

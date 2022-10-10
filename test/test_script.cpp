@@ -212,7 +212,7 @@ TEST(TestScript, Lexer)
         std::string src = "[]";
         l.clear();
         // skip '['
-        std::size_t parsed = l.parse(std::string_view(src).substr(1));
+        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
         EXPECT_EQ(parsed, 0);
 
         auto lexemes = l.lexemes();
@@ -223,11 +223,94 @@ TEST(TestScript, Lexer)
         std::string src = "[if $0: 'test']";
         l.clear();
         // skip '['
-        std::size_t parsed = l.parse(std::string_view(src).substr(1));
+        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
         EXPECT_EQ(parsed, src.size() - 2);
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 4);
+    }
+
+    {
+        std::string src = "{0.length:}";
+        l.clear();
+        // skip '{'
+        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
+        EXPECT_EQ(parsed, src.size() - 3);
+        EXPECT_EQ(src[parsed + 1], ':');
+
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 3);
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[0].as<lexeme::argument>().get_index(), 0);
+    }
+
+    {
+        std::string src = "{0.length}";
+        l.clear();
+        // skip '{'
+        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
+        EXPECT_EQ(parsed, src.size() - 2);
+        EXPECT_EQ(src[parsed + 1], '}');
+
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 3);
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[0].as<lexeme::argument>().get_index(), 0);
+    }
+
+    {
+        std::string src = "{name.length:}";
+        l.clear();
+        // skip '{'
+        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
+        EXPECT_EQ(parsed, src.size() - 3);
+        EXPECT_EQ(src[parsed + 1], ':');
+
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 3);
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[0].as<lexeme::argument>().get_string(), "name");
+    }
+
+    {
+        std::string src = "{.length:}";
+        l.clear();
+        // skip '{'
+        std::size_t parsed = l.parse(
+            std::string_view(src).substr(1),
+            lexer_mode::replacement_field,
+            0
+        );
+        EXPECT_EQ(parsed, src.size() - 3);
+        EXPECT_EQ(src[parsed + 1], ':');
+
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 3); // includes the inserted argument
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[0].as<lexeme::argument>().get_index(), 0);
+    }
+
+    {
+        std::string src = "{[:]:}";
+        l.clear();
+        // skip '{'
+        std::size_t parsed = l.parse(
+            std::string_view(src).substr(1),
+            lexer_mode::replacement_field,
+            0
+        );
+        EXPECT_EQ(parsed, src.size() - 3);
+        EXPECT_EQ(src[parsed + 1], ':');
+
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 4); // includes the inserted argument
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[0].as<lexeme::argument>().get_index(), 0);
     }
 }
 TEST(TestScript, Executor)

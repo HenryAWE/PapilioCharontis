@@ -5,9 +5,13 @@
 
 namespace papilio::script
 {
-    std::size_t lexer::parse(string_view_type src)
-    {
+    std::size_t lexer::parse(
+        string_view_type src,
+        lexer_mode mode,
+        std::optional<std::size_t> default_arg_idx
+    ) {
         std::size_t bracket_counter = 0;
+        bool parsing_condition = false;
 
         auto it = src.begin();
         for(; it != src.end();)
@@ -53,12 +57,32 @@ namespace papilio::script
             }
             else if(detail::is_digit(ch) || ch == '-')
             {
+                // '$' is optional in the replacement field mode
+                if(m_lexemes.size() == 0 && mode == lexer_mode::replacement_field)
+                {
+                    auto parsed = parse_argument(
+                        it, src.end()
+                    );
+                    push_lexeme<lexeme::argument>(std::move(parsed.first));
+                    it = parsed.second;
+                    continue;
+                }
                 auto parsed = parse_number(it, src.end());
                 push_lexeme<lexeme::constant>(std::move(parsed.first));
                 it = parsed.second;
             }
             else if(detail::is_identifier(ch, true))
             {
+                // '$' is optional in the replacement field mode
+                if(m_lexemes.size() == 0 && mode == lexer_mode::replacement_field)
+                {
+                    auto parsed = parse_argument(
+                        it, src.end()
+                    );
+                    push_lexeme<lexeme::argument>(std::move(parsed.first));
+                    it = parsed.second;
+                    continue;
+                }
                 auto next = std::find_if_not(
                     std::next(it), src.end(),
                     [](char_type ch) { return detail::is_identifier(ch, false); }
@@ -67,6 +91,7 @@ namespace papilio::script
                 auto kw = get_keyword(sv);
                 if(kw.has_value())
                 {
+                    parsing_condition = true;
                     push_lexeme<lexeme::keyword>(*kw);
                 }
                 else
@@ -84,26 +109,58 @@ namespace papilio::script
                 );
 
                 string_view_type sv(it, next);
+                std::size_t parsed_op_ch = 0;
                 while(!sv.empty())
                 {
                     auto op = get_operator(sv);
                     if(op.second == 0)
                         break;
                     if(op.first == operator_type::bracket_l)
+                    {
                         ++bracket_counter;
-                    if(op.first == operator_type::bracket_r)
+                        if(m_lexemes.size() == 0 && mode == lexer_mode::replacement_field )
+                        {
+                            // insert default argument
+                            if(default_arg_idx.has_value())
+                                push_lexeme<lexeme::argument>(*default_arg_idx);
+                            else
+                                throw lexer_error("can not deduce default argument here");
+                        }
+                    }
+                    else if(op.first == operator_type::bracket_r)
                     {
                         // this right bracket indicates the end of script block
                         if(bracket_counter == 0)
                         {
                             // parsed characters don't include the ending bracket
-                            return std::distance(src.begin(), it);
+                            if(mode == lexer_mode::script_block)
+                                return std::distance(src.begin(), it);
                         }
-
-                        // normal right bracket for indexing
-                        --bracket_counter;
+                        else
+                        {
+                            // normal right bracket for indexing
+                            --bracket_counter;
+                        }
                     }
+                    else if(op.first == operator_type::colon && mode == lexer_mode::replacement_field)
+                    {
+                        if(!parsing_condition && bracket_counter == 0)
+                            return std::distance(src.begin(), it) + parsed_op_ch;
+                    }
+                    else if(
+                        op.first == operator_type::dot &&
+                        m_lexemes.size() == 0
+                        && mode == lexer_mode::replacement_field
+                    ) {
+                        // insert default argument
+                        if(default_arg_idx.has_value())
+                            push_lexeme<lexeme::argument>(*default_arg_idx);
+                        else
+                            throw lexer_error("can not deduce default argument here");
+                    }
+
                     sv = sv.substr(op.second);
+                    parsed_op_ch += op.second;
 
                     push_lexeme<lexeme::operator_>(op.first);
                 }
@@ -114,6 +171,10 @@ namespace papilio::script
                 }
 
                 it = next;
+            }
+            else if(ch == '}' && mode == lexer_mode::replacement_field)
+            {
+                return std::distance(src.begin(), it);
             }
             else if(ch <= '~')
             {

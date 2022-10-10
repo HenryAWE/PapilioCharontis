@@ -169,6 +169,13 @@ namespace papilio::script
         { t.type }->std::same_as<const lexeme_type&>;
     };
 
+    enum class lexer_mode
+    {
+        standalone = 0,
+        script_block,
+        replacement_field
+    };
+
     class lexeme
     {
     public:
@@ -421,7 +428,14 @@ namespace papilio::script
         using iterator = const_iterator;
 
         // parse string and return parsed characters count
-        std::size_t parse(string_view_type src);
+        // mode: if mode is script block or replacement field,
+        // this function will assume that *(src.data() - 1) == '[' or '{', respectively
+        // default_arg_idx: this argument is used for replacement field mode for default index
+        std::size_t parse(
+            string_view_type src,
+            lexer_mode mode = lexer_mode::standalone,
+            std::optional<std::size_t> default_arg_idx = std::nullopt
+        );
 
         const std::vector<lexeme>& lexemes() const& noexcept
         {
