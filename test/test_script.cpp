@@ -212,8 +212,8 @@ TEST(TestScript, Lexer)
         std::string src = "[]";
         l.clear();
         // skip '['
-        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
-        EXPECT_EQ(parsed, 0);
+        auto result = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
+        EXPECT_EQ(result.parsed_char, 0);
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 0);
@@ -223,8 +223,8 @@ TEST(TestScript, Lexer)
         std::string src = "[if $0: 'test']";
         l.clear();
         // skip '['
-        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
-        EXPECT_EQ(parsed, src.size() - 2);
+        auto result = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
+        EXPECT_EQ(result.parsed_char, src.size() - 2);
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 4);
@@ -234,9 +234,9 @@ TEST(TestScript, Lexer)
         std::string src = "{0.length:}";
         l.clear();
         // skip '{'
-        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
-        EXPECT_EQ(parsed, src.size() - 3);
-        EXPECT_EQ(src[parsed + 1], ':');
+        auto result = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
+        EXPECT_EQ(result.parsed_char, src.size() - 3);
+        EXPECT_EQ(src[result.parsed_char + 1], ':');
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 3);
@@ -249,9 +249,9 @@ TEST(TestScript, Lexer)
         std::string src = "{0.length}";
         l.clear();
         // skip '{'
-        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
-        EXPECT_EQ(parsed, src.size() - 2);
-        EXPECT_EQ(src[parsed + 1], '}');
+        auto result = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
+        EXPECT_EQ(result.parsed_char, src.size() - 2);
+        EXPECT_EQ(src[result.parsed_char + 1], '}');
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 3);
@@ -264,9 +264,9 @@ TEST(TestScript, Lexer)
         std::string src = "{name.length:}";
         l.clear();
         // skip '{'
-        std::size_t parsed = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
-        EXPECT_EQ(parsed, src.size() - 3);
-        EXPECT_EQ(src[parsed + 1], ':');
+        auto result = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
+        EXPECT_EQ(result.parsed_char, src.size() - 3);
+        EXPECT_EQ(src[result.parsed_char + 1], ':');
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 3);
@@ -279,13 +279,13 @@ TEST(TestScript, Lexer)
         std::string src = "{.length:}";
         l.clear();
         // skip '{'
-        std::size_t parsed = l.parse(
+        auto result = l.parse(
             std::string_view(src).substr(1),
             lexer_mode::replacement_field,
             0
         );
-        EXPECT_EQ(parsed, src.size() - 3);
-        EXPECT_EQ(src[parsed + 1], ':');
+        EXPECT_EQ(result.parsed_char, src.size() - 3);
+        EXPECT_EQ(src[result.parsed_char + 1], ':');
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 3); // includes the inserted argument
@@ -298,13 +298,13 @@ TEST(TestScript, Lexer)
         std::string src = "{[:]:}";
         l.clear();
         // skip '{'
-        std::size_t parsed = l.parse(
+        auto result = l.parse(
             std::string_view(src).substr(1),
             lexer_mode::replacement_field,
             0
         );
-        EXPECT_EQ(parsed, src.size() - 3);
-        EXPECT_EQ(src[parsed + 1], ':');
+        EXPECT_EQ(result.parsed_char, src.size() - 3);
+        EXPECT_EQ(src[result.parsed_char + 1], ':');
 
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 4); // includes the inserted argument
@@ -568,6 +568,37 @@ TEST(TestScript, Interpreter)
         EXPECT_EQ(result, "plural");
         result = intp.run(src, "student");
         EXPECT_EQ(result, "single");
+    }
+
+    {
+        interpreter intp;
+        auto acc = intp.access("0[0]");
+
+        dynamic_format_arg_store store("testing");
+        EXPECT_EQ(get<std::string_view>(acc.second.access(store[acc.first])), "t");
+    }
+
+    {
+        interpreter intp;
+        auto acc = intp.access("string[0]");
+
+        dynamic_format_arg_store store("string"_a = "testing");
+        EXPECT_EQ(get<std::string_view>(acc.second.access(store[acc.first])), "t");
+    }
+
+    {
+        std::string src = "[if $0 != 1: 's']";
+        lexer l;
+        l.parse(src.substr(1), lexer_mode::script_block);
+        
+        interpreter intp;
+        auto ex = intp.compile(l.lexemes());
+
+        dynamic_format_arg_store store(0);
+        executor::context ctx(std::move(store));
+
+        ex(ctx);
+        EXPECT_EQ(ctx.get_result(), "s");
     }
 }
 

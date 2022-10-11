@@ -3,18 +3,22 @@
 
 namespace papilio
 {
-    void format_parser::parse(string_view_type str)
+    void format_parser::parse(string_view_type str, const dynamic_format_arg_store& store)
     {
         string_type seg_str;
         script::lexer lex;
         script::interpreter intp;
-        for(auto it = str.begin(); it != str.end();)
+
+        format_parse_context ctx(str, store);
+
+        iterator it = ctx.begin();
+        for(; it != ctx.end(); it = ctx.begin())
         {
             char_type ch = *it;
             if(ch == '{')
             {
                 iterator next_it = std::next(it);
-                if(next_it == str.end())
+                if(next_it == ctx.end())
                 {
                     throw std::runtime_error("missing replacement field");
                 }
@@ -22,7 +26,7 @@ namespace papilio
                 if(*next_it == '{')
                 {
                     seg_str += '{';
-                    it = std::next(next_it);
+                    ctx.advance_to(std::next(next_it));
                     continue;
                 }
                 else
@@ -33,11 +37,31 @@ namespace papilio
                         seg_str = string_type(); // avoid warning
                     }
 
+                    std::optional<std::size_t> default_arg_id = std::nullopt;
+                    if(!ctx.manual_indexing())
+                        default_arg_id = ctx.current_arg_id();
+                    iterator field_begin = std::next(it);
+                    lex.clear();
+                    auto result = lex.parse(
+                        string_view_type(field_begin, ctx.end()),
+                        script::lexer_mode::replacement_field,
+                        default_arg_id
+                    );
+                    if(result.default_arg_idx_used)
+                        ctx.next_arg_id();
+                    else
+                        ctx.enable_manual_indexing();
+                    iterator arg_end = std::next(field_begin, result.parsed_char);
+                    if(arg_end == ctx.end())
+                    {
+                        throw std::runtime_error("missing right brace ('}')");
+                    }
+
                     auto pred = [counter = std::size_t(0)](char_type ch) mutable
                     {
                         if(ch == '{')
                             ++counter;
-                        else if(ch == '}')
+                        if(ch == '}')
                         {
                             if(counter == 0)
                                 return true;
@@ -46,28 +70,32 @@ namespace papilio
 
                         return false;
                     };
-                    iterator field_begin = next_it;
-                    iterator field_end = std::find_if(
-                        field_begin, str.end(), pred
-                    );
-                    if(field_end == str.end())
+                    iterator fmt_begin = arg_end;
+                    if(*arg_end == ':')
+                        ++fmt_begin;
+                    iterator field_end = std::find_if(fmt_begin, ctx.end(), pred);
+                    if(field_end == ctx.end())
                     {
                         throw std::runtime_error("missing right brace ('}')");
                     }
 
-                    string_type field_str(field_begin, field_end);
-                    push_segment<replacement_field>(std::move(field_str));
+                    auto arg_access = build_arg_access(lex.lexemes());
+                    push_segment<replacement_field>(
+                        std::move(arg_access.first),
+                        std::move(arg_access.second),
+                        string_type(fmt_begin, field_end)
+                    );
 
-                    it = std::next(field_end);
+                    ctx.advance_to(std::next(field_end));
                 }
             }
             else if(ch == '}')
             {
                 iterator next_it = std::next(it);
-                if(next_it != str.end() && *next_it == '}')
+                if(next_it != ctx.end() && *next_it == '}')
                 {
                     seg_str += '}';
-                    it = std::next(next_it);
+                    ctx.advance_to(std::next(next_it));
                 }
                 else
                 {
@@ -77,7 +105,7 @@ namespace papilio
             else if(ch == '[')
             {
                 iterator next_it = std::next(it);
-                if(next_it == str.end())
+                if(next_it == ctx.end())
                 {
                     throw std::runtime_error("missing script block");
                 }
@@ -85,7 +113,7 @@ namespace papilio
                 if(*next_it == '[')
                 {
                     seg_str += '[';
-                    it = std::next(next_it);
+                    ctx.advance_to(std::next(next_it));
                     continue;
                 }
                 else
@@ -97,9 +125,13 @@ namespace papilio
                     }
 
                     string_view_type src(next_it, str.end());
-                    std::size_t parsed = lex.parse(src, script::lexer_mode::script_block);
-                    iterator script_end = std::next(next_it, parsed);
-                    if(script_end == str.end() || *script_end != ']')
+                    lex.clear();
+                    auto result = lex.parse(
+                        src,
+                        script::lexer_mode::script_block
+                    );
+                    iterator script_end = std::next(next_it, result.parsed_char);
+                    if(script_end == ctx.end() || *script_end != ']')
                     {
                         throw std::runtime_error("missing right bracket (']')");
                     }
@@ -107,16 +139,16 @@ namespace papilio
                     push_segment<script_block>(intp.compile(lex.lexemes()));
                     lex.clear();
 
-                    it = std::next(script_end);
+                    ctx.advance_to(std::next(script_end));
                 }
             }
             else if(ch == ']')
             {
                 iterator next_it = std::next(it);
-                if(next_it != str.end() && *next_it == ']')
+                if(next_it != ctx.end() && *next_it == ']')
                 {
                     seg_str += ']';
-                    it = std::next(next_it);
+                    ctx.advance_to(std::next(next_it));
                 }
                 else
                 {
@@ -126,11 +158,18 @@ namespace papilio
             else
             {
                 seg_str += ch;
-                ++it;
+                ctx.advance_to(std::next(it));
             }
         }
 
         if(!seg_str.empty())
             push_segment<plain_text>(std::move(seg_str));
+    }
+
+    std::pair<indexing_value, format_arg_access> format_parser::build_arg_access(
+        std::span<const script::lexeme> lexemes
+    ) {
+        script::interpreter intp;
+        return intp.access(lexemes);
     }
 }

@@ -228,12 +228,41 @@ namespace papilio
     template <typename T>
     concept string_like = basic_string_like<T, char>;
 
-    enum class align : std::uint8_t
+    enum class format_align : std::uint8_t
     {
+        default_align = 0,
         left,
         middle,
         right
     };
+    enum class format_sign
+    {
+        default_sign = 0,
+        positive,
+        negative,
+        space
+    };
+
+    class format_parse_context;
+
+    namespace detail
+    {
+        struct std_format_spec
+        {
+            using char_type = char;
+
+            char_type fill = ' ';
+            format_align align = format_align::default_align;
+            format_sign sign = format_sign::default_sign;
+            bool alternate_form = false; // specified by '#'
+            bool fill_zero = false;
+            std::size_t width = 0;
+            bool use_locale = false;
+            char_type type_char = '\0';
+        };
+
+        std_format_spec parse_std_format_spec(format_parse_context& ctx);
+    }
 
     template <typename T>
     struct named_arg
@@ -514,6 +543,7 @@ namespace papilio
 
         format_arg_access() noexcept : m_members() {}
         format_arg_access(const format_arg_access&) = delete;
+        format_arg_access(format_arg_access&&) noexcept = default;
         format_arg_access(std::vector<member_type> members)
             : m_members(std::move(members)) {}
 
@@ -621,5 +651,85 @@ namespace papilio
     private:
         std::vector<format_arg> m_args;
         std::map<string_type, format_arg, std::less<>> m_named_args;
+    };
+
+    // WARNING: This class only holds the view of string and reference of arguments
+    // The invoker needs to handle lifetimes manually
+    class format_parse_context
+    {
+    public:
+        using char_type = char;
+        using string_type = std::basic_string<char_type>;
+        using string_view_type = std::basic_string_view<char_type>;
+        using iterator = string_view_type::iterator;
+
+        format_parse_context() = delete;
+        format_parse_context(const format_parse_context&) = delete;
+        format_parse_context(string_view_type str, const dynamic_format_arg_store& store);
+
+        const dynamic_format_arg_store& get_store() const noexcept
+        {
+            return *m_store;
+        }
+
+        void enable_manual_indexing() noexcept
+        {
+            m_manual_indexing = true;
+        }
+        void advance_to(iterator it) noexcept
+        {
+            m_it = it;
+        }
+
+        iterator begin() const noexcept
+        {
+            return m_it;
+        }
+        iterator end() const noexcept
+        {
+            return m_view.end();
+        }
+
+        std::size_t current_arg_id() const
+        {
+            if(m_manual_indexing)
+                invalid_default_argument();
+            return m_default_arg_idx;
+        }
+        std::size_t next_arg_id()
+        {
+            if(m_manual_indexing)
+                invalid_default_argument();
+            return ++m_default_arg_idx;
+        }
+        std::size_t check_arg_id(std::size_t i) const
+        {
+            enable_manual_indexing();
+            return get_store().check(i);
+        }
+
+        [[nodiscard]]
+        bool manual_indexing() const noexcept
+        {
+            return m_manual_indexing;
+        }
+
+        [[noreturn]]
+        static void invalid_default_argument()
+        {
+            throw std::runtime_error("no default argument after an explicit argument");
+        }
+
+    private:
+        string_view_type m_view;
+        iterator m_it;
+        mutable bool m_manual_indexing = false;
+        std::size_t m_default_arg_idx = 0;
+        const dynamic_format_arg_store* m_store;
+
+        void enable_manual_indexing() const noexcept
+        {
+            m_manual_indexing = true;
+        }
     };
 }

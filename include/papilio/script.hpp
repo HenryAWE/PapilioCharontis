@@ -230,6 +230,16 @@ namespace papilio::script
                 return *std::get_if<string_type>(&m_arg);
             }
 
+            [[nodiscard]]
+            indexing_value to_indexing_value() const noexcept
+            {
+                auto visitor = [](auto&& v)->indexing_value
+                {
+                    return v;
+                };
+                return std::visit(visitor, m_arg);
+            }
+
         private:
             underlying_type m_arg;
         };
@@ -427,11 +437,17 @@ namespace papilio::script
         using const_iterator =  string_view_type::const_iterator;
         using iterator = const_iterator;
 
-        // parse string and return parsed characters count
+        struct parse_result
+        {
+            std::size_t parsed_char = 0; // parsed characters count
+            bool default_arg_idx_used = false;
+        };
+
+        // parse string and return parse result (see above)
         // mode: if mode is script block or replacement field,
         // this function will assume that *(src.data() - 1) == '[' or '{', respectively
         // default_arg_idx: this argument is used for replacement field mode for default index
-        std::size_t parse(
+        parse_result parse(
             string_view_type src,
             lexer_mode mode = lexer_mode::standalone,
             std::optional<std::size_t> default_arg_idx = std::nullopt
@@ -630,6 +646,8 @@ namespace papilio::script
                 : m_arg_id(std::move(arg_id)), m_access() {}
             argument(indexing_value arg_id, std::vector<member_type> members)
                 : m_arg_id(std::move(arg_id)), m_access(std::move(members)) {}
+            argument(indexing_value arg_id, format_arg_access access)
+                : m_arg_id(std::move(arg_id)), m_access(std::move(access)) {}
 
             void execute(context& ctx) const override
             {
@@ -754,8 +772,15 @@ namespace papilio::script
         executor compile(string_view_type src);
         executor compile(std::span<const lexeme> lexemes);
 
+        std::pair<indexing_value, format_arg_access> access(
+            string_view_type arg,
+            std::optional<std::size_t> default_arg_id = std::nullopt
+        );
+        std::pair<indexing_value, format_arg_access> access(std::span<const lexeme> lexemes);
+
     private:
         std::vector<lexeme> to_lexemes(string_view_type src);
         executor to_executor(std::span<const lexeme> lexemes);
+        std::pair<indexing_value, format_arg_access> to_access(std::span<const lexeme> lexemes);
     };
 }

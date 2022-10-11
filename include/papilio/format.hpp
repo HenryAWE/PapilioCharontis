@@ -42,17 +42,28 @@ namespace papilio
         {
         public:
             replacement_field() = delete;
-            replacement_field(string_type field)
-                : m_field(std::move(field)) {}
+            replacement_field(indexing_value arg, format_arg_access access, string_type fmt = string_type())
+                : m_arg(std::move(arg)), m_access(std::move(access)), m_fmt(std::move(fmt)) {}
 
             [[nodiscard]]
-            const string_type& get() const noexcept
+            const indexing_value& get_arg() const noexcept
             {
-                return m_field;
+                return m_arg;
+            }
+            const format_arg_access& get_access() const noexcept
+            {
+                return m_access;
+            }
+            [[nodiscard]]
+            const string_type& get_fmt() const noexcept
+            {
+                return m_fmt;
             }
 
         private:
-            string_type m_field;
+            indexing_value m_arg;
+            format_arg_access m_access;
+            string_type m_fmt;
         };
 
         class script_block : public segment
@@ -78,7 +89,7 @@ namespace papilio
             script_block
         >;
 
-        void parse(string_view_type str);
+        void parse(string_view_type str, const dynamic_format_arg_store& store);
 
         std::span<const segment_store> segments() const noexcept
         {
@@ -96,5 +107,9 @@ namespace papilio
                 std::forward<Args>(args)...
             );
         }
+
+        std::pair<indexing_value, format_arg_access> build_arg_access(
+            std::span<const script::lexeme> lexemes
+        );
     };
 }

@@ -281,4 +281,9 @@ namespace papilio
 
         return std::visit(visitor, idx.to_underlying());
     }
+
+    format_parse_context::format_parse_context(string_view_type str, const dynamic_format_arg_store& store)
+        : m_view(str), m_store(&store) {
+        m_it = str.begin();
+    }
 }

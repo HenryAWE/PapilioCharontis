@@ -5,11 +5,12 @@
 
 namespace papilio::script
 {
-    std::size_t lexer::parse(
+    lexer::parse_result lexer::parse(
         string_view_type src,
         lexer_mode mode,
         std::optional<std::size_t> default_arg_idx
     ) {
+        parse_result result;
         std::size_t bracket_counter = 0;
         bool parsing_condition = false;
 
@@ -120,6 +121,7 @@ namespace papilio::script
                         ++bracket_counter;
                         if(m_lexemes.size() == 0 && mode == lexer_mode::replacement_field )
                         {
+                            result.default_arg_idx_used = true;
                             // insert default argument
                             if(default_arg_idx.has_value())
                                 push_lexeme<lexeme::argument>(*default_arg_idx);
@@ -134,7 +136,10 @@ namespace papilio::script
                         {
                             // parsed characters don't include the ending bracket
                             if(mode == lexer_mode::script_block)
-                                return std::distance(src.begin(), it);
+                            {
+                                result.parsed_char = std::distance(src.begin(), it);
+                                return result;
+                            }
                         }
                         else
                         {
@@ -145,13 +150,17 @@ namespace papilio::script
                     else if(op.first == operator_type::colon && mode == lexer_mode::replacement_field)
                     {
                         if(!parsing_condition && bracket_counter == 0)
-                            return std::distance(src.begin(), it) + parsed_op_ch;
+                        {
+                            result.parsed_char = std::distance(src.begin(), it) + parsed_op_ch;
+                            return result;
+                        }
                     }
                     else if(
                         op.first == operator_type::dot &&
                         m_lexemes.size() == 0
                         && mode == lexer_mode::replacement_field
                     ) {
+                        result.default_arg_idx_used = true;
                         // insert default argument
                         if(default_arg_idx.has_value())
                             push_lexeme<lexeme::argument>(*default_arg_idx);
@@ -174,7 +183,17 @@ namespace papilio::script
             }
             else if(ch == '}' && mode == lexer_mode::replacement_field)
             {
-                return std::distance(src.begin(), it);
+                if(m_lexemes.size() == 0)
+                {
+                    result.default_arg_idx_used = true;
+                    // insert default argument
+                    if(default_arg_idx.has_value())
+                        push_lexeme<lexeme::argument>(*default_arg_idx);
+                    else
+                        throw lexer_error("can not deduce default argument here");
+                }
+                result.parsed_char = std::distance(src.begin(), it);
+                return result;
             }
             else if(ch <= '~')
             {
@@ -199,7 +218,8 @@ namespace papilio::script
             }
         }
 
-        return std::distance(src.begin(), it);
+        result.parsed_char = std::distance(src.begin(), it);
+        return result;
     }
 
     auto lexer::parse_number(iterator begin, iterator end)->std::pair<lexeme::constant, iterator>
@@ -469,6 +489,19 @@ namespace papilio::script
     executor interpreter::compile(std::span<const lexeme> lexemes)
     {
         return to_executor(lexemes);
+    }
+
+    std::pair<indexing_value, format_arg_access> interpreter::access(
+        string_view_type arg,
+        std::optional<std::size_t> default_arg_id
+    ) {
+        lexer l;
+        l.parse(arg, lexer_mode::replacement_field, default_arg_id);
+        return access(l.lexemes());
+    }
+    std::pair<indexing_value, format_arg_access> interpreter::access(std::span<const lexeme> lexemes)
+    {
+        return to_access(lexemes);
     }
 
     std::vector<lexeme> interpreter::to_lexemes(string_view_type src)
@@ -747,13 +780,24 @@ namespace papilio::script
             std::pair<std::unique_ptr<executor::argument>, iterator> build_argument(
                 iterator begin, iterator end
             ) {
+                auto [access, next_it] = build_access(begin, end);
+                auto ex = std::make_unique<executor::argument>(
+                    std::move(access.first),
+                    std::move(access.second)
+                );
+                return std::make_pair(std::move(ex), next_it);
+            }
+
+            std::pair<std::pair<indexing_value, format_arg_access>, iterator> build_access(
+                iterator begin, iterator end
+            ) {
+                assert(begin != end);
                 assert(begin->type() == lexeme_type::argument);
 
                 auto& a = begin->as<lexeme::argument>();
                 std::vector<executor::argument::member_type> members;
 
-                ++begin;
-                auto it = begin;
+                auto it = std::next(begin);
                 for(; it != end;)
                 {
                     if(it->type() == lexeme_type::operator_)
@@ -784,12 +828,10 @@ namespace papilio::script
                         break;
                 }
 
-                std::unique_ptr<executor::argument> ex;
-                if(a.is_indexed())
-                    ex = std::make_unique<executor::argument>(a.get_index(), std::move(members));
-                else if(a.is_named())
-                    ex = std::make_unique<executor::argument>(a.get_string(), std::move(members));
-                return std::make_pair(std::move(ex), it);
+                return std::make_pair(
+                    std::make_pair(a.to_indexing_value(), std::move(members)),
+                    it
+                );
             }
 
             // this function assumes that *--begin == '[' and begin != end
@@ -993,6 +1035,20 @@ namespace papilio::script
         {
             throw std::runtime_error("syntax error");
         }
+        return std::move(result);
+    }
+
+    std::pair<indexing_value, format_arg_access> interpreter::to_access(std::span<const lexeme> lexemes)
+    {
+        detail::executor_builder builder;
+
+        assert(!lexemes.empty());
+        if(lexemes[0].type() != lexeme_type::argument)
+            builder.raise_syntax_error("invalid access");
+
+        auto [result, it] = builder.build_access(lexemes.begin(), lexemes.end());
+        assert(it == lexemes.end());
+
         return std::move(result);
     }
 }
