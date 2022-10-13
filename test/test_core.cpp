@@ -192,6 +192,44 @@ TEST(TestCore, DynamicFormatArgStore)
         EXPECT_FALSE(store.check("test3"));
     }
 }
+TEST(TestCore, FormatContext)
+{
+    using namespace papilio;
+
+    {
+        format_context ctx;
+        ctx.append("1234");
+        EXPECT_EQ(ctx.str(), "1234");
+    }
+}
+TEST(TestCore, Formatter)
+{
+    using namespace papilio;
+
+    auto integer_formatter = []<std::integral T>(T val, std::string_view fmt)->std::string
+    {
+        using namespace papilio;
+
+        dynamic_format_arg_store store(val);
+        format_spec_parse_context parse_ctx(fmt, store);
+
+        formatter<T> f;
+        f.parse(parse_ctx);
+
+        format_context f_ctx;
+        f.format(val, f_ctx);
+        return std::move(f_ctx).str();
+    };
+
+    EXPECT_EQ(integer_formatter(0, ""), "0");
+    EXPECT_EQ(integer_formatter(10, ""), "10");
+    EXPECT_EQ(integer_formatter(0u, ""), "0");
+    EXPECT_EQ(integer_formatter(10u, ""), "10");
+
+    EXPECT_EQ(integer_formatter(0xF, "x"), "f");
+    EXPECT_EQ(integer_formatter(0b10, "b"), "10");
+    EXPECT_EQ(integer_formatter(017, "o"), "17");
+}
 
 int main(int argc, char* argv[])
 {

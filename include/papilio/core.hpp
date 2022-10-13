@@ -243,7 +243,7 @@ namespace papilio
         space
     };
 
-    class format_parse_context;
+    class format_spec_parse_context;
 
     namespace detail
     {
@@ -261,7 +261,7 @@ namespace papilio
             char_type type_char = '\0';
         };
 
-        std_format_spec parse_std_format_spec(format_parse_context& ctx);
+        std_format_spec parse_std_format_spec(format_spec_parse_context& ctx);
     }
 
     template <typename T>
@@ -560,6 +560,13 @@ namespace papilio
         std::vector<member_type> m_members;
     };
 
+    template <typename T>
+    class formatter
+    {
+    public:
+        static_assert(!sizeof(T), "You need to specialize formatter for this type");
+    };
+
     class dynamic_format_arg_store
     {
     public:
@@ -732,4 +739,120 @@ namespace papilio
             m_manual_indexing = true;
         }
     };
+
+    class format_context
+    {
+    public:
+        using char_type = char;
+        using string_type = std::basic_string<char_type>;
+        using string_view_type = std::basic_string_view<char_type>;
+
+        format_context() = default;
+        format_context(const format_context&) = delete;
+
+        void append(const string_type& str)
+        {
+            m_result.append(str);
+        }
+        void append(string_view_type str)
+        {
+            m_result.append(str);
+        }
+        void append(const char_type* str)
+        {
+            m_result.append(str);
+        }
+        void append(char_type ch, std::size_t count = 1)
+        {
+            m_result.append(count, ch);
+        }
+        template <typename InputIt>
+        void append(InputIt begin, InputIt end)
+        {
+            m_result.append(begin, end);
+        }
+
+        // compatible with std::back_inserter
+        void push_back(char_type ch)
+        {
+            m_result.push_back(ch);
+        }
+
+        [[nodiscard]]
+        const string_type& str() const& noexcept
+        {
+            return m_result;
+        }
+        [[nodiscard]]
+        string_type str() && noexcept
+        {
+            return m_result;
+        }
+
+    private:
+        string_type m_result;
+    };
+
+    // WARNING: This class only holds the view of string and reference of arguments
+    // The invoker needs to handle lifetimes manually
+    class format_spec_parse_context
+    {
+    public:
+        using char_type = char;
+        using string_type = std::basic_string<char_type>;
+        using string_view_type = std::basic_string_view<char_type>;
+        using iterator = string_view_type::const_iterator;
+        using reverse_iterator = string_view_type::const_reverse_iterator;
+
+        format_spec_parse_context() = delete;
+        format_spec_parse_context(const format_spec_parse_context&) = delete;
+        constexpr format_spec_parse_context(string_view_type str) noexcept
+            : m_spec_str(str), m_store(nullptr) {}
+        constexpr format_spec_parse_context(string_view_type str, const dynamic_format_arg_store& store) noexcept
+            : m_spec_str(str), m_store(&store) {}
+
+        [[nodiscard]]
+        constexpr iterator begin() const noexcept
+        {
+            return m_spec_str.begin();
+        }
+        [[nodiscard]]
+        constexpr iterator end() const noexcept
+        {
+            return m_spec_str.end();
+        }
+        [[nodiscard]]
+        constexpr reverse_iterator rbegin() const noexcept
+        {
+            return m_spec_str.rbegin();
+        }
+        [[nodiscard]]
+        constexpr reverse_iterator rend() const noexcept
+        {
+            return m_spec_str.rend();
+        }
+
+        [[nodiscard]]
+        constexpr operator string_view_type() const noexcept
+        {
+            return m_spec_str;
+        }
+
+        [[nodiscard]]
+        constexpr bool has_store() const noexcept
+        {
+            return m_store != nullptr;
+        }
+        [[nodiscard]]
+        constexpr const dynamic_format_arg_store& get_store() const noexcept
+        {
+            return *m_store;
+        }
+
+    private:
+        string_view_type m_spec_str;
+        const dynamic_format_arg_store* m_store;
+    };
 }
+
+#include "core.inl"

@@ -77,6 +77,66 @@ namespace papilio
         }
     }
 
+    namespace detail
+    {
+        std_format_spec parse_std_format_spec(format_spec_parse_context& ctx)
+        {
+            std_format_spec result;
+
+            auto it = ctx.rbegin();
+            if(it == ctx.rend())
+                return result;
+
+            // type
+            if('A' <= *it && *it <= 'z' && *it != 'L')
+            {
+                result.type_char = *it;
+                ++it;
+            }
+            if(it == ctx.rend())
+                return result;
+
+            // locale
+            if(*it == 'L')
+            {
+                result.use_locale = true;
+                ++it;
+            }
+            if(it == ctx.rend())
+                return result;
+
+            if(is_digit(*it))
+            {
+                auto digit_end = std::find_if(
+                    std::next(it), ctx.rend(), is_digit<char>
+                );
+                std::string_view digits(
+                    std::to_address(digit_end),
+                    std::to_address(it)
+                );
+                if(digits.length() > 1 && digits[0] == '0')
+                {
+                    result.fill_zero = true;
+                    digits = digits.substr(1);
+                }
+                auto conv_result = std::from_chars(
+                    digits.data(), digits.data() + digits.size(),
+                    result.width,
+                    10
+                );
+                if(conv_result.ec != std::errc())
+                {
+                    throw invalid_format("invalid format width");
+                }
+                it = digit_end;
+            }
+            if(it == ctx.rend())
+                return result;
+            
+            return result;
+        }
+    }
+
     bool attribute_name::validate(string_view_type name) noexcept
     {
         bool first = true;
