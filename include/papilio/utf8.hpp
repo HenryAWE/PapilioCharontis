@@ -16,9 +16,11 @@ namespace papilio
 
         std::string_view index(std::string_view str, std::size_t idx) noexcept;
         std::string index(const std::string& str, std::size_t idx);
+        std::string_view index(const char* str, std::size_t idx) noexcept;
 
         std::string_view rindex(std::string_view str, std::size_t idx) noexcept;
         std::string rindex(const std::string& str, std::size_t idx);
+        std::string_view rindex(const char* str, std::size_t idx) noexcept;
 
         std::string_view substr(
             std::string_view str,
@@ -27,6 +29,11 @@ namespace papilio
         ) noexcept;
         std::string substr(
             const std::string& str,
+            std::size_t off,
+            std::size_t count = std::string_view::npos
+        );
+        std::string_view substr(
+            const char* str,
             std::size_t off,
             std::size_t count = std::string_view::npos
         );
@@ -39,5 +46,9 @@ namespace papilio
             const std::string& str,
             const slice& s
         );
+        std::string_view substr(
+            const char* str,
+            const slice& s
+        ) noexcept;
     }
 }

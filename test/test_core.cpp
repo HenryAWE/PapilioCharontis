@@ -66,6 +66,31 @@ TEST(TestCore, Utilities)
     {
         using namespace papilio;
 
+        static_assert(!accessor_traits<int>::has_index());
+        static_assert(!accessor_traits<float>::has_index());
+        static_assert(accessor_traits<std::string>::has_index());
+        static_assert(accessor_traits<std::string>::has_custom_index());
+        static_assert(!accessor_traits<std::string>::has_key());
+        static_assert(accessor_traits<std::string>::has_slice());
+        static_assert(accessor_traits<std::string>::has_custom_slice());
+
+        std::string test = "hello world";
+        EXPECT_EQ(accessor_traits<std::string>::get(test, 0), "h");
+        EXPECT_EQ(accessor_traits<std::string>::get(test, slice(6, slice::npos)), "world");
+
+        EXPECT_EQ(
+            accessor_traits<std::string>::get_arg(test, -1).as_variable(),
+            "d"
+        );
+        EXPECT_EQ(
+            accessor_traits<std::string>::get_attr(test, "size").as_variable(),
+            test.size()
+        );
+    }
+
+    {
+        using namespace papilio;
+
         const std::string str_val = "hello world";
         const auto a_0 = arg("string", str_val);
         EXPECT_STREQ(a_0.name, "string");

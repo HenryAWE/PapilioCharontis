@@ -123,6 +123,10 @@ namespace papilio
                 index(std::string_view(str), idx)
             );
         }
+        std::string_view index(const char* str, std::size_t idx) noexcept
+        {
+            return index(std::string_view(str), idx);
+        }
 
         std::optional<std::pair<std::size_t, std::uint8_t>> rbyte_index(std::string_view str, std::size_t idx) noexcept
         {
@@ -159,6 +163,10 @@ namespace papilio
             return std::string(
                 rindex(std::string_view(str), idx)
             );
+        }
+        std::string_view rindex(const char* str, std::size_t idx) noexcept
+        {
+            return rindex(std::string_view(str), idx);
         }
 
         std::string_view substr(
@@ -203,6 +211,17 @@ namespace papilio
                 count
             );
             return std::string(sv);
+        }
+        std::string_view substr(
+            const char* str,
+            std::size_t off,
+            std::size_t count
+        ) {
+            return substr(
+                std::string_view(str),
+                off,
+                count
+            );
         }
 
         std::pair<std::size_t, std::size_t> get_slice_byte_range(
@@ -266,6 +285,15 @@ namespace papilio
         ) {
             return std::string(
                 substr(std::string_view(str), s)
+            );
+        }
+        std::string_view substr(
+            const char* str,
+            const slice& s
+        ) noexcept {
+            return substr(
+                std::string_view(str),
+                s
             );
         }
     }

@@ -153,49 +153,12 @@ namespace papilio
 
     format_arg format_arg::index(const indexing_value& idx) const
     {
-        auto visitor = [&](auto&& v)->format_arg
+        auto visitor = [&idx]<typename T>(T&& v)->format_arg
         {
-            using T = std::remove_cvref_t<decltype(v)>;
-
-            if constexpr(string_like<T>)
-            {
-                if(idx.is_index())
-                {
-                    auto i = idx.as_index();
-
-                    if constexpr(std::is_same_v<T, string_type>)
-                    {
-                        if(i < 0)
-                            return format_arg(utf8::rindex(v, -(i + 1)));
-                        else
-                            return format_arg(utf8::index(v, i));
-                    }
-                    else
-                    {
-                        string_view_type sv(v);
-                        if(i < 0)
-                            return format_arg(utf8::rindex(sv, -(i + 1)));
-                        else
-                            return format_arg(utf8::index(sv, i));
-                    }
-                }
-                else if(idx.is_slice())
-                {
-                    const auto& s = idx.as_slice();
-
-                    if constexpr(std::is_same_v<T, string_type>)
-                    {
-                        return format_arg(utf8::substr(v, s));
-                    }
-                    else
-                    {
-                        string_view_type sv(v);
-                        return format_arg(utf8::substr(sv, s));
-                    }
-                }
-            }
-
-            invalid_index();
+            return accessor_traits<std::remove_cvref_t<T>>::get_arg(
+                std::forward<T>(v),
+                idx
+            );
         };
         return std::visit(visitor, m_val);
     }

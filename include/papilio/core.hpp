@@ -15,6 +15,12 @@
 
 namespace papilio
 {
+    // forward declarations
+    class slice;
+    class indexing_value;
+    class attribute_name;
+    class format_arg;
+
     namespace detail
     {
         template <typename CharT>
@@ -444,6 +450,16 @@ namespace papilio
         [[nodiscard]]
         bool operator==(const attribute_name& rhs) const noexcept = default;
         [[nodiscard]]
+        friend bool operator==(const attribute_name& lhs, const string_type& rhs) noexcept
+        {
+            return lhs.m_name == rhs;
+        }
+        [[nodiscard]]
+        friend bool operator==(const string_type& lhs, const attribute_name& rhs) noexcept
+        {
+            return lhs == rhs.m_name;
+        }
+        [[nodiscard]]
         friend bool operator==(const attribute_name& lhs, string_view_type rhs) noexcept
         {
             return lhs.m_name == rhs;
@@ -453,12 +469,249 @@ namespace papilio
         {
             return lhs == rhs.m_name;
         }
+        [[nodiscard]]
+        friend bool operator==(const attribute_name& lhs, const char* rhs) noexcept
+        {
+            return lhs.m_name == rhs;
+        }
+        [[nodiscard]]
+        friend bool operator==(const char* lhs, const attribute_name& rhs) noexcept
+        {
+            return lhs == rhs.m_name;
+        }
+
+        [[nodiscard]]
+        const string_type& name() const noexcept
+        {
+            return m_name;
+        }
 
         [[nodiscard]]
         static bool validate(string_view_type name) noexcept;
 
     private:
         string_type m_name;
+    };
+    class invalid_attribute : public std::invalid_argument
+    {
+    public:
+        invalid_attribute(attribute_name attr)
+            : invalid_argument("invalid attribute name \"" + attr.name() + '\"'),
+            m_attr(std::move(attr)) {}
+
+        [[nodiscard]]
+        const attribute_name& attr() const noexcept
+        {
+            return m_attr;
+        }
+
+    private:
+        attribute_name m_attr;
+    };
+
+    template <typename T>
+    struct accessor {};
+
+    namespace detail
+    {
+        struct string_accessor
+        {
+            using has_index = void;
+            using has_slice = void;
+
+            template <string_like String>
+            static auto get(const String& str, indexing_value::index_type i)
+            {
+                if(i < 0)
+                    return utf8::rindex(str, -(i + 1));
+                else
+                    return utf8::index(str, i);
+            }
+
+            template <string_like String>
+            static auto get(const String& str, slice s)
+            {
+                return utf8::substr(str, s);
+            }
+
+            template <string_like String>
+            static bool has_attr(const String&, const attribute_name& attr)
+            {
+                using namespace std::literals;
+                return
+                    attr == "length"sv ||
+                    attr == "size"sv;
+            }
+            template <string_like String>
+            static format_arg get_attr(const String& str, const attribute_name& attr)
+            {
+                using namespace std::literals;
+                if(attr == "length"sv)
+                    return format_arg(utf8::strlen(str));
+                else if(attr == "size"sv)
+                    return format_arg(str.size());
+                else
+                    throw invalid_attribute(attr);
+            }
+        };
+    }
+    template <string_like String>
+    struct accessor<String> : detail::string_accessor {};
+
+    template <typename T>
+    class accessor_traits
+    {
+    public:
+        using type = T;
+        using accessor_type = accessor<type>;
+
+        [[nodiscard]]
+        static constexpr bool has_index() noexcept
+        {
+            return requires() { typename accessor_type::has_index; };
+        }
+        [[nodiscard]]
+        static constexpr bool has_custom_index() noexcept
+        {
+            if constexpr(has_index())
+            {
+                return requires(T object, indexing_value::index_type i) { accessor_type::get(object, i); };
+            }
+            else
+                return false;
+        }
+
+        [[nodiscard]]
+        static constexpr bool has_key() noexcept
+        {
+            return requires() { typename accessor_type::has_key; };
+        }
+        [[nodiscard]]
+        static constexpr bool has_custom_key() noexcept
+        {
+            if constexpr(has_key())
+            {
+                return requires(T object, indexing_value::string_view_type str) { accessor_type::get(object, str); };
+            }
+            else
+                return false;
+        }
+
+        [[nodiscard]]
+        static constexpr bool has_slice() noexcept
+        {
+            return requires() { typename accessor_type::has_slice; };
+        }
+        [[nodiscard]]
+        static constexpr bool has_custom_slice() noexcept
+        {
+            if constexpr(has_slice())
+            {
+                return requires(T object, slice s) { accessor_type::get(object, s); };
+            }
+            else
+                return false;
+        }
+
+        [[noreturn]]
+        constexpr static void index_unavailable()
+        {
+            throw std::runtime_error("index unavailable");
+        }
+        [[noreturn]]
+        constexpr static void key_unavailable()
+        {
+            throw std::runtime_error("key unavailable");
+        }
+        [[noreturn]]
+        constexpr static void slice_unavailable()
+        {
+            throw std::runtime_error("slice unavailable");
+        }
+
+        template <typename U>
+        static format_arg get_arg(U&& object, const indexing_value& idx);
+
+        template <typename U>
+        static decltype(auto) get(U&& object, indexing_value::index_type i)
+        {
+            return index_handler(std::forward<U>(object), i);
+        }
+        template <typename U>
+        static decltype(auto) get(U&& object, indexing_value::string_view_type str)
+        {
+            return index_handler(std::forward<U>(object), str);
+        }
+        template <typename U>
+        static decltype(auto) get(U&& object, slice s)
+        {
+            return index_handler(std::forward<U>(object), s);
+        }
+
+        template <typename U>
+        static format_arg get_attr(U&& object, const attribute_name& attr)
+        {
+            if constexpr(requires() { accessor_type::get_attr(std::forward<U>(object), attr); })
+            {
+                return accessor_type::get_attr(std::forward<U>(object), attr);
+            }
+            else
+                throw invalid_attribute(attr);
+        }
+
+    private:
+        template <typename U>
+        static decltype(auto) index_handler(U&& object, indexing_value::index_type i)
+        {
+            if constexpr(!has_index())
+            {
+                index_unavailable();
+            }
+            else if constexpr(has_custom_index())
+            {
+                return accessor_type::get(std::forward<U>(object), i);
+            }
+            else
+            {
+                if(i < 0)
+                    throw std::runtime_error("reverse index unavailable");
+                return object[static_cast<std::size_t>(i)];
+            }
+        }
+        template <typename U>
+        static decltype(auto) index_handler(U&& object, indexing_value::string_view_type str)
+        {
+            if constexpr(!has_key())
+            {
+                key_unavailable();
+            }
+            else if constexpr(has_custom_key())
+            {
+                using Accessor = accessor<T>;
+                return Accessor::get(std::forward<U>(object), str);
+            }
+            else
+            {
+                return object[str];
+            }
+        }
+        template <typename U>
+        static decltype(auto) index_handler(U&& object, slice s)
+        {
+            if constexpr(!has_slice())
+            {
+                slice_unavailable();
+            }
+            else if constexpr(has_custom_slice())
+            {
+                using Accessor = accessor<T>;
+                return Accessor::get(std::forward<U>(object), s);
+            }
+            else
+            {
+                return object[s];
+            }
+        }
     };
 
     class format_arg

@@ -8,6 +8,30 @@
 
 namespace papilio
 {
+    template <typename T>
+    template <typename U>
+    format_arg accessor_traits<T>::get_arg(U&& object, const indexing_value& idx)
+    {
+        auto visitor = [&object]<typename Arg>(Arg&& v)->format_arg
+        {
+            using result_type = decltype(
+                index_handler(std::forward<U>(object), std::forward<Arg>(v))
+            );
+            if constexpr(std::is_void_v<result_type>)
+            {
+                // trigger exception
+                get(std::forward<U>(object), std::forward<Arg>(v));
+                // placeholder
+                return format_arg();
+            }
+            else
+            {
+                return format_arg(get(std::forward<U>(object), std::forward<Arg>(v)));
+            }
+        };
+        return std::visit(visitor, idx.to_underlying());
+    }
+
 #   define PAPILIO_IMPL_INTEGER_FORMATTER(int_type) \
     template <>\
     class formatter<int_type>\
