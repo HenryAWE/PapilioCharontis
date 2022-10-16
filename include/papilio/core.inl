@@ -8,6 +8,44 @@
 
 namespace papilio
 {
+    namespace detail
+    {
+        template <string_like String>
+        auto string_accessor::get(const String& str, indexing_value::index_type i)
+        {
+            if(i < 0)
+                return utf8::rindex(str, -(i + 1));
+            else
+                return utf8::index(str, i);
+        }
+
+        template <string_like String>
+        auto string_accessor::get(const String& str, slice s)
+        {
+            return utf8::substr(str, s);
+        }
+
+        template <string_like String>
+        bool string_accessor::has_attr(const String&, const attribute_name& attr)
+        {
+            using namespace std::literals;
+            return
+                attr == "length"sv ||
+                attr == "size"sv;
+        }
+        template <string_like String>
+        format_arg string_accessor::get_attr(const String& str, const attribute_name& attr)
+        {
+            using namespace std::literals;
+            if(attr == "length"sv)
+                return format_arg(utf8::strlen(str));
+            else if(attr == "size"sv)
+                return format_arg(str.size());
+            else
+                throw invalid_attribute(attr);
+        }
+    }
+
     template <typename T>
     template <typename U>
     format_arg accessor_traits<T>::get_arg(U&& object, const indexing_value& idx)
@@ -30,6 +68,17 @@ namespace papilio
             }
         };
         return std::visit(visitor, idx.to_underlying());
+    }
+    template <typename T>
+    template <typename U>
+    format_arg  accessor_traits<T>::get_attr(U&& object, const attribute_name& attr)
+    {
+        if constexpr(requires() { accessor_type::get_attr(std::forward<U>(object), attr); })
+        {
+            return accessor_type::get_attr(std::forward<U>(object), attr);
+        }
+        else
+            throw invalid_attribute(attr);
     }
 
 #   define PAPILIO_IMPL_INTEGER_FORMATTER(int_type) \

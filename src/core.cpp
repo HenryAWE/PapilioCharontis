@@ -1,4 +1,5 @@
 #include <papilio/core.hpp>
+#include <algorithm>
 
 
 namespace papilio

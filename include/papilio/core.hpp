@@ -520,39 +520,15 @@ namespace papilio
             using has_slice = void;
 
             template <string_like String>
-            static auto get(const String& str, indexing_value::index_type i)
-            {
-                if(i < 0)
-                    return utf8::rindex(str, -(i + 1));
-                else
-                    return utf8::index(str, i);
-            }
+            static auto get(const String& str, indexing_value::index_type i);
 
             template <string_like String>
-            static auto get(const String& str, slice s)
-            {
-                return utf8::substr(str, s);
-            }
+            static auto get(const String& str, slice s);
 
             template <string_like String>
-            static bool has_attr(const String&, const attribute_name& attr)
-            {
-                using namespace std::literals;
-                return
-                    attr == "length"sv ||
-                    attr == "size"sv;
-            }
+            static bool has_attr(const String&, const attribute_name& attr);
             template <string_like String>
-            static format_arg get_attr(const String& str, const attribute_name& attr)
-            {
-                using namespace std::literals;
-                if(attr == "length"sv)
-                    return format_arg(utf8::strlen(str));
-                else if(attr == "size"sv)
-                    return format_arg(str.size());
-                else
-                    throw invalid_attribute(attr);
-            }
+            static format_arg get_attr(const String& str, const attribute_name& attr);
         };
     }
     template <string_like String>
@@ -649,15 +625,7 @@ namespace papilio
         }
 
         template <typename U>
-        static format_arg get_attr(U&& object, const attribute_name& attr)
-        {
-            if constexpr(requires() { accessor_type::get_attr(std::forward<U>(object), attr); })
-            {
-                return accessor_type::get_attr(std::forward<U>(object), attr);
-            }
-            else
-                throw invalid_attribute(attr);
-        }
+        static format_arg get_attr(U&& object, const attribute_name& attr);
 
     private:
         template <typename U>
