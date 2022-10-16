@@ -774,9 +774,17 @@ namespace papilio
 
         template <typename T>
         [[nodiscard]]
-        friend const T& get(const format_arg& val)
+        friend const auto& get(const format_arg& val)
         {
+#ifdef __GNUC__
+            // handle std::size_t
+            if constexpr(std::is_same_v<T, unsigned long>)
+                return std::get<unsigned long long int>(val.m_val);
+            else
+                return std::get<T>(val.m_val);
+#else
             return std::get<T>(val.m_val);
+#endif
         }
 
         script::variable as_variable() const;
