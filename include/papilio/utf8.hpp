@@ -421,18 +421,22 @@ namespace papilio
         string_container& operator=(string_type& str)
         {
             m_str.emplace<string_view_type>(str);
+            return *this;
         }
         string_container& operator=(string_view_type str)
         {
             m_str.emplace<string_view_type>(str);
+            return *this;
         }
         string_container& operator=(const char_type* str)
         {
             m_str.emplace<string_view_type>(str);
+            return *this;
         }
         string_container& operator=(detail::make_independent_proxy str)
         {
             m_str = std::make_shared<string_type>(str.str);
+            return *this;
         }
 
         bool is_borrowed() const noexcept
