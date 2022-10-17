@@ -8,83 +8,16 @@ namespace papilio
 {
     namespace utf8
     {
-        std::pair<char32_t, std::uint8_t> decode(const char* src) noexcept
-        {
-            assert(src != nullptr);
-
-            std::uint8_t first_byte = src[0];
-
-            // ASCII (single byte)
-            if(first_byte <= 0b0111'1111)
-            {
-                return std::make_pair(src[0], 1);
-            }
-            // 2 bytes
-            else if(0b1100'0000 <= first_byte && first_byte <= 0b1101'1111)
-            {
-                char32_t result = U'\0';
-                result |= src[0] & 0b0001'1111;
-                result <<= 6;
-                result |= src[1] & 0b0011'1111;
-
-                return std::make_pair(result, 2);
-            }
-            // 3 bytes
-            else if(0b1110'0000 <= first_byte && first_byte <= 0b1110'1111)
-            {
-                char32_t result = U'\0';
-                result |= src[0] & 0b0000'1111;
-                result <<= 6;
-                result |= src[1] & 0b0011'1111;
-                result <<= 6;
-                result |= src[2] & 0b0011'1111;
-
-                return std::make_pair(result, 3);
-            }
-            // 4 bytes
-            else if(0b1111'0000 <= first_byte && first_byte <= 0b1111'0111)
-            {
-                char32_t result = U'\0';
-                result |= src[0] & 0b0000'1111;
-                result <<= 6;
-                result |= src[1] & 0b0011'1111;
-                result <<= 6;
-                result |= src[2] & 0b0011'1111;
-                result <<= 6;
-                result |= src[3] & 0b0011'1111;
-
-                return std::make_pair(result, 3);
-            }
-
-            return std::make_pair(U'\0', 0);
-        }
-        std::pair<char32_t, std::uint8_t> rdecode(const char* src, std::size_t size) noexcept
-        {
-            if(size == 0)
-                size = std::string_view(src).size();
-            
-            const char* start = nullptr;
-            for(const char* it = src + size; it != src; --it)
-            {
-                if((*(it - 1) & 0b1100'0000) != 0b1000'0000)
-                {
-                    start = it - 1;
-                    break;
-                }
-            }
-            if(!start)
-                return std::pair(U'\0', 0);
-
-            return decode(start);
-        }
-
         std::size_t strlen(std::string_view str) noexcept
         {
             std::size_t result = 0;
             for(std::size_t i = 0; i < str.size();)
             {
                 ++result;
-                i += decode(str.data() + i).second;
+                std::uint8_t len = is_leading_byte(str[i]);
+                if(len == 0) // corrupted string
+                    break;
+                i += len;
             }
 
             return result;
@@ -92,20 +25,22 @@ namespace papilio
 
         std::optional<std::pair<std::size_t, std::uint8_t>> byte_index(std::string_view str, std::size_t idx) noexcept
         {
-            std::size_t i = 0;
-            std::uint8_t ch_count = 0;
+            std::size_t byte_idx = 0;
+            std::uint8_t count = 0;
 
-            ch_count = decode(str.data()).second;
-            assert(idx != -1);
-            for(std::size_t n = 0; n < idx; ++n)
+            for(std::size_t i = 0; i < idx; ++i)
             {
-                i += ch_count;
-                if(i >= str.size())
+                count = is_leading_byte(str[byte_idx]);
+                if(count == 0)
                     return std::nullopt;
-                ch_count = decode(str.data() + i).second;
+                byte_idx += count;
+                if(byte_idx >= str.size())
+                    return std::nullopt;
             }
 
-            return std::make_pair(i, ch_count);
+            count = is_leading_byte(str[byte_idx]);
+
+            return std::make_pair(byte_idx, count);
         }
 
         std::string_view index(std::string_view str, std::size_t idx) noexcept
@@ -130,23 +65,23 @@ namespace papilio
 
         std::optional<std::pair<std::size_t, std::uint8_t>> rbyte_index(std::string_view str, std::size_t idx) noexcept
         {
-            std::size_t i = str.size();
-            std::uint8_t ch_count = 0;
-
-            ch_count = rdecode(str.data(), str.size()).second;
-            i -= ch_count;
-            assert(idx != -1);
-            for(std::size_t n = 0; n < idx; ++n)
+            if(idx == -1)
+                return std::nullopt;
+            std::size_t byte_idx = str.size();
+            std::uint8_t count = 0;
+            for(std::size_t i = 0; i < idx + 1; ++i)
             {
-                if(i < ch_count)
-                    return std::nullopt;
-                ch_count = rdecode(str.data(), str.size() - i).second;
-                i -= ch_count;
-                if(i == 0)
-                    return std::nullopt;
+                count = 0;
+                while(count == 0)
+                {
+                    if(byte_idx == 0)
+                        return std::nullopt;
+                    --byte_idx;
+                    count = is_leading_byte(str[byte_idx]);
+                }
             }
 
-            return std::make_pair(i, ch_count);
+            return std::make_pair(byte_idx, count);
         }
 
         std::string_view rindex(std::string_view str, std::size_t idx) noexcept
@@ -177,28 +112,18 @@ namespace papilio
             if(count == 0)
                 return std::string_view();
 
-            std::size_t i = 0;
-            std::size_t off_count = 0;
-            for(; off_count < off && i < str.size();)
-            {
-                ++off_count;
-                i += decode(str.data() + i).second;
-            }
-
-            if(i >= str.size())
+            auto begin = byte_index(str, off);
+            if(!begin.has_value())
                 return std::string_view();
-            if(count == str.npos)
-                return str.substr(i);
 
-            std::size_t j = i;
-            std::size_t char_count = 0;
-            for(; char_count < count && j < str.size();)
-            {
-                ++char_count;
-                j += decode(str.data() + j).second;
-            }
-
-            return str.substr(i, j - i);
+            str = str.substr(begin->first);
+            if(count == std::string_view::npos)
+                return str;
+            auto byte_count = byte_index(str, count);
+            if(byte_count.has_value())
+                return str.substr(0, byte_count->first);
+            else
+                return str;
         }
         std::string substr(
             const std::string& str,
@@ -295,6 +220,102 @@ namespace papilio
                 std::string_view(str),
                 s
             );
+        }
+    }
+
+    void string_container::pop_back() noexcept
+    {
+        string_view_type view = get_string_view();
+        assert(!view.empty());
+        size_type idx = view.size() - 1;
+        while(utf8::is_leading_byte(view[idx]) == 0)
+        {
+            if(idx == 0)
+            {
+                clear();
+                return;
+            }
+            --idx;
+        }
+        view = string_view_type(view.data(), idx);
+        if(is_borrowed())
+            m_str = view;
+        else
+            m_str = std::make_shared<string_type>(view);
+    }
+
+    string_container::const_iterator string_container::find(utf8::codepoint cp, size_type pos) const noexcept
+    {
+        const_iterator it = cbegin();
+        const_iterator cend_it = cend();
+        for(size_type i = 0; i < pos; ++i)
+        {
+            if(it == cend_it)
+                return cend_it;
+            ++it;
+        }
+        for(; it != cend_it; ++it)
+        {
+            if(*it == cp)
+                break;
+        }
+        return it;
+    }
+    string_container::const_iterator string_container::find(const string_container& str, size_type pos) const noexcept
+    {
+        return find(str.get_string_view(), pos);
+    }
+    string_container::const_iterator string_container::find(string_view_type str, size_type pos) const noexcept
+    {
+        string_view_type view = get_string_view();
+        size_type byte_off = 0;
+        for(size_type i = 0; i < pos; ++i)
+        {
+            if(byte_off >= view.size())
+                return cend();
+            byte_off += utf8::is_leading_byte(view[byte_off]);
+        }
+        size_type byte_idx = view.find(str, byte_off);
+        if(byte_idx == view.npos)
+            return cend();
+        const_pointer ptr = view.data() + byte_idx;
+        return const_iterator(
+            ptr, utf8::is_leading_byte(ptr[0])
+        );
+    }
+
+    string_container::const_reference string_container::front() const noexcept
+    {
+        assert(!empty());
+        return utf8::codepoint::decode(get_string_view()).first;
+    }
+    string_container::const_reference string_container::back() const noexcept
+    {
+        assert(!empty());
+        return utf8::codepoint::rdecode(get_string_view()).first;
+    }
+
+    string_container::string_type& string_container::get_string()
+    {
+        assert(!m_str.valueless_by_exception());
+        if(m_str.index() != 0)
+        {
+            string_view_type sv = *std::get_if<1>(&m_str);
+            m_str.emplace<0>(std::make_shared<string_type>(sv));
+        }
+
+        return **std::get_if<0>(&m_str);
+    }
+    string_container::string_view_type string_container::get_string_view() const noexcept
+    {
+        assert(!m_str.valueless_by_exception());
+        if(m_str.index() == 0)
+        {
+            return **std::get_if<0>(&m_str);
+        }
+        else
+        {
+            return *std::get_if<1>(&m_str);
         }
     }
 }
