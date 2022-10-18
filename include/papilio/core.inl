@@ -38,7 +38,7 @@ namespace papilio
             return str.substr(s);
         }
 
-        static format_arg get_attr(string_container str, const attribute_name& attr)
+        static format_arg get_attr(const string_container& str, const attribute_name& attr)
         {
             using namespace std::literals;
 

@@ -142,21 +142,26 @@ TEST(TestCore, FormatArg)
 
     {
         format_arg arg('a');
+        EXPECT_TRUE(arg.holds<utf8::codepoint>());
         EXPECT_EQ(get<utf8::codepoint>(arg), U'a');
     }
 
     {
         format_arg arg(1);
+        EXPECT_TRUE(arg.holds<int>());
         EXPECT_EQ(get<int>(arg), 1);
     }
 
     {
         format_arg arg(1.0);
+        EXPECT_TRUE(arg.holds<double>());
         EXPECT_DOUBLE_EQ(get<double>(arg), 1.0);
     }
 
     {
         papilio::format_arg fmt_arg("test");
+        EXPECT_TRUE(fmt_arg.holds<string_container>());
+        EXPECT_TRUE(get<string_container>(fmt_arg).is_borrowed());
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), std::string("test").length());
         EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(0)), U't');
@@ -167,7 +172,23 @@ TEST(TestCore, FormatArg)
     }
 
     {
+        using namespace std::literals;
+        format_arg fmt_arg("test"s);
+        EXPECT_TRUE(fmt_arg.holds<string_container>());
+        EXPECT_FALSE(get<string_container>(fmt_arg).is_borrowed());
+    }
+
+    {
+        using namespace std::literals;
+        std::string s = "test"s;
+        format_arg fmt_arg(s);
+        EXPECT_TRUE(fmt_arg.holds<string_container>());
+        EXPECT_TRUE(get<string_container>(fmt_arg).is_borrowed());
+    }
+
+    {
         papilio::format_arg fmt_arg((const char*)u8"测试");
+        EXPECT_TRUE(fmt_arg.holds<string_container>());
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), 2);
         EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(0)), U'测');

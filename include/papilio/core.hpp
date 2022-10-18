@@ -750,15 +750,13 @@ namespace papilio
             !char_type<T>;
 
         template <typename T>
-        concept use_handle_raw =
+        concept use_handle =
             !std::is_same_v<T, utf8::codepoint> &&
             !char_type<T> &&
             !integral_type<T> &&
             !std::floating_point<T> &&
             !std::is_same_v<T, string_container> &&
             !string_like<T>;
-        template <typename T>
-        concept use_handle = use_handle_raw<std::remove_cvref_t<T>>;
     }
 
     class format_arg
@@ -868,8 +866,8 @@ namespace papilio
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
         template <detail::use_handle T>
-        format_arg(T&& val)
-            : m_val(std::in_place_type<handle>, std::forward<T>(val)) {}
+        format_arg(const T& val)
+            : m_val(std::in_place_type<handle>, val) {}
 
         format_arg& operator=(const format_arg&) = default;
         format_arg& operator=(format_arg&&) noexcept = default;
@@ -879,10 +877,16 @@ namespace papilio
         [[nodiscard]]
         format_arg attribute(const attribute_name& attr) const;
 
+        template <typename T>
+        [[nodiscard]]
+        bool holds() const noexcept
+        {
+            return std::holds_alternative<T>(m_val);
+        }
         [[nodiscard]]
         bool empty() const noexcept
         {
-            return std::holds_alternative<std::monostate>(m_val);
+            return holds<std::monostate>();
         }
 
         template <typename T>
