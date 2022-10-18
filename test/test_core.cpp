@@ -7,9 +7,10 @@ TEST(TestCore, Variable)
     using namespace papilio;
     using namespace script;
 
-    static_assert(is_variable_type<variable::int_type>);
-    static_assert(is_variable_type<variable::float_type>);
-    static_assert(is_variable_type<variable::string_type>);
+    static_assert(is_variable_type_v<variable::int_type>);
+    static_assert(is_variable_type_v<variable::float_type>);
+    static_assert(!is_variable_type_v<variable::string_type>);
+    static_assert(is_variable_type_v<string_container>);
 
     {
         variable var = 10;
@@ -75,22 +76,26 @@ TEST(TestCore, Utilities)
 
         static_assert(!accessor_traits<int>::has_index());
         static_assert(!accessor_traits<float>::has_index());
-        static_assert(accessor_traits<std::string>::has_index());
-        static_assert(accessor_traits<std::string>::has_custom_index());
-        static_assert(!accessor_traits<std::string>::has_key());
-        static_assert(accessor_traits<std::string>::has_slice());
-        static_assert(accessor_traits<std::string>::has_custom_slice());
+        static_assert(accessor_traits<string_container>::has_index());
+        static_assert(accessor_traits<string_container>::has_custom_index());
+        static_assert(!accessor_traits<string_container>::has_key());
+        static_assert(accessor_traits<string_container>::has_slice());
+        static_assert(accessor_traits<string_container>::has_custom_slice());
 
-        std::string test = "hello world";
-        EXPECT_EQ(accessor_traits<std::string>::get(test, 0), "h");
-        EXPECT_EQ(accessor_traits<std::string>::get(test, slice(6, slice::npos)), "world");
+        string_container test = "hello world";
+        EXPECT_EQ(accessor_traits<string_container>::get(test, 0), U'h');
+        EXPECT_EQ(accessor_traits<string_container>::get(test, slice(6, slice::npos)), "world");
 
         EXPECT_EQ(
-            accessor_traits<std::string>::get_arg(test, -1).as_variable(),
+            accessor_traits<string_container>::get_arg(test, -1).as_variable(),
             "d"
         );
         EXPECT_EQ(
-            accessor_traits<std::string>::get_attr(test, "size").as_variable(),
+            accessor_traits<string_container>::get_attr(test, "length").as_variable(),
+            test.length()
+        );
+        EXPECT_EQ(
+            accessor_traits<string_container>::get_attr(test, "size").as_variable(),
             test.size()
         );
     }
@@ -233,34 +238,6 @@ TEST(TestCore, FormatContext)
         ctx.append("1234");
         EXPECT_EQ(ctx.str(), "1234");
     }
-}
-TEST(TestCore, Formatter)
-{
-    using namespace papilio;
-
-    auto integer_formatter = []<std::integral T>(T val, std::string_view fmt)->std::string
-    {
-        using namespace papilio;
-
-        dynamic_format_arg_store store(val);
-        format_spec_parse_context parse_ctx(fmt, store);
-
-        formatter<T> f;
-        f.parse(parse_ctx);
-
-        format_context f_ctx;
-        f.format(val, f_ctx);
-        return std::move(f_ctx).str();
-    };
-
-    EXPECT_EQ(integer_formatter(0, ""), "0");
-    EXPECT_EQ(integer_formatter(10, ""), "10");
-    EXPECT_EQ(integer_formatter(0u, ""), "0");
-    EXPECT_EQ(integer_formatter(10u, ""), "10");
-
-    EXPECT_EQ(integer_formatter(0xF, "x"), "f");
-    EXPECT_EQ(integer_formatter(0b10, "b"), "10");
-    EXPECT_EQ(integer_formatter(017, "o"), "17");
 }
 
 int main(int argc, char* argv[])

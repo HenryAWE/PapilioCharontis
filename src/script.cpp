@@ -818,7 +818,7 @@ namespace papilio::script
                             }
 
                             auto& id = identifier_it->as<lexeme::identifier>();
-                            members.push_back(attribute_name(std::move(id).get()));
+                            members.push_back(attribute_name(id.get()));
                             it = std::next(identifier_it);
                         }
                         else

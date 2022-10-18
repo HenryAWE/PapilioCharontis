@@ -245,12 +245,16 @@ namespace papilio
         };
 
         template <typename T>
-        concept is_variable_type =
-            std::is_same_v<T, bool> ||
-            std::is_same_v<T, variable::int_type> ||
-            std::is_same_v<T, variable::float_type> ||
-            std::is_same_v<T, variable::string_type>;
-
+        struct is_variable_type
+        {
+            static constexpr bool value =
+                std::is_same_v<T, bool> ||
+                std::is_same_v<T, variable::int_type> ||
+                std::is_same_v<T, variable::float_type> ||
+                std::is_same_v<T, string_container>;
+        };
+        template <typename T>
+        inline constexpr bool is_variable_type_v = is_variable_type<T>::value;
     }
 
     enum class format_align : std::uint8_t
@@ -537,28 +541,6 @@ namespace papilio
     template <typename T>
     struct accessor {};
 
-    namespace detail
-    {
-        struct string_accessor
-        {
-            using has_index = void;
-            using has_slice = void;
-
-            template <string_like String>
-            static auto get(const String& str, indexing_value::index_type i);
-
-            template <string_like String>
-            static auto get(const String& str, slice s);
-
-            template <string_like String>
-            static bool has_attr(const String&, const attribute_name& attr);
-            template <string_like String>
-            static format_arg get_attr(const String& str, const attribute_name& attr);
-        };
-    }
-    template <string_like String>
-    struct accessor<String> : detail::string_accessor {};
-
     template <typename T>
     class accessor_traits
     {
@@ -782,19 +764,10 @@ namespace papilio
         format_arg& operator=(const format_arg&) = default;
         format_arg& operator=(format_arg&&) noexcept = default;
 
+        [[nodiscard]]
         format_arg index(const indexing_value& idx) const;
+        [[nodiscard]]
         format_arg attribute(attribute_name name) const;
-
-        [[noreturn]]
-        static void invalid_index()
-        {
-            throw std::out_of_range("invalid index");
-        }
-        [[noreturn]]
-        static void invalid_attribute()
-        {
-            throw std::invalid_argument("invalid attribute");
-        }
 
         template <typename T>
         [[nodiscard]]
