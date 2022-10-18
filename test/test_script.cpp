@@ -331,7 +331,7 @@ TEST(TestScript, Executor)
     {
         executor::context ctx;
         ctx.push("string");
-        EXPECT_EQ(ctx.top().get<executor::string_type>(), "string");
+        EXPECT_EQ(ctx.top().get<string_container>(), "string");
     }
 
     {
@@ -366,7 +366,7 @@ TEST(TestScript, Executor)
         executor ex3(std::in_place_type<executor::argument>, "string"s);
         ex3(ctx);
 
-        EXPECT_EQ(ctx.copy_and_pop().get<executor::string_type>(), "test");
+        EXPECT_EQ(ctx.copy_and_pop().get<string_container>(), "test");
 
         executor ex4(
             std::in_place_type<executor::argument>,
@@ -575,7 +575,10 @@ TEST(TestScript, Interpreter)
         auto acc = intp.access("0[0]");
 
         dynamic_format_arg_store store("testing");
-        EXPECT_EQ(get<std::string_view>(acc.second.access(store[acc.first])), "t");
+        EXPECT_EQ(
+            get<utf8::codepoint>(acc.second.access(store[acc.first])),
+            U't'
+        );
     }
 
     {
@@ -583,7 +586,10 @@ TEST(TestScript, Interpreter)
         auto acc = intp.access("string[0]");
 
         dynamic_format_arg_store store("string"_a = "testing");
-        EXPECT_EQ(get<std::string_view>(acc.second.access(store[acc.first])), "t");
+        EXPECT_EQ(
+            get<utf8::codepoint>(acc.second.access(store[acc.first])),
+            U't'
+        );
     }
 
     {

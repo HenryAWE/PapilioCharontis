@@ -19,8 +19,15 @@ TEST(TestCore, Variable)
 
     {
         variable var = "test";
-        EXPECT_TRUE(var.holds<std::string>());
-        EXPECT_EQ(var.get<std::string>(), "test");
+        EXPECT_TRUE(var.holds<string_container>());
+        EXPECT_EQ(var.get<string_container>(), "test");
+        EXPECT_TRUE(var.as<bool>());
+    }
+
+    {
+        variable var = std::string("test");
+        EXPECT_TRUE(var.holds<string_container>());
+        EXPECT_EQ(var.get<string_container>(), "test");
         EXPECT_TRUE(var.as<bool>());
     }
 
@@ -131,36 +138,36 @@ TEST(TestCore, FormatArg)
         papilio::format_arg fmt_arg("test");
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), std::string("test").length());
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(0)), "t");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(1)), "e");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(2)), "s");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(3)), "t");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(4)), std::string_view());
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(0)), U't');
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(1)), U'e');
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(2)), U's');
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(3)), U't');
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(4)), utf8::codepoint());
     }
 
     {
         papilio::format_arg fmt_arg((const char*)u8"测试");
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), 2);
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(0)), (const char*)u8"测");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(1)), (const char*)u8"试");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(2)), std::string_view());
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(0)), U'测');
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(1)), U'试');
+        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(2)), utf8::codepoint());
     }
 
     {
         papilio::format_arg fmt_arg("test");
 
         auto var = fmt_arg.as_variable();
-        EXPECT_EQ(var.as<std::string>(), "test");
+        EXPECT_EQ(var.as<string_container>(), "test");
     }
 
     {
         papilio::format_arg fmt_arg("long sentence for testing slicing");
 
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(0, 4))), "long");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(14, -16))), "for");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(-slice::npos, -20))), "long sentence");
+        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(0, 4))), "long");
+        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
+        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(14, -16))), "for");
+        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(-slice::npos, -20))), "long sentence");
     }
 }
 TEST(TestCore, DynamicFormatArgStore)
@@ -187,10 +194,10 @@ TEST(TestCore, DynamicFormatArgStore)
         EXPECT_EQ(store.size(), 2);
         EXPECT_EQ(store.named_size(), 2);
 
-        EXPECT_EQ(get<char>(store[0]), 'a');
-        EXPECT_EQ(get<char>(store[1]), 'b');
-        EXPECT_EQ(get<char>(store["c"]), 'c');
-        EXPECT_EQ(get<char>(store["d"]), 'd');
+        EXPECT_EQ(get<utf8::codepoint>(store[0]), U'a');
+        EXPECT_EQ(get<utf8::codepoint>(store[1]), U'b');
+        EXPECT_EQ(get<utf8::codepoint>(store["c"]), U'c');
+        EXPECT_EQ(get<utf8::codepoint>(store["d"]), U'd');
     }
 
     {
@@ -200,7 +207,7 @@ TEST(TestCore, DynamicFormatArgStore)
 
         EXPECT_EQ(get<int>(store[indexing_value(0)]), 1);
         EXPECT_FLOAT_EQ(get<float>(store[indexing_value(1)]), 2.0f);
-        EXPECT_STREQ(get<const char*>(store[indexing_value("named")]), "named");
+        EXPECT_EQ(get<string_container>(store[indexing_value("named")]), "named");
     }
 
     {

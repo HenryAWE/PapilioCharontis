@@ -21,6 +21,15 @@ namespace papilio
     class attribute_name;
     class format_arg;
 
+    template <typename T, typename CharT>
+    concept basic_string_like =
+        std::is_same_v<std::decay_t<T>, CharT*> ||
+        std::is_same_v<std::decay_t<T>, const CharT*> ||
+        std::is_same_v<T, std::basic_string<CharT>> ||
+        std::is_same_v<T, std::basic_string_view<CharT>>;
+    template <typename T>
+    concept string_like = basic_string_like<T, char>;
+
     namespace detail
     {
         template <typename CharT>
@@ -40,6 +49,22 @@ namespace papilio
 
             return ('A' <= ch && ch <= 'z') || digit || ch == '_';
         }
+
+        template <typename T>
+        struct is_char : std::false_type {};
+        template <>
+        struct is_char<char> : std::true_type {};
+        template <>
+        struct is_char<wchar_t> : std::true_type {};
+        template <>
+        struct is_char<char16_t> : std::true_type {};
+        template <>
+        struct is_char<char32_t> : std::true_type {};
+        template <>
+        struct is_char<char8_t> : std::true_type {};
+
+        template <typename T>
+        inline constexpr bool is_char_v = is_char<T>::value;
     }
 
     namespace script
@@ -57,7 +82,7 @@ namespace papilio
                 bool,
                 int_type,
                 float_type,
-                string_type
+                string_container
             >;
 
             variable() = delete;
@@ -71,12 +96,14 @@ namespace papilio
             template <std::floating_point T>
             variable(T f)
                 : m_var(static_cast<float_type>(f)) {}
-            variable(string_type str)
+            variable(string_container str)
                 : m_var(std::move(str)) {}
-            variable(string_view_type str)
-                : m_var(std::in_place_type<string_type>, str) {}
-            variable(const char_type* str)
-                : m_var(std::in_place_type<string_type>, str) {}
+            template <string_like String>
+            variable(String&& str)
+                : m_var(std::in_place_type<string_container>, std::forward<String>(str)) {}
+            template <string_like String>
+            variable(independent_t, String&& str)
+                : m_var(std::in_place_type<string_container>, independent, std::forward<String>(str)) {}
 
             variable& operator=(const variable&) = default;
             variable& operator=(bool v)
@@ -101,14 +128,15 @@ namespace papilio
                 m_var = std::move(str);
                 return *this;
             }
-            variable& operator=(string_view_type str)
+            variable& operator=(string_container str)
             {
-                m_var.emplace<string_type>(str);
+                m_var.emplace<string_container>(std::move(str));
                 return *this;
             }
-            variable& operator=(const char_type* str)
+            template <string_like String>
+            variable& operator=(String&& str)
             {
-                m_var.emplace<string_type>(str);
+                m_var.emplace<string_container>(std::forward<String>(str));
                 return *this;
             }
 
@@ -138,7 +166,7 @@ namespace papilio
 
                     if constexpr(is_same_v<T, bool>)
                     {
-                        if constexpr(is_same_v<U, string_type>)
+                        if constexpr(is_same_v<U, string_container>)
                         {
                             return !v.empty();
                         }
@@ -149,7 +177,7 @@ namespace papilio
                     }
                     else if constexpr(std::integral<T> ||std::floating_point<T>)
                     {
-                        if constexpr(is_same_v<U, string_type>)
+                        if constexpr(is_same_v<U, string_container>)
                         {
                             invalid_conversion();
                         }
@@ -158,11 +186,11 @@ namespace papilio
                             return static_cast<T>(v);
                         }
                     }
-                    else if constexpr(is_same_v<T, string_type>)
+                    else if constexpr(is_same_v<T, string_container> || string_like<T>)
                     {
-                        if constexpr(is_same_v<U, string_type>)
+                        if constexpr(is_same_v<U, string_container>)
                         {
-                            return v;
+                            return T(string_view_type(v));
                         }
                         else
                         {
@@ -224,15 +252,6 @@ namespace papilio
             std::is_same_v<T, variable::string_type>;
 
     }
-
-    template <typename T, typename CharT>
-    concept basic_string_like =
-        std::is_same_v<std::decay_t<T>, CharT*> ||
-        std::is_same_v<std::decay_t<T>, const CharT*> ||
-        std::is_same_v<T, std::basic_string<CharT>> ||
-        std::is_same_v<T, std::basic_string_view<CharT>>;
-    template <typename T>
-    concept string_like = basic_string_like<T, char>;
 
     enum class format_align : std::uint8_t
     {
@@ -366,7 +385,7 @@ namespace papilio
         using underlying_type = std::variant<
             index_type,
             slice,
-            string_type
+            string_container
         >;
 
         indexing_value() = delete;
@@ -376,8 +395,14 @@ namespace papilio
             : m_val(index) {}
         indexing_value(slice s)
             : m_val(s) {}
-        indexing_value(string_type key)
+        indexing_value(string_container key)
             : m_val(std::move(key)) {}
+        template <string_like String>
+        indexing_value(String&& key)
+            : m_val(std::in_place_type<string_container>, std::forward<String>(key)) {}
+        template <string_like String>
+        indexing_value(independent_t, String&& key)
+            : m_val(std::in_place_type<string_container>, independent, std::forward<String>(key)) {}
 
         template <typename T>
         [[nodiscard]]
@@ -399,7 +424,7 @@ namespace papilio
         [[nodiscard]]
         bool is_key() const noexcept
         {
-            return holds<string_type>();
+            return holds<string_container>();
         }
 
         [[nodiscard]]
@@ -414,9 +439,9 @@ namespace papilio
             return *std::get_if<slice>(&m_val);
         }
         [[nodiscard]]
-        const std::string& as_key() const noexcept
+        const string_container& as_key() const noexcept
         {
-            return *std::get_if<string_type>(&m_val);
+            return *std::get_if<string_container>(&m_val);
         }
 
         [[nodiscard]]
@@ -682,6 +707,22 @@ namespace papilio
         }
     };
 
+    namespace detail
+    {
+        template <std::integral Integral>
+        struct best_int_type
+        {
+            using type = std::conditional_t<
+                std::is_unsigned_v<Integral>,
+                std::conditional_t<(sizeof(Integral) <= sizeof(unsigned int)), unsigned int, unsigned long long int>,
+                std::conditional_t<(sizeof(Integral) <= sizeof(int)), int, long long int>
+            >;
+        };
+
+        template <std::integral Integral>
+        using best_int_type_t = best_int_type<Integral>::type;
+    }
+
     class format_arg
     {
     public:
@@ -699,7 +740,7 @@ namespace papilio
 
         using underlying_type = std::variant<
             std::monostate,
-            char_type,
+            utf8::codepoint,
             int,
             unsigned int,
             long long int,
@@ -707,9 +748,7 @@ namespace papilio
             float,
             double,
             long double,
-            const char_type*,
-            string_view_type,
-            string_type,
+            string_container,
             handle
         >;
 
@@ -719,6 +758,23 @@ namespace papilio
         format_arg(format_arg&&) noexcept = default;
         format_arg(underlying_type val)
             : m_val(std::move(val)) {}
+        format_arg(utf8::codepoint cp)
+            : m_val(std::in_place_type<utf8::codepoint>, cp) {}
+        template <typename Char>
+        format_arg(Char ch) requires detail::is_char_v<Char>
+            : m_val(std::in_place_type<utf8::codepoint>, char32_t(ch)) {}
+        template <std::integral Integral> requires(!detail::is_char_v<Integral>)
+        format_arg(Integral val)
+            : m_val(static_cast<detail::best_int_type_t<Integral>>(val)) {}
+        template <std::floating_point Float>
+        format_arg(Float val)
+            : m_val(val) {}
+        template <string_like String>
+        format_arg(String&& str)
+            : m_val(std::in_place_type<string_container>, std::forward<String>(str)) {}
+        template <string_like String>
+        format_arg(independent_t, String&& str)
+            : m_val(std::in_place_type<string_container>, independent, std::forward<String>(str)) {}
         template <typename T, typename... Args>
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
@@ -839,28 +895,8 @@ namespace papilio
         const format_arg& get(const indexing_value& idx) const;
 
         [[nodiscard]]
-        bool check(size_type i) const noexcept
-        {
-            return i < m_args.size();
-        }
-        [[nodiscard]]
-        bool check(string_view_type key) const noexcept
-        {
-            return m_named_args.contains(key);
-        }
-        [[nodiscard]]
         bool check(const indexing_value& idx) const noexcept;
 
-        [[nodiscard]]
-        const format_arg& operator[](size_type i) const
-        {
-            return get(i);
-        }
-        [[nodiscard]]
-        const format_arg& operator[](string_view_type key) const
-        {
-            return get(key);
-        }
         [[nodiscard]]
         const format_arg& operator[](const indexing_value& idx) const
         {

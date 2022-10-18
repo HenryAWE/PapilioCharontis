@@ -46,6 +46,35 @@ namespace papilio
         }
     }
 
+    template <>
+    struct accessor<string_container>
+    {
+        using has_index = void;
+        using has_slice = void;
+
+        static utf8::codepoint get(const string_container& str, indexing_value::index_type i)
+        {
+            return str[i];
+        }
+
+        static string_container get(const string_container& str, slice s)
+        {
+            return str.substr(s);
+        }
+
+        static format_arg get_attr(string_container str, const attribute_name& attr)
+        {
+            using namespace std::literals;
+
+            if(attr == "length"sv)
+                return str.length();
+            else if(attr == "size")
+                return str.size();
+            else
+                throw invalid_attribute(attr);
+        }
+    };
+
     template <typename T>
     template <typename U>
     format_arg accessor_traits<T>::get_arg(U&& object, const indexing_value& idx)

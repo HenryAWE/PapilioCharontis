@@ -388,7 +388,7 @@ namespace papilio
     public:
         string_container() noexcept
             : m_str(std::in_place_type<string_view_type>) {}
-        string_container(string_container& other)
+        string_container(const string_container& other)
         {
             link(other);
         }
@@ -403,14 +403,30 @@ namespace papilio
             : m_str(std::in_place_type<string_view_type>, str) {}
         string_container(const char_type* str)
             : m_str(std::in_place_type<string_view_type>, str) {}
+        template <std::contiguous_iterator Iterator>
+        string_container(Iterator begin, Iterator end)
+            : m_str(std::in_place_type<string_view_type>, begin, end) {}
         string_container(detail::make_independent_proxy str)
             : m_str(std::make_shared<string_type>(str.str)) {}
+        string_container(string_type&& str)
+            : m_str(std::make_shared<string_type>(std::move(str))) {}
         string_container(independent_t, string_type str)
             : m_str(std::make_shared<string_type>(std::move(str))) {}
+        string_container(utf8::codepoint cp, size_type count)
+        {
+            auto result = std::make_shared<string_type>();
+            result->reserve(cp.size() * count);
+            for(size_type i = 0; i < count; ++i)
+                result->append(string_view_type(cp));
+            m_str = std::move(result);
+        }
         string_container(independent_t, string_view_type str)
             : m_str(std::make_shared<string_type>(str)) {}
         string_container(independent_t, const char* str)
             : m_str(std::make_shared<string_type>(str)) {}
+        template <typename Iterator>
+        string_container(independent_t, Iterator begin, Iterator end)
+            : m_str(std::make_shared<string_type>(begin, end)) {}
 
         string_container& operator=(string_container&) = default;
         string_container& operator=(string_container&& other) noexcept
@@ -448,7 +464,11 @@ namespace papilio
             get_string();
         }
 
-        void link(string_container& other) noexcept
+        void link(const string_container& other) const noexcept
+        {
+            m_str = other.m_str;
+        }
+        void link(const string_container& other) noexcept
         {
             m_str = other.m_str;
         }
@@ -667,7 +687,7 @@ namespace papilio
         }
 
     private:
-        string_store m_str;
+        mutable string_store m_str;
 
         string_type& get_string();
         string_view_type get_string_view() const noexcept;

@@ -187,7 +187,7 @@ namespace papilio::script
         {
         public:
             using index_type = std::size_t;
-            using underlying_type = std::variant<index_type, string_type>;
+            using underlying_type = std::variant<index_type, string_container>;
 
             static constexpr lexeme_type type = lexeme_type::argument;
 
@@ -196,7 +196,7 @@ namespace papilio::script
             argument(argument&&) = default;
             constexpr argument(index_type idx) noexcept
                 : m_arg(idx) {}
-            argument(string_type name)
+            argument(string_container name)
                 : m_arg(std::move(name)) {}
                 
             [[nodiscard]]
@@ -224,18 +224,18 @@ namespace papilio::script
                 return *std::get_if<index_type>(&m_arg);
             }
             [[nodiscard]]
-            const string_type& get_string() const noexcept
+            const string_container& get_string() const noexcept
             {
-                assert(holds<string_type>());
-                return *std::get_if<string_type>(&m_arg);
+                assert(holds<string_container>());
+                return *std::get_if<string_container>(&m_arg);
             }
 
             [[nodiscard]]
             indexing_value to_indexing_value() const noexcept
             {
-                auto visitor = [](auto&& v)->indexing_value
+                auto visitor = [](auto&& v)
                 {
-                    return v;
+                    return indexing_value(v);
                 };
                 return std::visit(visitor, m_arg);
             }
@@ -252,19 +252,17 @@ namespace papilio::script
             identifier() = delete;
             identifier(const identifier&) = default;
             identifier(identifier&&) = default;
-            identifier(string_type str)
+            identifier(string_container str)
                 : m_str(std::move(str)) {}
-            identifier(string_view_type sv)
-                : m_str(sv) {}
 
             [[nodiscard]]
-            const string_type& get() const& noexcept
+            const string_container& get() const noexcept
             {
                 return m_str;
             }
 
         private:
-            string_type m_str;
+            string_container m_str;
         };
 
         class constant
@@ -275,7 +273,7 @@ namespace papilio::script
             using underlying_type = std::variant<
                 int_type,
                 float_type,
-                string_type
+                string_container
             >;
 
             static constexpr lexeme_type type = lexeme_type::constant;
@@ -287,7 +285,7 @@ namespace papilio::script
                 : m_const(i) {}
             constant(float_type f)
                 : m_const(f) {}
-            constant(string_type str)
+            constant(string_container str)
                 : m_const(std::move(str)) {}
 
             template <typename T>
@@ -309,10 +307,10 @@ namespace papilio::script
                 return *std::get_if<float_type>(&m_const);
             }
             [[nodiscard]]
-            const string_type& get_string() const noexcept
+            const string_container& get_string() const noexcept
             {
-                assert(holds<string_type>());
-                return *std::get_if<string_type>(&m_const);
+                assert(holds<string_container>());
+                return *std::get_if<string_container>(&m_const);
             }
 
             [[nodiscard]]
@@ -374,18 +372,16 @@ namespace papilio::script
             field();
             field(const field&) = default;
             field(field&&) noexcept = default;
-            field(string_type fmt_str)
+            field(string_container fmt_str)
                 : m_fmt_str(std::move(fmt_str)) {}
-            field(string_view_type fmt_sv)
-                : m_fmt_str(fmt_sv) {}
 
-            const string_type& get() const noexcept
+            const string_container& get() const noexcept
             {
                 return m_fmt_str;
             }
 
         private:
-            string_type m_fmt_str;
+            string_container m_fmt_str;
         };
 
         using lexeme_store = std::variant<

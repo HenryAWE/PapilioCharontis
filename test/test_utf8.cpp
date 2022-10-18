@@ -297,6 +297,10 @@ TEST(TestUTF8, StringContainer)
         EXPECT_EQ(str.find((const char*)u8"你好", 1), str.cend());
         EXPECT_NE(str.find((const char*)u8"世界", 1), str.cend());
     }
+
+    {
+        const bool i = accessor_traits<string_container>::has_index();
+    }
 }
 
 int main(int argc, char* argv[])

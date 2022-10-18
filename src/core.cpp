@@ -18,7 +18,7 @@ namespace papilio
                 {
                     return lhs <=> rhs;
                 }
-                else if constexpr(is_same_v<T, string_type> || is_same_v<U, string_type>)
+                else if constexpr(is_same_v<T, string_container> || is_same_v<U, string_container>)
                 {
                     throw std::invalid_argument("invalid argument");
                 }
@@ -55,7 +55,7 @@ namespace papilio
                 }
                 else
                 {
-                    if constexpr(is_same_v<T, string_type> || is_same_v<U, string_type>)
+                    if constexpr(is_same_v<T, string_container> || is_same_v<U, string_container>)
                     {
                         return false;
                     }
@@ -165,25 +165,12 @@ namespace papilio
     }
     format_arg format_arg::attribute(attribute_name name) const
     {
-        auto visitor = [&](auto&& v)->format_arg
+        auto visitor = [&name](auto&& v)->format_arg
         {
             using namespace std::literals;
             using T = std::remove_cvref_t<decltype(v)>;
 
-            if constexpr(string_like<T>)
-            {
-                string_view_type str(v);
-                if(name == "length"sv)
-                {
-                    return format_arg(utf8::strlen(str));
-                }
-                else if(name == "size"sv)
-                {
-                    return format_arg(str.size());
-                }
-            }
-
-            invalid_attribute();
+            return accessor_traits<T>::get_attr(v, name);
         };
         return std::visit(visitor, m_val);
     }
@@ -196,9 +183,9 @@ namespace papilio
         {
             using T = std::remove_cvref_t<decltype(v)>;
 
-            if constexpr(std::is_same_v<T, char_type>)
+            if constexpr(std::is_same_v<T, utf8::codepoint>)
             {
-                return string_type(1, v);
+                return variable(string_container(v, 1));
             }
             if constexpr(std::integral<T>)
             {
@@ -208,9 +195,9 @@ namespace papilio
             {
                 return static_cast<variable::float_type>(v);
             }
-            else if constexpr(string_like<T>)
+            else if constexpr(std::is_same_v<T, string_container>)
             {
-                return string_view_type(v);
+                return variable(v);
             }
             else
             {
@@ -272,7 +259,7 @@ namespace papilio
             {
                 return m_args[static_cast<size_type>(v)];
             }
-            else if constexpr(is_same_v<T, string_type>)
+            else if constexpr(is_same_v<T, string_container>)
             {
                 auto it = m_named_args.find(v);
                 if(it == m_named_args.end())
@@ -296,9 +283,9 @@ namespace papilio
             using T = std::remove_cvref_t<decltype(v)>;
 
             if constexpr(is_same_v<T, indexing_value::index_type>)
-                return check(v);
-            else if constexpr(is_same_v<T, string_type>)
-                return check(string_view_type(v));
+                return  v < m_args.size();
+            else if constexpr(is_same_v<T, string_container>)
+                return m_named_args.contains(string_view_type(v));
             else
                 return false;
         };
