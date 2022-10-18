@@ -1,5 +1,6 @@
 #include <papilio/core.hpp>
 #include <algorithm>
+#include <cstring> // std::memset
 
 
 namespace papilio
@@ -152,25 +153,51 @@ namespace papilio
         return true;
     }
 
+    void format_arg::handle::copy(const handle& other) noexcept
+    {
+        other.ptr()->reset(ptr());
+        m_has_value = true;
+    }
+    void format_arg::handle::destroy() noexcept
+    {
+        ptr()->~handle_impl_base();
+        std::memset(m_storage, 0, sizeof(m_storage));
+        m_has_value = false;
+    }
+
     format_arg format_arg::index(const indexing_value& idx) const
     {
         auto visitor = [&idx]<typename T>(T&& v)->format_arg
         {
-            return accessor_traits<std::remove_cvref_t<T>>::get_arg(
-                std::forward<T>(v),
-                idx
-            );
+            using type = std::remove_cvref_t<T>;
+            if constexpr(std::is_same_v<type, handle>)
+            {
+                return v.index(idx);
+            }
+            else
+            {
+                return accessor_traits<type>::get_arg(
+                    std::forward<T>(v),
+                    idx
+                );
+            }
         };
         return std::visit(visitor, m_val);
     }
-    format_arg format_arg::attribute(attribute_name name) const
+    format_arg format_arg::attribute(const attribute_name& attr) const
     {
-        auto visitor = [&name](auto&& v)->format_arg
+        auto visitor = [&attr]<typename T>(T&& v)->format_arg
         {
-            using namespace std::literals;
-            using T = std::remove_cvref_t<decltype(v)>;
+            using type = std::remove_cvref_t<T>;
 
-            return accessor_traits<T>::get_attr(v, name);
+            if constexpr(std::is_same_v<type, handle>)
+            {
+                return v.attribute(attr);
+            }
+            else
+            {
+                return accessor_traits<type>::get_attr(v, attr);
+            }
         };
         return std::visit(visitor, m_val);
     }

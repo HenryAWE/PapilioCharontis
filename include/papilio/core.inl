@@ -8,6 +8,20 @@
 
 namespace papilio
 {
+    namespace detail
+    {
+        template <typename T>
+        format_arg handle_impl<T>::index(const indexing_value& idx) const
+        {
+            return accessor_traits<T>::get_arg(*m_ptr, idx);
+        }
+        template <typename T>
+        format_arg handle_impl<T>::attribute(const attribute_name& attr) const
+        {
+            return accessor_traits<T>::get_attr(*m_ptr, attr);
+        }
+    }
+
     template <>
     struct accessor<string_container>
     {

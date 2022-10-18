@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <map>
 #include <papilio/core.hpp>
 
 
@@ -140,6 +141,21 @@ TEST(TestCore, FormatArg)
     using namespace papilio;
 
     {
+        format_arg arg('a');
+        EXPECT_EQ(get<utf8::codepoint>(arg), U'a');
+    }
+
+    {
+        format_arg arg(1);
+        EXPECT_EQ(get<int>(arg), 1);
+    }
+
+    {
+        format_arg arg(1.0);
+        EXPECT_DOUBLE_EQ(get<double>(arg), 1.0);
+    }
+
+    {
         papilio::format_arg fmt_arg("test");
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), std::string("test").length());
@@ -173,6 +189,67 @@ TEST(TestCore, FormatArg)
         EXPECT_EQ(get<string_container>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
         EXPECT_EQ(get<string_container>(fmt_arg.index(slice(14, -16))), "for");
         EXPECT_EQ(get<string_container>(fmt_arg.index(slice(-slice::npos, -20))), "long sentence");
+
+        EXPECT_EQ(get<std::string>(fmt_arg.index(slice(0, 4))), "long");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(0, 4))), "long");
+    }
+}
+
+using map_type = std::map<std::string, std::string, std::less<>>;
+namespace papilio
+{
+    template <>
+    struct accessor<map_type>
+    {
+        using has_key = void;
+
+        static format_arg get(const map_type& m, std::string_view k)
+        {
+            auto it = m.find(k);
+            if(it == m.end())
+                return format_arg();
+            return string_container(it->second);
+        }
+
+        static format_arg get_attr(const map_type& m, const attribute_name& attr)
+        {
+            using namespace std::literals;
+            if(attr == "size"sv)
+                return m.size();
+            else
+                throw invalid_attribute(attr);
+        }
+    };
+}
+TEST(TestCore, FormatArgHandle)
+{
+    using namespace papilio;
+
+    {
+        static_assert(!detail::use_handle<int>);
+        static_assert(!detail::use_handle<char>);
+        static_assert(detail::use_handle<map_type>);
+
+        static_assert(accessor_traits<map_type>::has_key());
+
+        map_type m;
+        m["1"] = "one";
+        m["2"] = "two";
+
+        EXPECT_EQ(get<std::size_t>(accessor_traits<map_type>::get_attr(m, "size")), 2);
+        EXPECT_EQ(get<string_container>(accessor_traits<map_type>::get_arg(m, "1")), "one");
+        EXPECT_EQ(get<string_container>(accessor_traits<map_type>::get_arg(m, "2")), "two");
+        EXPECT_TRUE(accessor_traits<map_type>::get_arg(m, "3").empty());
+
+        format_arg::handle h = m;
+        EXPECT_EQ(get<std::size_t>(h.attribute("size")), 2);
+        EXPECT_EQ(get<string_container>(h.index("1")), "one");
+        EXPECT_EQ(get<string_container>(h.index("2")), "two");
+
+        format_arg arg = m;
+        EXPECT_EQ(get<std::size_t>(arg.attribute("size")), 2);
+        EXPECT_EQ(get<string_container>(arg.index("1")), "one");
+        EXPECT_EQ(get<string_container>(arg.index("2")), "two");
     }
 }
 TEST(TestCore, DynamicFormatArgStore)
