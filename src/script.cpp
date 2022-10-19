@@ -609,8 +609,27 @@ namespace papilio::script
             std::pair<std::unique_ptr<executor::base>, iterator> build_condition(
                 iterator begin, iterator end
             ) {
+                auto pred = [counter = std::size_t(0), this](const lexeme& l) mutable->bool
+                {
+                    if(l.type() != lexeme_type::operator_)
+                        return false;
+                    auto op = l.as<lexeme::operator_>().get();
+                    if(op == operator_type::bracket_l)
+                        ++counter;
+                    else if(op == operator_type::bracket_r)
+                    {
+                        if(counter == 0)
+                        {
+                            raise_syntax_error("too many right brackets (']')");
+                        }
+                        --counter;
+                    }
+                    else if(op == operator_type::colon && counter == 0)
+                        return true;
+                    return false;
+                };
                 iterator colon = std::find_if(
-                    begin, end, operator_finder{ .target = operator_type::colon }
+                    begin, end, pred
                 );
                 if(colon == end)
                 {
@@ -631,47 +650,15 @@ namespace papilio::script
                 std::unique_ptr<executor::base> result;
 
                 const std::size_t count = std::distance(begin, end);
-                if(count == 1)
-                {
-                    auto& l = *begin;
-                    if(l.type() == lexeme_type::constant)
-                    {
-                        auto& c = l.as<lexeme::constant>();
-                        auto visitor = [](auto&& v)->bool
-                        {
-                            using T = std::remove_cvref_t<decltype(v)>;
-                            if constexpr(std::is_same_v<T, string_container>)
-                            {
-                                return !v.empty();
-                            }
-                            else
-                            {
-                                return static_cast<bool>(v);
-                            }
-                        };
-
-                        auto ex = std::make_unique<executor::constant<bool>>(
-                            std::visit(visitor, c.to_underlying())
-                        );
-                        return std::make_pair(std::move(ex), end);
-                    }
-                    else if(l.type() == lexeme_type::argument)
-                    {
-                        auto& arg = l.as<lexeme::argument>();
-                        std::unique_ptr<executor::argument> ex;
-                        if(arg.is_indexed())
-                            ex = std::make_unique<executor::argument>(arg.get_index());
-                        else
-                            ex = std::make_unique<executor::argument>(arg.get_string());
-                        return std::make_pair(std::move(ex), end);
-                    }
-                }
-                else if(
+                if(
                     begin->type() == lexeme_type::operator_ &&
                     begin->as<lexeme::operator_>().get() == operator_type::not_
                 ) {
                     auto input = build_input(std::next(begin), end);
-                    assert(input.second == end);
+                    if(input.second != end)
+                    {
+                        raise_syntax_error("invalid Boolean expression");
+                    }
 
                     return std::make_pair(
                         std::make_unique<executor::logical_not>(std::move(input.first)),
@@ -680,6 +667,7 @@ namespace papilio::script
                 }
                 else
                 {
+                    // TODO: bug fix
                     auto comp_pred = [](const lexeme& l)->bool
                     {
                         if(l.type() != lexeme_type::operator_)
@@ -698,17 +686,39 @@ namespace papilio::script
                     );
                     if(comp_it == end)
                     {
-                        raise_syntax_error("invalid Boolean expression");
+                        if(begin->type() == lexeme_type::argument)
+                        {
+                            auto build_result = build_argument(begin, end);
+                            if(build_result.second != end)
+                            {
+                                raise_syntax_error("invalid Boolean expression");
+                            }
+
+                            return std::move(build_result);
+                        }
+                        else if(begin->type() == lexeme_type::constant)
+                        {
+                            auto build_result = build_constant(begin, end);
+                            if(build_result.second != end)
+                            {
+                                raise_syntax_error("invalid Boolean expression");
+                            }
+
+                            return std::move(build_result);
+                        }
                     }
-                    auto lhs = build_input(begin, comp_it);
-                    auto rhs = build_input(std::next(comp_it), end);
+                    else
+                    {
+                        auto lhs = build_input(begin, comp_it);
+                        auto rhs = build_input(std::next(comp_it), end);
 
-                    auto ex = get_comparator(
-                        comp_it->as<lexeme::operator_>().get(),
-                        std::move(lhs.first), std::move(rhs.first)
-                    );
+                        auto ex = get_comparator(
+                            comp_it->as<lexeme::operator_>().get(),
+                            std::move(lhs.first), std::move(rhs.first)
+                        );
 
-                    return std::make_pair(std::move(ex), rhs.second);
+                        return std::make_pair(std::move(ex), rhs.second);
+                    }
                 }
 
                 raise_syntax_error("invalid Boolean expression");

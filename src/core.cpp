@@ -284,7 +284,10 @@ namespace papilio
 
             if constexpr(is_same_v<T, indexing_value::index_type>)
             {
-                return m_args[static_cast<size_type>(v)];
+                size_type i = static_cast<size_type>(v);
+                if(i >= m_args.size())
+                    throw std::out_of_range("argument index out of range");
+                return m_args[i];
             }
             else if constexpr(is_same_v<T, string_container>)
             {

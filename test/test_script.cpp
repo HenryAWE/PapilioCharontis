@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <algorithm>
 #include <ranges>
+#include <map>
 #include <papilio/papilio.hpp>
 
 
@@ -133,6 +134,37 @@ TEST(TestScript, Lexer)
 
         EXPECT_EQ(lexemes[4].type(), lexeme_type::operator_);
         EXPECT_EQ(lexemes[4].as<lexeme::operator_>().get(), operator_type::bracket_r);
+    }
+
+    l.clear();
+    l.parse(R"($0[10][:3])");
+    {
+        auto lexemes = l.lexemes();
+        EXPECT_EQ(lexemes.size(), 8);
+
+        EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
+        EXPECT_EQ(lexemes[0].as<lexeme::argument>().get_index(), 0);
+
+        EXPECT_EQ(lexemes[1].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[1].as<lexeme::operator_>().get(), operator_type::bracket_l);
+
+        EXPECT_EQ(lexemes[2].type(), lexeme_type::constant);
+        EXPECT_EQ(lexemes[2].as<lexeme::constant>().get_int(), 10);
+
+        EXPECT_EQ(lexemes[3].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[3].as<lexeme::operator_>().get(), operator_type::bracket_r);
+
+        EXPECT_EQ(lexemes[4].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[4].as<lexeme::operator_>().get(), operator_type::bracket_l);
+
+        EXPECT_EQ(lexemes[5].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[5].as<lexeme::operator_>().get(), operator_type::colon);
+
+        EXPECT_EQ(lexemes[6].type(), lexeme_type::constant);
+        EXPECT_EQ(lexemes[6].as<lexeme::constant>().get_int(), 3);
+
+        EXPECT_EQ(lexemes[7].type(), lexeme_type::operator_);
+        EXPECT_EQ(lexemes[7].as<lexeme::operator_>().get(), operator_type::bracket_r);
     }
 
     // non-ASCII characters
@@ -605,6 +637,69 @@ TEST(TestScript, Interpreter)
 
         ex(ctx);
         EXPECT_EQ(ctx.get_result(), "s");
+    }
+}
+using map_type = std::map<int, std::string>;
+namespace papilio
+{
+    template <>
+    struct accessor<map_type>
+    {
+        using has_index = void;
+
+        static format_arg get(const map_type& m, indexing_value::index_type i)
+        {
+            auto it = m.find(i);
+            if(it == m.end())
+                return format_arg(string_container());
+            return string_container(it->second);
+        }
+
+        static format_arg get_attr(const map_type& m, const attribute_name& attr)
+        {
+            using namespace std::literals;
+            if(attr == "size"sv)
+                return m.size();
+            else
+                throw invalid_attribute(attr);
+        }
+    };
+}
+TEST(TestScript, CustomType)
+{
+    using namespace papilio;
+    using namespace script;
+
+    {
+        map_type m;
+        m[0] = "zero";
+        format_arg_access acc({ 0 });
+
+        format_arg fmt_arg = m;
+        auto member = acc.access(fmt_arg);
+        EXPECT_EQ(get<string_container>(member), "zero");
+    }
+
+    {
+        map_type m;
+        m[1] = "one";
+
+        interpreter intp;
+        std::string result = intp.run("$0[1]", m);
+        EXPECT_EQ(result, "one");
+        result = intp.run("$0[1][0]", m);
+        EXPECT_EQ(result, "o");
+
+        m.clear();
+        m[10] = "tenth";
+        result = intp.run("$0[10][:3]", m);
+        EXPECT_EQ(result, "ten");
+
+        result = intp.run("if $0[10][:3]: 'test'", m);
+        EXPECT_EQ(result, "test");
+
+        result = intp.run("if $0[10][:3] == 'ten': 'begin with \"ten\"'", m);
+        EXPECT_EQ(result, "begin with \"ten\"");
     }
 }
 
