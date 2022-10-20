@@ -145,30 +145,121 @@ TEST(TestFormat, Formatter)
 {
     using namespace papilio;
 
-    auto integer_formatter = []<std::integral T>(T val, std::string_view fmt)->std::string
     {
-        using namespace papilio;
+        static_assert(formatter_traits<int>::has_formatter());
 
-        dynamic_format_arg_store store(val);
-        format_spec_parse_context parse_ctx(fmt, store);
+        auto integer_formatter = []<std::integral T>(T val, std::string_view fmt)->std::string
+        {
+            using namespace papilio;
 
-        formatter<T> f;
-        f.parse(parse_ctx);
+            dynamic_format_arg_store store(val);
+            format_spec_parse_context parse_ctx(fmt, store);
 
-        std::string result;
-        basic_format_context fmt_ctx(std::back_inserter(result), store);
-        f.format(val, fmt_ctx);
-        return result;
+            formatter<T> f;
+            f.parse(parse_ctx);
+
+            std::string result;
+            basic_format_context fmt_ctx(std::back_inserter(result), store);
+            f.format(val, fmt_ctx);
+            return result;
+        };
+
+        EXPECT_EQ(integer_formatter(0, ""), "0");
+        EXPECT_EQ(integer_formatter(10, ""), "10");
+        EXPECT_EQ(integer_formatter(0u, ""), "0");
+        EXPECT_EQ(integer_formatter(10u, ""), "10");
+
+        EXPECT_EQ(integer_formatter(0xF, "x"), "f");
+        EXPECT_EQ(integer_formatter(0b10, "b"), "10");
+        EXPECT_EQ(integer_formatter(017, "o"), "17");
+    }
+
+    {
+        auto dyn_formatter = [](format_arg fmt_arg, std::string_view fmt)
+        {
+            dynamic_format_arg_store store(fmt_arg);
+            format_spec_parse_context parse_ctx(fmt, store);
+
+            std::string result;
+            basic_format_context fmt_ctx(std::back_inserter(result), store);
+            fmt_arg.format(parse_ctx, fmt_ctx);
+            return result;
+        };
+
+        format_arg a1 = 1;
+        EXPECT_EQ(dyn_formatter(a1, ""), "1");
+        format_arg a2 = 0xF;
+        EXPECT_EQ(dyn_formatter(a2, "x"), "f");
+    }
+}
+namespace test_format
+{
+    class my_value
+    {
+    public:
+        char ch;
+        int count;
     };
+}
+namespace papilio
+{
+    template <>
+    class formatter<test_format::my_value>
+    {
+    public:
+        void parse(format_spec_parse_context& spec)
+        {
+            std::string_view view(spec.begin(), spec.end());
+            if(view == "s")
+                m_as_str = true;
+        }
+        template <typename Context>
+        void format(const test_format::my_value& val, Context& ctx)
+        {
+            format_context_traits traits(ctx);
+            if(m_as_str)
+                traits.append(val.ch, val.count);
+            else
+            {
+                std::string result;
+                result += '(';
+                result += val.ch;
+                result += ", ";
+                result += std::to_string(val.count);
+                result += ')';
+                traits.append(result);
+            }
+        }
 
-    EXPECT_EQ(integer_formatter(0, ""), "0");
-    EXPECT_EQ(integer_formatter(10, ""), "10");
-    EXPECT_EQ(integer_formatter(0u, ""), "0");
-    EXPECT_EQ(integer_formatter(10u, ""), "10");
+    private:
+        bool m_as_str = false;
+    };
+}
+TEST(TestFormat, CustomType)
+{
+    using namespace papilio;
+    using test_format::my_value;
 
-    EXPECT_EQ(integer_formatter(0xF, "x"), "f");
-    EXPECT_EQ(integer_formatter(0b10, "b"), "10");
-    EXPECT_EQ(integer_formatter(017, "o"), "17");
+    {
+        static_assert(formatter_traits<my_value>::has_formatter());
+
+        my_value my_val('A', 4);
+        format_arg fmt_arg = my_val;
+
+        auto dyn_formatter = [](format_arg fmt_arg, std::string_view fmt)
+        {
+            dynamic_format_arg_store store(fmt_arg);
+            format_spec_parse_context parse_ctx(fmt, store);
+
+            std::string result;
+            basic_format_context fmt_ctx(std::back_inserter(result), store);
+            fmt_arg.format(parse_ctx, fmt_ctx);
+            return result;
+        };
+
+        EXPECT_EQ(dyn_formatter(fmt_arg, "s"), "AAAA");
+        EXPECT_EQ(dyn_formatter(fmt_arg, ""), "(A, 4)");
+    }
 }
 
 int main(int argc, char* argv[])

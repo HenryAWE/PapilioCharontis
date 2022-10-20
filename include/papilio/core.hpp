@@ -10,6 +10,7 @@
 #include <limits>
 #include <iterator>
 #include <algorithm>
+#include <typeinfo>
 #include "utf8.hpp"
 #include "error.hpp"
 
@@ -21,6 +22,10 @@ namespace papilio
     class indexing_value;
     class attribute_name;
     class format_arg;
+    template <typename OutputIt, typename Store>
+    class basic_format_context;
+    class dynamic_format_context;
+    class format_spec_parse_context;
 
     template <typename T, typename CharT>
     concept basic_string_like =
@@ -540,6 +545,21 @@ namespace papilio
     class formatter;
 
     template <typename T>
+    class formatter_traits
+    {
+    public:
+        using type = T;
+        using formatter_type = formatter<T>;
+
+        template <typename Context = dynamic_format_context>
+        [[nodiscard]]
+        static constexpr bool has_formatter() noexcept;
+
+        template <typename Context>
+        static void format(format_spec_parse_context& spec, const type& val, Context& ctx);
+    };
+
+    template <typename T>
     struct accessor {};
 
     template <typename T>
@@ -716,6 +736,8 @@ namespace papilio
             virtual format_arg index(const indexing_value& idx) const = 0;
             virtual format_arg attribute(const attribute_name& attr) const = 0;
 
+            virtual void format(format_spec_parse_context& spec, dynamic_format_context& ctx) const = 0;
+
             virtual void reset(handle_impl_base* mem) const = 0;
         };
 
@@ -728,6 +750,8 @@ namespace papilio
 
             format_arg index(const indexing_value& idx) const override;
             format_arg attribute(const attribute_name& attr) const override;
+
+            void format(format_spec_parse_context& spec, dynamic_format_context& ctx) const override;
 
             void reset(handle_impl_base* mem) const override
             {
@@ -803,6 +827,11 @@ namespace papilio
             format_arg attribute(const attribute_name& attr) const
             {
                 return ptr()->attribute(attr);
+            }
+
+            void format(format_spec_parse_context& spec, dynamic_format_context& ctx) const
+            {
+                ptr()->format(spec, ctx);
             }
 
         private:
@@ -908,6 +937,9 @@ namespace papilio
         }
 
         script::variable as_variable() const;
+
+        template <typename Context>
+        void format(format_spec_parse_context& spec, Context& ctx);
 
     private:
         underlying_type m_val;

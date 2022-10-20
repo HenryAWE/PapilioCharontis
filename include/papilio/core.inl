@@ -20,6 +20,43 @@ namespace papilio
         {
             return accessor_traits<T>::get_attr(*m_ptr, attr);
         }
+
+        template <typename T>
+        void handle_impl<T>::format(format_spec_parse_context& spec, dynamic_format_context& ctx) const
+        {
+            using traits = formatter_traits<T>;
+            traits::format(spec, *m_ptr, ctx);
+        }
+    }
+
+    template <typename T>
+    template <typename Context>
+    constexpr bool formatter_traits<T>::has_formatter() noexcept
+    {
+        return requires(formatter<T> f, format_spec_parse_context& spec, const type& val, Context& ctx)
+        {
+            typename formatter<T>;
+            f.parse(spec);
+            f.format(val, ctx);
+        };
+    }
+
+    template <typename T>
+    template <typename Context>
+    void formatter_traits<T>::format(format_spec_parse_context& spec, const type& val, Context& ctx)
+    {
+        if constexpr(has_formatter<Context>())
+        {
+            formatter_type fmt;
+            fmt.parse(spec);
+            fmt.format(val, ctx);
+        }
+        else
+        {
+            throw std::runtime_error(
+                std::string("no formatter for ") + typeid(type).name()
+            );
+        }
     }
 
     template <>
@@ -84,5 +121,32 @@ namespace papilio
         }
         else
             throw invalid_attribute(attr);
+    }
+
+    template <typename Context>
+    void format_arg::format(format_spec_parse_context& spec, Context& ctx)
+    {
+        auto visitor = [&spec, &ctx]<typename T> (const T& v)
+        {
+            if constexpr(std::is_same_v<T, handle>)
+            {
+                if constexpr(std::is_same_v<Context, dynamic_format_context>)
+                {
+                    v.format(spec, ctx);
+                }
+                else
+                {
+                    dynamic_format_context dyn_ctx(ctx);
+                    v.format(spec, dyn_ctx);
+                }
+            }
+            else
+            {
+                using traits = formatter_traits<T>;
+                traits::format(spec, v, ctx);
+            }
+        };
+
+        std::visit(visitor, m_val);
     }
 }
