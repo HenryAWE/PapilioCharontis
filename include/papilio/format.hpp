@@ -136,8 +136,10 @@ namespace papilio
             else\
                 throw invalid_format("invalid type specifier");\
         }\
-        void format(value_type val, format_context& ctx) const\
+        template <typename Context>\
+        void format(value_type val, Context& ctx) const\
         {\
+            format_context_traits traits(ctx);\
             constexpr std::size_t bufsize = sizeof(value_type) * 8 + 8;\
             char_type buf[bufsize];\
             auto result = std::to_chars(\
@@ -149,7 +151,7 @@ namespace papilio
             {\
                 throw std::system_error(std::make_error_code(result.ec));\
             }\
-            ctx.append(buf, result.ptr);\
+            traits.append(buf, result.ptr);\
         }\
     private:\
         int m_base = 10;\

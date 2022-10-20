@@ -155,9 +155,10 @@ TEST(TestFormat, Formatter)
         formatter<T> f;
         f.parse(parse_ctx);
 
-        format_context f_ctx;
-        f.format(val, f_ctx);
-        return std::move(f_ctx).str();
+        std::string result;
+        basic_format_context fmt_ctx(std::back_inserter(result), store);
+        f.format(val, fmt_ctx);
+        return result;
     };
 
     EXPECT_EQ(integer_formatter(0, ""), "0");

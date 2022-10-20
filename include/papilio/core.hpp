@@ -9,6 +9,7 @@
 #include <charconv>
 #include <limits>
 #include <iterator>
+#include <algorithm>
 #include "utf8.hpp"
 #include "error.hpp"
 
@@ -536,6 +537,9 @@ namespace papilio
     };
 
     template <typename T>
+    class formatter;
+
+    template <typename T>
     struct accessor {};
 
     template <typename T>
@@ -937,13 +941,6 @@ namespace papilio
         std::vector<member_type> m_members;
     };
 
-    template <typename T>
-    class formatter
-    {
-    public:
-        static_assert(!sizeof(T), "You need to specialize formatter for this type");
-    };
-
     class dynamic_format_arg_store
     {
     public:
@@ -1097,59 +1094,6 @@ namespace papilio
         }
     };
 
-    class format_context
-    {
-    public:
-        using char_type = char;
-        using string_type = std::basic_string<char_type>;
-        using string_view_type = std::basic_string_view<char_type>;
-
-        format_context() = default;
-        format_context(const format_context&) = delete;
-
-        void append(const string_type& str)
-        {
-            m_result.append(str);
-        }
-        void append(string_view_type str)
-        {
-            m_result.append(str);
-        }
-        void append(const char_type* str)
-        {
-            m_result.append(str);
-        }
-        void append(char_type ch, std::size_t count = 1)
-        {
-            m_result.append(count, ch);
-        }
-        template <typename InputIt>
-        void append(InputIt begin, InputIt end)
-        {
-            m_result.append(begin, end);
-        }
-
-        // compatible with std::back_inserter
-        void push_back(char_type ch)
-        {
-            m_result.push_back(ch);
-        }
-
-        [[nodiscard]]
-        const string_type& str() const& noexcept
-        {
-            return m_result;
-        }
-        [[nodiscard]]
-        string_type str() && noexcept
-        {
-            return m_result;
-        }
-
-    private:
-        string_type m_result;
-    };
-
     // WARNING: This class only holds the view of string and reference of arguments
     // The invoker needs to handle lifetimes manually
     class format_spec_parse_context
@@ -1209,6 +1153,161 @@ namespace papilio
     private:
         string_view_type m_spec_str;
         const dynamic_format_arg_store* m_store;
+    };
+
+    template <typename OutputIt, typename Store = dynamic_format_arg_store>
+    class basic_format_context
+    {
+    public:
+        using char_type = char;
+        using iterator = OutputIt;
+        using store_type = Store;
+
+        basic_format_context(iterator it, const store_type& store)
+            : m_out(std::move(it)), m_store(&store) {}
+
+        iterator out()
+        {
+            return m_out;
+        }
+        void advance_to(iterator it)
+        {
+            m_out = std::move(it);
+        }
+
+        const store_type& get_store() const noexcept
+        {
+            return *m_store;
+        }
+
+    private:
+        iterator m_out;
+        const store_type* m_store;
+    };
+
+    namespace detail
+    {
+        class dynamic_format_context_impl_base
+        {
+        public:
+            using char_type = char;
+
+            virtual void push_back(char_type ch) = 0;
+            virtual const dynamic_format_arg_store& get_store() const noexcept = 0;
+        };
+        template <typename OutputIt, typename Store>
+        class dynamic_format_context_impl final : public dynamic_format_context_impl_base
+        {
+        public:
+            using iterator = OutputIt;
+            using store_type = Store;
+
+            dynamic_format_context_impl(basic_format_context<OutputIt, Store>& ctx) noexcept
+                : m_out(ctx.out()), m_store(&ctx.get_store()) {}
+
+            void push_back(char_type ch) override
+            {
+                *m_out = ch;
+                ++m_out;
+            }
+            const dynamic_format_arg_store& get_store() const noexcept override
+            {
+                return *m_store;
+            }
+        private:
+            iterator m_out;
+            const dynamic_format_arg_store* m_store;
+        };
+    }
+
+    class dynamic_format_context
+    {
+    public:
+        using char_type = char;
+        using iterator = std::back_insert_iterator<dynamic_format_context>;
+        using store_type = dynamic_format_arg_store;
+        using value_type = char_type;
+
+        dynamic_format_context() = delete;
+        template <typename OutputIt, typename Store>
+        dynamic_format_context(basic_format_context<OutputIt, Store>& ctx)
+            : m_impl(std::make_unique<detail::dynamic_format_context_impl<OutputIt, Store>>(ctx)) {}
+
+        iterator out()
+        {
+            return std::back_inserter(*this);
+        }
+        void advance_to(iterator) {}
+
+        const store_type& get_store() const noexcept
+        {
+            return m_impl->get_store();
+        }
+
+        void push_back(char_type ch)
+        {
+            m_impl->push_back(ch);
+        }
+
+    private:
+        std::unique_ptr<detail::dynamic_format_context_impl_base> m_impl;
+    };
+
+    template <typename Context>
+    class format_context_traits
+    {
+    public:
+        using char_type = char;
+        using string_type = std::basic_string<char_type>;
+        using string_view_type = std::basic_string_view<char_type>;
+        using iterator = typename Context::iterator;
+        using store_type = typename Context::store_type;
+
+        format_context_traits() = delete;
+        format_context_traits(const format_context_traits&) noexcept = default;
+        format_context_traits(Context& ctx) noexcept
+            : m_ctx(&ctx) {}
+
+        iterator out()
+        {
+            return m_ctx->out();
+        }
+        void advance_to(iterator it)
+        {
+            m_ctx->advance_to(std::move(it));
+        }
+
+        const store_type& get_store() const noexcept
+        {
+            return m_ctx->get_store();
+        }
+
+        template <typename InputIt>
+        void append(InputIt begin, InputIt end)
+        {
+            advance_to(std::copy(begin, end, out()));
+        }
+        void append(string_view_type str)
+        {
+            append(str.begin(), str.end());
+        }
+        template <detail::char_type Char>
+        void append(Char ch, std::size_t count = 1)
+        {
+            if constexpr(std::is_same_v<Char, char> || std::is_same_v<Char, char8_t>)
+            {
+                advance_to(std::fill_n(out(), count, static_cast<char>(ch)));
+            }
+            else
+            {
+                utf8::codepoint cp(static_cast<char32_t>(ch));
+                for(std::size_t i = 0; i < count; ++i)
+                    append(string_view_type(cp));
+            }
+        }
+
+    private:
+        Context* m_ctx;
     };
 }
 

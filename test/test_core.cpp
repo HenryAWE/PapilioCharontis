@@ -332,9 +332,48 @@ TEST(TestCore, FormatContext)
     using namespace papilio;
 
     {
-        format_context ctx;
-        ctx.append("1234");
-        EXPECT_EQ(ctx.str(), "1234");
+        std::string result;
+        dynamic_format_arg_store store;
+        basic_format_context ctx(
+            std::back_inserter(result),
+            store
+        );
+        format_context_traits traits(ctx);
+        EXPECT_EQ(&traits.get_store(), &store);
+
+        traits.append("1234");
+        EXPECT_EQ(result, "1234");
+
+        result.clear();
+        traits.append('1', 4);
+        EXPECT_EQ(result, "1111");
+
+        result.clear();
+        traits.append(U'ä', 2);
+        EXPECT_EQ(result, (const char*)u8"ää");
+    }
+
+    {
+        std::string result;
+        dynamic_format_arg_store store;
+        basic_format_context ctx(
+            std::back_inserter(result),
+            store
+        );
+        dynamic_format_context dyn_ctx(ctx);
+        format_context_traits traits(dyn_ctx);
+        EXPECT_EQ(&traits.get_store(), &store);
+
+        traits.append("1234");
+        EXPECT_EQ(result, "1234");
+
+        result.clear();
+        traits.append('1', 4);
+        EXPECT_EQ(result, "1111");
+
+        result.clear();
+        traits.append(U'ä', 2);
+        EXPECT_EQ(result, (const char*)u8"ää");
     }
 }
 
