@@ -177,6 +177,33 @@ TEST(TestFormat, Formatter)
     }
 
     {
+        static_assert(formatter_traits<float>::has_formatter());
+        static_assert(formatter_traits<double>::has_formatter());
+        static_assert(formatter_traits<long double>::has_formatter());
+
+        auto float_formatter = []<std::floating_point T>(T val, std::string_view fmt)->std::string
+        {
+            using namespace papilio;
+
+            dynamic_format_arg_store store(val);
+            format_spec_parse_context parse_ctx(fmt, store);
+
+            formatter<T> f;
+            f.parse(parse_ctx);
+
+            std::string result;
+            basic_format_context fmt_ctx(std::back_inserter(result), store);
+            f.format(val, fmt_ctx);
+            return result;
+        };
+
+        EXPECT_EQ(float_formatter(1.0, ""), "1");
+        EXPECT_EQ(float_formatter(1.5f, ""), "1.5");
+        EXPECT_EQ(float_formatter(1.5, ""), "1.5");
+        EXPECT_EQ(float_formatter(1.5L, ""), "1.5");
+    }
+
+    {
         auto dyn_formatter = [](format_arg fmt_arg, std::string_view fmt)
         {
             dynamic_format_arg_store store(fmt_arg);
@@ -256,7 +283,22 @@ TEST(TestFormat, VFormat)
         EXPECT_EQ(result, "1 apple");
         result = vformat(apple_fmt, make_format_args(2));
         EXPECT_EQ(result, "2 apples");
+
+        result = vformat("length of \"{0}\" is {0.length}", make_format_args("hello"));
+        EXPECT_EQ(result, "length of \"hello\" is 5");
     }
+}
+TEST(TestFormat, Format)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(format("{}", true), "true");
+    EXPECT_EQ(format("{}", false), "false");
+    EXPECT_EQ(format("{}", nullptr), "0x0");
+    EXPECT_EQ(format("{}", (const void*)0xABCD), "0xabcd");
+
+    struct tmp_type {};
+    EXPECT_ANY_THROW(format("{}", tmp_type()));
 }
 TEST(TestFormat, CustomType)
 {
@@ -282,6 +324,14 @@ TEST(TestFormat, CustomType)
 
         EXPECT_EQ(dyn_formatter(fmt_arg, "s"), "AAAA");
         EXPECT_EQ(dyn_formatter(fmt_arg, ""), "(A, 4)");
+    }
+
+    {
+        my_value my_val('B', 3);
+        std::string result = format("{}", my_val);
+        EXPECT_EQ(result, "(B, 3)");
+        result = format("{:s}", my_val);
+        EXPECT_EQ(result, "BBB");
     }
 }
 

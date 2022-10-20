@@ -860,6 +860,7 @@ namespace papilio
 
         using underlying_type = std::variant<
             std::monostate,
+            bool,
             utf8::codepoint,
             int,
             unsigned int,
@@ -869,6 +870,7 @@ namespace papilio
             double,
             long double,
             string_container,
+            const void*,
             handle
         >;
 
@@ -876,6 +878,8 @@ namespace papilio
             : m_val() {}
         format_arg(const format_arg&) = default;
         format_arg(format_arg&&) noexcept = default;
+        format_arg(bool val)
+            : m_val(std::in_place_type<bool>, val) {}
         format_arg(utf8::codepoint cp)
             : m_val(std::in_place_type<utf8::codepoint>, cp) {}
         template <detail::char_type Char>
@@ -898,6 +902,11 @@ namespace papilio
         template <typename T, typename... Args>
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
+        template <typename T> requires(!detail::char_type<T>)
+        format_arg(const T* ptr)
+            : m_val(std::in_place_type<const void*>, ptr) {}
+        format_arg(std::nullptr_t)
+            : m_val(std::in_place_type<const void*>, nullptr) {}
         template <detail::use_handle T>
         format_arg(const T& val)
             : m_val(std::in_place_type<handle>, val) {}

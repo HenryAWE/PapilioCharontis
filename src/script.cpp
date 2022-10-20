@@ -151,6 +151,15 @@ namespace papilio::script
                     {
                         if(!parsing_condition && bracket_counter == 0)
                         {
+                            if(m_lexemes.size() == 0)
+                            {
+                                result.default_arg_idx_used = true;
+                                // insert default argument
+                                if(default_arg_idx.has_value())
+                                    push_lexeme<lexeme::argument>(*default_arg_idx);
+                                else
+                                    throw lexer_error("can not deduce default argument here");
+                            }
                             result.parsed_char = std::distance(src.begin(), it) + parsed_op_ch;
                             return result;
                         }
