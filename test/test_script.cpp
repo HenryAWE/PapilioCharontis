@@ -382,8 +382,8 @@ TEST(TestScript, Executor)
         int a1 = 1;
         float a2 = 2.0f;
         std::string a3 = "test";
-
-        executor::context ctx(dynamic_format_arg_store(a1, a2, "string"_a = a3));
+        dynamic_format_arg_store store(a1, a2, "string"_a = a3);
+        executor::context ctx(store);
 
         executor ex1(std::in_place_type<executor::argument>, 0);
         ex1(ctx);

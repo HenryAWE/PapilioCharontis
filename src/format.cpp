@@ -172,4 +172,25 @@ namespace papilio
         script::interpreter intp;
         return intp.access(lexemes);
     }
+
+    std::string vformat(std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        format_parser parser;
+        parser.parse(fmt, store);
+
+        std::string result;
+        basic_format_context fmt_ctx(std::back_inserter(result), store);
+
+        auto segments = parser.segments();
+        auto visitor = [&fmt_ctx](const auto& seg)
+        {
+            seg.format(fmt_ctx);
+        };
+        for(const auto& seg : segments)
+        {
+            std::visit(visitor, seg);
+        }
+
+        return result;
+    }
 }

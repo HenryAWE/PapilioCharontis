@@ -109,7 +109,8 @@ TEST(TestFormat, FormatParser)
             "test script "
         );
 
-        script::executor::context ctx(dynamic_format_arg_store(true));
+        dynamic_format_arg_store store_2(true);
+        script::executor::context ctx(store_2);
         EXPECT_TRUE(std::holds_alternative<format_parser::script_block>(seg[1]));
         EXPECT_EQ(
             std::get<format_parser::script_block>(seg[1])(ctx),
@@ -133,7 +134,8 @@ TEST(TestFormat, FormatParser)
             " apple"
         );
 
-        script::executor::context ctx(dynamic_format_arg_store(0));
+        dynamic_format_arg_store store_2(0);
+        script::executor::context ctx(store_2);
         EXPECT_TRUE(std::holds_alternative<format_parser::script_block>(seg[2]));
         EXPECT_EQ(
             std::get<format_parser::script_block>(seg[2])(ctx),
@@ -234,6 +236,27 @@ namespace papilio
     private:
         bool m_as_str = false;
     };
+}
+TEST(TestFormat, VFormat)
+{
+    using namespace papilio;
+
+    {
+        std::string result = vformat("plain text", make_format_args());
+        EXPECT_EQ(result, "plain text");
+
+        result = vformat("Count: {}", make_format_args(10));
+        EXPECT_EQ(result, "Count: 10");
+
+        result = vformat("Bin {0:b}, Dec {0}, Hex {0:x}", make_format_args(0xF));
+        EXPECT_EQ(result, "Bin 1111, Dec 15, Hex f");
+
+        std::string_view apple_fmt = "{} apple[if $0 != 1: 's']";
+        result = vformat(apple_fmt, make_format_args(1));
+        EXPECT_EQ(result, "1 apple");
+        result = vformat(apple_fmt, make_format_args(2));
+        EXPECT_EQ(result, "2 apples");
+    }
 }
 TEST(TestFormat, CustomType)
 {

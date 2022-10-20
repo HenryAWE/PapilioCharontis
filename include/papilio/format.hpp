@@ -34,6 +34,13 @@ namespace papilio
                 return std::move(m_text);
             }
 
+            template <typename Context>
+            void format(Context& ctx) const
+            {
+                format_context_traits traits(ctx);
+                traits.append(m_text);
+            }
+
         private:
             string_type m_text;
         };
@@ -60,6 +67,17 @@ namespace papilio
                 return m_fmt;
             }
 
+            template <typename Context>
+            void format(Context& ctx) const
+            {
+                format_context_traits traits(ctx);
+                format_spec_parse_context spec(m_fmt, traits.get_store());
+
+                auto& store = traits.get_store();
+
+                m_access.access(store.get(m_arg)).format(spec, ctx);
+            }
+
         private:
             indexing_value m_arg;
             format_arg_access m_access;
@@ -79,8 +97,18 @@ namespace papilio
                 return ctx.get_result();
             }
 
+            template <typename Context>
+            void format(Context& ctx) const
+            {
+                format_context_traits traits(ctx);
+                script::executor::context ex_ctx(traits.get_store());
+                m_ex(ex_ctx);
+
+                traits.append(ex_ctx.get_result());
+            }
+
         private:
-            script::executor m_ex;
+            mutable script::executor m_ex;
         };
 
         using segment_store = std::variant<
@@ -112,6 +140,14 @@ namespace papilio
             std::span<const script::lexeme> lexemes
         );
     };
+
+    template <typename... Args>
+    dynamic_format_arg_store make_format_args(Args&&... args)
+    {
+        return dynamic_format_arg_store(std::forward<Args>(args)...);
+    }
+
+    std::string vformat(std::string_view fmt, const dynamic_format_arg_store& store);
 
 #   define PAPILIO_IMPL_INTEGER_FORMATTER(int_type) \
     template <>\
