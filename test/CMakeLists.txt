@@ -13,6 +13,13 @@ target_link_libraries(test_format PRIVATE papilio)
 target_link_libraries(test_format PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
 gtest_discover_tests(test_format)
 
+if(${papilio_build_module})
+    add_executable(test_module test_module.cpp)
+    target_link_libraries(test_module PRIVATE papilio)
+    target_link_libraries(test_module PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+    gtest_discover_tests(test_module)
+endif()
+
 add_executable(test_script test_script.cpp)
 target_link_libraries(test_script PRIVATE papilio)
 target_link_libraries(test_script PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)

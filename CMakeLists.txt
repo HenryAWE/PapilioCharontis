@@ -11,6 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
+option(papilio_build_unit_test "build unit tests" OFF)
+option(papilio_build_module "build module (experimental)" OFF)
 
 project(
     "Papilio Charontis"
@@ -18,11 +20,14 @@ project(
     LANGUAGES C CXX
 )
 
-aux_source_directory(src papilio_src)
+set(glob_expr "src/*.cpp")
+if(${papilio_build_module})
+    list(APPEND glob_expr "src/*.cppm")
+endif()
+file(GLOB_RECURSE papilio_src ${glob_expr})
 add_library(papilio ${papilio_src})
 target_include_directories(papilio PUBLIC include)
 
-option(papilio_build_unit_test "build unit tests" OFF)
 if(${papilio_build_unit_test})
     enable_testing()
     add_subdirectory(test)
