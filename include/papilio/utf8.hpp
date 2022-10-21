@@ -388,7 +388,7 @@ namespace papilio
     public:
         string_container() noexcept
             : m_str(std::in_place_type<string_view_type>) {}
-        string_container(const string_container& other)
+        string_container(const string_container& other) noexcept
         {
             link(other);
         }
@@ -397,14 +397,14 @@ namespace papilio
         {
             swap(other);
         }
-        string_container(const string_type& str)
+        string_container(const string_type& str) noexcept
             : m_str(std::in_place_type<string_view_type>, str) {}
-        string_container(string_view_type str)
+        string_container(string_view_type str) noexcept
             : m_str(std::in_place_type<string_view_type>, str) {}
-        string_container(const char_type* str)
+        string_container(const char_type* str) noexcept
             : m_str(std::in_place_type<string_view_type>, str) {}
         template <std::contiguous_iterator Iterator>
-        string_container(Iterator begin, Iterator end)
+        string_container(Iterator begin, Iterator end) noexcept
             : m_str(std::in_place_type<string_view_type>, begin, end) {}
         string_container(detail::make_independent_proxy str)
             : m_str(std::make_shared<string_type>(str.str)) {}
@@ -655,7 +655,6 @@ namespace papilio
             return string_container(independent, view);
         }
 
-        
         const_pointer c_str() noexcept
         {
             return get_string().data();

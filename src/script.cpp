@@ -532,19 +532,6 @@ namespace papilio::script
             using iterator = span_type::iterator;
             using reverse_iterator = span_type::reverse_iterator;
             using pointer = std::span<const lexeme>::const_pointer;
-            using operator_position_data = std::pair<operator_type, iterator>;
-
-            struct operator_finder
-            {
-                operator_type target;
-
-                bool operator()(const lexeme& l) const
-                {
-                    return
-                        l.type() == lexeme_type::operator_ &&
-                        l.as<lexeme::operator_>().get() == target;
-                }
-            };
 
             // this function assumes that *--begin == if_ or elif
             std::pair<std::unique_ptr<executor::base>, iterator> build_selection(

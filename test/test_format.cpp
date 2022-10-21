@@ -297,6 +297,14 @@ TEST(TestFormat, Format)
     EXPECT_EQ(format("{}", nullptr), "0x0");
     EXPECT_EQ(format("{}", (const void*)0xABCD), "0xabcd");
 
+    std::string_view fmt =
+        "There "
+        "[if $0 != 1: 'are' else: 'is']"
+        " {} "
+        "apple[if $0 != 1: 's']";
+    EXPECT_EQ(format(fmt, 1), "There is 1 apple");
+    EXPECT_EQ(format(fmt, 2), "There are 2 apples");
+
     struct tmp_type {};
     EXPECT_ANY_THROW(format("{}", tmp_type()));
 }

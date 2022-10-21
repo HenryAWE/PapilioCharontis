@@ -874,24 +874,24 @@ namespace papilio
             handle
         >;
 
-        format_arg()
+        format_arg() noexcept
             : m_val() {}
-        format_arg(const format_arg&) = default;
+        format_arg(const format_arg&) noexcept = default;
         format_arg(format_arg&&) noexcept = default;
-        format_arg(bool val)
+        format_arg(bool val) noexcept
             : m_val(std::in_place_type<bool>, val) {}
-        format_arg(utf8::codepoint cp)
+        format_arg(utf8::codepoint cp) noexcept
             : m_val(std::in_place_type<utf8::codepoint>, cp) {}
         template <detail::char_type Char>
-        format_arg(Char ch)
+        format_arg(Char ch) noexcept
             : m_val(std::in_place_type<utf8::codepoint>, char32_t(ch)) {}
         template <detail::integral_type Integral>
-        format_arg(Integral val)
+        format_arg(Integral val) noexcept
             : m_val(static_cast<detail::best_int_type_t<Integral>>(val)) {}
         template <std::floating_point Float>
-        format_arg(Float val)
+        format_arg(Float val) noexcept
             : m_val(val) {}
-        format_arg(string_container str)
+        format_arg(string_container str) noexcept
             : m_val(std::in_place_type<string_container>, std::move(str)) {}
         template <string_like String>
         format_arg(String&& str)
@@ -903,12 +903,12 @@ namespace papilio
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
         template <typename T> requires(!detail::char_type<T>)
-        format_arg(const T* ptr)
+        format_arg(const T* ptr) noexcept
             : m_val(std::in_place_type<const void*>, ptr) {}
-        format_arg(std::nullptr_t)
+        format_arg(std::nullptr_t) noexcept
             : m_val(std::in_place_type<const void*>, nullptr) {}
         template <detail::use_handle T>
-        format_arg(const T& val)
+        format_arg(const T& val) noexcept
             : m_val(std::in_place_type<handle>, val) {}
 
         format_arg& operator=(const format_arg&) = default;
