@@ -301,8 +301,9 @@ TEST(TestUTF8, StringContainer)
         EXPECT_EQ(str.find((const char*)u8"你好", 1), str.cend());
         EXPECT_NE(str.find((const char*)u8"世界", 1), str.cend());
 
-        std::reverse(result.begin(), result.end());
-        EXPECT_TRUE(std::equal(result.begin(), result.end(), str.rbegin(), str.rend()));
+        std::u32string reversed;
+        std::copy(str.rbegin(), str.rend(), std::back_inserter(reversed));
+        EXPECT_TRUE(std::equal(result.rbegin(), result.rend(), reversed.begin(), reversed.end()));
     }
 }
 
