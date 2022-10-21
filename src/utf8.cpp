@@ -295,6 +295,21 @@ namespace papilio
         return utf8::codepoint::rdecode(get_string_view()).first;
     }
 
+    std::u8string string_container::to_u8string() const
+    {
+        auto view = get_string_view();
+        return std::u8string(
+            reinterpret_cast<const char8_t*>(view.data()),
+            view.size()
+        );
+    }
+    std::u32string string_container::to_u32string() const
+    {
+        std::u32string result;
+        std::copy(begin(), end(), std::back_inserter(result));
+        return result;
+    }
+
     string_container::string_type& string_container::get_string()
     {
         assert(!m_str.valueless_by_exception());

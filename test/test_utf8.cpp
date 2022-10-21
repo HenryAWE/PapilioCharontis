@@ -282,10 +282,14 @@ TEST(TestUTF8, StringContainer)
 
     {
         string_container str = (const char*)u8"你好，世界！";
+        // GoogleTest cannot correctly handle char8_t
+        EXPECT_TRUE(str.to_u8string() == u8"你好，世界！");
         std::u32string result;
         for(auto&& cp : str)
             result += cp;
         EXPECT_EQ(result, U"你好，世界！");
+        EXPECT_EQ(result, str.to_u32string());
+        EXPECT_EQ(str.to_u32string(), U"你好，世界！");
         EXPECT_TRUE(str.contains(U'你'));
         EXPECT_TRUE(str.contains((const char*)u8"你好"));
         EXPECT_TRUE(str.contains((const char*)u8"世界"));
@@ -296,10 +300,9 @@ TEST(TestUTF8, StringContainer)
         EXPECT_EQ(str.find(U'你', 1), str.cend());
         EXPECT_EQ(str.find((const char*)u8"你好", 1), str.cend());
         EXPECT_NE(str.find((const char*)u8"世界", 1), str.cend());
-    }
 
-    {
-        const bool i = accessor_traits<string_container>::has_index();
+        std::reverse(result.begin(), result.end());
+        EXPECT_TRUE(std::equal(result.begin(), result.end(), str.rbegin(), str.rend()));
     }
 }
 

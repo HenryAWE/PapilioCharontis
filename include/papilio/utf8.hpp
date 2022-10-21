@@ -340,6 +340,8 @@ namespace papilio
         {
         public:
             using underlying_type = const_pointer;
+            using value_type = utf8::codepoint;
+            using difference_type = std::size_t;
 
             const_iterator(const const_iterator&) noexcept = default;
             const_iterator(underlying_type it, utf8::codepoint::size_type len) noexcept
@@ -350,14 +352,31 @@ namespace papilio
                 m_it = std::next(m_it, utf8::is_leading_byte(*m_it));
                 return *this;
             }
+            const_iterator& operator--() noexcept
+            {
+                do
+                {
+                    --m_it;
+                    m_len = utf8::is_leading_byte(*m_it);
+                } while(m_len == 0);
+                m_len = m_len;
+
+                return *this;
+            }
             const_iterator operator++(int) noexcept
             {
                 const_iterator tmp = *this;
                 ++(*this);
                 return tmp;
             }
+            const_iterator operator--(int) noexcept
+            {
+                const_iterator tmp = *this;
+                --(*this);
+                return tmp;
+            }
 
-            const_reference operator*() const noexcept
+            value_type operator*() const noexcept
             {
                 if(m_len == 0)
                     return utf8::codepoint();
@@ -376,6 +395,8 @@ namespace papilio
             utf8::codepoint::size_type m_len = 0;
         };
         using iterator = const_iterator;
+        using reverse_const_iterator = std::reverse_iterator<const_iterator>;
+        using reverse_iterator = reverse_const_iterator;
 
         static constexpr size_type npos = -1;
 
@@ -676,6 +697,14 @@ namespace papilio
             string_view_type view = get_string_view();
             return const_iterator(view.data() + view.size(), 0);
         }
+        reverse_const_iterator crbegin() const
+        {
+            return reverse_const_iterator(cend());
+        }
+        reverse_const_iterator crend() const
+        {
+            return reverse_const_iterator(cbegin());
+        }
         iterator begin() const noexcept
         {
             return cbegin();
@@ -684,6 +713,17 @@ namespace papilio
         {
             return cend();
         }
+        reverse_iterator rbegin() const noexcept
+        {
+            return reverse_iterator(end());
+        }
+        reverse_iterator rend() const noexcept
+        {
+            return reverse_iterator(begin());
+        }
+
+        std::u8string to_u8string() const;
+        std::u32string to_u32string() const;
 
     private:
         mutable string_store m_str;
