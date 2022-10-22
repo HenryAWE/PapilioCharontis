@@ -356,6 +356,11 @@ namespace papilio
         }
 
         [[nodiscard]]
+        bool has_fill() const noexcept
+        {
+            return m_fill != U'\0';
+        }
+        [[nodiscard]]
         utf8::codepoint fill() const noexcept
         {
             return m_fill;
@@ -363,6 +368,11 @@ namespace papilio
         void fill(utf8::codepoint cp) noexcept
         {
             m_fill = cp;
+        }
+        [[nodiscard]]
+        utf8::codepoint fill_or(utf8::codepoint or_cp) const noexcept
+        {
+            return has_fill() ? m_fill : or_cp;
         }
         [[nodiscard]]
         format_align align() const noexcept
@@ -390,6 +400,15 @@ namespace papilio
         void alternate_form(bool val) noexcept
         {
             m_alternate_form = val;
+        }
+        [[nodiscard]]
+        bool fill_zero() const noexcept
+        {
+            return m_fill_zero;
+        }
+        void fill_zero(bool val) noexcept
+        {
+            m_fill_zero = val;
         }
         [[nodiscard]]
         std::size_t width() const noexcept
@@ -439,7 +458,7 @@ namespace papilio
         }
 
     private:
-        utf8::codepoint m_fill = U' ';
+        utf8::codepoint m_fill = U'\0';
         format_align m_align = format_align::default_align;
         format_sign m_sign = format_sign::default_sign;
         bool m_alternate_form = false; // specified by '#'

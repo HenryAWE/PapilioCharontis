@@ -173,7 +173,10 @@ TEST(TestFormat, Formatter)
 
         EXPECT_EQ(integer_formatter(0xF, "x"), "f");
         EXPECT_EQ(integer_formatter(0b10, "b"), "10");
+        EXPECT_EQ(integer_formatter(0xFF, "x"), "ff");
         EXPECT_EQ(integer_formatter(017, "o"), "17");
+
+        EXPECT_EQ(integer_formatter(0xff, "08x"), "000000ff");
     }
 
     {

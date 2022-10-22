@@ -154,61 +154,191 @@ namespace papilio
         return vformat(fmt, make_format_args(std::forward<Args>(args)...));
     }
 
-#   define PAPILIO_IMPL_INTEGER_FORMATTER(int_type) \
-    template <>\
-    class formatter<int_type>\
-    {\
-    public:\
-        using char_type = char;\
-        using value_type = int_type;\
-        void parse(format_spec_parse_context& ctx)\
-        {\
-            m_spec = detail::parse_std_format_spec(ctx);\
-            if(m_spec.align == format_align::default_align)\
-                m_spec.align = format_align::right;\
-            if(m_spec.type_char == '\0' || m_spec.type_char == 'd')\
-                m_base = 10;\
-            else if(m_spec.type_char == 'x')\
-                m_base = 16;\
-            else if(m_spec.type_char == 'b')\
-                m_base = 2;\
-            else if(m_spec.type_char == 'o')\
-                m_base = 8;\
-            else\
-                throw invalid_format("invalid type specifier");\
-        }\
-        template <typename Context>\
-        void format(value_type val, Context& ctx) const\
-        {\
-            format_context_traits traits(ctx);\
-            constexpr std::size_t bufsize = sizeof(value_type) * 8 + 8;\
-            char_type buf[bufsize];\
-            auto result = std::to_chars(\
-                buf, buf + bufsize,\
-                val,\
-                m_base\
-            );\
-            if(result.ec != std::errc())\
-            {\
-                throw std::system_error(std::make_error_code(result.ec));\
-            }\
-            traits.append(buf, result.ptr);\
-        }\
-    private:\
-        int m_base = 10;\
-        detail::std_format_spec m_spec;\
-    };
+    namespace detail
+    {
+        template <typename T>
+        concept supported_integral =
+            std::is_same_v<T, signed char> ||
+            std::is_same_v<T, unsigned char> ||
+            std::is_same_v<T, short> ||
+            std::is_same_v<T, unsigned short> ||
+            std::is_same_v<T, int> ||
+            std::is_same_v<T, unsigned int> ||
+            std::is_same_v<T, long> ||
+            std::is_same_v<T, unsigned long> ||
+            std::is_same_v<T, long long> ||
+            std::is_same_v<T, signed char> ||
+            std::is_same_v<T, unsigned long long>;
 
-    PAPILIO_IMPL_INTEGER_FORMATTER(signed char);
-    PAPILIO_IMPL_INTEGER_FORMATTER(unsigned char);
-    PAPILIO_IMPL_INTEGER_FORMATTER(short);
-    PAPILIO_IMPL_INTEGER_FORMATTER(unsigned short);
-    PAPILIO_IMPL_INTEGER_FORMATTER(int);
-    PAPILIO_IMPL_INTEGER_FORMATTER(unsigned int);
-    PAPILIO_IMPL_INTEGER_FORMATTER(long);
-    PAPILIO_IMPL_INTEGER_FORMATTER(unsigned long);
-    PAPILIO_IMPL_INTEGER_FORMATTER(long long);
-    PAPILIO_IMPL_INTEGER_FORMATTER(unsigned long long);
+        class integral_formatter_base
+        {
+        public:
+            static char map_char(unsigned char digit, bool uppercase) noexcept
+            {
+                if(digit < 10)
+                    return '0' + digit;
+                else
+                {
+                    if(uppercase)
+                        return 'A' + (digit - 10);
+                    else
+                        return 'a' + (digit - 10);
+                }
+            }
+        };
+    }
+
+    template <detail::supported_integral Integral>
+    class formatter<Integral> : public detail::integral_formatter_base
+    {
+    public:
+        using char_type = char;
+        using value_type = Integral;
+        using unsigned_value_type = std::make_unsigned_t<value_type>;
+
+        void parse(format_spec_parse_context& ctx)
+        {
+            m_spec.parse(ctx);
+            if(!m_spec.has_type_char() || m_spec.type_char() == 'd')
+                m_base = 10;
+            else if(m_spec.type_char() == 'x')
+                m_base = 16;
+            else if(m_spec.type_char() == 'X')
+            {
+                m_base = 16;
+                m_uppercase = true;
+            }
+            else if(m_spec.type_char() == 'b')
+                m_base = 2;
+            else if(m_spec.type_char() == 'o')
+                m_base = 8;
+            else
+            {
+                throw invalid_format("invalid type '" + std::string(m_spec.type_char()) + "' for integer");
+            }
+
+            if(m_spec.sign() == format_sign::default_sign)
+                m_spec.sign(format_sign::negative);
+        }
+        template <typename Context>
+        void format(value_type val, Context& ctx) const
+        {
+            std::size_t len = 0;
+            if(m_spec.sign() == format_sign::negative)
+            {
+                if constexpr(std::is_signed_v<value_type>)
+                {
+                    if(val < 0)
+                        ++len;
+                }
+            }
+            else
+                ++len;
+            if(m_spec.alternate_form())
+                len += 2;
+            std::size_t raw_num_len = raw_formatted_size(val, m_base);
+            len += raw_num_len;
+
+            format_context_traits traits(ctx);
+
+            if(m_spec.has_fill())
+            {
+                std::size_t to_fill = m_spec.width();
+                to_fill = len >= to_fill ? 0 : to_fill - len;
+
+                if(to_fill)
+                    traits.append(m_spec.fill(), to_fill);
+            }
+
+            switch(m_spec.sign())
+            {
+            case format_sign::negative:
+                if(val < 0)
+                    traits.append('-');
+                break;
+            case format_sign::positive:
+                if(val < 0)
+                    traits.append('-');
+                else
+                    traits.append('+');
+                break;
+            case format_sign::space:
+                if(val < 0)
+                    traits.append('-');
+                else
+                    traits.append(' ');
+                break;
+            }
+            if(m_spec.alternate_form())
+            {
+                switch(m_base)
+                {
+                case 2:
+                    traits.append("0b");
+                    break;
+                [[unlikely]] case 8:
+                    traits.append("0o");
+                    break;
+                case 16:
+                    if(m_uppercase)
+                        traits.append("0X");
+                    else
+                        traits.append("0x");
+                    break;
+                }
+            }
+
+            if(m_spec.fill_zero())
+            {
+                if(m_spec.align() != format_align::left)
+                {
+                    std::size_t to_fill = m_spec.width();
+                    to_fill = raw_num_len > to_fill ? 0 : to_fill - raw_num_len;
+                    traits.append('0', to_fill);
+                }
+            }
+
+            unsigned_value_type uval = val < 0 ? -val : val;
+            char buf[sizeof(value_type) * 8];
+            std::size_t buf_idx = raw_num_len;
+            do
+            {
+                unsigned_value_type rem = uval % m_base;
+                uval /= m_base;
+                buf[--buf_idx] = map_char(rem, m_uppercase);
+            } while(uval != 0);
+
+            traits.append(buf, buf + raw_num_len);
+        }
+
+    private:
+        unsigned int m_base = 10;
+        bool m_uppercase = false;
+        common_format_spec m_spec;
+
+        unsigned_value_type get_mod(unsigned_value_type e) const noexcept
+        {
+            unsigned_value_type result = 1;
+            for(unsigned_value_type i = 0; i < e; ++i)
+                result *= m_base;
+            return result;
+        }
+
+        static std::size_t raw_formatted_size(value_type val, unsigned int base) noexcept
+        {
+            if constexpr(std::is_signed_v<value_type>)
+            {
+                if(val < 0)
+                    val = -val;
+            }
+
+            unsigned_value_type uval = static_cast<unsigned_value_type>(val);
+            std::size_t counter = 1;
+            while(uval /= base)
+                ++counter;
+            return counter;
+        }
+    };
 
     template <>
     class formatter<string_container>
