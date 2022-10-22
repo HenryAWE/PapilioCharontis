@@ -378,9 +378,18 @@ namespace papilio
         {
             return m_sign;
         }
-        void align(format_sign val) noexcept
+        void sign(format_sign val) noexcept
         {
             m_sign = val;
+        }
+        [[nodiscard]]
+        bool alternate_form() const noexcept
+        {
+            return m_use_locale;
+        }
+        void alternate_form(bool val) noexcept
+        {
+            m_alternate_form = val;
         }
         [[nodiscard]]
         std::size_t width() const noexcept
@@ -1522,9 +1531,13 @@ namespace papilio
             else
             {
                 utf8::codepoint cp(static_cast<char32_t>(ch));
-                for(std::size_t i = 0; i < count; ++i)
-                    append(string_view_type(cp));
+                append(cp, count);
             }
+        }
+        void append(utf8::codepoint cp, std::size_t count = 1)
+        {
+            for(std::size_t i = 0; i < count; ++i)
+                append(string_view_type(cp));
         }
 
     private:
