@@ -419,7 +419,6 @@ namespace papilio
         {
             return m_type_char;
         }
-        [[nodiscard]]
         void type_char(utf8::codepoint cp) noexcept
         {
             m_type_char = cp;
