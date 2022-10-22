@@ -376,6 +376,72 @@ TEST(TestCore, FormatContext)
         EXPECT_EQ(result, (const char*)u8"ää");
     }
 }
+TEST(TestCore, CommonFormatSpec)
+{
+    using namespace papilio;
+
+    auto helper = []<typename... Args>(std::string_view fmt, Args&&... args)
+    {
+        common_format_spec spec;
+        dynamic_format_arg_store store(std::forward<Args>(args)...);
+        format_parse_context parse_ctx(fmt, store);
+        parse_ctx.next_arg_id();
+        format_spec_parse_context spec_ctx(parse_ctx, fmt.substr(2, fmt.size() - 3));
+
+        spec.parse(spec_ctx);
+        return spec;
+    };
+
+    {
+        common_format_spec spec;
+        spec = helper("{:}", 0);
+        EXPECT_FALSE(spec.has_type_char());
+        EXPECT_EQ(spec.type_char_or('d'), 'd');
+
+        spec = helper("{: }", 0);
+        EXPECT_FALSE(spec.has_type_char());
+        EXPECT_EQ(spec.sign(), format_sign::space);
+
+        spec = helper("{:d}", 0);
+        EXPECT_EQ(spec.precision(), -1);
+        EXPECT_EQ(spec.width(), 0);
+        EXPECT_EQ(spec.type_char(), 'd');
+
+        spec = helper("{:.10d}", 0);
+        EXPECT_EQ(spec.precision(), 10);
+        EXPECT_EQ(spec.type_char(), 'd');
+
+        spec = helper("{:10d}", 0);
+        EXPECT_EQ(spec.width(), 10);
+        EXPECT_EQ(spec.type_char(), 'd');
+
+        spec = helper("{:10.6d}", 0);
+        EXPECT_EQ(spec.width(), 10);
+        EXPECT_EQ(spec.precision(), 6);
+        EXPECT_EQ(spec.type_char(), 'd');
+
+        spec = helper("{: >}", "");
+        EXPECT_FALSE(spec.has_type_char());
+        EXPECT_EQ(spec.fill(), ' ');
+        EXPECT_EQ(spec.align(), format_align::right);
+    }
+    {
+        common_format_spec spec;
+
+        spec = helper("{:.{}d}", 0, 10);
+        EXPECT_EQ(spec.precision(), 10);
+        EXPECT_EQ(spec.type_char(), 'd');
+
+        spec = helper("{:{}d}", 0, 10);
+        EXPECT_EQ(spec.width(), 10);
+        EXPECT_EQ(spec.type_char(), 'd');
+
+        spec = helper("{:{}.{}d}", 0, 10, 6);
+        EXPECT_EQ(spec.width(), 10);
+        EXPECT_EQ(spec.precision(), 6);
+        EXPECT_EQ(spec.type_char(), 'd');
+    }
+}
 
 int main(int argc, char* argv[])
 {

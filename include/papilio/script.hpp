@@ -424,6 +424,92 @@ namespace papilio::script
         lexeme_store m_store;
     };
 
+    // NOTE: This function assumes that *--being == '['
+    // and it will find the first mismatched right bracket ']'
+    template <typename Iterator>
+    Iterator find_script_end(Iterator begin, Iterator end)
+    {
+        auto pred = [counter = std::size_t(0)](const auto& ch) mutable
+        {
+            if(ch == '[')
+                ++counter;
+            if(ch == ']')
+            {
+                if(counter == 0)
+                    return true;
+                --counter;
+            }
+
+            return false;
+        };
+
+        return std::find_if(begin, end, pred);
+    }
+    // NOTE: This function assumes that *--being == ']'
+    // and it will find the first mismatched left bracket '['
+    template <typename ReverseIterator>
+    ReverseIterator rfind_script_begin(ReverseIterator begin, ReverseIterator end)
+    {
+        auto pred = [counter = std::size_t(0)](const auto& ch) mutable
+        {
+            if(ch == ']')
+                ++counter;
+            if(ch == '[')
+            {
+                if(counter == 0)
+                    return true;
+                --counter;
+            }
+
+            return false;
+        };
+
+        return std::find_if(begin, end, pred);
+    }
+
+    // NOTE: This function assumes that *--being == '{'
+    // and it will find the first mismatched right brace '}'
+    template <typename Iterator>
+    Iterator find_field_end(Iterator begin, Iterator end)
+    {
+        auto pred = [counter = std::size_t(0)](const auto& ch) mutable
+        {
+            if(ch == '{')
+                ++counter;
+            if(ch == '}')
+            {
+                if(counter == 0)
+                    return true;
+                --counter;
+            }
+
+            return false;
+        };
+
+        return std::find_if(begin, end, pred);
+    }
+    // NOTE: This function assumes that *--being == '}'
+    // and it will find the first mismatched left brace '{'
+    template <typename ReverseIterator>
+    ReverseIterator rfind_field_begin(ReverseIterator begin, ReverseIterator end)
+    {
+        auto pred = [counter = std::size_t(0)](const auto& ch) mutable
+        {
+            if(ch == '}')
+                ++counter;
+            if(ch == '{')
+            {
+                if(counter == 0)
+                    return true;
+                --counter;
+            }
+
+            return false;
+        };
+
+        return std::find_if(begin, end, pred);
+    }
+
     class lexer
     {
     public:

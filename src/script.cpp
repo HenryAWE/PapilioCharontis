@@ -14,6 +14,16 @@ namespace papilio::script
         std::size_t bracket_counter = 0;
         bool parsing_condition = false;
 
+        if(src.empty() && mode == lexer_mode::replacement_field)
+        {
+            result.default_arg_idx_used = true;
+            // insert default argument
+            if(default_arg_idx.has_value())
+                push_lexeme<lexeme::argument>(*default_arg_idx);
+            else
+                throw lexer_error("can not deduce default argument here");
+        }
+
         auto it = src.begin();
         for(; it != src.end();)
         {

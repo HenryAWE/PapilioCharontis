@@ -1,5 +1,7 @@
 #include <papilio/core.hpp>
+#include <papilio/script.hpp>
 #include <algorithm>
+#include <cassert>
 #include <cstring> // std::memset
 
 
@@ -110,7 +112,7 @@ namespace papilio
             if(is_digit(*it))
             {
                 auto digit_end = std::find_if(
-                    std::next(it), ctx.rend(), is_digit<char>
+                    std::next(it), ctx.rend(), is_digit
                 );
                 std::string_view digits(
                     std::to_address(digit_end),
@@ -136,6 +138,185 @@ namespace papilio
                 return result;
             
             return result;
+        }
+    }
+
+    namespace detail
+    {
+        static bool is_special_spec_ch(char32_t ch) noexcept
+        {
+            return
+                ch == '}' ||
+                ch == ']' ||
+                ch == '{' ||
+                ch == '[';
+        }
+
+        template <typename Iterator>
+        std::optional<char32_t> next_char(Iterator current, Iterator end)
+        {
+            ++current;
+            if(current == end)
+                return std::nullopt;
+            return *current;
+        }
+
+        template <typename Iterator>
+        std::pair<std::size_t, Iterator> parse_spec_value(format_spec_parse_context& spec_ctx, Iterator begin, Iterator end)
+        {
+            if(*begin == '{')
+            {
+                auto field_end = script::find_field_end(std::next(begin), end);
+                if(field_end == end)
+                {
+                    throw invalid_format("missing right brace: " + std::string(spec_ctx));
+                }
+
+                std::string_view view(
+                    std::next(begin),
+                    field_end
+                );
+                script::interpreter intp;
+                std::optional<std::size_t> default_arg_id;
+                if(!spec_ctx.manual_indexing())
+                {
+                    default_arg_id = spec_ctx.current_arg_id();
+                    spec_ctx.next_arg_id();
+                }
+                auto [idx, arg_access] = intp.access(view, default_arg_id);
+
+                assert(spec_ctx.has_store());
+                format_arg arg = arg_access.access(spec_ctx.get_store()[idx]);
+
+                return std::make_pair(
+                    arg.as_variable().as<std::size_t>(),
+                    ++field_end
+                );
+            }
+            else
+            {
+                assert(is_digit(*begin));
+                auto digit_end = std::find_if_not(
+                    std::next(begin), end,
+                    &is_digit
+                );
+                std::size_t val = 0;
+                std::from_chars_result result = std::from_chars(
+                    std::to_address(begin),
+                    std::to_address(digit_end),
+                    val,
+                    10
+                );
+                assert(result.ptr == std::to_address(digit_end));
+                if(result.ec != std::errc())
+                {
+                    throw std::system_error(std::make_error_code(result.ec));
+                }
+
+                return std::make_pair(
+                    val, digit_end
+                );
+            }
+        }
+    }
+
+    void common_format_spec::parse(format_spec_parse_context& spec_ctx)
+    {
+        std::string_view view = spec_ctx;
+        reset();
+        if(view.empty())
+            return;
+
+        struct parser_state
+        {
+            bool has_fill = false;
+            bool width_parsed = false;
+            bool dot_parsed = false;
+        };
+        parser_state state;
+
+        for(auto it = view.begin(); it != view.end();)
+        {
+            utf8::codepoint cp = *it;
+
+            if(cp == '0')
+            {
+                if(m_fill_zero)
+                {
+                    throw invalid_format("too many zeros");
+                }
+                m_fill_zero = true;
+                ++it;
+            }
+            else if(detail::is_digit(cp) || cp == '{')
+            {
+                if(state.width_parsed)
+                {
+                    throw invalid_format("invalid format " + std::string(view));
+                }
+                std::size_t val = 0;
+                std::tie(val, it) = detail::parse_spec_value(spec_ctx, it, view.end());
+
+                m_width = val;
+                state.width_parsed = true;
+            }
+            else if(cp == '.')
+            {
+                if(state.dot_parsed)
+                {
+                    throw invalid_format("too many precision values: " + std::string(view));
+                }
+                state.dot_parsed = true;
+
+                std::optional next_ch = detail::next_char(it, view.end());
+                if(!next_ch.has_value() || !(detail::is_digit(*next_ch) || *next_ch == '{'))
+                {
+                    throw invalid_format("invalid precision: " + std::string(view));
+                }
+
+                ++it;
+                std::size_t val = 0;
+                std::tie(val, it) = detail::parse_spec_value(spec_ctx, it, view.end());
+                m_precision = val;
+            }
+            else
+            {
+                std::optional next_ch = detail::next_char(it, view.end());
+                if(!next_ch.has_value())
+                {
+                    if(cp == 'L')
+                        m_use_locale = true;
+                    else if(is_align_spec(cp))
+                        m_align = get_align(cp);
+                    else if(cp == '#')
+                        m_alternate_form = true;
+                    else if(is_sign_spec(cp))
+                        m_sign = get_sign(cp);
+                    else
+                        m_type_char = cp;
+                    break;
+                }
+                else if(is_align_spec(*next_ch))
+                {
+                    m_fill = cp;
+                    m_align = get_align(*next_ch);
+                    ++it;
+                }
+                else if(*next_ch == '#')
+                {
+                    m_fill = cp;
+                    m_alternate_form = true;
+                    ++it;
+                }
+                else if(is_sign_spec(*next_ch))
+                {
+                    m_fill = cp;
+                    m_sign = get_sign(*next_ch);
+                    ++it;
+                }
+
+                ++it;
+            }
         }
     }
 

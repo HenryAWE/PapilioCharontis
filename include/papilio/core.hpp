@@ -38,9 +38,8 @@ namespace papilio
 
     namespace detail
     {
-        template <typename CharT>
         [[nodiscard]]
-        constexpr bool is_digit(CharT ch) noexcept
+        constexpr bool is_digit(char ch) noexcept
         {
             return '0' <= ch && ch <= '9';
         }
@@ -290,6 +289,158 @@ namespace papilio
 
         std_format_spec parse_std_format_spec(format_spec_parse_context& ctx);
     }
+
+    class common_format_spec
+    {
+    public:
+        common_format_spec() = default;
+        common_format_spec(const common_format_spec&) noexcept = default;
+        common_format_spec(format_spec_parse_context& spec_ctx)
+        {
+            parse(spec_ctx);
+        }
+
+        void parse(format_spec_parse_context& spec_ctx);
+        void reset() noexcept
+        {
+            *this = common_format_spec();
+        }
+
+        [[nodiscard]]
+        static constexpr bool is_align_spec(char32_t ch) noexcept
+        {
+            return
+                ch == '<' ||
+                ch == '^' ||
+                ch == '>';
+        }
+        [[nodiscard]]
+        static constexpr format_align get_align(char32_t ch) noexcept
+        {
+            switch(ch)
+            {
+                using enum format_align;
+            case '<':
+                return left;
+            case '^':
+                return middle;
+            case '>':
+                return right;
+            default:
+                return default_align;
+            }
+        }
+
+        [[nodiscard]]
+        static constexpr bool is_sign_spec(char32_t ch) noexcept
+        {
+            return
+                ch == '+' ||
+                ch == ' ' ||
+                ch == '-';
+        }
+        [[nodiscard]]
+        static constexpr format_sign get_sign(char32_t ch) noexcept
+        {
+            switch(ch)
+            {
+                using enum format_sign;
+            [[likely]] case '+':
+                return positive;
+            case ' ':
+                return space;
+            default:
+            case '-':
+                return negative;
+            }
+        }
+
+        [[nodiscard]]
+        utf8::codepoint fill() const noexcept
+        {
+            return m_fill;
+        }
+        void fill(utf8::codepoint cp) noexcept
+        {
+            m_fill = cp;
+        }
+        [[nodiscard]]
+        format_align align() const noexcept
+        {
+            return m_align;
+        }
+        void align(format_align val) noexcept
+        {
+            m_align = val;
+        }
+        [[nodiscard]]
+        format_sign sign() const noexcept
+        {
+            return m_sign;
+        }
+        void align(format_sign val) noexcept
+        {
+            m_sign = val;
+        }
+        [[nodiscard]]
+        std::size_t width() const noexcept
+        {
+            return m_width;
+        }
+        void width(std::size_t val) noexcept
+        {
+            m_width = val;
+        }
+        [[nodiscard]]
+        std::size_t precision() const noexcept
+        {
+            return m_precision;
+        }
+        void precision(std::size_t val) noexcept
+        {
+            m_precision = val;
+        }
+        [[nodiscard]]
+        bool use_locale() const noexcept
+        {
+            return m_use_locale;
+        }
+        void use_locale(bool val) noexcept
+        {
+            m_use_locale = val;
+        }
+        [[nodiscard]]
+        bool has_type_char() const noexcept
+        {
+            return m_type_char != U'\0';
+        }
+        [[nodiscard]]
+        utf8::codepoint type_char() const noexcept
+        {
+            return m_type_char;
+        }
+        [[nodiscard]]
+        void type_char(utf8::codepoint cp) noexcept
+        {
+            m_type_char = cp;
+        }
+        [[nodiscard]]
+        utf8::codepoint type_char_or(utf8::codepoint or_cp) const noexcept
+        {
+            return has_type_char() ? m_type_char : or_cp;
+        }
+
+    private:
+        utf8::codepoint m_fill = U' ';
+        format_align m_align = format_align::default_align;
+        format_sign m_sign = format_sign::default_sign;
+        bool m_alternate_form = false; // specified by '#'
+        bool m_fill_zero = false;
+        std::size_t m_width = 0;
+        std::size_t m_precision = -1;
+        bool m_use_locale = false;
+        utf8::codepoint m_type_char = U'\0';
+    };
 
     template <typename T>
     struct named_arg
@@ -1148,10 +1299,39 @@ namespace papilio
 
         format_spec_parse_context() = delete;
         format_spec_parse_context(const format_spec_parse_context&) = delete;
-        constexpr format_spec_parse_context(string_view_type str) noexcept
-            : m_spec_str(str), m_store(nullptr) {}
         constexpr format_spec_parse_context(string_view_type str, const dynamic_format_arg_store& store) noexcept
-            : m_spec_str(str), m_store(&store) {}
+            : m_base(nullptr), m_spec_str(str), m_store(&store) {}
+        format_spec_parse_context(format_parse_context& base, string_view_type str) noexcept
+            : m_base(&base), m_spec_str(str), m_store(&base.get_store()) {}
+
+        [[nodiscard]]
+        constexpr bool has_base() const noexcept
+        {
+            return m_base != nullptr;
+        }
+        format_parse_context& get_base() const noexcept
+        {
+            return *m_base;
+        }
+
+        std::size_t current_arg_id() const
+        {
+            return get_base().current_arg_id();
+        }
+        std::size_t next_arg_id()
+        {
+            return get_base().next_arg_id();
+        }
+        std::size_t check_arg_id(std::size_t i) const
+        {
+            return get_base().check_arg_id(i);
+        }
+
+        [[nodiscard]]
+        bool manual_indexing() const noexcept
+        {
+            return get_base().manual_indexing();
+        }
 
         [[nodiscard]]
         constexpr iterator begin() const noexcept
@@ -1192,6 +1372,7 @@ namespace papilio
         }
 
     private:
+        format_parse_context* m_base;
         string_view_type m_spec_str;
         const dynamic_format_arg_store* m_store;
     };

@@ -199,6 +199,16 @@ namespace papilio
             {
                 return lhs.to_int().first == rhs;
             }
+            [[nodiscard]]
+            friend bool operator==(char lhs, const codepoint& rhs) noexcept
+            {
+                return lhs == rhs.to_int().first;
+            }
+            [[nodiscard]]
+            friend bool operator==(const codepoint& lhs, char rhs) noexcept
+            {
+                return lhs.to_int().first == rhs;
+            }
 
             [[nodiscard]]
             constexpr std::strong_ordering operator<=>(const codepoint& rhs) const noexcept
@@ -390,6 +400,12 @@ namespace papilio
                 return m_it == rhs.m_it;
             }
 
+            [[nodiscard]]
+            friend underlying_type to_address(const const_iterator& it) noexcept
+            {
+                return it.m_it;
+            }
+
         private:
             underlying_type m_it;
             utf8::codepoint::size_type m_len = 0;
@@ -397,6 +413,13 @@ namespace papilio
         using iterator = const_iterator;
         using reverse_const_iterator = std::reverse_iterator<const_iterator>;
         using reverse_iterator = reverse_const_iterator;
+
+        [[nodiscard]]
+        friend auto to_address(const reverse_const_iterator& it) noexcept
+        {
+            auto base_it = it.base();
+            return to_address(--base_it);
+        }
 
         static constexpr size_type npos = -1;
 
