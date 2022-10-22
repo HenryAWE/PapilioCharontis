@@ -289,6 +289,15 @@ TEST(TestFormat, VFormat)
 
         result = vformat("length of \"{0}\" is {0.length}", make_format_args("hello"));
         EXPECT_EQ(result, "length of \"hello\" is 5");
+
+        result = vformat("{[:5]:}", make_format_args("hello world"));
+        EXPECT_EQ(result, "hello");
+        result = vformat("{[-5:]:}", make_format_args("hello world"));
+        EXPECT_EQ(result, "world");
+        result = vformat("{[0]:}", make_format_args("hello world"));
+        EXPECT_EQ(result, "h");
+        result = vformat("{[-1]:}", make_format_args("hello world"));
+        EXPECT_EQ(result, "d");
     }
 }
 TEST(TestFormat, Format)

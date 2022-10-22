@@ -341,6 +341,27 @@ namespace papilio
     };
 
     template <>
+    class formatter<utf8::codepoint>
+    {
+    public:
+        void parse(format_spec_parse_context& spec)
+        {
+            m_spec = detail::parse_std_format_spec(spec);
+            if(m_spec.type_char != 'c' && m_spec.type_char != '\0')
+                throw invalid_format("invalid character format");
+        }
+        template <typename Context>
+        void format(utf8::codepoint val, Context& ctx)
+        {
+            format_context_traits traits(ctx);
+
+            traits.append(val);
+        }
+
+    private:
+        detail::std_format_spec m_spec;
+    };
+    template <>
     class formatter<string_container>
     {
     public:
