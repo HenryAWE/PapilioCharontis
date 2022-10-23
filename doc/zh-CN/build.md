@@ -12,7 +12,9 @@ mkdir build
 cd build
 cmake ..
 ```
-如果需要构建单元测试，请添加参数 `-Dpapilio_build_unit_test=1`
+如果需要构建单元测试，请添加参数 `-Dpapilio_build_unit_test=1`  
+更多编译选项的文档在[自定义构建](custom_build.md)中
+
 ### 编译
 ```bash
 cmake --build .
