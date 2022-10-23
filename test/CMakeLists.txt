@@ -3,6 +3,11 @@ enable_testing()
 find_package(GTest CONFIG REQUIRED)
 include(GoogleTest)
 
+add_executable(test_chrono test_chrono.cpp)
+target_link_libraries(test_chrono PRIVATE papilio)
+target_link_libraries(test_chrono PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+gtest_discover_tests(test_chrono)
+
 add_executable(test_core test_core.cpp)
 target_link_libraries(test_core PRIVATE papilio)
 target_link_libraries(test_core PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
@@ -24,6 +29,11 @@ add_executable(test_script test_script.cpp)
 target_link_libraries(test_script PRIVATE papilio)
 target_link_libraries(test_script PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
 gtest_discover_tests(test_script)
+
+add_executable(test_stl_container test_stl_container.cpp)
+target_link_libraries(test_stl_container PRIVATE papilio)
+target_link_libraries(test_stl_container PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+gtest_discover_tests(test_stl_container)
 
 add_executable(test_utf8 test_utf8.cpp)
 target_link_libraries(test_utf8 PRIVATE papilio)

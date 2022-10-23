@@ -151,7 +151,8 @@ namespace papilio
     template <typename... Args>
     std::string format(std::string_view fmt, Args&&... args)
     {
-        return vformat(fmt, make_format_args(std::forward<Args>(args)...));
+        // use namespace prefix to avoid collision with std::format caused by ADL
+        return vformat(fmt, papilio::make_format_args(std::forward<Args>(args)...));
     }
 
     namespace detail
