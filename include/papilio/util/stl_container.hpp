@@ -43,31 +43,30 @@ namespace papilio
             using getter = format_arg(*)(const Tuple& val);
 
             template <std::size_t... Indices>
-            static constexpr const std::array<getter, std::tuple_size_v<Tuple>>& get_map(std::index_sequence<Indices...>) noexcept
+            static format_arg get_impl(const Tuple& val, indexing_value::index_type i, std::index_sequence<Indices...>)
             {
-                static constexpr std::array<getter, std::tuple_size_v<Tuple>> getter_map{
+                constexpr std::array<getter, std::tuple_size_v<Tuple>> getter_map{
                     (&get_element<Indices>)...
                 };
-                return getter_map;
-            }
-
-            static format_arg get(const Tuple& val, indexing_value::index_type i)
-            {
-                const auto& map = get_map(std::make_index_sequence<std::tuple_size_v<Tuple>>());
 
                 if(i < 0)
                 {
                     i = -i;
                     if(i > std::tuple_size_v<Tuple>)
                         return format_arg();
-                    return map[std::tuple_size_v<Tuple> - i](val);
+                    return getter_map[std::tuple_size_v<Tuple> - i](val);
                 }
                 else
                 {
                     if(i >= std::tuple_size_v<Tuple>)
                         return format_arg();
-                    return map[i](val);
+                    return getter_map[i](val);
                 }
+            }
+
+            static format_arg get(const Tuple& val, indexing_value::index_type i)
+            {
+                return get_impl(val, i, std::make_index_sequence<std::tuple_size_v<Tuple>>());
             }
 
             static format_arg get_attr(const Tuple& val, const attribute_name& attr)
