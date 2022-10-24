@@ -411,11 +411,11 @@ namespace papilio
             utf8::codepoint::size_type m_len = 0;
         };
         using iterator = const_iterator;
-        using reverse_const_iterator = std::reverse_iterator<const_iterator>;
-        using reverse_iterator = reverse_const_iterator;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using reverse_iterator = const_reverse_iterator;
 
         [[nodiscard]]
-        friend auto to_address(const reverse_const_iterator& it) noexcept
+        friend auto to_address(const const_reverse_iterator& it) noexcept
         {
             auto base_it = it.base();
             return to_address(--base_it);
@@ -720,13 +720,13 @@ namespace papilio
             string_view_type view = get_string_view();
             return const_iterator(view.data() + view.size(), 0);
         }
-        reverse_const_iterator crbegin() const
+        const_reverse_iterator crbegin() const
         {
-            return reverse_const_iterator(cend());
+            return const_reverse_iterator(cend());
         }
-        reverse_const_iterator crend() const
+        const_reverse_iterator crend() const
         {
-            return reverse_const_iterator(cbegin());
+            return const_reverse_iterator(cbegin());
         }
         iterator begin() const noexcept
         {
