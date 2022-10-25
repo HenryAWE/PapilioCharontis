@@ -190,7 +190,11 @@ namespace papilio
         void assign(Iterator first, Iterator last)
         {
             clear();
-            if constexpr(std::is_convertible_v<std::iterator_traits<Iterator>::iterator_category, std::random_access_iterator_tag>)
+            constexpr bool random_access = std::is_convertible_v<
+                typename std::iterator_traits<Iterator>::iterator_category,
+                std::random_access_iterator_tag
+            >;
+            if constexpr(random_access)
             {
                 reserve(std::distance(first, last));
                 for(auto it = first; it != last; ++it)
