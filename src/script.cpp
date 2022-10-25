@@ -502,8 +502,9 @@ namespace papilio::script
     }
     executor interpreter::compile(string_view_type src)
     {
-        auto lexemes = to_lexemes(src);
-        return compile(lexemes);
+        lexer l;
+        l.parse(src);
+        return compile(l.lexemes());
     }
     executor interpreter::compile(std::span<const lexeme> lexemes)
     {
@@ -521,13 +522,6 @@ namespace papilio::script
     std::pair<indexing_value, format_arg_access> interpreter::access(std::span<const lexeme> lexemes)
     {
         return to_access(lexemes);
-    }
-
-    std::vector<lexeme> interpreter::to_lexemes(string_view_type src)
-    {
-        lexer l;
-        l.parse(src);
-        return std::move(l).lexemes();
     }
 
     namespace detail

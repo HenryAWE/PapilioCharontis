@@ -518,6 +518,7 @@ namespace papilio::script
         using string_view_type = std::basic_string_view<char_type>;
         using const_iterator =  string_view_type::const_iterator;
         using iterator = const_iterator;
+        using lexeme_storage = small_vector<lexeme, 8>;
 
         struct parse_result
         {
@@ -535,13 +536,9 @@ namespace papilio::script
             std::optional<std::size_t> default_arg_idx = std::nullopt
         );
 
-        const std::vector<lexeme>& lexemes() const& noexcept
+        std::span<const lexeme> lexemes() const& noexcept
         {
             return m_lexemes;
-        }
-        std::vector<lexeme>&& lexemes() && noexcept
-        {
-            return std::move(m_lexemes);
         }
 
         void clear() noexcept
@@ -868,7 +865,6 @@ namespace papilio::script
         std::pair<indexing_value, format_arg_access> access(std::span<const lexeme> lexemes);
 
     private:
-        std::vector<lexeme> to_lexemes(string_view_type src);
         executor to_executor(std::span<const lexeme> lexemes);
         std::pair<indexing_value, format_arg_access> to_access(std::span<const lexeme> lexemes);
     };
