@@ -403,7 +403,7 @@ TEST(TestScript, Executor)
         executor ex4(
             std::in_place_type<executor::argument>,
             "string"s,
-            std::vector<executor::argument::member_type>{ attribute_name("length") }
+            format_arg_access::member_storage{ attribute_name("length") }
         );
         ex4(ctx);
 

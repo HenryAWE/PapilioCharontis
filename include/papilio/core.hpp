@@ -1716,11 +1716,12 @@ namespace papilio
             indexing_value,
             attribute_name
         >;
+        using member_storage = small_vector<member_type, 2>;
 
         format_arg_access() noexcept : m_members() {}
         format_arg_access(const format_arg_access&) = delete;
         format_arg_access(format_arg_access&&) noexcept = default;
-        format_arg_access(std::vector<member_type> members)
+        format_arg_access(member_storage members)
             : m_members(std::move(members)) {}
 
         [[nodiscard]]
@@ -1733,7 +1734,7 @@ namespace papilio
         }
 
     private:
-        std::vector<member_type> m_members;
+        member_storage m_members;
     };
 
     class dynamic_format_arg_store

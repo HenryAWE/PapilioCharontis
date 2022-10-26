@@ -581,6 +581,10 @@ namespace papilio::script
         using int_type = variable::int_type;
         using float_type = variable::float_type;
         using string_type = std::basic_string<char_type>;
+        using stack_type = std::stack<
+            variable,
+            small_vector<variable, 4>
+        >;
 
         class context
         {
@@ -591,12 +595,12 @@ namespace papilio::script
                 : m_arg_store(&arg_store) {}
 
             [[nodiscard]]
-            std::stack<variable>& get_stack() noexcept
+            stack_type& get_stack() noexcept
             {
                 return m_var_stack;
             }
             [[nodiscard]]
-            const std::stack<variable>& get_stack() const noexcept
+            const stack_type& get_stack() const noexcept
             {
                 return m_var_stack;
             }
@@ -652,7 +656,7 @@ namespace papilio::script
             }
 
         private:
-            std::stack<variable> m_var_stack;
+            stack_type m_var_stack;
 
             const dynamic_format_arg_store* m_arg_store;
         };
@@ -726,11 +730,12 @@ namespace papilio::script
         {
         public:
             using member_type = format_arg_access::member_type;
+            using member_storage = format_arg_access::member_storage;
 
             argument() = delete;
             argument(indexing_value arg_id)
                 : m_arg_id(std::move(arg_id)), m_access() {}
-            argument(indexing_value arg_id, std::vector<member_type> members)
+            argument(indexing_value arg_id, member_storage members)
                 : m_arg_id(std::move(arg_id)), m_access(std::move(members)) {}
             argument(indexing_value arg_id, format_arg_access access)
                 : m_arg_id(std::move(arg_id)), m_access(std::move(access)) {}

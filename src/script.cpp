@@ -805,7 +805,7 @@ namespace papilio::script
                 assert(begin->type() == lexeme_type::argument);
 
                 auto& a = begin->as<lexeme::argument>();
-                std::vector<executor::argument::member_type> members;
+                format_arg_access::member_storage members;
 
                 auto it = std::next(begin);
                 for(; it != end;)
