@@ -493,21 +493,22 @@ namespace papilio::script
     template <typename ReverseIterator>
     ReverseIterator rfind_field_begin(ReverseIterator begin, ReverseIterator end)
     {
-        auto pred = [counter = std::size_t(0)](const auto& ch) mutable
+        std::size_t counter = 0;
+
+        // std::find_if will cause compile errors on GCC
+        for(auto it = begin; it != end; ++it)
         {
-            if(ch == '}')
+            char32_t ch = *it;
+            if(ch == U'}')
                 ++counter;
-            if(ch == '{')
+            if(ch == U'{')
             {
                 if(counter == 0)
-                    return true;
+                    return it;
                 --counter;
             }
-
-            return false;
-        };
-
-        return std::find_if(begin, end, pred);
+        }
+        return end;
     }
 
     class lexer

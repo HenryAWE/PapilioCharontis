@@ -353,6 +353,7 @@ namespace papilio
             using value_type = utf8::codepoint;
             using difference_type = std::size_t;
 
+            const_iterator() = default;
             const_iterator(const const_iterator&) noexcept = default;
             const_iterator(underlying_type it, utf8::codepoint::size_type len) noexcept
                 : m_it(it), m_len(len) {}
