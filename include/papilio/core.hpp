@@ -971,7 +971,7 @@ namespace papilio
         [[nodiscard]]
         bool alternate_form() const noexcept
         {
-            return m_use_locale;
+            return m_alternate_form;
         }
         void alternate_form(bool val) noexcept
         {

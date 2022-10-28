@@ -177,6 +177,16 @@ TEST(TestFormat, Formatter)
         EXPECT_EQ(integer_formatter(017, "o"), "17");
 
         EXPECT_EQ(integer_formatter(0xff, "08x"), "000000ff");
+
+        EXPECT_EQ(format("{:#08x}", 0), "0x00000000");
+        EXPECT_EQ(format("{0:},{0:+},{0:-},{0: }", 1), "1,+1,1, 1");
+        EXPECT_EQ(format("{0:},{0:+},{0:-},{0: }", -1), "-1,-1,-1,-1");
+        EXPECT_EQ(format("{:6}", 42), "    42");
+        EXPECT_EQ(format("{:06}", 42), "000042");
+        EXPECT_EQ(format("{:*<6}", 1), "1*****");
+        EXPECT_EQ(format("{:*>6}", 1), "*****1");
+        EXPECT_EQ(format("{:*^6}", 1), "**1***");
+        EXPECT_EQ(format("{:<06}", -42), "-42   "); // ignore zero
     }
 
     {

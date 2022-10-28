@@ -2,6 +2,7 @@
 
 #include "core.hpp"
 #include "script.hpp"
+#include <cmath>
 
 
 namespace papilio
@@ -220,6 +221,16 @@ namespace papilio
 
             if(m_spec.sign() == format_sign::default_sign)
                 m_spec.sign(format_sign::negative);
+            if(m_spec.width() != 0)
+            {
+                if(m_spec.align() == format_align::default_align)
+                    m_spec.align(format_align::right);
+                if(!m_spec.has_fill())
+                {
+                    if(!(m_spec.align() == format_align::right && m_spec.fill_zero()))
+                        m_spec.fill(U' ');
+                }
+            }
         }
         template <typename Context>
         void format(value_type val, Context& ctx) const
@@ -235,21 +246,40 @@ namespace papilio
             }
             else
                 ++len;
-            if(m_spec.alternate_form())
+            if(m_spec.alternate_form() && m_base != 10)
                 len += 2;
             std::size_t raw_num_len = raw_formatted_size(val, m_base);
             len += raw_num_len;
 
             format_context_traits traits(ctx);
 
+            std::size_t fill_front = 0;
+            std::size_t fill_back = 0;
+
             if(m_spec.has_fill())
             {
-                std::size_t to_fill = m_spec.width();
-                to_fill = len >= to_fill ? 0 : to_fill - len;
+                std::size_t w = m_spec.width();
+                std::size_t to_fill = w <= len ? 0 : w - len;
+                switch(m_spec.align())
+                {
+                    using enum format_align;
+                case left:
+                    fill_back = to_fill;
+                    break;
 
-                if(to_fill)
-                    traits.append(m_spec.fill(), to_fill);
+                [[likely]] case right:
+                    fill_front = to_fill;
+                    break;
+
+                case middle:
+                    fill_front = to_fill / 2; // floor(to_fill / 2)
+                    fill_back = to_fill / 2 + to_fill % 2; // ceil(to_fill / 2)
+                    break;
+                }
             }
+
+            if(fill_front != 0)
+                traits.append(m_spec.fill(), fill_front);
 
             switch(m_spec.sign())
             {
@@ -289,9 +319,10 @@ namespace papilio
                 }
             }
 
-            if(m_spec.fill_zero())
+            if(!m_spec.has_fill() && m_spec.fill_zero())
             {
-                if(m_spec.align() != format_align::left)
+                using enum format_align;
+                if(m_spec.align() == right || m_spec.align() == default_align)
                 {
                     std::size_t to_fill = m_spec.width();
                     to_fill = raw_num_len > to_fill ? 0 : to_fill - raw_num_len;
@@ -310,6 +341,9 @@ namespace papilio
             } while(uval != 0);
 
             traits.append(buf, buf + raw_num_len);
+
+            if(fill_back != 0)
+                traits.append(m_spec.fill(), fill_back);
         }
 
     private:
