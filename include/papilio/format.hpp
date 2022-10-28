@@ -230,7 +230,7 @@ namespace papilio
 
         // return base of the integer
         // the second Boolean value indicates whether use the uppercase letters for hexadecimal output
-        static std::pair<unsigned int, bool> get_base(utf8::codepoint type)
+        static std::pair<unsigned int, bool> get_base(char32_t type)
         {
             if(type == U'd')
                 return std::make_pair(10, false);
@@ -244,7 +244,7 @@ namespace papilio
                 return std::make_pair(8, false);
             else
             {
-                throw invalid_format("invalid type '" + std::string(type) + "' for integer");
+                throw invalid_format("invalid type '" + std::string(utf8::codepoint(type)) + "' for integer");
             }
         }
 
@@ -383,6 +383,8 @@ namespace papilio
         void parse(format_spec_parse_context& ctx)
         {
             m_spec.parse(ctx);
+            if(m_spec.align() == format_align::default_align)
+                m_spec.align(format_align::left);
         }
         template <typename Context>
         void format(utf8::codepoint val, Context& ctx)
@@ -428,70 +430,154 @@ namespace papilio
     class formatter<string_container>
     {
     public:
-        void parse(format_spec_parse_context& spec)
+        void parse(format_spec_parse_context& ctx)
         {
-            m_spec = detail::parse_std_format_spec(spec);
-            if(m_spec.type_char != 's' && m_spec.type_char != '\0')
+            m_spec.parse(ctx);
+            if(m_spec.type_char_or(U's') != U's')
                 throw invalid_format("invalid string format");
+            if(m_spec.width() != 0 && !m_spec.has_fill())
+            {
+                if(m_spec.fill_zero())
+                    m_spec.fill(U'0');
+                else
+                    m_spec.fill(U' ');
+            }
+            if(m_spec.align() == format_align::default_align)
+                m_spec.align(format_align::left);
         }
         template <typename Context>
         void format(const string_container& val, Context& ctx)
         {
+            format_impl(val, ctx, m_spec);
+        }
+
+        // Internal API
+        template <typename Context>
+        static void format_impl(
+            const string_container& val, Context& ctx,
+            const common_format_spec& spec
+        ) {
             format_context_traits traits(ctx);
 
-            traits.append(val);
+            auto [str_end, est_width] = find_str_end(val, spec.precision());
+
+            std::size_t fill_front = 0;
+            std::size_t fill_back = 0;
+            if(std::size_t w = spec.width(); w != 0)
+            {
+                std::tie(fill_front, fill_back) = detail::calc_fill_width(
+                    spec.align(),
+                    w,
+                    est_width
+                );
+            }
+
+            if(fill_front != 0)
+                traits.append(spec.fill(), fill_front);
+
+            for(auto it = val.begin(); it != str_end; ++it)
+                traits.append(*it);
+
+            if(fill_back != 0)
+                traits.append(spec.fill(), fill_back);
         }
 
     private:
-        detail::std_format_spec m_spec;
+        common_format_spec m_spec;
+
+        static std::pair<string_container::iterator, std::size_t> find_str_end(
+            const string_container& str,
+            std::size_t precision
+        ) {
+            std::size_t current_width = 0;
+            auto it = str.begin();
+            const auto end = str.end();
+            for(; it != end; ++it)
+            {
+                std::size_t est_cp_width = (*it).estimate_width();
+                if(current_width + est_cp_width > precision)
+                    break;
+                current_width += est_cp_width;
+            }
+
+            return std::make_pair(it, current_width);
+        }
     };
 
     template <>
     class formatter<bool>
     {
     public:
-        void parse(format_spec_parse_context& spec)
+        void parse(format_spec_parse_context& ctx)
         {
-            m_spec = detail::parse_std_format_spec(spec);
+            m_spec.parse(ctx);
         }
         template <typename Context>
         void format(bool val, Context& ctx)
         {
-            format_context_traits traits(ctx);
+            if(char32_t type = m_spec.type_char_or(U's'); type == U's')
+            {
+                using str_formatter = formatter<string_container>;
+                str_formatter::format_impl(
+                    get_name(val), ctx,
+                    m_spec
+                );
+            }
+            else
+            {
+                using int_formatter = formatter<unsigned int>;
+                auto [base, uppercase] = int_formatter::get_base(type);
+                int_formatter::format_impl(
+                    static_cast<unsigned int>(val), ctx,
+                    m_spec, base, uppercase
+                );
+            }
+        }
 
-            val ? traits.append("true") : traits.append("false");
+        [[nodiscard]]
+        string_container get_name(bool val) noexcept
+        {
+            if(val)
+            {
+                return "true";
+            }
+            else
+            {
+                return "false";
+            }
         }
 
     private:
-        detail::std_format_spec m_spec;
+        common_format_spec m_spec;
     };
 
     template <>
     class formatter<const void*>
     {
     public:
-        void parse(format_spec_parse_context& spec)
+        void parse(format_spec_parse_context& ctx)
         {
-            std::string_view view = spec;
-            if(!view.empty() && view != "p")
+            m_spec.parse(ctx);
+            if(m_spec.type_char_or(U'p') != U'p')
             {
                 throw invalid_format("invalid pointer format");
             }
+
+            m_spec.type_char(U'x');
+            m_spec.alternate_form(true);
         }
         template <typename Context>
         void format(const void* val, Context& ctx)
         {
-            auto int_val = reinterpret_cast<std::uintptr_t>(val);
-            char buf[16];
-            auto result = std::to_chars(buf, buf + 16, int_val, 16);
-
-            format_context_traits traits(ctx);
-            traits.append("0x");
-            traits.append(buf, result.ptr);
+            using int_formatter = formatter<std::uintptr_t>;
+            int_formatter::format_impl(
+                reinterpret_cast<std::uintptr_t>(val), ctx,
+                m_spec, 16, false
+            );
         }
 
     private:
-        detail::std_format_spec m_spec;
+        common_format_spec m_spec;
     };
 
     template <std::floating_point Float>

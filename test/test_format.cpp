@@ -205,6 +205,36 @@ TEST(TestFormat, Formatter)
     }
 
     {
+        EXPECT_EQ(format("{}", nullptr), "0x0");
+        EXPECT_EQ(format("{:p}", nullptr), "0x0");
+        EXPECT_EQ(format("{:#08p}", nullptr), "0x00000000");
+        EXPECT_EQ(format("{:#08p}", (const void*)0xFFFF), "0x0000ffff");
+        // redirection to other type is not allowed for pointer
+        EXPECT_THROW(format("{:08d}", nullptr), invalid_format);
+    }
+
+    {
+        EXPECT_EQ(format("{}", "hello"), "hello");
+        EXPECT_EQ(format("{:6}", "hello"), "hello ");
+        EXPECT_EQ(format("{:>6}", "hello"), " hello");
+        EXPECT_EQ(format("{:^6}", "hello"), "hello ");
+        EXPECT_EQ(format("{:.^5s}", (const char*)u8"我"), ".我..");
+        EXPECT_EQ(format("{:.5s}", (const char*)u8"我我我"), "我我");
+        EXPECT_EQ(format("{:.<5.5s}", (const char*)u8"我我我"), "我我.");
+    }
+
+    {
+        EXPECT_EQ(format("{}", true), "true");
+        EXPECT_EQ(format("{}", false), "false");
+        EXPECT_EQ(format("{:s}", true), "true");
+        EXPECT_EQ(format("{:s}", false), "false");
+        EXPECT_EQ(format("{:d}", true), "1");
+        EXPECT_EQ(format("{:d}", false), "0");
+        EXPECT_EQ(format("{:#02b}", true), "0b01");
+        EXPECT_EQ(format("{:#02b}", false), "0b00");
+    }
+
+    {
         static_assert(formatter_traits<float>::has_formatter());
         static_assert(formatter_traits<double>::has_formatter());
         static_assert(formatter_traits<long double>::has_formatter());
