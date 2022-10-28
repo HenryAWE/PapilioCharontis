@@ -190,6 +190,39 @@ namespace papilio
         };
     }
 
+    namespace detail
+    {
+        // front and back
+        std::pair<std::size_t, std::size_t> calc_fill_width(format_align align, std::size_t width, std::size_t current)
+        {
+            if(width <= current)
+                return std::make_pair(0, 0);
+
+            std::size_t fill_front = 0;
+            std::size_t fill_back = 0;
+            std::size_t to_fill = width - current;
+
+            using enum format_align;
+            switch(align)
+            {
+            case left:
+                fill_back = to_fill;
+                break;
+
+            [[likely]] case right:
+                fill_front = to_fill;
+                break;
+
+            case middle:
+                fill_front = to_fill / 2; // floor(to_fill / 2)
+                fill_back = to_fill / 2 + to_fill % 2; // ceil(to_fill / 2)
+                break;
+            }
+
+            return std::make_pair(fill_front, fill_back);
+        }
+    }
+
     template <detail::supported_integral Integral>
     class formatter<Integral> : public detail::integral_formatter_base
     {
@@ -201,23 +234,7 @@ namespace papilio
         void parse(format_spec_parse_context& ctx)
         {
             m_spec.parse(ctx);
-            if(!m_spec.has_type_char() || m_spec.type_char() == 'd')
-                m_base = 10;
-            else if(m_spec.type_char() == 'x')
-                m_base = 16;
-            else if(m_spec.type_char() == 'X')
-            {
-                m_base = 16;
-                m_uppercase = true;
-            }
-            else if(m_spec.type_char() == 'b')
-                m_base = 2;
-            else if(m_spec.type_char() == 'o')
-                m_base = 8;
-            else
-            {
-                throw invalid_format("invalid type '" + std::string(m_spec.type_char()) + "' for integer");
-            }
+            std::tie(m_base, m_uppercase) = get_base(m_spec.type_char_or(U'd'));
 
             if(m_spec.sign() == format_sign::default_sign)
                 m_spec.sign(format_sign::negative);
@@ -235,8 +252,44 @@ namespace papilio
         template <typename Context>
         void format(value_type val, Context& ctx) const
         {
+            format_impl(
+                val, ctx,
+                m_spec, m_base, m_uppercase
+            );
+        }
+
+        // return base of the integer
+        // the second Boolean value indicates whether use the uppercase letters for hexadecimal output
+        static std::pair<unsigned int, bool> get_base(utf8::codepoint type)
+        {
+            if(type == U'd')
+                return std::make_pair(10, false);
+            else if(type == U'x')
+                return std::make_pair(16, false);
+            else if(type == U'X')
+                return std::make_pair(16, true);
+            else if(type == U'b')
+                return std::make_pair(2, false);
+            else if(type == U'o')
+                return std::make_pair(8, false);
+            else
+            {
+                throw invalid_format("invalid type '" + std::string(type) + "' for integer");
+            }
+        }
+
+        // Internal API
+        // This function can be used by other formatter (e.g. formatter for single character)
+        // when they need to redirect their outputs to integral formatter.
+        // For example, when character formatter needs to output the code point of character
+        // it can redirect its parsed specification to here
+        template <typename Context>
+        static void format_impl(
+            value_type val, Context& ctx,
+            const common_format_spec& spec, unsigned int base, bool uppercase)
+        {
             std::size_t len = 0;
-            if(m_spec.sign() == format_sign::negative)
+            if(spec.sign() == format_sign::negative)
             {
                 if constexpr(std::is_signed_v<value_type>)
                 {
@@ -246,42 +299,28 @@ namespace papilio
             }
             else
                 ++len;
-            if(m_spec.alternate_form() && m_base != 10)
+            if(spec.alternate_form() && base != 10)
                 len += 2;
-            std::size_t raw_num_len = raw_formatted_size(val, m_base);
+            std::size_t raw_num_len = raw_formatted_size(val, base);
             len += raw_num_len;
 
             format_context_traits traits(ctx);
 
             std::size_t fill_front = 0;
             std::size_t fill_back = 0;
-
-            if(m_spec.has_fill())
+            if(spec.has_fill())
             {
-                std::size_t w = m_spec.width();
-                std::size_t to_fill = w <= len ? 0 : w - len;
-                switch(m_spec.align())
-                {
-                    using enum format_align;
-                case left:
-                    fill_back = to_fill;
-                    break;
-
-                [[likely]] case right:
-                    fill_front = to_fill;
-                    break;
-
-                case middle:
-                    fill_front = to_fill / 2; // floor(to_fill / 2)
-                    fill_back = to_fill / 2 + to_fill % 2; // ceil(to_fill / 2)
-                    break;
-                }
+                std::tie(fill_front, fill_back) = detail::calc_fill_width(
+                    spec.align(),
+                    spec.width(),
+                    len
+                );
             }
 
             if(fill_front != 0)
-                traits.append(m_spec.fill(), fill_front);
+                traits.append(spec.fill(), fill_front);
 
-            switch(m_spec.sign())
+            switch(spec.sign())
             {
             case format_sign::negative:
                 if(val < 0)
@@ -300,9 +339,9 @@ namespace papilio
                     traits.append(' ');
                 break;
             }
-            if(m_spec.alternate_form())
+            if(spec.alternate_form())
             {
-                switch(m_base)
+                switch(base)
                 {
                 case 2:
                     traits.append("0b");
@@ -311,7 +350,7 @@ namespace papilio
                     traits.append("0o");
                     break;
                 case 16:
-                    if(m_uppercase)
+                    if(uppercase)
                         traits.append("0X");
                     else
                         traits.append("0x");
@@ -319,12 +358,12 @@ namespace papilio
                 }
             }
 
-            if(!m_spec.has_fill() && m_spec.fill_zero())
+            if(!spec.has_fill() && spec.fill_zero())
             {
                 using enum format_align;
-                if(m_spec.align() == right || m_spec.align() == default_align)
+                if(spec.align() == right || spec.align() == default_align)
                 {
-                    std::size_t to_fill = m_spec.width();
+                    std::size_t to_fill = spec.width();
                     to_fill = raw_num_len > to_fill ? 0 : to_fill - raw_num_len;
                     traits.append('0', to_fill);
                 }
@@ -335,29 +374,21 @@ namespace papilio
             std::size_t buf_idx = raw_num_len;
             do
             {
-                unsigned_value_type rem = uval % m_base;
-                uval /= m_base;
-                buf[--buf_idx] = map_char(rem, m_uppercase);
+                unsigned_value_type rem = uval % base;
+                uval /= base;
+                buf[--buf_idx] = map_char(rem, uppercase);
             } while(uval != 0);
 
             traits.append(buf, buf + raw_num_len);
 
             if(fill_back != 0)
-                traits.append(m_spec.fill(), fill_back);
+                traits.append(spec.fill(), fill_back);
         }
 
     private:
         unsigned int m_base = 10;
         bool m_uppercase = false;
         common_format_spec m_spec;
-
-        unsigned_value_type get_mod(unsigned_value_type e) const noexcept
-        {
-            unsigned_value_type result = 1;
-            for(unsigned_value_type i = 0; i < e; ++i)
-                result *= m_base;
-            return result;
-        }
 
         static std::size_t raw_formatted_size(value_type val, unsigned int base) noexcept
         {
@@ -379,22 +410,49 @@ namespace papilio
     class formatter<utf8::codepoint>
     {
     public:
-        void parse(format_spec_parse_context& spec)
+        void parse(format_spec_parse_context& ctx)
         {
-            m_spec = detail::parse_std_format_spec(spec);
-            if(m_spec.type_char != 'c' && m_spec.type_char != '\0')
-                throw invalid_format("invalid character format");
+            m_spec.parse(ctx);
         }
         template <typename Context>
         void format(utf8::codepoint val, Context& ctx)
         {
             format_context_traits traits(ctx);
 
+            if(auto type = m_spec.type_char_or(U'c'); type != U'c')
+            {
+                using int_formatter = formatter<std::uint32_t>;
+                auto [base, uppercase] = int_formatter::get_base(type);
+
+                int_formatter::format_impl(
+                    static_cast<std::uint32_t>(val.to_int().first), ctx,
+                    m_spec, base, uppercase
+                );
+                return;
+            }
+
+            std::size_t fill_front = 0;
+            std::size_t fill_back = 0;
+            if(std::size_t w = m_spec.width(); w != 0)
+            {
+                std::tie(fill_front, fill_back) = detail::calc_fill_width(
+                    m_spec.align(),
+                    w,
+                    val.estimate_width()
+                );
+            }
+
+            if(fill_front != 0)
+                traits.append(m_spec.fill_or(U' '), fill_front);
+
             traits.append(val);
+
+            if(fill_back != 0)
+                traits.append(m_spec.fill_or(U' '), fill_back);
         }
 
     private:
-        detail::std_format_spec m_spec;
+        common_format_spec m_spec;
     };
     template <>
     class formatter<string_container>

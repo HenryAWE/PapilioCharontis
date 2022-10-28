@@ -310,6 +310,17 @@ namespace papilio
         return result;
     }
 
+    std::size_t string_container::estimate_width() const noexcept
+    {
+        std::size_t result = 0;
+        for(auto&& cp : *this)
+        {
+            result += cp.estimate_width();
+        }
+
+        return result;
+    }
+
     string_container::string_type& string_container::get_string()
     {
         assert(!m_str.valueless_by_exception());

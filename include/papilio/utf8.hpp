@@ -257,6 +257,38 @@ namespace papilio
                 return m_bytes;
             }
 
+            [[nodiscard]]
+            constexpr std::size_t estimate_width() const noexcept
+            {
+                // [begin, end) intervals
+                constexpr std::pair<char32_t, char32_t> estimate_intervals[] =
+                {
+                    { 0x1100u, 0x1160u },
+                    { 0x2329u, 0x232Bu },
+                    { 0x2E80u, 0x303Fu },
+                    { 0x3040u, 0xA4D0u },
+                    { 0xAC00u, 0xD7A4u },
+                    { 0xF900u, 0xFB00u },
+                    { 0xFE10u, 0xFE1Au },
+                    { 0xFE30u, 0xFE70u },
+                    { 0xFF00u, 0xFF61u },
+                    { 0xFFE0u, 0xFFE7u },
+                    { 0x1F300u, 0x1F650u },
+                    { 0x1F900u, 0x1FA00u },
+                    { 0x20000u, 0x2FFFEu },
+                    { 0x30000u, 0x3FFFEu }
+                };
+
+                char32_t ch = *this;
+                for(const auto& i : estimate_intervals)
+                {
+                    if(i.first <= ch && ch < i.second)
+                        return 2;
+                }
+
+                return 1;
+            }
+
         private:
             char8_t m_bytes[4] = { '\0', '\0', '\0', '\0' };
         };
@@ -748,6 +780,8 @@ namespace papilio
 
         std::u8string to_u8string() const;
         std::u32string to_u32string() const;
+
+        std::size_t estimate_width() const noexcept;
 
     private:
         mutable string_store m_str;

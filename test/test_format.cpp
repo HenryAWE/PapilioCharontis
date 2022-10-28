@@ -187,6 +187,21 @@ TEST(TestFormat, Formatter)
         EXPECT_EQ(format("{:*>6}", 1), "*****1");
         EXPECT_EQ(format("{:*^6}", 1), "**1***");
         EXPECT_EQ(format("{:<06}", -42), "-42   "); // ignore zero
+
+        EXPECT_EQ(format("{:}", U'A'), "A");
+        EXPECT_EQ(format("{:*<6}", U'A'), "A*****");
+        EXPECT_EQ(format("{:*^6}", U'A'), "**A***");
+        EXPECT_EQ(format("{:*>6}", U'A'), "*****A");
+        EXPECT_EQ(format("{:c}", U'A'), "A");
+        EXPECT_EQ(format("{:}", U'我'), (const char*)u8"我");
+        EXPECT_EQ(format("{:*<6}", U'我'), (const char*)u8"我****");
+        EXPECT_EQ(format("{:*^6}", U'我'), (const char*)u8"**我**");
+        EXPECT_EQ(format("{:*>6}", U'我'), (const char*)u8"****我");
+        EXPECT_EQ(format("{:c}", U'我'), (const char*)u8"我");
+        EXPECT_EQ(format("{:#x}", U'我'), "0x6211");
+        EXPECT_EQ(format("{:d}", U'A'), "65");
+
+        EXPECT_EQ(format("{.length:06}", "ABCDEFGHIJKL"), "000012");
     }
 
     {
