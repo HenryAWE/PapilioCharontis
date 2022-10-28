@@ -258,7 +258,7 @@ namespace papilio
             }
 
             [[nodiscard]]
-            constexpr std::size_t estimate_width() const noexcept
+            std::size_t estimate_width() const noexcept
             {
                 // [begin, end) intervals
                 constexpr std::pair<char32_t, char32_t> estimate_intervals[] =
