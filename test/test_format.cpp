@@ -259,6 +259,16 @@ TEST(TestFormat, Formatter)
         EXPECT_EQ(float_formatter(1.5f, ""), "1.5");
         EXPECT_EQ(float_formatter(1.5, ""), "1.5");
         EXPECT_EQ(float_formatter(1.5L, ""), "1.5");
+
+        const float pi = 3.14f;
+        EXPECT_EQ(format("{:10f}", pi), "  3.140000");
+        EXPECT_EQ(format("{:.5f}", pi), "3.14000");
+        EXPECT_EQ(format("{:10.5f}", pi), "   3.14000");
+
+        constexpr double inf = std::numeric_limits<double>::infinity();
+        constexpr double nan = std::numeric_limits<double>::quiet_NaN();
+        EXPECT_EQ(format("{0:},{0:+},{0:-},{0: }", inf), "inf,+inf,inf, inf");
+        EXPECT_EQ(format("{0:},{0:+},{0:-},{0: }", nan), "nan,+nan,nan, nan");
     }
 
     {

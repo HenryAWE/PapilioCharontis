@@ -580,38 +580,242 @@ namespace papilio
         common_format_spec m_spec;
     };
 
+    namespace detail
+    {
+        class floating_pointer_formatter_base
+        {
+        public:
+            static void nan_to_chars(char* buf, bool uppercase) noexcept
+            {
+                if(uppercase)
+                {
+                    buf[0] = 'N';
+                    buf[1] = 'A';
+                    buf[2] = 'N';
+                }
+                else
+                {
+                    buf[0] = 'n';
+                    buf[1] = 'a';
+                    buf[2] = 'n';
+                }
+            }
+            static void inf_to_chars(char* buf, bool uppercase) noexcept
+            {
+                if(uppercase)
+                {
+                    buf[0] = 'I';
+                    buf[1] = 'N';
+                    buf[2] = 'F';
+                }
+                else
+                {
+                    buf[0] = 'i';
+                    buf[1] = 'n';
+                    buf[2] = 'f';
+                }
+            }
+        };
+    }
+
     template <std::floating_point Float>
-    class formatter<Float>
+    class formatter<Float> : public detail::floating_pointer_formatter_base
     {
     public:
-        void parse(format_spec_parse_context& spec)
+        using value_type = Float;
+
+        void parse(format_spec_parse_context& ctx)
         {
-            m_spec = detail::parse_std_format_spec(spec);
-            if(m_spec.type_char == 'f')
+            m_spec.parse(ctx);
+            if(!m_spec.has_type_char())
+                return;
+            if(char32_t type = m_spec.type_char(); type == U'a' || type == U'A')
+            {
+                m_chars_fmt = std::chars_format::hex;
+                if(type == 'A')
+                    m_uppercase = true;
+            }
+            else if(type == 'e' || type == 'E')
+            {
+                m_chars_fmt = std::chars_format::scientific;
+                if(m_spec.precision() == -1)
+                    m_spec.precision(6);
+                if(type == 'E')
+                    m_uppercase = true;
+            }
+            else if(type == 'f' || type == 'F')
             {
                 m_chars_fmt = std::chars_format::fixed;
+                if(m_spec.precision() == -1)
+                    m_spec.precision(6);
             }
-            else if(m_spec.type_char == '\0')
+            else if(type == 'g' || type == 'G')
             {
                 m_chars_fmt = std::chars_format::general;
+                if(m_spec.precision() == -1)
+                    m_spec.precision(6);
+                if(type == 'G')
+                    m_uppercase = true;
+            }
+
+            if(m_spec.width() != 0)
+            {
+                if(m_spec.align() == format_align::default_align)
+                    m_spec.align(format_align::right);
+                if(!m_spec.has_fill())
+                {
+                    if(!(m_spec.align() == format_align::right && m_spec.fill_zero()))
+                        m_spec.fill(U' ');
+                }
             }
         }
         template <typename Context>
         void format(Float val, Context& ctx)
         {
+            format_impl(
+                val, ctx,
+                m_spec, m_chars_fmt, m_uppercase
+            );
+        }
+
+        template <typename Context>
+        static void format_impl(
+            value_type val, Context& ctx,
+            const common_format_spec& spec, std::chars_format chars_fmt, bool uppercase
+        ) {
+            char buf[128];
+            char* p_end = buf;
+            std::size_t raw_num_len = 0;
+            bool is_special_val = false;
+
+            if(std::isnan(val))
+            {
+                nan_to_chars(buf, uppercase);
+                p_end += 3;
+                is_special_val = true;
+            }
+            else if(std::isinf(val))
+            {
+                inf_to_chars(buf, uppercase);
+                p_end += 3;
+                is_special_val = true;
+            }
+            else
+            {
+                if(spec.precision() == -1)
+                {
+                    std::to_chars_result result = std::to_chars(
+                        buf, buf + 128,
+                        val,
+                        chars_fmt
+                    );
+                    if(result.ec != std::errc())
+                    {
+                        throw std::system_error(std::make_error_code(result.ec));
+                    }
+                    p_end = result.ptr;
+                }
+                else
+                {
+                    std::to_chars_result result = std::to_chars(
+                        buf, buf + 128,
+                        val,
+                        chars_fmt,
+                        static_cast<int>(spec.precision())
+                    );
+                    if(result.ec != std::errc())
+                    {
+                        throw std::system_error(std::make_error_code(result.ec));
+                    }
+                    p_end = result.ptr;
+                }
+
+                raw_num_len = p_end - buf;
+
+                if(uppercase)
+                {
+                    for(std::size_t i = 0; i < p_end - buf; ++i)
+                    {
+                        if('a' <= buf[i] && buf[i] <= 'z')
+                        {
+                            buf[i] -= 'a' - 'A';
+                        }
+                    }
+                }
+            }
+
+            std::size_t num_len = 0;
+            char sign_ch = get_sign(spec.sign(), std::signbit(val));
+            if(sign_ch != '\0')
+                ++num_len;
+            num_len += p_end - buf;
+
+            std::size_t fill_front = 0;
+            std::size_t fill_back = 0;
+            if(std::size_t w = spec.width(); w != 0)
+            {
+                std::tie(fill_front, fill_back) = detail::calc_fill_width(
+                    spec.align(),
+                    w,
+                    num_len
+                );
+            }
+
             format_context_traits traits(ctx);
 
-            char buf[128];
-            auto result = std::to_chars(buf, buf + 128, val, m_chars_fmt);
-            if(result.ec != std::errc())
+            if(fill_front != 0)
+                traits.append(spec.fill(), fill_front);
+
+            if(!spec.has_fill() && spec.fill_zero() && !is_special_val)
             {
-                throw std::system_error(std::make_error_code(result.ec));
+                using enum format_align;
+                if(spec.align() == right || spec.align() == default_align)
+                {
+                    std::size_t to_fill = spec.width();
+                    to_fill = raw_num_len > to_fill ? 0 : to_fill - raw_num_len;
+                    traits.append('0', to_fill);
+                }
             }
-            traits.append(buf, result.ptr);
+
+            if(sign_ch != '\0')
+                traits.append(sign_ch);
+            traits.append(buf, p_end);
+
+            if(fill_back != 0)
+                traits.append(spec.fill(), fill_back);
         }
 
     private:
-        detail::std_format_spec m_spec;
+        common_format_spec m_spec;
         std::chars_format m_chars_fmt = std::chars_format::general;
+        bool m_uppercase = false;
+
+        // returns null character when sign character is not needed
+        static char get_sign(format_sign sign, bool sign_bit)
+        {
+            switch(sign)
+            {
+                using enum format_sign;
+            case positive:
+                if(sign_bit)
+                    return '-';
+                else
+                    return '+';
+
+            default:
+            case default_sign:
+            [[likely]] case negative:
+                if(sign_bit)
+                    return '-';
+                else
+                    return '\0';
+
+            case space:
+                if(sign_bit)
+                    return '-';
+                else
+                    return ' ';
+            }
+        }
     };
 }
