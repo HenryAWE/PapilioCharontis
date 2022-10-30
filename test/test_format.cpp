@@ -149,34 +149,26 @@ TEST(TestFormat, Formatter)
 
     {
         static_assert(formatter_traits<int>::has_formatter());
+        static_assert(formatter_traits<unsigned int>::has_formatter());
+        static_assert(formatter_traits<long>::has_formatter());
+        static_assert(formatter_traits<unsigned long>::has_formatter());
+        static_assert(formatter_traits<long long>::has_formatter());
+        static_assert(formatter_traits<unsigned long long>::has_formatter());
 
-        auto integer_formatter = []<std::integral T>(T val, std::string_view fmt)->std::string
-        {
-            using namespace papilio;
+        EXPECT_EQ(format("{}", 0), "0");
+        EXPECT_EQ(format("{}", 10), "10");
+        EXPECT_EQ(format("{}", 0u), "0");
+        EXPECT_EQ(format("{}", 10u), "10");
 
-            dynamic_format_arg_store store(val);
-            format_spec_parse_context parse_ctx(fmt, store);
+        EXPECT_EQ(format("{:x}", 0xF), "f");
+        EXPECT_EQ(format("{:b}", 0b10), "10");
+        EXPECT_EQ(format("{:#b}", 0b10), "0b10");
+        EXPECT_EQ(format("{:x}", 0xFF), "ff");
+        EXPECT_EQ(format("{:X}", 0xFF), "FF");
+        EXPECT_EQ(format("{:o}", 017), "17");
+        EXPECT_EQ(format("{:#o}", 017), "0o17");
 
-            formatter<T> f;
-            f.parse(parse_ctx);
-
-            std::string result;
-            basic_format_context fmt_ctx(std::back_inserter(result), store);
-            f.format(val, fmt_ctx);
-            return result;
-        };
-
-        EXPECT_EQ(integer_formatter(0, ""), "0");
-        EXPECT_EQ(integer_formatter(10, ""), "10");
-        EXPECT_EQ(integer_formatter(0u, ""), "0");
-        EXPECT_EQ(integer_formatter(10u, ""), "10");
-
-        EXPECT_EQ(integer_formatter(0xF, "x"), "f");
-        EXPECT_EQ(integer_formatter(0b10, "b"), "10");
-        EXPECT_EQ(integer_formatter(0xFF, "x"), "ff");
-        EXPECT_EQ(integer_formatter(017, "o"), "17");
-
-        EXPECT_EQ(integer_formatter(0xff, "08x"), "000000ff");
+        EXPECT_EQ(format("{:08x}", 0xff), "000000ff");
 
         EXPECT_EQ(format("{:#08x}", 0), "0x00000000");
         EXPECT_EQ(format("{0:},{0:+},{0:-},{0: }", 1), "1,+1,1, 1");
@@ -205,6 +197,8 @@ TEST(TestFormat, Formatter)
     }
 
     {
+        static_assert(formatter_traits<const void*>::has_formatter());
+
         EXPECT_EQ(format("{}", nullptr), "0x0");
         EXPECT_EQ(format("{:p}", nullptr), "0x0");
         EXPECT_EQ(format("{:#08p}", nullptr), "0x00000000");
@@ -214,6 +208,8 @@ TEST(TestFormat, Formatter)
     }
 
     {
+        static_assert(formatter_traits<string_container>::has_formatter());
+
         EXPECT_EQ(format("{}", "hello"), "hello");
         EXPECT_EQ(format("{:6}", "hello"), "hello ");
         EXPECT_EQ(format("{:>6}", "hello"), " hello");
@@ -224,6 +220,8 @@ TEST(TestFormat, Formatter)
     }
 
     {
+        static_assert(formatter_traits<bool>::has_formatter());
+
         EXPECT_EQ(format("{}", true), "true");
         EXPECT_EQ(format("{}", false), "false");
         EXPECT_EQ(format("{:s}", true), "true");
@@ -239,26 +237,10 @@ TEST(TestFormat, Formatter)
         static_assert(formatter_traits<double>::has_formatter());
         static_assert(formatter_traits<long double>::has_formatter());
 
-        auto float_formatter = []<std::floating_point T>(T val, std::string_view fmt)->std::string
-        {
-            using namespace papilio;
-
-            dynamic_format_arg_store store(val);
-            format_spec_parse_context parse_ctx(fmt, store);
-
-            formatter<T> f;
-            f.parse(parse_ctx);
-
-            std::string result;
-            basic_format_context fmt_ctx(std::back_inserter(result), store);
-            f.format(val, fmt_ctx);
-            return result;
-        };
-
-        EXPECT_EQ(float_formatter(1.0, ""), "1");
-        EXPECT_EQ(float_formatter(1.5f, ""), "1.5");
-        EXPECT_EQ(float_formatter(1.5, ""), "1.5");
-        EXPECT_EQ(float_formatter(1.5L, ""), "1.5");
+        EXPECT_EQ(format("{}", 1.0), "1");
+        EXPECT_EQ(format("{}", 1.5f), "1.5");
+        EXPECT_EQ(format("{}", 1.5), "1.5");
+        EXPECT_EQ(format("{}", 1.5L), "1.5");
 
         const float pi = 3.14f;
         EXPECT_EQ(format("{:10f}", pi), "  3.140000");
@@ -369,10 +351,15 @@ TEST(TestFormat, Format)
 {
     using namespace papilio;
 
+    EXPECT_EQ(format("plain text"), "plain text");
+    EXPECT_EQ(format("{{}}"), "{}");
+    EXPECT_EQ(format("[[]]"), "[]");
+
     EXPECT_EQ(format("{}", true), "true");
     EXPECT_EQ(format("{}", false), "false");
     EXPECT_EQ(format("{}", nullptr), "0x0");
     EXPECT_EQ(format("{}", (const void*)0xABCD), "0xabcd");
+    EXPECT_EQ(format("{.length}", "hello"), "5");
 
     std::string_view fmt =
         "There "
@@ -393,30 +380,14 @@ TEST(TestFormat, CustomType)
     {
         static_assert(formatter_traits<my_value>::has_formatter());
 
-        my_value my_val('A', 4);
-        format_arg fmt_arg = my_val;
+        my_value my_val_a('A', 4);
 
-        auto dyn_formatter = [](format_arg fmt_arg, std::string_view fmt)
-        {
-            dynamic_format_arg_store store(fmt_arg);
-            format_spec_parse_context parse_ctx(fmt, store);
+        EXPECT_EQ(format("{:s}", my_val_a), "AAAA");
+        EXPECT_EQ(format("{}", my_val_a), "(A, 4)");
 
-            std::string result;
-            basic_format_context fmt_ctx(std::back_inserter(result), store);
-            fmt_arg.format(parse_ctx, fmt_ctx);
-            return result;
-        };
-
-        EXPECT_EQ(dyn_formatter(fmt_arg, "s"), "AAAA");
-        EXPECT_EQ(dyn_formatter(fmt_arg, ""), "(A, 4)");
-    }
-
-    {
-        my_value my_val('B', 3);
-        std::string result = format("{}", my_val);
-        EXPECT_EQ(result, "(B, 3)");
-        result = format("{:s}", my_val);
-        EXPECT_EQ(result, "BBB");
+        my_value my_val_b('B', 3);
+        EXPECT_EQ(format("{}", my_val_b), "(B, 3)");
+        EXPECT_EQ(format("{:s}", my_val_b), "BBB");
     }
 }
 
