@@ -18,7 +18,7 @@ namespace papilio
         {
             if(i < 0 || i >= 10)
                 return format_arg();
-            return format_arg(val.values[10]);
+            return format_arg(val.values[i]);
         }
     };
 }

@@ -12,7 +12,8 @@ mkdir build
 cd build
 cmake ..
 ```
-If building unit tests is required, please add the argument `-Dpapilio_build_unit_test=1`
+If building unit tests is required, please add the argument `-Dpapilio_build_unit_test=1`  
+Document for more build options are in the [Custom Build](custom_build.md)
 ### Compile
 ```bash
 cmake --build .
