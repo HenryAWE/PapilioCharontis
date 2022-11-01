@@ -4,6 +4,7 @@
 ```
 填充与对齐 符号 # 0 宽度 .精度 L 类型
 ```
+这些参数都是可选的
 
 ### 填充与对齐
 填充可以为任意字符，后随对齐选项为 `<`、`>` 与 `^` 之一  
@@ -14,7 +15,7 @@
 
 ### 符号、# 与 0
 符号选项：
-- `+`：负数与非负数都要使用符号。在非负数前输出 + 号
+- `+`：负数与非负数都要使用符号。在非负数前输出 `+` 号
 - `-`：仅负数使用符号（默认行为）
 - ` `（空格）：非负数使用前导空格，负数使用负号
 
@@ -25,6 +26,7 @@ double nan = std::numeric_limits<double>::quiet_NaN();
 papilio::format("{0:},{0:+},{0:-},{0: }", inf); // "inf,+inf,inf, inf"
 papilio::format("{0:},{0:+},{0:-},{0: }", nan); // "nan,+nan,nan, nan"
 ```
+
 `#` 选项将导致输出启用替换形式
 - 整数类型：使用二进制、八进制或十六进制显示类型时，将插入前缀（`0b`、`0o` 或 `0x`）到输出中
 - 浮点类型：目前暂无实际效果
@@ -88,7 +90,7 @@ papilio::format("{:.<5.5s}", "文文文"); // "文文."
 - `a`：若指定精度，则等价于 `std::to_chars(first, last, value, std::chars_format::hex, precision)` 产生的输出，其中 `precision` 为指定的精度；否则等价于 `std::to_chars(first, last, value, std::chars_format::hex)` 产生输出
 - `e`：等价于 `std::to_chars(first, last, value, std::chars_format::scientific, precision)`  产生的输出，其中 `precision` 为指定的精度，若未指定精度则默认为 `6`
 - `f`：等价于 `std::to_chars(first, last, value, std::chars_format::fixed, precision)` 产生的输出，其中 `precision` 为指定的精度，若未指定精度则默认为 `6`
-- `g`：若指定净土，则等价于 `std::to_chars(first, last, value, std::chars_format::general, precision)` 产生的输出，其中 `precision` 为指定的精度；否则等价于 `std::to_chars(first, last, value)` 产生的输出
+- `g`：若指定精度，则等价于 `std::to_chars(first, last, value, std::chars_format::general, precision)` 产生的输出，其中 `precision` 为指定的精度；否则等价于 `std::to_chars(first, last, value)` 产生的输出
 - 无：若指定精度，则等价于 `std::to_chars(first, last, value, std::chars_format::general, precision)` 产生的输出，其中 `precision` 为指定的精度；否则等价于 `std::to_chars(first, last, value)` 产生的输出。
 
 无穷大和非数（NaN）分别格式化为 `inf` 与 `nan`
@@ -101,7 +103,7 @@ papilio::format("{:.<5.5s}", "文文文"); // "文文."
 
 ### `std::tm` （位于头文件 `<ctime>` 中）
 - 无：等价于使用 [`std::asctime`](https://zh.cppreference.com/w/cpp/chrono/c/asctime) 进行输出
-- 格式字符串：等价于使用 [`std::strftime`](https://zh.cppreference.com/w/cpp/chrono/c/strftime) 进行格式化
+- 格式字符串：等价于使用格式化字符串调用 [`std::strftime`](https://zh.cppreference.com/w/cpp/chrono/c/strftime) 进行格式化
 
 ```c++
 std::tm t{};

@@ -1,6 +1,5 @@
 # 目录
 1. [构建](build.md)：构建项目
-2. [快速入门](quickstart.md)
 3. [常见问题（FAQ）](faq.md)
 4. [脚本语言介绍](script.md)
 5. [内建格式化器（Formatter）](builtin_formatter.md)：常见类型的内建格式化器，你可以在这里找到这些常见类型的格式化说明符文档

@@ -1,6 +1,6 @@
 [English](README.md) **简体中文**
-# 引蝶座 / Papilio Charontis
-功能灵活的 C++ 字符串格式化库
+# 引蝶座（Papilio Charontis）
+功能灵活的 C++ 格式化库
 
 ## 概览
 ### 核心特性：脚本
@@ -11,45 +11,45 @@ std::string_view fmt =
     "[if $0 != 1: 'are' else: 'is']"
     " {} "
     "apple[if $0 != 1: 's']";
-format(fmt, 1); // 返回 "There is 1 apple"
-format(fmt, 2); // 返回 "There are 2 apples"
+papilio::format(fmt, 1); // 返回 "There is 1 apple"
+papilio::format(fmt, 2); // 返回 "There are 2 apples"
 ```
 
 ### 访问成员
 支持索引（整数或字符串）、切片和访问成员属性
 ```c++
-format("length of \"{0}\" is {0.length}", "hello");
+papilio::format("length of \"{0}\" is {0.length}", "hello");
 // 返回 "length of "hello" is 5"
-format("{[:5]:}", "hello world"); // 返回 "hello"
-format("{[-5:]:}", "hello world"); // 返回 "world"
-format("{[0]:}", "hello world"); // 返回 "h"
-format("{[-1]:}", "hello world"); // 返回 "d"
+papilio::format("{[:5]:}", "hello world"); // 返回 "hello"
+papilio::format("{[-5:]:}", "hello world"); // 返回 "world"
+papilio::format("{[0]:}", "hello world"); // 返回 "h"
+papilio::format("{[-1]:}", "hello world"); // 返回 "d"
 ```
 
 ### 与 C++ 20 `<format>` 类似的功能
 ```c++
-format("{}", 10); // 返回 "10"
-format("#{:08x}", 0xff); // 返回 "#000000ff"
-format("{1} and {0}", "second", "first"); // 返回 "first and second"
+papilio::format("{}", 10); // 返回 "10"
+papilio::format("#{:08x}", 0xff); // 返回 "#000000ff"
+papilio::format("{1} and {0}", "second", "first"); // 返回 "first and second"
 using namespace papilio::literals;
-format("{text} and {0}", "world", "text"_a = "hello"); // 返回 "hello and world"
-// 如果你不想 using namespace，可以用 arg("text", "hello") 代替
+papilio::format("{text} and {0}", "world", "text"_a = "hello"); // 返回 "hello and world"
+// 如果你不想 using namespace，可以用 papilio::arg("text", "hello") 代替
 ```
 
 ### Unicode 支持
 你可以在格式化函数中方便地使用 Unicode 字符串
 ```c++
-format("{[:2]}", "你好，世界");
+papilio::format("{[:2]}", "你好，世界");
 // 返回 "你好"，而不是返回无法表达有意义字符的前两个字节
-format("长度：{0.length}；大小：{0.size}", "你好，世界");
+papilio::format("长度：{0.length}；大小：{0.size}", "你好，世界");
 // 返回 "长度：5；大小：15"
 ```
 注意：要运行上文的代码，你需要保证你的代码是用 UTF-8 编码保存的并且设置了正确的编译器选项。你可以使用“u8”前缀以强制字符串使用 UTF-8 编码
 
-[快速入门](doc/zh-CN/quickstart.md)
-
 ## 文档
 1. [构建项目](doc/zh-CN/build.md)
+2. [脚本介绍](doc/zh-CN/script.md)
+3. [常见问题（FAQ）](doc/zh-CN/faq.md)
 
 [更多主题](doc/zh-CN/contents.md)
 
