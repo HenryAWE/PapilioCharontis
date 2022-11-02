@@ -2,147 +2,6 @@
 #include <papilio/format.hpp>
 
 
-TEST(TestFormat, FormatParser)
-{
-    using namespace papilio;
-
-    {
-        format_parser p;
-        dynamic_format_arg_store store;
-        p.parse("plain text", store);
-
-        auto seg = p.segments();
-        EXPECT_EQ(seg.size(), 1);
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::plain_text>(seg[0]));
-        EXPECT_EQ(
-            std::get<format_parser::plain_text>(seg[0]).get(),
-            "plain text"
-        );
-    }
-
-    {
-        format_parser p;
-        dynamic_format_arg_store store;
-        p.parse("{{plain text 2}}", store);
-
-        auto seg = p.segments();
-        EXPECT_EQ(seg.size(), 1);
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::plain_text>(seg[0]));
-        EXPECT_EQ(
-            std::get<format_parser::plain_text>(seg[0]).get(),
-            "{plain text 2}"
-        );
-    }
-
-    {
-        format_parser p;
-        dynamic_format_arg_store store;
-        p.parse("[[plain text 3]]", store);
-
-        auto seg = p.segments();
-        EXPECT_EQ(seg.size(), 1);
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::plain_text>(seg[0]));
-        EXPECT_EQ(
-            std::get<format_parser::plain_text>(seg[0]).get(),
-            "[plain text 3]"
-        );
-    }
-
-    {
-        format_parser p;
-        dynamic_format_arg_store store(true);
-        p.parse("formatting {}", store);
-
-        auto seg = p.segments();
-        EXPECT_EQ(seg.size(), 2);
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::plain_text>(seg[0]));
-        EXPECT_EQ(
-            std::get<format_parser::plain_text>(seg[0]).get(),
-            "formatting "
-        );
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::replacement_field>(seg[1]));
-        auto& field = std::get<format_parser::replacement_field>(seg[1]);
-        EXPECT_TRUE(field.get_arg().is_index());
-        EXPECT_EQ(field.get_arg().as_index(), 0);
-        EXPECT_TRUE(field.get_access().empty());
-        EXPECT_EQ(field.get_fmt(), "");
-    }
-
-    {
-        format_parser p;
-        dynamic_format_arg_store store(true);
-        p.parse("{name.length:02d}", store);
-
-        auto seg = p.segments();
-        EXPECT_EQ(seg.size(), 1);
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::replacement_field>(seg[0]));
-        auto& field = std::get<format_parser::replacement_field>(seg[0]);
-        EXPECT_TRUE(field.get_arg().is_key());
-        EXPECT_EQ(field.get_arg().as_key(), "name");
-        EXPECT_FALSE(field.get_access().empty());
-        EXPECT_EQ(field.get_fmt(), "02d");
-
-        std::string test = "test";
-        EXPECT_EQ(
-            get<std::size_t>(field.get_access().access(format_arg(test))),
-            4
-        );
-    }
-
-    {
-        format_parser p;
-        dynamic_format_arg_store store(true);
-        p.parse("test script [if $0: 'true']", store);
-
-        auto seg = p.segments();
-        EXPECT_EQ(seg.size(), 2);
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::plain_text>(seg[0]));
-        EXPECT_EQ(
-            std::get<format_parser::plain_text>(seg[0]).get(),
-            "test script "
-        );
-
-        dynamic_format_arg_store store_2(true);
-        script::executor::context ctx(store_2);
-        EXPECT_TRUE(std::holds_alternative<format_parser::script_block>(seg[1]));
-        EXPECT_EQ(
-            std::get<format_parser::script_block>(seg[1])(ctx),
-            "true"
-        );
-    }
-
-    {
-        format_parser p;
-        dynamic_format_arg_store store(true);
-        p.parse("{} apple[if $0 != 1: 's']", store);
-
-        auto seg = p.segments();
-        EXPECT_EQ(seg.size(), 3);
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::replacement_field>(seg[0]));
-
-        EXPECT_TRUE(std::holds_alternative<format_parser::plain_text>(seg[1]));
-        EXPECT_EQ(
-            std::get<format_parser::plain_text>(seg[1]).get(),
-            " apple"
-        );
-
-        dynamic_format_arg_store store_2(0);
-        script::executor::context ctx(store_2);
-        EXPECT_TRUE(std::holds_alternative<format_parser::script_block>(seg[2]));
-        EXPECT_EQ(
-            std::get<format_parser::script_block>(seg[2])(ctx),
-            "s"
-        );
-    }
-}
 TEST(TestFormat, Formatter)
 {
     using namespace papilio;
@@ -244,8 +103,11 @@ TEST(TestFormat, Formatter)
 
         const float pi = 3.14f;
         EXPECT_EQ(format("{:10f}", pi), "  3.140000");
+        EXPECT_EQ(format("{:{}f}", pi, 10), "  3.140000");
         EXPECT_EQ(format("{:.5f}", pi), "3.14000");
+        EXPECT_EQ(format("{:.{}f}", pi, 5), "3.14000");
         EXPECT_EQ(format("{:10.5f}", pi), "   3.14000");
+        EXPECT_EQ(format("{:{}.{}f}", pi, 10, 5), "   3.14000");
 
         constexpr double inf = std::numeric_limits<double>::infinity();
         constexpr double nan = std::numeric_limits<double>::quiet_NaN();

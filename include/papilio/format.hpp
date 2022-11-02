@@ -7,139 +7,174 @@
 
 namespace papilio
 {
-    class format_parser
+    template <typename Context>
+    class format_executor
     {
     public:
         using char_type = char;
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
-        using iterator = string_view_type::const_iterator;
 
-        class segment {};
+        format_executor(string_view_type fmt, Context& ctx) noexcept
+            : m_fmt(fmt), m_ctx(ctx) {}
+        format_executor(const format_executor&) = delete;
 
-        class plain_text : public segment
+        void execute()
         {
-        public:
-            plain_text() = delete;
-            plain_text(string_type text)
-                : m_text(std::move(text)) {}
+            format_context_traits traits(m_ctx);
+            format_parse_context parse_ctx(m_fmt, traits.get_store());
+            script::lexer lex;
+            script::interpreter intp;
 
-            [[nodiscard]]
-            const string_type& get() const& noexcept
+            auto it = parse_ctx.begin();
+            for(; it != parse_ctx.end(); it = parse_ctx.begin())
             {
-                return m_text;
+                char_type ch = *it;
+                if(ch == '{')
+                {
+                    auto next_it = std::next(it);
+                    if(next_it == parse_ctx.end())
+                    {
+                        throw std::runtime_error("missing replacement field");
+                    }
+
+                    if(*next_it == '{')
+                    {
+                        traits.append('{');
+                        parse_ctx.advance_to(std::next(next_it));
+                        continue;
+                    }
+                    else
+                    {
+                        std::optional<std::size_t> default_arg_id = std::nullopt;
+                        if(!parse_ctx.manual_indexing())
+                            default_arg_id = parse_ctx.current_arg_id();
+                        auto field_begin = std::next(it);
+                        lex.clear();
+                        auto result = lex.parse(
+                            string_view_type(field_begin, parse_ctx.end()),
+                            script::lexer_mode::replacement_field,
+                            default_arg_id
+                        );
+                        if(result.default_arg_idx_used)
+                            parse_ctx.next_arg_id();
+                        else
+                            parse_ctx.enable_manual_indexing();
+                        auto arg_end = std::next(field_begin, result.parsed_char);
+                        if(arg_end == parse_ctx.end())
+                        {
+                            throw std::runtime_error("missing right brace ('}')");
+                        }
+
+                        auto pred = [counter = std::size_t(0)](char_type ch) mutable
+                        {
+                            if(ch == '{')
+                                ++counter;
+                            if(ch == '}')
+                            {
+                                if(counter == 0)
+                                    return true;
+                                --counter;
+                            }
+
+                            return false;
+                        };
+                        auto fmt_begin = arg_end;
+                        if(*arg_end == ':')
+                            ++fmt_begin;
+                        auto field_end = std::find_if(fmt_begin, parse_ctx.end(), pred);
+                        if(field_end == parse_ctx.end())
+                        {
+                            throw std::runtime_error("missing right brace ('}')");
+                        }
+
+                        auto [idx, acc] = intp.access(lex.lexemes());
+                        // TODO: Separate parsing and formatting
+
+                        format_spec_parse_context spec_ctx(
+                            parse_ctx,
+                            string_view_type(fmt_begin, field_end)
+                        );
+                        acc.access(traits.get_store().get(idx)).format(
+                            spec_ctx,
+                            m_ctx
+                        );
+
+                        parse_ctx.advance_to(std::next(field_end));
+                    }
+                }
+                else if(ch == '}')
+                {
+                    auto next_it = std::next(it);
+                    if(next_it != parse_ctx.end() && *next_it == '}')
+                    {
+                        traits.append('}');
+                        parse_ctx.advance_to(std::next(next_it));
+                    }
+                    else
+                    {
+                        throw std::runtime_error("invalid right brace ('}')");
+                    }
+                }
+                else if(ch == '[')
+                {
+                    auto next_it = std::next(it);
+                    if(next_it == parse_ctx.end())
+                    {
+                        throw std::runtime_error("missing script block");
+                    }
+
+                    if(*next_it == '[')
+                    {
+                        traits.append('[');
+                        parse_ctx.advance_to(std::next(next_it));
+                        continue;
+                    }
+                    else
+                    {
+                        string_view_type src(next_it, parse_ctx.end());
+                        lex.clear();
+                        auto result = lex.parse(
+                            src,
+                            script::lexer_mode::script_block
+                        );
+                        auto script_end = std::next(next_it, result.parsed_char);
+                        if(script_end == parse_ctx.end() || *script_end != ']')
+                        {
+                            throw std::runtime_error("missing right bracket (']')");
+                        }
+
+                        script::executor::context ex_ctx(traits.get_store());
+                        intp.compile(lex.lexemes())(ex_ctx);
+
+                        traits.append(ex_ctx.get_result());
+                        parse_ctx.advance_to(std::next(script_end));
+                    }
+                }
+                else if(ch == ']')
+                {
+                    auto next_it = std::next(it);
+                    if(next_it != parse_ctx.end() && *next_it == ']')
+                    {
+                        traits.append(']');
+                        parse_ctx.advance_to(std::next(next_it));
+                    }
+                    else
+                    {
+                        throw std::runtime_error("invalid right brace ('}')");
+                    }
+                }
+                else
+                {
+                    traits.append(ch);
+                    parse_ctx.advance_to(std::next(it));
+                }
             }
-            [[nodiscard]]
-            string_type get() && noexcept
-            {
-                return std::move(m_text);
-            }
-
-            template <typename Context>
-            void format(Context& ctx) const
-            {
-                format_context_traits traits(ctx);
-                traits.append(m_text);
-            }
-
-        private:
-            string_type m_text;
-        };
-
-        class replacement_field : public segment
-        {
-        public:
-            replacement_field() = delete;
-            replacement_field(indexing_value arg, format_arg_access access, string_type fmt = string_type())
-                : m_arg(std::move(arg)), m_access(std::move(access)), m_fmt(std::move(fmt)) {}
-
-            [[nodiscard]]
-            const indexing_value& get_arg() const noexcept
-            {
-                return m_arg;
-            }
-            const format_arg_access& get_access() const noexcept
-            {
-                return m_access;
-            }
-            [[nodiscard]]
-            const string_type& get_fmt() const noexcept
-            {
-                return m_fmt;
-            }
-
-            template <typename Context>
-            void format(Context& ctx) const
-            {
-                format_context_traits traits(ctx);
-                format_spec_parse_context spec(m_fmt, traits.get_store());
-
-                auto& store = traits.get_store();
-
-                m_access.access(store.get(m_arg)).format(spec, ctx);
-            }
-
-        private:
-            indexing_value m_arg;
-            format_arg_access m_access;
-            string_type m_fmt;
-        };
-
-        class script_block : public segment
-        {
-        public:
-            script_block() = delete;
-            script_block(script::executor ex)
-                : m_ex(std::move(ex)) {}
-
-            string_type operator()(script::executor::context& ctx) const
-            {
-                m_ex(ctx);
-                return ctx.get_result();
-            }
-
-            template <typename Context>
-            void format(Context& ctx) const
-            {
-                format_context_traits traits(ctx);
-                script::executor::context ex_ctx(traits.get_store());
-                m_ex(ex_ctx);
-
-                traits.append(ex_ctx.get_result());
-            }
-
-        private:
-            mutable script::executor m_ex;
-        };
-
-        using segment_store = std::variant<
-            plain_text,
-            replacement_field,
-            script_block
-        >;
-
-        void parse(string_view_type str, const dynamic_format_arg_store& store);
-
-        std::span<const segment_store> segments() const noexcept
-        {
-            return m_segments;
         }
 
     private:
-        std::vector<segment_store> m_segments;
-
-        template <typename T, typename... Args>
-        void push_segment(Args&&... args)
-        {
-            m_segments.emplace_back(
-                std::in_place_type<T>,
-                std::forward<Args>(args)...
-            );
-        }
-
-        std::pair<indexing_value, format_arg_access> build_arg_access(
-            std::span<const script::lexeme> lexemes
-        );
+        string_view_type m_fmt;
+        Context& m_ctx;
     };
 
     template <typename... Args>
