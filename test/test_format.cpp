@@ -114,67 +114,6 @@ TEST(TestFormat, Formatter)
         EXPECT_EQ(format("{0:},{0:+},{0:-},{0: }", inf), "inf,+inf,inf, inf");
         EXPECT_EQ(format("{0:},{0:+},{0:-},{0: }", nan), "nan,+nan,nan, nan");
     }
-
-    {
-        auto dyn_formatter = [](format_arg fmt_arg, std::string_view fmt)
-        {
-            dynamic_format_arg_store store(fmt_arg);
-            format_spec_parse_context parse_ctx(fmt, store);
-
-            std::string result;
-            basic_format_context fmt_ctx(std::back_inserter(result), store);
-            fmt_arg.format(parse_ctx, fmt_ctx);
-            return result;
-        };
-
-        format_arg a1 = 1;
-        EXPECT_EQ(dyn_formatter(a1, ""), "1");
-        format_arg a2 = 0xF;
-        EXPECT_EQ(dyn_formatter(a2, "x"), "f");
-    }
-}
-namespace test_format
-{
-    class my_value
-    {
-    public:
-        char ch;
-        int count;
-    };
-}
-namespace papilio
-{
-    template <>
-    class formatter<test_format::my_value>
-    {
-    public:
-        void parse(format_spec_parse_context& spec)
-        {
-            std::string_view view(spec.begin(), spec.end());
-            if(view == "s")
-                m_as_str = true;
-        }
-        template <typename Context>
-        void format(const test_format::my_value& val, Context& ctx)
-        {
-            format_context_traits traits(ctx);
-            if(m_as_str)
-                traits.append(val.ch, val.count);
-            else
-            {
-                std::string result;
-                result += '(';
-                result += val.ch;
-                result += ", ";
-                result += std::to_string(val.count);
-                result += ')';
-                traits.append(result);
-            }
-        }
-
-    private:
-        bool m_as_str = false;
-    };
 }
 TEST(TestFormat, VFormat)
 {
@@ -233,6 +172,49 @@ TEST(TestFormat, Format)
 
     struct tmp_type {};
     EXPECT_ANY_THROW(format("{}", tmp_type()));
+}
+namespace test_format
+{
+    class my_value
+    {
+    public:
+        char ch;
+        int count;
+    };
+}
+namespace papilio
+{
+    template <>
+    class formatter<test_format::my_value>
+    {
+    public:
+        void parse(format_spec_parse_context& spec)
+        {
+            std::string_view view(spec.begin(), spec.end());
+            if(view == "s")
+                m_as_str = true;
+        }
+        template <typename Context>
+        void format(const test_format::my_value& val, Context& ctx)
+        {
+            format_context_traits traits(ctx);
+            if(m_as_str)
+                traits.append(val.ch, val.count);
+            else
+            {
+                std::string result;
+                result += '(';
+                result += val.ch;
+                result += ", ";
+                result += std::to_string(val.count);
+                result += ')';
+                traits.append(result);
+            }
+        }
+
+    private:
+        bool m_as_str = false;
+    };
 }
 TEST(TestFormat, CustomType)
 {

@@ -5,46 +5,21 @@
 #include <papilio/papilio.hpp>
 
 
-TEST(TestScript, Utilities)
-{
-    using namespace papilio::script;
-
-    static_assert(is_lexeme<lexeme::argument>);
-    static_assert(is_lexeme<lexeme::identifier>);
-    static_assert(is_lexeme<lexeme::constant>);
-    static_assert(is_lexeme<lexeme::keyword>);
-    static_assert(is_lexeme<lexeme::operator_>);
-
-    {
-        using namespace std::literals;
-        namespace stdr = std::ranges;
-
-        EXPECT_TRUE(stdr::all_of(" \n\t\f\v"sv, detail::is_space));
-        EXPECT_FALSE(stdr::all_of("abcABC_$.*/+-="sv, detail::is_space));
-
-        EXPECT_TRUE(stdr::all_of("1234567890"sv, detail::is_digit));
-        EXPECT_FALSE(stdr::all_of("a1234567890"sv, detail::is_digit));
-        EXPECT_TRUE(stdr::all_of("1234567890abcdefABCDEF"sv, detail::is_xdigit));
-        EXPECT_FALSE(stdr::all_of("1234567890abcdefABCDEFgG"sv, detail::is_xdigit));
-
-        EXPECT_TRUE(stdr::all_of("name"sv, detail::is_identifier_helper()));
-        EXPECT_TRUE(stdr::all_of("_name"sv, detail::is_identifier_helper()));
-        EXPECT_TRUE(stdr::all_of("NAME"sv, detail::is_identifier_helper()));
-        EXPECT_TRUE(stdr::all_of("name_1"sv, detail::is_identifier_helper()));
-        EXPECT_FALSE(stdr::all_of("$name"sv, detail::is_identifier_helper()));
-        EXPECT_FALSE(stdr::all_of("-name"sv, detail::is_identifier_helper()));
-        EXPECT_FALSE(stdr::all_of("1_name"sv, detail::is_identifier_helper()));
-        EXPECT_FALSE(stdr::all_of("name 1"sv, detail::is_identifier_helper()));
-    }
-}
 TEST(TestScript, Lexer)
 {
     using namespace papilio;
     using namespace script;
 
-    lexer l;
-    l.parse(R"(if $0: 'one\'s')");
+    static_assert(is_lexeme_v<lexeme::argument>);
+    static_assert(is_lexeme_v<lexeme::identifier>);
+    static_assert(is_lexeme_v<lexeme::constant>);
+    static_assert(is_lexeme_v<lexeme::keyword>);
+    static_assert(is_lexeme_v<lexeme::operator_>);
+
     {
+        lexer l;
+        l.parse(R"(if $0: 'one\'s')");
+
         auto lexemes = l.lexemes();
         
         EXPECT_EQ(lexemes[0].type(), lexeme_type::keyword);
@@ -60,9 +35,10 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[3].as<lexeme::constant>().get_string(), "one's");
     }
 
-    l.clear();
-    l.parse("if !$0: 'false'");
     {
+        lexer l;
+        l.parse("if !$0: 'false'");
+
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 5);
 
@@ -72,9 +48,10 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[2].type(), lexeme_type::argument);
     }
 
-    l.clear();
-    l.parse(R"($0[-1])");
     {
+        lexer l;
+        l.parse(R"($0[-1])");
+
         auto lexemes = l.lexemes();
 
         EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
@@ -90,9 +67,10 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[3].as<lexeme::operator_>().get(), operator_type::bracket_r);
     }
 
-    l.clear();
-    l.parse(R"($0[-2:-1])");
     {
+        lexer l;
+        l.parse(R"($0[-2:-1])");
+
         auto lexemes = l.lexemes();
 
         EXPECT_EQ(lexemes[0].type(), lexeme_type::argument);
@@ -114,9 +92,10 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[5].as<lexeme::operator_>().get(), operator_type::bracket_r);
     }
 
-    l.clear();
-    l.parse(R"($0[:-1])");
     {
+        lexer l;
+        l.parse(R"($0[:-1])");
+
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 5);
 
@@ -136,9 +115,10 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[4].as<lexeme::operator_>().get(), operator_type::bracket_r);
     }
 
-    l.clear();
-    l.parse(R"($0[10][:3])");
     {
+        lexer l;
+        l.parse(R"($0[10][:3])");
+
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 8);
 
@@ -168,9 +148,10 @@ TEST(TestScript, Lexer)
     }
 
     // non-ASCII characters
-    l.clear();
-    l.parse((const char*)u8R"('非ASCII字符串')");
     {
+        lexer l;
+        l.parse((const char*)u8R"('非ASCII字符串')");
+
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes[0].type(), lexeme_type::constant);
         EXPECT_EQ(
@@ -179,9 +160,10 @@ TEST(TestScript, Lexer)
         );
     }
 
-    l.clear();
-    l.parse("$0.length");
     {
+        lexer l;
+        l.parse("$0.length");
+
         auto lexemes = l.lexemes();
         EXPECT_EQ(lexemes.size(), 3);
 
@@ -192,9 +174,9 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[2].as<lexeme::identifier>().get(), "length");
     }
 
-    l.clear();
-    l.parse(R"(if $name: {name} else: '(empty)')");
     {
+        lexer l;
+        l.parse(R"(if $name: {name} else: '(empty)')");
         auto lexemes = l.lexemes();
 
         EXPECT_EQ(lexemes[0].type(), lexeme_type::keyword);
@@ -219,9 +201,10 @@ TEST(TestScript, Lexer)
         EXPECT_EQ(lexemes[6].as<lexeme::constant>().get_string(), "(empty)");
     }
 
-    l.clear();
-    l.parse(R"(if $0 == 0: 'zero')");
     {
+        lexer l;
+        l.parse(R"(if $0 == 0: 'zero')");
+
         auto lexemes = l.lexemes();
 
         EXPECT_EQ(lexemes[0].type(), lexeme_type::keyword);
@@ -241,8 +224,9 @@ TEST(TestScript, Lexer)
     }
 
     {
+        lexer l;
+
         std::string src = "[]";
-        l.clear();
         // skip '['
         auto result = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
         EXPECT_EQ(result.parsed_char, 0);
@@ -252,8 +236,9 @@ TEST(TestScript, Lexer)
     }
 
     {
+        lexer l;
+
         std::string src = "[if $0: 'test']";
-        l.clear();
         // skip '['
         auto result = l.parse(std::string_view(src).substr(1), lexer_mode::script_block);
         EXPECT_EQ(result.parsed_char, src.size() - 2);
@@ -263,8 +248,9 @@ TEST(TestScript, Lexer)
     }
 
     {
+        lexer l;
+
         std::string src = "{0.length:}";
-        l.clear();
         // skip '{'
         auto result = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
         EXPECT_EQ(result.parsed_char, src.size() - 3);
@@ -278,8 +264,9 @@ TEST(TestScript, Lexer)
     }
 
     {
+        lexer l;
+
         std::string src = "{0.length}";
-        l.clear();
         // skip '{'
         auto result = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
         EXPECT_EQ(result.parsed_char, src.size() - 2);
@@ -293,8 +280,9 @@ TEST(TestScript, Lexer)
     }
 
     {
+        lexer l;
+
         std::string src = "{name.length:}";
-        l.clear();
         // skip '{'
         auto result = l.parse(std::string_view(src).substr(1), lexer_mode::replacement_field);
         EXPECT_EQ(result.parsed_char, src.size() - 3);
@@ -308,8 +296,9 @@ TEST(TestScript, Lexer)
     }
 
     {
+        lexer l;
+
         std::string src = "{.length:}";
-        l.clear();
         // skip '{'
         auto result = l.parse(
             std::string_view(src).substr(1),
@@ -327,8 +316,9 @@ TEST(TestScript, Lexer)
     }
 
     {
+        lexer l;
+
         std::string src = "{[:]:}";
-        l.clear();
         // skip '{'
         auto result = l.parse(
             std::string_view(src).substr(1),

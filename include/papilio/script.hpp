@@ -163,11 +163,19 @@ namespace papilio::script
         less_equal, // <=
     };
 
-    template <typename T>
-    concept is_lexeme = requires(T t)
+    namespace detail
     {
-        { t.type }->std::same_as<const lexeme_type&>;
-    };
+        template <typename T>
+        concept is_lexeme_helper = requires(T t)
+        {
+            { t.type }->std::same_as<const lexeme_type&>;
+        };
+    }
+
+    template <typename T>
+    struct is_lexeme : std::bool_constant<detail::is_lexeme_helper<T>> {};
+    template <typename T>
+    inline constexpr bool is_lexeme_v = is_lexeme<T>::value;
 
     enum class lexer_mode
     {
@@ -396,7 +404,7 @@ namespace papilio::script
         lexeme() = delete;
         lexeme(const lexeme&) = default;
         lexeme(lexeme&&) = default;
-        template <typename Lexeme> requires is_lexeme<Lexeme>
+        template <typename Lexeme> requires is_lexeme_v<Lexeme>
         lexeme(Lexeme lex)
             : m_store(std::move(lex)) {}
 
@@ -408,12 +416,12 @@ namespace papilio::script
             );
         }
 
-        template <typename T> requires is_lexeme<T>
+        template <typename T> requires is_lexeme_v<T>
         bool holds() const noexcept
         {
             return std::holds_alternative<T>(m_store);
         }
-        template <typename T> requires is_lexeme<T>
+        template <typename T> requires is_lexeme_v<T>
         const T& as() const noexcept
         {
             assert(holds<T>());
@@ -550,7 +558,7 @@ namespace papilio::script
     private:
         std::vector<lexeme> m_lexemes;
 
-        template <typename Lexeme, typename... Args> requires is_lexeme<Lexeme>
+        template <typename Lexeme, typename... Args> requires is_lexeme_v<Lexeme>
         void push_lexeme(Args&&... args)
         {
             m_lexemes.emplace_back(Lexeme(std::forward<Args>(args)...));
