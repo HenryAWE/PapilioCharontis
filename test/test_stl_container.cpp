@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/papilio.hpp>
 #include <papilio/util/stl_container.hpp>
+#include <papilio/util/join.hpp>
 
 
 TEST(TestSTLContainer, Tuple)
@@ -108,6 +109,18 @@ TEST(TestSTLContainer, Vector)
     EXPECT_EQ(papilio::format("{.size}", ints), "4");
     EXPECT_EQ(papilio::format("{[0]}", ints), "0");
     EXPECT_EQ(papilio::format("{[-1]}", ints), "3");
+}
+TEST(TestSTLContainer, Join)
+{
+    using namespace papilio;
+
+    {
+        std::array<int, 3> int_arr = { 1, 2, 3 };
+        std::string result = format("{}", join(int_arr, ", "));
+        EXPECT_EQ(result, "1, 2, 3");
+        result = format("{:#x}", join(int_arr, ", "));
+        EXPECT_EQ(result, "0x1, 0x2, 0x3");
+    }
 }
 
 int main(int argc, char* argv[])
