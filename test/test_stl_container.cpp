@@ -121,6 +121,14 @@ TEST(TestSTLContainer, Join)
         result = format("{:#x}", join(int_arr, ", "));
         EXPECT_EQ(result, "0x1, 0x2, 0x3");
     }
+
+    {
+        char ch_arr[] = { 'A', 'B', 'C' };
+        std::string result = format("{}", join(ch_arr, ";"));
+        EXPECT_EQ(result, "A;B;C");
+        result = format("{:d}", join(ch_arr, ";"));
+        EXPECT_EQ(result, "65;66;67");
+    }
 }
 
 int main(int argc, char* argv[])

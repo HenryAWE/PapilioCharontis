@@ -46,7 +46,7 @@ namespace papilio
     public:
         using joiner_type = joiner<Range>;
         using value_type = std::ranges::range_value_t<Range>;
-        using underlying_formatter = formatter<value_type>;
+        using underlying_formatter = formatter_traits<value_type>::formatter_type;
 
         void parse(format_spec_parse_context& spec_ctx)
         {

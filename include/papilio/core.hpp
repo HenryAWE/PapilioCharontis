@@ -1295,6 +1295,68 @@ namespace papilio
         attribute_name m_attr;
     };
 
+    namespace detail
+    {
+        template <std::integral Integral>
+        struct best_int_type
+        {
+            using type = std::conditional_t<
+                std::is_unsigned_v<Integral>,
+                std::conditional_t<(sizeof(Integral) <= sizeof(unsigned int)), unsigned int, unsigned long long int>,
+                std::conditional_t<(sizeof(Integral) <= sizeof(int)), int, long long int>
+            >;
+        };
+
+        template <std::integral Integral>
+        using best_int_type_t = best_int_type<Integral>::type;
+
+        template <typename T>
+        struct formatter_selector_helper
+        {
+            using type = std::remove_const_t<T>;
+        };
+
+        template <std::integral T> requires(!char_type<T> && !std::is_same_v<T, bool>)
+        struct formatter_selector_helper<T>
+        {
+            using type = best_int_type_t<T>;
+        };
+        template <>
+        struct formatter_selector_helper<bool>
+        {
+            using type = bool;
+        };
+
+        template <char_type T>
+        struct formatter_selector_helper<T>
+        {
+            using type = utf8::codepoint;
+        };
+
+        template <typename T> requires(!char_type<T>)
+        struct formatter_selector_helper<T*>
+        {
+            using type = const T*;
+        };
+        template <typename T> requires(!char_type<T>)
+        struct formatter_selector_helper<const T*>
+        {
+            using type = const T*;
+        };
+
+        template <std::floating_point T>
+        struct formatter_selector_helper<T>
+        {
+            using type = T;
+        };
+
+        template <string_like T>
+        struct formatter_selector_helper<T>
+        {
+            using type = string_container;
+        };
+    }
+
     template <typename T>
     class formatter;
 
@@ -1302,8 +1364,8 @@ namespace papilio
     class formatter_traits
     {
     public:
-        using type = T;
-        using formatter_type = formatter<T>;
+        using type = detail::formatter_selector_helper<T>::type;
+        using formatter_type = formatter<type>;
 
         template <typename Context = dynamic_format_context>
         [[nodiscard]]
@@ -1466,19 +1528,6 @@ namespace papilio
 
     namespace detail
     {
-        template <std::integral Integral>
-        struct best_int_type
-        {
-            using type = std::conditional_t<
-                std::is_unsigned_v<Integral>,
-                std::conditional_t<(sizeof(Integral) <= sizeof(unsigned int)), unsigned int, unsigned long long int>,
-                std::conditional_t<(sizeof(Integral) <= sizeof(int)), int, long long int>
-            >;
-        };
-
-        template <std::integral Integral>
-        using best_int_type_t = best_int_type<Integral>::type;
-
         class handle_impl_base
         {
         public:
