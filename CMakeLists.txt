@@ -16,7 +16,7 @@ option(papilio_build_module "build module (experimental)" OFF)
 
 project(
     "Papilio Charontis"
-    VERSION 0.0.1
+    VERSION 0.1.0
     LANGUAGES C CXX
 )
 
