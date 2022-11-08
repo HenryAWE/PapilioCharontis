@@ -131,6 +131,24 @@ TEST(TestSTLContainer, Join)
     }
 
     {
+        std::vector<int> values{ 0, 1, 2, 3 };
+        std::string result = format("{}", join(values, ", "));
+        EXPECT_EQ(result, "0, 1, 2, 3");
+
+        auto rng = values | std::views::transform([](int v) { return v + 1; });
+        result = format("{}", join(rng, ", "));
+        EXPECT_EQ(result, "1, 2, 3, 4");
+    }
+
+    {
+        std::vector<std::string> values{ "A", "BC", "DEF", "GHIJ" };
+        std::string result = format("{}", join(values, ", "));
+        EXPECT_EQ(result, "A, BC, DEF, GHIJ");
+        result = format("{:>4}", join(values, ";"));
+        EXPECT_EQ(result, "   A;  BC; DEF;GHIJ");
+    }
+
+    {
         std::tuple<int, bool, std::string> tp(1, false, "hello");
         std::string result = format("{}", join(tp, ", "));
         EXPECT_EQ(result, "1, false, hello");
