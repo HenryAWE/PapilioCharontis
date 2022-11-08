@@ -129,6 +129,18 @@ TEST(TestSTLContainer, Join)
         result = format("{:d}", join(ch_arr, ";"));
         EXPECT_EQ(result, "65;66;67");
     }
+
+    {
+        std::tuple<int, bool, std::string> tp(1, false, "hello");
+        std::string result = format("{}", join(tp, ", "));
+        EXPECT_EQ(result, "1, false, hello");
+    }
+
+    {
+        std::pair<std::string, int> p("key", 0);
+        std::string result = format("{}", join(p, ", "));
+        EXPECT_EQ(result, "key, 0");
+    }
 }
 
 int main(int argc, char* argv[])
