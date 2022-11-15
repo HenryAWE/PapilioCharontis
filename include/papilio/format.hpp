@@ -183,8 +183,39 @@ namespace papilio
         return dynamic_format_arg_store(std::forward<Args>(args)...);
     }
 
+    template <typename OutputIt>
+    OutputIt vformat_to(OutputIt out, std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        basic_format_context fmt_ctx(out, store);
+        format_executor fmt_ex(fmt, fmt_ctx);
+        fmt_ex.execute();
+
+        return fmt_ctx.out();
+    }
+    template <typename OutputIt>
+    OutputIt vformat_to(OutputIt out, const std::locale& loc, std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        basic_format_context fmt_ctx(loc, out, store);
+        format_executor fmt_ex(fmt, fmt_ctx);
+        fmt_ex.execute();
+
+        return fmt_ctx.out();
+    }
     std::string vformat(std::string_view fmt, const dynamic_format_arg_store& store);
     std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_arg_store& store);
+
+    template <typename OutputIt, typename... Args>
+    OutputIt format_to(OutputIt out, std::string_view fmt, Args&&... args)
+    {
+        // use namespace prefix to avoid collision with std::format caused by ADL
+        return vformat_to(out, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+    }
+    template <typename OutputIt, typename... Args>
+    OutputIt format_to(OutputIt out, std::locale& loc, std::string_view fmt, Args&&... args)
+    {
+        // use namespace prefix to avoid collision with std::format caused by ADL
+        return vformat_to(out, loc, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+    }
     template <typename... Args>
     std::string format(std::string_view fmt, Args&&... args)
     {

@@ -148,6 +148,22 @@ TEST(TestFormat, VFormat)
         EXPECT_EQ(result, "d");
     }
 }
+TEST(TestFormat, FormatTo)
+{
+    using namespace papilio;
+
+    {
+        std::vector<char> buf;
+
+        format_to(std::back_inserter(buf), "plain text");
+        EXPECT_EQ(std::string_view(buf.data(), buf.size()), "plain text");
+
+        buf.clear();
+        buf.resize(4);
+        EXPECT_EQ(format_to(buf.begin(), "{}", 1234), buf.end());
+        EXPECT_EQ(std::string_view(buf.data(), 4), "1234");
+    }
+}
 TEST(TestFormat, Format)
 {
     using namespace papilio;

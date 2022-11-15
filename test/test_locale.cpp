@@ -45,6 +45,31 @@ TEST(TestLocale, LocaleRef)
         EXPECT_EQ(bool_helper(false, custom_ref), "no");
     }
 }
+TEST(TestLocale, FormatTo)
+{
+    using namespace papilio;
+
+    {
+        std::vector<char> buf;
+
+        format_to(std::back_inserter(buf), "{:L}", true);
+        EXPECT_EQ(std::string_view(buf.data(), 4), "true");
+        buf.clear();
+        format_to(std::back_inserter(buf), "{:L}", false);
+        EXPECT_EQ(std::string_view(buf.data(), 5), "false");
+    }
+
+    {
+        std::vector<char> buf;
+        std::locale custom(std::locale("C"), new test_locale::yes_no);
+
+        format_to(std::back_inserter(buf), custom, "{:L}", true);
+        EXPECT_EQ(std::string_view(buf.data(), 3), "yes");
+        buf.clear();
+        format_to(std::back_inserter(buf), custom, "{:L}", false);
+        EXPECT_EQ(std::string_view(buf.data(), 2), "no");
+    }
+}
 TEST(TestLocale, Format)
 {
     using namespace papilio;
