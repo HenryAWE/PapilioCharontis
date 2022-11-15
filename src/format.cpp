@@ -12,6 +12,15 @@ namespace papilio
 
         return result;
     }
+    std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        std::string result;
+        basic_format_context fmt_ctx(loc, std::back_inserter(result), store);
+        format_executor fmt_ex(fmt, fmt_ctx);
+        fmt_ex.execute();
+
+        return result;
+    }
 
     namespace detail
     {

@@ -4,6 +4,7 @@
 #include "core.hpp"
 #include "script.hpp"
 #include "format.hpp"
+#include "locale.hpp"
 
 
 namespace papilio

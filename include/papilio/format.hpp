@@ -184,11 +184,18 @@ namespace papilio
     }
 
     std::string vformat(std::string_view fmt, const dynamic_format_arg_store& store);
+    std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_arg_store& store);
     template <typename... Args>
     std::string format(std::string_view fmt, Args&&... args)
     {
         // use namespace prefix to avoid collision with std::format caused by ADL
         return vformat(fmt, papilio::make_format_args(std::forward<Args>(args)...));
+    }
+    template <typename... Args>
+    std::string format(const std::locale& loc, std::string_view fmt, Args&&... args)
+    {
+        // use namespace prefix to avoid collision with std::format caused by ADL
+        return vformat(loc, fmt, papilio::make_format_args(std::forward<Args>(args)...));
     }
 
     namespace detail
@@ -553,10 +560,20 @@ namespace papilio
             if(char32_t type = m_spec.type_char_or(U's'); type == U's')
             {
                 using str_formatter = formatter<string_container>;
-                str_formatter::format_impl(
-                    get_name(val), ctx,
-                    m_spec
-                );
+                if(m_spec.use_locale())
+                {
+                    str_formatter::format_impl(
+                        get_name(val, ctx.getloc()), ctx,
+                        m_spec
+                    );
+                }
+                else
+                {
+                    str_formatter::format_impl(
+                        get_name(val), ctx,
+                        m_spec
+                    );
+                }
             }
             else
             {
@@ -570,7 +587,7 @@ namespace papilio
         }
 
         [[nodiscard]]
-        string_container get_name(bool val) noexcept
+        static string_container get_name(bool val) noexcept
         {
             if(val)
             {
@@ -580,6 +597,12 @@ namespace papilio
             {
                 return "false";
             }
+        }
+        [[nodiscard]]
+        static string_container get_name(bool val, const std::locale& loc)
+        {
+            auto& numpunct_facet = std::use_facet<std::numpunct<char>>(loc);
+            return val ? numpunct_facet.truename() : numpunct_facet.falsename();
         }
 
     private:

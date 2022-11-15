@@ -15,6 +15,7 @@
 #include "macros.hpp"
 #include "utf8.hpp"
 #include "error.hpp"
+#include "locale.hpp"
 
 
 namespace papilio
@@ -2040,6 +2041,8 @@ namespace papilio
 
         basic_format_context(iterator it, const store_type& store)
             : m_out(std::move(it)), m_store(&store) {}
+        basic_format_context(const std::locale& loc, iterator it, const store_type& store)
+            : m_loc(loc), m_out(std::move(it)), m_store(&store) {}
 
         iterator out()
         {
@@ -2054,10 +2057,21 @@ namespace papilio
         {
             return *m_store;
         }
+        std::locale getloc() const
+        {
+            return m_loc.get();
+        }
+
+        // internal API
+        locale_ref getloc_ref() const noexcept
+        {
+            return m_loc;
+        }
 
     private:
         iterator m_out;
         const store_type* m_store;
+        locale_ref m_loc;
     };
 
     namespace detail
@@ -2069,6 +2083,12 @@ namespace papilio
 
             virtual void push_back(char_type ch) = 0;
             virtual const dynamic_format_arg_store& get_store() const noexcept = 0;
+            virtual locale_ref getloc_ref() const noexcept = 0;
+
+            std::locale getloc() const
+            {
+                return getloc_ref().get();
+            }
         };
         template <typename OutputIt, typename Store>
         class dynamic_format_context_impl final : public dynamic_format_context_impl_base
@@ -2078,7 +2098,7 @@ namespace papilio
             using store_type = Store;
 
             dynamic_format_context_impl(basic_format_context<OutputIt, Store>& ctx) noexcept
-                : m_out(ctx.out()), m_store(&ctx.get_store()) {}
+                : m_out(ctx.out()), m_store(&ctx.get_store()), m_loc(ctx.getloc_ref()) {}
 
             void push_back(char_type ch) override
             {
@@ -2089,9 +2109,14 @@ namespace papilio
             {
                 return *m_store;
             }
+            locale_ref getloc_ref() const noexcept override
+            {
+                return m_loc;
+            }
         private:
             iterator m_out;
             const dynamic_format_arg_store* m_store;
+            locale_ref m_loc;
         };
     }
 
