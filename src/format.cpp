@@ -17,32 +17,42 @@ namespace papilio
 
         return result;
     }
-    std::size_t vformatted_size(std::string_view fmt, const dynamic_format_arg_store& store)
+
+    namespace detail
     {
-        struct counter
+        struct formatted_size_counter
         {
+            using iterator_category = std::output_iterator_tag;
+            using value_type = char;
+            using difference_type = std::ptrdiff_t;
+
             std::size_t value = 0;
 
-            counter& operator=(char) noexcept { return *this; }
-            counter& operator*() noexcept { return *this; }
-            counter& operator++() noexcept { ++value; return *this; }
-        };
+            formatted_size_counter() noexcept = default;
+            formatted_size_counter(const formatted_size_counter&) noexcept = default;
 
-        auto result = vformat_to(counter(), fmt, store);
+            formatted_size_counter& operator=(const formatted_size_counter&) noexcept = default;
+            formatted_size_counter& operator=(char) noexcept { return *this; }
+
+            formatted_size_counter& operator*() noexcept { return *this; }
+            formatted_size_counter& operator++() noexcept { ++value; return *this; }
+            formatted_size_counter operator++(int) noexcept
+            {
+                formatted_size_counter tmp(*this);
+                ++(*this);
+                return tmp;
+            }
+        };
+    }
+
+    std::size_t vformatted_size(std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        auto result = vformat_to(detail::formatted_size_counter(), fmt, store);
         return result.value;
     }
     std::size_t vformatted_size(const std::locale& loc, std::string_view fmt, const dynamic_format_arg_store& store)
     {
-        struct counter
-        {
-            std::size_t value = 0;
-
-            counter& operator=(char) noexcept { return *this; }
-            counter& operator*() noexcept { return *this; }
-            counter& operator++() noexcept { ++value; return *this; }
-        };
-
-        auto result = vformat_to(counter(), loc, fmt, store);
+        auto result = vformat_to(detail::formatted_size_counter(), loc, fmt, store);
         return result.value;
     }
 

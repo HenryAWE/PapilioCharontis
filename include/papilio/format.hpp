@@ -214,6 +214,10 @@ namespace papilio
         template <typename OutputIt>
         struct format_to_n_wrapper
         {
+            using iterator_category = std::output_iterator_tag;
+            using value_type = char;
+            using difference_type = std::ptrdiff_t;
+
             OutputIt out;
             std::iter_difference_t<OutputIt> n;
             std::iter_difference_t<OutputIt> counter = 0;
@@ -236,6 +240,7 @@ namespace papilio
             format_to_n_wrapper& operator=(const format_to_n_wrapper&) = default;
             format_to_n_wrapper& operator=(format_to_n_wrapper&&) = default;
             format_to_n_wrapper& operator++() noexcept { return *this; }
+            format_to_n_wrapper operator++(int) { return *this; }
         };
     }
 
