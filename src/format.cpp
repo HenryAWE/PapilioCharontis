@@ -17,6 +17,34 @@ namespace papilio
 
         return result;
     }
+    std::size_t vformatted_size(std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        struct counter
+        {
+            std::size_t value = 0;
+
+            counter& operator=(char) noexcept { return *this; }
+            counter& operator*() noexcept { return *this; }
+            counter& operator++() noexcept { ++value; return *this; }
+        };
+
+        auto result = vformat_to(counter(), fmt, store);
+        return result.value;
+    }
+    std::size_t vformatted_size(const std::locale& loc, std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        struct counter
+        {
+            std::size_t value = 0;
+
+            counter& operator=(char) noexcept { return *this; }
+            counter& operator*() noexcept { return *this; }
+            counter& operator++() noexcept { ++value; return *this; }
+        };
+
+        auto result = vformat_to(counter(), loc, fmt, store);
+        return result.value;
+    }
 
     namespace detail
     {

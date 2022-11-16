@@ -164,6 +164,36 @@ TEST(TestFormat, FormatTo)
         EXPECT_EQ(std::string_view(buf.data(), 4), "1234");
     }
 }
+TEST(TestFormat, FormatToN)
+{
+    using namespace papilio;
+
+    {
+        std::vector<char> buf;
+        buf.resize(10);
+
+        auto result = format_to_n(buf.begin(), 5, "plain text");
+        EXPECT_EQ(result.out, buf.begin() + 5);
+        EXPECT_EQ(result.size, 5);
+        EXPECT_EQ(std::string_view(buf.data(), result.size), "plain");
+
+        buf.clear();
+        buf.resize(10);
+        result = format_to_n(buf.begin(), buf.size(), "{}", 1234);
+        EXPECT_EQ(result.out, buf.begin() + 4);
+        EXPECT_EQ(result.size, 4);
+        EXPECT_EQ(std::string_view(buf.data(), result.size), "1234");
+    }
+
+    {
+        std::size_t size = formatted_size("{}", 123);
+        EXPECT_EQ(size, 3);
+
+        std::vector<char> buf(size);
+        format_to_n(buf.begin(), size, "{}", 123);
+        EXPECT_EQ(std::string_view(buf.data(), size), "123");
+    }
+}
 TEST(TestFormat, Format)
 {
     using namespace papilio;

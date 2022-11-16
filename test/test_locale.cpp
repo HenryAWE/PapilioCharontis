@@ -70,6 +70,38 @@ TEST(TestLocale, FormatTo)
         EXPECT_EQ(std::string_view(buf.data(), 2), "no");
     }
 }
+TEST(TestLocale, FormatToN)
+{
+    using namespace papilio;
+
+    {
+        std::vector<char> buf;
+        buf.resize(10);
+
+        auto result = format_to_n(buf.begin(), 5, "{:L} {:L}", false, true);
+        EXPECT_EQ(result.out, buf.begin() + 5);
+        EXPECT_EQ(result.size, 5);
+        EXPECT_EQ(std::string_view(buf.data(), result.size), "false");
+
+        buf.clear();
+        buf.resize(10);
+        result = format_to_n(buf.begin(), buf.size(), "{:L}", true);
+        EXPECT_EQ(result.out, buf.begin() + 4);
+        EXPECT_EQ(result.size, 4);
+        EXPECT_EQ(std::string_view(buf.data(), result.size), "true");
+    }
+
+    {
+        std::locale custom(std::locale("C"), new test_locale::yes_no);
+
+        std::size_t size = formatted_size(custom, "{:L}", true);
+        EXPECT_EQ(size, 3); // "yes"
+
+        std::vector<char> buf(size);
+        format_to_n(buf.begin(), size, custom, "{:L}", true);
+        EXPECT_EQ(std::string_view(buf.data(), size), "yes");
+    }
+}
 TEST(TestLocale, Format)
 {
     using namespace papilio;
