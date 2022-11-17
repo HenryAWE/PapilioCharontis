@@ -93,13 +93,14 @@ namespace papilio
         template <typename Context>
         void format(const joiner<Range>& rng, Context& ctx)
         {
+            using context_traits = format_context_traits<Context>;
+
             bool first = true;
             for(auto&& i : rng.get_range())
             {
                 if(!first)
                 {
-                    format_context_traits traits(ctx);
-                    traits.append(rng.get_separator());
+                    context_traits::append(ctx, rng.get_separator());
                 }
                 m_fmt.format(i, ctx);
                 first = false;
@@ -141,15 +142,18 @@ namespace papilio
         template <std::size_t Index, typename Context>
         void format_helper(const joiner_type& tp_joiner, Context& ctx)
         {
-            format_context_traits traits(ctx);
+            using context_traits = format_context_traits<Context>;
             const auto& val = std::get<Index>(tp_joiner.get_tuple());
 
             // TODO: Optimization
             if constexpr(Index != 0)
             {
-                traits.append(tp_joiner.get_separator());
+                context_traits::append(ctx, tp_joiner.get_separator());
             }
-            traits.append(papilio::format("{}", val));
+            context_traits::advance_to(
+                ctx,
+                papilio::format_to(context_traits::out(ctx), "{}", val)
+            );
         }
     };
 }

@@ -15,26 +15,25 @@ namespace papilio
         void parse(format_spec_parse_context& ctx)
         {
             m_fmt = std::string_view(ctx);
-            if(!m_fmt.empty())
-                m_fmt.make_independent();
         }
         template <typename Context>
         void format(const std::tm& val, Context& ctx)
         {
-            format_context_traits traits(ctx);
+            using context_traits = format_context_traits<Context>;
+
             if(m_fmt.empty())
             {
-                traits.append(std::asctime(&val));
+                context_traits::append(ctx, std::asctime(&val));
             }
             else
             {
                 char buf[128];
                 std::size_t len = std::strftime(buf, 128, m_fmt.c_str(), &val);
-                traits.append(buf, buf + len);
+                context_traits::append(ctx, buf, buf + len);
             }
         }
 
     private:
-        string_container m_fmt;
+        std::string m_fmt;
     };
 }

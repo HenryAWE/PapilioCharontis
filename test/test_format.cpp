@@ -243,9 +243,10 @@ namespace papilio
         template <typename Context>
         void format(const test_format::my_value& val, Context& ctx)
         {
-            format_context_traits traits(ctx);
+            using context_traits = format_context_traits<Context>;
+
             if(m_as_str)
-                traits.append(val.ch, val.count);
+                context_traits::append(ctx, val.ch, val.count);
             else
             {
                 std::string result;
@@ -254,7 +255,7 @@ namespace papilio
                 result += ", ";
                 result += std::to_string(val.count);
                 result += ')';
-                traits.append(result);
+                context_traits::append(ctx, result);
             }
         }
 

@@ -21,8 +21,9 @@ namespace papilio
 
         void execute()
         {
-            format_context_traits traits(m_ctx);
-            format_parse_context parse_ctx(m_fmt, traits.get_store());
+            using context_traits = format_context_traits<Context>;
+
+            format_parse_context parse_ctx(m_fmt, context_traits::get_store(m_ctx));
             script::lexer lex;
             script::interpreter intp;
 
@@ -40,7 +41,7 @@ namespace papilio
 
                     if(*next_it == '{')
                     {
-                        traits.append('{');
+                        context_traits::append(m_ctx, '{');
                         parse_ctx.advance_to(std::next(next_it));
                         continue;
                     }
@@ -95,7 +96,7 @@ namespace papilio
                             parse_ctx,
                             string_view_type(fmt_begin, field_end)
                         );
-                        acc.access(traits.get_store().get(idx)).format(
+                        acc.access(context_traits::get_store(m_ctx).get(idx)).format(
                             spec_ctx,
                             m_ctx
                         );
@@ -108,7 +109,7 @@ namespace papilio
                     auto next_it = std::next(it);
                     if(next_it != parse_ctx.end() && *next_it == '}')
                     {
-                        traits.append('}');
+                        context_traits::append(m_ctx, '}');
                         parse_ctx.advance_to(std::next(next_it));
                     }
                     else
@@ -126,7 +127,7 @@ namespace papilio
 
                     if(*next_it == '[')
                     {
-                        traits.append('[');
+                        context_traits::append(m_ctx, '[');
                         parse_ctx.advance_to(std::next(next_it));
                         continue;
                     }
@@ -144,10 +145,10 @@ namespace papilio
                             throw std::runtime_error("missing right bracket (']')");
                         }
 
-                        script::executor::context ex_ctx(traits.get_store());
+                        script::executor::context ex_ctx(context_traits::get_store(m_ctx));
                         intp.compile(lex.lexemes())(ex_ctx);
 
-                        traits.append(ex_ctx.get_result());
+                        context_traits::append(m_ctx, ex_ctx.get_result());
                         parse_ctx.advance_to(std::next(script_end));
                     }
                 }
@@ -156,7 +157,7 @@ namespace papilio
                     auto next_it = std::next(it);
                     if(next_it != parse_ctx.end() && *next_it == ']')
                     {
-                        traits.append(']');
+                        context_traits::append(m_ctx, ']');
                         parse_ctx.advance_to(std::next(next_it));
                     }
                     else
@@ -166,7 +167,7 @@ namespace papilio
                 }
                 else
                 {
-                    traits.append(ch);
+                    context_traits::append(m_ctx, ch);
                     parse_ctx.advance_to(std::next(it));
                 }
             }
@@ -435,7 +436,7 @@ namespace papilio
             std::size_t raw_num_len = raw_formatted_size(val, base);
             len += raw_num_len;
 
-            format_context_traits traits(ctx);
+            using context_traits = format_context_traits<Context>;
 
             std::size_t fill_front = 0;
             std::size_t fill_back = 0;
@@ -449,25 +450,25 @@ namespace papilio
             }
 
             if(fill_front != 0)
-                traits.append(spec.fill(), fill_front);
+                context_traits::append(ctx, spec.fill(), fill_front);
 
             switch(spec.sign())
             {
             case format_sign::negative:
                 if(val < 0)
-                    traits.append('-');
+                    context_traits::append(ctx, '-');
                 break;
             case format_sign::positive:
                 if(val < 0)
-                    traits.append('-');
+                    context_traits::append(ctx, '-');
                 else
-                    traits.append('+');
+                    context_traits::append(ctx, '+');
                 break;
             case format_sign::space:
                 if(val < 0)
-                    traits.append('-');
+                    context_traits::append(ctx, '-');
                 else
-                    traits.append(' ');
+                    context_traits::append(ctx, ' ');
                 break;
             }
             if(spec.alternate_form())
@@ -475,16 +476,16 @@ namespace papilio
                 switch(base)
                 {
                 case 2:
-                    traits.append("0b");
+                    context_traits::append(ctx, "0b");
                     break;
                 [[unlikely]] case 8:
-                    traits.append("0o");
+                    context_traits::append(ctx, "0o");
                     break;
                 case 16:
                     if(uppercase)
-                        traits.append("0X");
+                        context_traits::append(ctx, "0X");
                     else
-                        traits.append("0x");
+                        context_traits::append(ctx, "0x");
                     break;
                 }
             }
@@ -496,7 +497,7 @@ namespace papilio
                 {
                     std::size_t to_fill = spec.width();
                     to_fill = raw_num_len > to_fill ? 0 : to_fill - raw_num_len;
-                    traits.append('0', to_fill);
+                    context_traits::append(ctx, '0', to_fill);
                 }
             }
 
@@ -510,10 +511,10 @@ namespace papilio
                 buf[--buf_idx] = map_char(rem, uppercase);
             } while(uval != 0);
 
-            traits.append(buf, buf + raw_num_len);
+            context_traits::append(ctx, buf, buf + raw_num_len);
 
             if(fill_back != 0)
-                traits.append(spec.fill(), fill_back);
+                context_traits::append(ctx, spec.fill(), fill_back);
         }
 
     private:
@@ -550,7 +551,7 @@ namespace papilio
         template <typename Context>
         void format(utf8::codepoint val, Context& ctx)
         {
-            format_context_traits traits(ctx);
+            using context_traits = format_context_traits<Context>;
 
             if(auto type = m_spec.type_char_or(U'c'); type != U'c')
             {
@@ -576,12 +577,12 @@ namespace papilio
             }
 
             if(fill_front != 0)
-                traits.append(m_spec.fill_or(U' '), fill_front);
+                context_traits::append(ctx, m_spec.fill_or(U' '), fill_front);
 
-            traits.append(val);
+            context_traits::append(ctx, val);
 
             if(fill_back != 0)
-                traits.append(m_spec.fill_or(U' '), fill_back);
+                context_traits::append(ctx, m_spec.fill_or(U' '), fill_back);
         }
 
     private:
@@ -618,7 +619,7 @@ namespace papilio
             const string_container& val, Context& ctx,
             const common_format_spec& spec
         ) {
-            format_context_traits traits(ctx);
+            using context_traits = format_context_traits<Context>;
 
             auto [str_end, est_width] = find_str_end(val, spec.precision());
 
@@ -634,13 +635,13 @@ namespace papilio
             }
 
             if(fill_front != 0)
-                traits.append(spec.fill(), fill_front);
+                context_traits::append(ctx, spec.fill(), fill_front);
 
             for(auto it = val.begin(); it != str_end; ++it)
-                traits.append(*it);
+                context_traits::append(ctx, *it);
 
             if(fill_back != 0)
-                traits.append(spec.fill(), fill_back);
+                context_traits::append(ctx, spec.fill(), fill_back);
         }
 
     private:
@@ -938,10 +939,10 @@ namespace papilio
                 );
             }
 
-            format_context_traits traits(ctx);
+            using context_traits = format_context_traits<Context>;
 
             if(fill_front != 0)
-                traits.append(spec.fill(), fill_front);
+                context_traits::append(ctx, spec.fill(), fill_front);
 
             if(!spec.has_fill() && spec.fill_zero() && !is_special_val)
             {
@@ -950,16 +951,16 @@ namespace papilio
                 {
                     std::size_t to_fill = spec.width();
                     to_fill = raw_num_len > to_fill ? 0 : to_fill - raw_num_len;
-                    traits.append('0', to_fill);
+                    context_traits::append(ctx, '0', to_fill);
                 }
             }
 
             if(sign_ch != '\0')
-                traits.append(sign_ch);
-            traits.append(buf, p_end);
+                context_traits::append(ctx, sign_ch);
+            context_traits::append(ctx, buf, p_end);
 
             if(fill_back != 0)
-                traits.append(spec.fill(), fill_back);
+                context_traits::append(ctx, spec.fill(), fill_back);
         }
 
     private:

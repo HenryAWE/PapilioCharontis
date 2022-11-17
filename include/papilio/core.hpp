@@ -2160,58 +2160,55 @@ namespace papilio
         using char_type = char;
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
+        using context_type = Context;
         using iterator = typename Context::iterator;
         using store_type = typename Context::store_type;
 
         format_context_traits() = delete;
-        format_context_traits(const format_context_traits&) noexcept = default;
-        format_context_traits(Context& ctx) noexcept
-            : m_ctx(&ctx) {}
 
-        iterator out()
+        [[nodiscard]]
+        static iterator out(context_type& ctx)
         {
-            return m_ctx->out();
+            return ctx.out();
         }
-        void advance_to(iterator it)
+        static void advance_to(context_type& ctx, iterator it)
         {
-            m_ctx->advance_to(std::move(it));
+            ctx.advance_to(std::move(it));
         }
 
-        const store_type& get_store() const noexcept
+        [[nodiscard]]
+        static const store_type& get_store(context_type& ctx) noexcept
         {
-            return m_ctx->get_store();
+            return ctx.get_store();
         }
 
         template <typename InputIt>
-        void append(InputIt begin, InputIt end)
+        static void append(context_type& ctx, InputIt begin, InputIt end)
         {
-            advance_to(std::copy(begin, end, out()));
+            advance_to(ctx, std::copy(begin, end, out(ctx)));
         }
-        void append(string_view_type str)
+        static void append(context_type& ctx, string_view_type str)
         {
-            append(str.begin(), str.end());
+            append(ctx, str.begin(), str.end());
         }
         template <detail::char_type Char>
-        void append(Char ch, std::size_t count = 1)
+        static void append(context_type& ctx, Char ch, std::size_t count = 1)
         {
             if constexpr(std::is_same_v<Char, char> || std::is_same_v<Char, char8_t>)
             {
-                advance_to(std::fill_n(out(), count, static_cast<char>(ch)));
+                advance_to(ctx, std::fill_n(out(ctx), count, static_cast<char>(ch)));
             }
             else
             {
                 utf8::codepoint cp(static_cast<char32_t>(ch));
-                append(cp, count);
+                append(ctx, cp, count);
             }
         }
-        void append(utf8::codepoint cp, std::size_t count = 1)
+        static void append(context_type& ctx, utf8::codepoint cp, std::size_t count = 1)
         {
             for(std::size_t i = 0; i < count; ++i)
-                append(string_view_type(cp));
+                append(ctx, string_view_type(cp));
         }
-
-    private:
-        Context* m_ctx;
     };
 }
 

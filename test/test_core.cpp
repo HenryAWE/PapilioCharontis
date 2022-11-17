@@ -460,18 +460,19 @@ TEST(TestCore, FormatContext)
             std::back_inserter(result),
             store
         );
-        format_context_traits traits(ctx);
-        EXPECT_EQ(&traits.get_store(), &store);
 
-        traits.append("1234");
+        using context_traits = format_context_traits<decltype(ctx)>;
+        EXPECT_EQ(&context_traits::get_store(ctx), &store);
+
+        context_traits::append(ctx, "1234");
         EXPECT_EQ(result, "1234");
 
         result.clear();
-        traits.append('1', 4);
+        context_traits::append(ctx, '1', 4);
         EXPECT_EQ(result, "1111");
 
         result.clear();
-        traits.append(U'ä', 2);
+        context_traits::append(ctx, U'ä', 2);
         EXPECT_EQ(result, (const char*)u8"ää");
     }
 
@@ -483,18 +484,19 @@ TEST(TestCore, FormatContext)
             store
         );
         dynamic_format_context dyn_ctx(ctx);
-        format_context_traits traits(dyn_ctx);
-        EXPECT_EQ(&traits.get_store(), &store);
 
-        traits.append("1234");
+        using context_traits = format_context_traits<decltype(dyn_ctx)>;
+        EXPECT_EQ(&context_traits::get_store(dyn_ctx), &store);
+
+        context_traits::append(dyn_ctx, "1234");
         EXPECT_EQ(result, "1234");
 
         result.clear();
-        traits.append('1', 4);
+        context_traits::append(dyn_ctx, '1', 4);
         EXPECT_EQ(result, "1111");
 
         result.clear();
-        traits.append(U'ä', 2);
+        context_traits::append(dyn_ctx, U'ä', 2);
         EXPECT_EQ(result, (const char*)u8"ää");
     }
 }
