@@ -70,7 +70,7 @@ namespace papilio
         ::UINT m_win_cp = CP_ACP;
 #else
     protected:
-        cfile_iterator_utf8_win(unsigned int win_cp) noexcept {}
+        cfile_iterator_utf8_base(unsigned int win_cp) noexcept {}
 
         unsigned int get_cp() const noexcept = delete;
 #endif
