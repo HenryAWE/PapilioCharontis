@@ -12,6 +12,7 @@ add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 option(papilio_build_unit_test "build unit tests" OFF)
+option(papilio_build_example "build unit examples" OFF)
 option(papilio_build_module "build module (experimental)" OFF)
 
 project(
@@ -28,6 +29,9 @@ file(GLOB_RECURSE papilio_src ${glob_expr})
 add_library(papilio ${papilio_src})
 target_include_directories(papilio PUBLIC include)
 
+if(${papilio_build_example})
+    add_subdirectory(example)
+endif()
 if(${papilio_build_unit_test})
     enable_testing()
     add_subdirectory(test)
