@@ -5,6 +5,7 @@
 #include "script.hpp"
 #include "format.hpp"
 #include "locale.hpp"
+#include "print.hpp"
 
 
 namespace papilio
