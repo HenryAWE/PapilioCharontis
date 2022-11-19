@@ -281,6 +281,33 @@ TEST(TestFormat, CustomType)
         EXPECT_EQ(format("{:s}", my_val_b), "BBB");
     }
 }
+namespace test_format
+{
+    struct ostream_only_string
+    {
+        std::string data;
+
+        friend std::ostream& operator<<(std::ostream& os, const ostream_only_string& val)
+        {
+            os << val.data;
+            return os;
+        }
+    };
+}
+TEST(TestFormat, OStreamCompatibility)
+{
+    using namespace papilio;
+    using namespace std::literals;
+
+    static_assert(!formatter_traits<test_format::ostream_only_string>::has_formatter());
+
+    {
+        test_format::ostream_only_string str("operator<<"s);
+
+        EXPECT_EQ(format("{}", str), "operator<<");
+        EXPECT_THROW(format("{:s}", str), invalid_format);
+    }
+}
 
 int main(int argc, char* argv[])
 {

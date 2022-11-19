@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <sstream>
+#include <iomanip> // std::boolalpha
 #include <papilio/papilio.hpp>
 
 
@@ -136,6 +137,51 @@ TEST(TestLocale, PrintToStream)
         print(ss, "{:L} {:L}", true, false);
 
         EXPECT_EQ(ss.str(), "yes no");
+    }
+}
+namespace test_locale
+{
+    struct ostream_only_bool
+    {
+        bool data;
+
+        friend std::ostream& operator<<(std::ostream& os, const ostream_only_bool& val)
+        {
+            os << std::boolalpha << val.data;
+            return os;
+        }
+    };
+}
+TEST(TestLocale, OStreamCompatibility)
+{
+    using namespace papilio;
+
+    static_assert(!formatter_traits<test_locale::ostream_only_bool>::has_formatter());
+
+    {
+        test_locale::ostream_only_bool val_true(true);
+        test_locale::ostream_only_bool val_false(false);
+
+        EXPECT_EQ(format("{:L} {:L}", val_true, val_false), "true false");
+    }
+
+    {
+        test_locale::ostream_only_bool val_true(true);
+        test_locale::ostream_only_bool val_false(false);
+
+        std::locale custom(std::locale("C"), new test_locale::yes_no);
+
+        EXPECT_EQ(format(custom, "{:L} {:L}", val_true, val_false), "yes no");
+    }
+
+    {
+        test_locale::ostream_only_bool val_true(true);
+        test_locale::ostream_only_bool val_false(false);
+
+        std::locale custom(std::locale("C"), new test_locale::yes_no);
+
+        // without locale specifiers "L"
+        EXPECT_EQ(format(custom, "{} {}", val_true, val_false), "true false");
     }
 }
 

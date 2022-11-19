@@ -4,6 +4,7 @@
 #include <concepts>
 #include <system_error>
 #include <charconv>
+#include <sstream>
 
 
 namespace papilio
@@ -50,6 +51,23 @@ namespace papilio
             formatter_type fmt;
             fmt.parse(spec);
             fmt.format(val, ctx);
+        }
+        else if constexpr(detail::has_ostream_support_helper<T>)
+        {
+            using context_traits = format_context_traits<Context>;
+
+            std::ostringstream oss;
+            std::string view(spec);
+            if(view == "L")
+                oss.imbue(ctx.getloc());
+            else if(!view.empty())
+            {
+                throw invalid_format("invalid format");
+            }
+
+            oss << val;
+
+            context_traits::append(ctx, std::move(oss).str());
         }
         else
         {

@@ -9,6 +9,7 @@
 #include <map>
 #include <charconv>
 #include <limits>
+#include <iostream>
 #include <iterator>
 #include <algorithm>
 #include <typeinfo>
@@ -1312,6 +1313,12 @@ namespace papilio
         using best_int_type_t = best_int_type<Integral>::type;
 
         template <typename T>
+        concept has_ostream_support_helper = requires(std::ostream os, const T& val)
+        {
+            os << val;
+        };
+
+        template <typename T>
         struct formatter_selector_helper
         {
             using type = std::remove_const_t<T>;
@@ -1372,6 +1379,7 @@ namespace papilio
         [[nodiscard]]
         static constexpr bool has_formatter() noexcept;
 
+        // TODO: rename
         template <typename Context>
         static void format(format_spec_parse_context& spec, const type& val, Context& ctx);
     };
@@ -2147,6 +2155,17 @@ namespace papilio
         void push_back(char_type ch)
         {
             m_impl->push_back(ch);
+        }
+
+        std::locale getloc() const
+        {
+            return m_impl->getloc();
+        }
+
+        // internal API
+        locale_ref getloc_ref() const noexcept
+        {
+            return m_impl->getloc_ref();
         }
 
     private:
