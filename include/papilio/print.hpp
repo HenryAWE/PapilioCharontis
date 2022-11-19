@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio> // FILE*
+#include <iosfwd>
 #include "format.hpp"
 
 
@@ -36,4 +37,12 @@ namespace papilio
 
     void println(std::FILE* file);
     void println();
+
+    void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_arg_store& store);
+
+    template <typename... Args>
+    void print(std::ostream& os, std::string_view fmt, Args&&... args)
+    {
+        vprint(os, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+    }
 }

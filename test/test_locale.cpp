@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <sstream>
 #include <papilio/papilio.hpp>
 
 
@@ -113,6 +114,28 @@ TEST(TestLocale, Format)
         std::locale custom(std::locale("C"), new test_locale::yes_no);
         EXPECT_EQ(format(custom, "{:L}", true), "yes");
         EXPECT_EQ(format(custom, "{:L}", false), "no");
+    }
+}
+TEST(TestLocale, PrintToStream)
+{
+    using namespace papilio;
+
+    {
+        std::stringstream ss;
+        ss.imbue(std::locale("C"));
+
+        print(ss, "{:L} {:L}", true, false);
+
+        EXPECT_EQ(ss.str(), "true false");
+    }
+
+    {
+        std::stringstream ss;
+        ss.imbue(std::locale(std::locale("C"), new test_locale::yes_no));
+
+        print(ss, "{:L} {:L}", true, false);
+
+        EXPECT_EQ(ss.str(), "yes no");
     }
 }
 

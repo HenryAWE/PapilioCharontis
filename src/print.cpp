@@ -4,6 +4,8 @@
 #   define WIN32_LEAN_AND_MEAN
 #   include <Windows.h>
 #endif
+#include <iostream>
+#include <iterator>
 
 
 namespace papilio
@@ -218,5 +220,10 @@ namespace papilio
     void println()
     {
         println(stdout);
+    }
+
+    void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_arg_store& store)
+    {
+        vformat_to(std::ostream_iterator<char>(os), os.getloc(), fmt, store);
     }
 }

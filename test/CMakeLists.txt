@@ -30,6 +30,11 @@ if(${papilio_build_module})
     gtest_discover_tests(test_module)
 endif()
 
+add_executable(test_print test_print.cpp)
+target_link_libraries(test_print PRIVATE papilio)
+target_link_libraries(test_print PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+gtest_discover_tests(test_print)
+
 add_executable(test_script test_script.cpp)
 target_link_libraries(test_script PRIVATE papilio)
 target_link_libraries(test_script PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
