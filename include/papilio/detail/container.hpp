@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <stdexcept>
 #include "../macros.hpp"
 
 
@@ -561,6 +562,218 @@ namespace papilio::detail
             m_dyn_alloc = true;
             m_capacity = std::exchange(other.m_capacity, static_size());
             m_size = std::exchange(other.m_size, tmp_size);
+        }
+    };
+
+    template <typename T, std::size_t Capacity>
+    class fixed_vector
+    {
+    public:
+        using value_type = T;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using reference = T&;
+        using const_reference = const T&;
+        using pointer = T*;
+        using const_pointer = const T*;
+        using iterator = pointer;
+        using const_iterator = const_pointer;
+
+        fixed_vector() noexcept
+            : m_size(0) {}
+        fixed_vector(const fixed_vector& other) noexcept(std::is_nothrow_copy_constructible_v<T>)
+        {
+            for(size_type i = 0; i < other.size(); ++i)
+            {
+                emplace_back(other[i]);
+            }
+        }
+        fixed_vector(fixed_vector&& other) noexcept(std::is_nothrow_move_constructible_v<T>)
+        {
+            for(size_type i = 0; i < other.size(); ++i)
+            {
+                emplace_back(std::move(other[i]));
+            }
+        }
+        fixed_vector(size_type count, const T& value)
+        {
+            for(size_type i = 0; i < count; ++i)
+            {
+                emplace_back(value);
+            }
+        }
+
+        ~fixed_vector() noexcept
+        {
+            clear();
+        }
+
+        reference at(size_type pos)
+        {
+            [[unlikely]]
+            if(pos >= size())
+                throw std::out_of_range("out of range");
+            return data()[pos];
+        }
+        const_reference at(size_type pos) const
+        {
+            [[unlikely]]
+            if(pos >= size())
+                throw std::out_of_range("out of range");
+            return data()[pos];
+        }
+
+        reference operator[](size_type pos) noexcept
+        {
+            return data()[pos];
+        }
+        const_reference operator[](size_type pos) const noexcept
+        {
+            return data()[pos];
+        }
+
+        reference front() noexcept
+        {
+            return *begin();
+        }
+        const_reference front() const noexcept
+        {
+            return *begin();
+        }
+        reference back() noexcept
+        {
+            return *(end() - 1);
+        }
+        const_reference back() const noexcept
+        {
+            return *(end() - 1);
+        }
+
+        pointer data() noexcept
+        {
+            return static_cast<pointer>(getbuf());
+        }
+        const_pointer data() const noexcept
+        {
+            return static_cast<const_pointer>(getbuf());
+        }
+
+        // iterators
+
+        iterator begin() noexcept { return data(); }
+        iterator end() noexcept { return data() + size(); }
+        const_iterator begin() const noexcept { return data(); }
+        const_iterator end() const noexcept { return data() + size(); }
+        const_iterator cbegin() const noexcept { return begin(); }
+        const_iterator cend() const noexcept { return end(); }
+
+        // capacity
+
+        bool empty() const noexcept
+        {
+            return m_size == 0;
+        }
+        size_type size() const noexcept
+        {
+            return m_size;
+        }
+        static size_type max_size() noexcept
+        {
+            return Capacity;
+        }
+        size_type capacity() const noexcept
+        {
+            return max_size();
+        }
+
+        // modifiers
+
+        void clear() noexcept
+        {
+            std::destroy_n(data(), size());
+            m_size = 0;
+        }
+
+        template <typename... Args>
+        iterator emplace(const_iterator pos, Args&&... args)
+        {
+            assert(pos >= cbegin());
+
+            if(pos > cend())
+            {
+                throw std::out_of_range("out of range");
+            }
+            else if(pos == cend())
+            {
+                return std::addressof(emplace_back(std::forward<Args>(args)...));
+            }
+            else if(m_size == capacity())
+            {
+                throw std::out_of_range("too many values");
+            }
+
+            emplace_back(std::move(back()));
+            if(size() > 2)
+            {
+                for(iterator it = end() - 2; it != pos; --it)
+                {
+                    *it = std::move(*std::prev(it));
+                }
+            }
+
+            value_type tmp(std::forward<Args>(args)...);
+            iterator nonconst_pos = const_cast<iterator>(pos);
+            *nonconst_pos = std::move(tmp);
+
+            return nonconst_pos;
+        }
+        iterator insert(const_iterator pos, const T& val)
+        {
+            return emplace(pos, val);
+        }
+        iterator insert(const_iterator pos, T&& val)
+        {
+            return emplace(pos, std::move(val));
+        }
+
+        template <typename... Args>
+        reference emplace_back(Args&&... args)
+        {
+            if(m_size == capacity())
+                throw std::out_of_range("too many values");
+            pointer new_val = std::construct_at<T>(data() + m_size, std::forward<Args>(args)...);
+            ++m_size;
+
+            return *new_val;
+        }
+        void push_back(const value_type& val)
+        {
+            emplace_back(val);
+        }
+        void push_back(value_type&& val)
+        {
+            emplace_back(std::move(val));
+        }
+
+        void pop_back() noexcept
+        {
+            assert(!empty());
+
+            std::destroy_at(data() + m_size - 1);
+            --m_size;
+        }
+
+    private:
+        char m_buf[sizeof(T) * Capacity]{};
+        size_type m_size = 0;
+
+        void* getbuf() noexcept
+        {
+            return m_buf;
+        }
+        const void* getbuf() const noexcept
+        {
+            return m_buf;
         }
     };
 }
