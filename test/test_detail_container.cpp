@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/detail/container.hpp>
+#include <list>
 #include <span>
 
 

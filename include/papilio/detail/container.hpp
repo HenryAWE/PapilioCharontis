@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <utility>
+#include <numeric>
 #include <stdexcept>
 #include "../macros.hpp"
 
