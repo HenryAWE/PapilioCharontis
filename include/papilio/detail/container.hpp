@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <memory>
+#include <array>
 #include <utility>
 #include <numeric>
 #include <stdexcept>
@@ -773,16 +774,16 @@ namespace papilio::detail
         }
 
     private:
-        char m_buf[sizeof(T) * Capacity]{};
+        std::array<char, sizeof(T) * Capacity> m_buf;
         size_type m_size = 0;
 
         void* getbuf() noexcept
         {
-            return m_buf;
+            return m_buf.data();
         }
         const void* getbuf() const noexcept
         {
-            return m_buf;
+            return m_buf.data();
         }
     };
 
@@ -906,7 +907,7 @@ namespace papilio::detail
             static_assert(std::is_assignable_v<mapped_type&, U&&>);
 
             auto pos = lower_bound(k);
-            if(is_equal(pos->first, k, m_comp.comp))
+            if(pos != end() && is_equal(pos->first, k, m_comp.comp))
             {
                 pos->second = std::forward<U>(val);
 
@@ -925,7 +926,7 @@ namespace papilio::detail
         std::pair<iterator, bool> try_emplace(const Key& k, Args&&... args)
         {
             auto pos = lower_bound(k);
-            if(is_equal(pos->first, k, m_comp.comp))
+            if(pos != end() && is_equal(pos->first, k, m_comp.comp))
             {
                 return std::make_pair(pos, false);
             }

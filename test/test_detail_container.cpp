@@ -226,6 +226,14 @@ TEST(TestDetailContainer, FixedVector)
         EXPECT_THROW(fv.insert(fv.begin(), "overflow"), std::length_error);
         EXPECT_THROW(fv.insert(fv.end(), "overflow"), std::length_error);
     }
+
+    // zero capacity
+    {
+        fixed_vector<int, 0> fv;
+        EXPECT_EQ(fv.capacity(), 0);
+
+        EXPECT_THROW(fv.push_back(0), std::length_error);
+    }
 }
 TEST(TestDetailContainer, FixedFlatMap)
 {
@@ -292,6 +300,13 @@ TEST(TestDetailContainer, FixedFlatMap)
         EXPECT_EQ(fm.at(1), "first");
         EXPECT_FALSE(fm.insert_or_assign(1, "one").second);
         EXPECT_EQ(fm.at(1), "one");
+    }
+
+    // zero capacity
+    {
+        fixed_flat_map<int, std::string, 0> fm;
+
+        EXPECT_THROW(fm.try_emplace(0, "overflow"), std::length_error);
     }
 }
 
