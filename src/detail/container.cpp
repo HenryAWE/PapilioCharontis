@@ -25,6 +25,15 @@ namespace papilio::detail
         return current;
     }
 
+    void fixed_vector_base::raise_out_of_range()
+    {
+        throw std::out_of_range("out of range");
+    }
+    void fixed_vector_base::raise_length_error()
+    {
+        throw std::length_error("length error");
+    }
+
     void fixed_flat_map_base::raise_out_of_range()
     {
         throw std::out_of_range("out of range");

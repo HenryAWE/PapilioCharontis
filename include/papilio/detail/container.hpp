@@ -567,13 +567,23 @@ namespace papilio::detail
         }
     };
 
+    class fixed_vector_base
+    {
+    public:
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+
+        [[noreturn]]
+        static void raise_out_of_range();
+        [[noreturn]]
+        static void raise_length_error();
+    };
+
     template <typename T, std::size_t Capacity>
-    class fixed_vector
+    class fixed_vector : public fixed_vector_base
     {
     public:
         using value_type = T;
-        using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
         using reference = T&;
         using const_reference = const T&;
         using pointer = T*;
@@ -614,14 +624,14 @@ namespace papilio::detail
         {
             [[unlikely]]
             if(pos >= size())
-                throw std::out_of_range("out of range");
+                raise_out_of_range();
             return data()[pos];
         }
         const_reference at(size_type pos) const
         {
             [[unlikely]]
             if(pos >= size())
-                throw std::out_of_range("out of range");
+                raise_out_of_range();
             return data()[pos];
         }
 
@@ -700,18 +710,15 @@ namespace papilio::detail
         iterator emplace(const_iterator pos, Args&&... args)
         {
             assert(pos >= cbegin());
+            assert(pos <= cend());
 
-            if(pos > cend())
-            {
-                throw std::out_of_range("out of range");
-            }
-            else if(pos == cend())
+            if(pos == cend())
             {
                 return std::addressof(emplace_back(std::forward<Args>(args)...));
             }
             else if(m_size == capacity())
             {
-                throw std::out_of_range("too many values");
+                raise_length_error();
             }
 
             emplace_back(std::move(back()));
@@ -742,7 +749,7 @@ namespace papilio::detail
         reference emplace_back(Args&&... args)
         {
             if(m_size == capacity())
-                throw std::out_of_range("too many values");
+                raise_length_error();
             pointer new_val = std::construct_at<T>(data() + m_size, std::forward<Args>(args)...);
             ++m_size;
 

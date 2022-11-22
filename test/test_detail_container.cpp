@@ -163,7 +163,7 @@ TEST(TestDetailContainer, FixedVector)
         EXPECT_EQ(fv.back(), 1);
         EXPECT_EQ(std::as_const(fv).back(), 1);
 
-        EXPECT_THROW(fv.push_back(2), std::out_of_range);
+        EXPECT_THROW(fv.push_back(2), std::length_error);
     }
 
     {
@@ -201,7 +201,7 @@ TEST(TestDetailContainer, FixedVector)
         EXPECT_EQ(fv.back(), "second");
         EXPECT_EQ(std::as_const(fv).back(), "second");
 
-        EXPECT_THROW(fv.push_back("third"), std::out_of_range);
+        EXPECT_THROW(fv.push_back("third"), std::length_error);
     }
 
     {
@@ -223,8 +223,8 @@ TEST(TestDetailContainer, FixedVector)
         EXPECT_EQ(fv.at(0), "first");
         EXPECT_EQ(fv.size(), 4);
 
-        EXPECT_THROW(fv.insert(fv.begin(), "overflow"), std::out_of_range);
-        EXPECT_THROW(fv.insert(fv.end(), "overflow"), std::out_of_range);
+        EXPECT_THROW(fv.insert(fv.begin(), "overflow"), std::length_error);
+        EXPECT_THROW(fv.insert(fv.end(), "overflow"), std::length_error);
     }
 }
 TEST(TestDetailContainer, FixedFlatMap)
@@ -250,8 +250,8 @@ TEST(TestDetailContainer, FixedFlatMap)
         EXPECT_EQ(std::next(fm.begin(), 2)->second, "third");
         EXPECT_EQ(std::next(fm.begin(), 3)->second, "fourth");
 
-        EXPECT_THROW(fm.try_emplace(0, "overflow"), std::out_of_range);
-        EXPECT_THROW(fm.try_emplace(5, "overflow"), std::out_of_range);
+        EXPECT_THROW(fm.try_emplace(0, "overflow"), std::length_error);
+        EXPECT_THROW(fm.try_emplace(5, "overflow"), std::length_error);
 
         EXPECT_EQ(
             fm.try_emplace(1, "duplicated"),
