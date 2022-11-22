@@ -778,4 +778,227 @@ namespace papilio::detail
             return m_buf;
         }
     };
+
+    template <bool IsTransparent>
+    class value_compare_base {};
+    template <>
+    class value_compare_base<true>
+    {
+        using is_transparent = void;
+    };
+
+    template <typename Compare>
+    inline constexpr bool is_transparent_v = requires()
+    {
+        typename Compare::is_transparent;
+    };
+
+    class fixed_flat_map_base
+    {
+    public:
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+
+        [[noreturn]]
+        static void raise_out_of_range();
+    };
+
+    template <typename Key, typename T, std::size_t Capacity, typename Compare = std::less<>>
+    class fixed_flat_map : public fixed_flat_map_base
+    {
+    public:
+        using key_type = Key;
+        using mapped_type = T;
+        using value_type = std::pair<Key, T>;
+        using underlying_type = fixed_vector<value_type, Capacity>;
+        using key_compare = Compare;
+        using reference = value_type&;
+        using const_reference = value_type&;
+        using iterator = underlying_type::iterator;
+        using const_iterator = underlying_type::const_iterator;
+
+        class value_compare : value_compare_base<is_transparent_v<Compare>>
+        {
+        public:
+            value_compare() = default;
+            value_compare(const value_compare&) = default;
+            value_compare(value_compare&&) = default;
+
+            bool operator()(const value_type& lhs, const value_type& rhs) const
+            {
+                return m_comp(lhs.first, rhs.first);
+            }
+            template <typename T1, typename T2>
+            bool operator()(T1&& lhs, T2&& rhs) const requires is_transparent_v<Compare>
+            {
+                return m_comp(std::forward<T1>(lhs), std::forward<T2>(rhs));
+            }
+
+            Compare key_comp() const
+            {
+                return m_comp;
+            }
+
+        protected:
+            friend class fixed_flat_map;
+
+            value_compare(Compare comp_)
+                : comp(comp_) {}
+
+            key_compare comp;
+        };
+
+        // element access
+
+        T& at(const Key& k)
+        {
+            auto it = find(k);
+            if(it == end())
+            {
+                raise_out_of_range();
+            }
+
+            return it->second;
+        }
+        const T& at(const Key& k) const
+        {
+            auto it = find(k);
+            if(it == end())
+            {
+                raise_out_of_range();
+            }
+
+            return it->second;
+        }
+
+        // iterators
+
+        iterator begin() noexcept { return m_storage.begin(); }
+        iterator end() noexcept { return m_storage.end(); }
+        const_iterator begin() const noexcept { return m_storage.begin(); }
+        const_iterator end() const noexcept { return m_storage.end(); }
+
+        // capacity
+
+        bool empty() const noexcept
+        {
+            return m_storage.empty();
+        }
+        size_type size() const noexcept
+        {
+            return m_storage.size();
+        }
+        static size_type max_size() noexcept
+        {
+            return underlying_type::max_size();
+        }
+
+        template <typename U>
+        std::pair<iterator, bool> insert_or_assign(const Key& k, U&& val)
+        {
+            static_assert(std::is_assignable_v<mapped_type&, U&&>);
+
+            auto pos = lower_bound(k);
+            if(is_equal(pos->first, k, m_comp.comp))
+            {
+                pos->second = std::forward<U>(val);
+
+                return std::make_pair(pos, false);
+            }
+
+            m_storage.emplace(
+                pos,
+                k, std::forward<U>(val)
+            );
+
+            return std::make_pair(pos, true);
+        }
+
+        template <typename... Args>
+        std::pair<iterator, bool> try_emplace(const Key& k, Args&&... args)
+        {
+            auto pos = lower_bound(k);
+            if(is_equal(pos->first, k, m_comp.comp))
+            {
+                return std::make_pair(pos, false);
+            }
+
+            m_storage.emplace(
+                pos,
+                std::piecewise_construct,
+                std::forward_as_tuple(k),
+                std::forward_as_tuple(std::forward<Args>(args))...
+            );
+            return std::make_pair(
+                pos,
+                true
+            );
+        }
+
+        // lookup
+
+        iterator find(const Key& k)
+        {
+            auto it = lower_bound(k);
+            return is_equal(it->first, k, m_comp.comp) ? it : end();
+        }
+        const_iterator find(const Key& k) const
+        {
+            auto it = lower_bound(k);
+            return is_equal(it->first, k, m_comp.comp) ? it : end();
+        }
+        bool contains(const Key& k) const
+        {
+            return find(k) != end();
+        }
+        iterator lower_bound(const Key& k)
+        {
+            return lower_bound_impl(begin(), end(), k, m_comp.comp);
+        }
+        const_iterator lower_bound(const Key& k) const
+        {
+            return lower_bound_impl(begin(), end(), k, m_comp.comp);
+        }
+
+    private:
+        underlying_type m_storage;
+        PAPILIO_NO_UNIQUE_ADDRESS value_compare m_comp;
+
+        template <typename T1, typename T2, typename Comp>
+        static bool is_equal(T1&& lhs, T2&& rhs, Comp&& c)
+        {
+            return !c(lhs, rhs) && !c(rhs, lhs);
+        }
+
+        template <typename Iterator, typename K, typename Pred>
+        static Iterator lower_bound_impl(Iterator start, Iterator stop, K&& k, Pred&& pred)
+        {
+            if constexpr(!is_transparent_v<std::remove_cvref_t<Pred>>)
+            {
+                static_assert(
+                    std::is_same_v<std::remove_cvref_t<K>, Key>,
+                    "transparent compare not available"
+                );
+            }
+
+            std::iter_difference_t<Iterator> count = std::distance(start, stop);
+
+            while(count > 0)
+            {
+                const std::iter_difference_t<Iterator> tmp_count = count / 2;
+                const auto mid = std::next(start, tmp_count);
+                if(pred(mid->first, std::forward<K>(k)))
+                {
+                    start = std::next(mid);
+                    count -= tmp_count + 1;
+                }
+                else
+                {
+                    count = tmp_count;
+                }
+            }
+
+            return start;
+        }
+    };
 }

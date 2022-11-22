@@ -24,4 +24,9 @@ namespace papilio::detail
             current += current / 2;
         return current;
     }
+
+    void fixed_flat_map_base::raise_out_of_range()
+    {
+        throw std::out_of_range("out of range");
+    }
 }
