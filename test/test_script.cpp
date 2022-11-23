@@ -367,6 +367,40 @@ TEST(TestScript, Executor)
     }
 
     {
+        using namespace std::literals;
+
+        int a1 = 1;
+        float a2 = 2.0f;
+        std::string a3 = "test";
+        mutable_format_arg_store store(a1, a2, "string"_a = a3);
+        executor::context ctx(store);
+
+        executor ex1(std::in_place_type<executor::argument>, 0);
+        ex1(ctx);
+
+        EXPECT_EQ(ctx.copy_and_pop().get<executor::int_type>(), 1);
+
+        executor ex2(std::in_place_type<executor::argument>, 1);
+        ex2(ctx);
+
+        EXPECT_DOUBLE_EQ(ctx.copy_and_pop().get<executor::float_type>(), 2.0);
+
+        executor ex3(std::in_place_type<executor::argument>, "string"s);
+        ex3(ctx);
+
+        EXPECT_EQ(ctx.copy_and_pop().get<string_container>(), "test");
+
+        executor ex4(
+            std::in_place_type<executor::argument>,
+            "string"s,
+            format_arg_access::member_storage{ attribute_name("length") }
+        );
+        ex4(ctx);
+
+        EXPECT_EQ(ctx.copy_and_pop().get<executor::int_type>(), std::string("test").length());
+    }
+
+    {
         executor::context ctx;
 
         executor ex(
