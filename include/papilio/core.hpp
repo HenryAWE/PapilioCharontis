@@ -1536,7 +1536,7 @@ namespace papilio
 
         const dynamic_format_arg_store& get_store() const noexcept
         {
-            return *m_store;
+            return m_store;
         }
 
         void enable_manual_indexing() noexcept
@@ -1592,7 +1592,7 @@ namespace papilio
         iterator m_it;
         mutable bool m_manual_indexing = false;
         std::size_t m_default_arg_idx = 0;
-        const dynamic_format_arg_store* m_store;
+        dynamic_format_arg_store m_store;
 
         void enable_manual_indexing() const noexcept
         {
@@ -1614,9 +1614,9 @@ namespace papilio
         format_spec_parse_context() = delete;
         format_spec_parse_context(const format_spec_parse_context&) = delete;
         constexpr format_spec_parse_context(string_view_type str, const dynamic_format_arg_store& store) noexcept
-            : m_base(nullptr), m_spec_str(str), m_store(&store) {}
+            : m_base(nullptr), m_spec_str(str), m_store(store) {}
         format_spec_parse_context(format_parse_context& base, string_view_type str) noexcept
-            : m_base(&base), m_spec_str(str), m_store(&base.get_store()) {}
+            : m_base(&base), m_spec_str(str), m_store(base.get_store()) {}
 
         [[nodiscard]]
         constexpr bool has_base() const noexcept
@@ -1674,21 +1674,21 @@ namespace papilio
             return m_spec_str;
         }
 
-        [[nodiscard]]
+        [[deprecated("no effect")]]
         constexpr bool has_store() const noexcept
         {
-            return m_store != nullptr;
+            return true;
         }
         [[nodiscard]]
-        constexpr const dynamic_format_arg_store& get_store() const noexcept
+        const dynamic_format_arg_store& get_store() const noexcept
         {
-            return *m_store;
+            return m_store;
         }
 
     private:
         format_parse_context* m_base;
         string_view_type m_spec_str;
-        const dynamic_format_arg_store* m_store;
+        dynamic_format_arg_store m_store;
     };
 
     template <typename OutputIt>
