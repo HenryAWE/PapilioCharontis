@@ -340,24 +340,27 @@ TEST(TestScript, Executor)
     using namespace papilio;
     using namespace script;
 
+    // a placeholder
+    auto empty_arg_store = make_format_args();
+
     {
-        executor::context ctx;
+        executor::context ctx(empty_arg_store);
         ctx.push(1);
         EXPECT_EQ(ctx.top().get<executor::int_type>(), 1);
     }
     {
-        executor::context ctx;
+        executor::context ctx(empty_arg_store);
         ctx.push(2.0L);
         EXPECT_DOUBLE_EQ(ctx.top().get<executor::float_type>(), 2.0L);
     }
     {
-        executor::context ctx;
+        executor::context ctx(empty_arg_store);
         ctx.push("string");
         EXPECT_EQ(ctx.top().get<string_container>(), "string");
     }
 
     {
-        executor::context ctx;
+        executor::context ctx(empty_arg_store);
 
         executor ex(std::in_place_type<executor::constant<executor::int_type>>, 2);
         ex(ctx);
@@ -401,7 +404,7 @@ TEST(TestScript, Executor)
     }
 
     {
-        executor::context ctx;
+        executor::context ctx(empty_arg_store);
 
         executor ex(
             std::in_place_type<executor::comparator<std::less<>>>,

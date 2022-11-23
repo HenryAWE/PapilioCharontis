@@ -601,10 +601,9 @@ namespace papilio::script
         class context
         {
         public:
-            context()
-                : m_arg_store(nullptr) {}
+            context() = delete;
             context(const dynamic_format_arg_store& arg_store)
-                : m_arg_store(&arg_store) {}
+                : m_arg_store(arg_store) {}
 
             [[nodiscard]]
             stack_type& get_stack() noexcept
@@ -618,15 +617,9 @@ namespace papilio::script
             }
 
             [[nodiscard]]
-            bool has_store() const noexcept
-            {
-                return m_arg_store != nullptr;
-            }
-            [[nodiscard]]
             const dynamic_format_arg_store& get_store() const noexcept
             {
-                assert(has_store());
-                return *m_arg_store;
+                return m_arg_store;
             }
 
             [[nodiscard]]
@@ -669,8 +662,7 @@ namespace papilio::script
 
         private:
             stack_type m_var_stack;
-
-            const dynamic_format_arg_store* m_arg_store;
+            dynamic_format_arg_store m_arg_store;
         };
 
         class base
