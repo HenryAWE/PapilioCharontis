@@ -274,12 +274,24 @@ TEST(TestCore, FormatArgHandle)
         EXPECT_EQ(get<string_container>(arg.index("2")), "two");
     }
 }
-TEST(TestCore, DynamicFormatArgStore)
+
+TEST(TestCore, StaticFormatArgStore)
 {
     using namespace papilio;
 
+    static_assert(format_arg_store<static_format_arg_store<0, 0>>);
+    static_assert(format_arg_store<static_format_arg_store<1, 0>>);
+    static_assert(format_arg_store<static_format_arg_store<0, 1>>);
+    static_assert(format_arg_store<static_format_arg_store<1, 1>>);
+}
+TEST(TestCore, MutableFormatArgStore)
+{
+    using namespace papilio;
+
+    static_assert(format_arg_store<mutable_format_arg_store>);
+
     {
-        dynamic_format_arg_store store(1, "three"_a = 3, 2);
+        mutable_format_arg_store store(1, "three"_a = 3, 2);
 
         EXPECT_EQ(store.size(), 2);
         EXPECT_EQ(store.named_size(), 1);
@@ -293,7 +305,7 @@ TEST(TestCore, DynamicFormatArgStore)
         EXPECT_EQ(store.size(), 0);
         EXPECT_EQ(store.named_size(), 0);
 
-        store.emplace('a', 'b', "c"_a = 'c', "d"_a = 'd');
+        store.push('a', 'b', "c"_a = 'c', "d"_a = 'd');
 
         EXPECT_EQ(store.size(), 2);
         EXPECT_EQ(store.named_size(), 2);
@@ -303,29 +315,18 @@ TEST(TestCore, DynamicFormatArgStore)
         EXPECT_EQ(get<utf8::codepoint>(store["c"]), U'c');
         EXPECT_EQ(get<utf8::codepoint>(store["d"]), U'd');
     }
+}
+TEST(TestCore, DynamicFormatArgStore)
+{
+    using namespace papilio;
+
+    static_assert(format_arg_store<dynamic_format_arg_store>);
 
     {
-        dynamic_format_arg_store store(1, 2.0f, "string", "named"_a = "named");
+        mutable_format_arg_store underlying_store;
+        dynamic_format_arg_store dyn_store(underlying_store);
 
-        EXPECT_EQ(get<std::size_t>(store[2].attribute("length")), 6);
-
-        EXPECT_EQ(get<int>(store[indexing_value(0)]), 1);
-        EXPECT_FLOAT_EQ(get<float>(store[indexing_value(1)]), 2.0f);
-        EXPECT_EQ(get<string_container>(store[indexing_value("named")]), "named");
-    }
-
-    {
-        dynamic_format_arg_store store(0, 1, 2, "test1"_a = "test 1", "test2"_a = "test 2");
-        EXPECT_EQ(store.size(), 3);
-        EXPECT_EQ(store.named_size(), 2);
-
-        for(std::size_t i : { 0, 1, 2 })
-            EXPECT_TRUE(store.check(i));
-        EXPECT_FALSE(store.check(3));
-
-        EXPECT_TRUE(store.check("test1"));
-        EXPECT_TRUE(store.check("test2"));
-        EXPECT_FALSE(store.check("test3"));
+        EXPECT_EQ(&dyn_store.to_underlying(), &underlying_store);
     }
 }
 TEST(TestCore, FormatContext)
@@ -334,14 +335,14 @@ TEST(TestCore, FormatContext)
 
     {
         std::string result;
-        dynamic_format_arg_store store;
+        mutable_format_arg_store store;
         basic_format_context ctx(
             std::back_inserter(result),
             store
         );
 
         using context_traits = format_context_traits<decltype(ctx)>;
-        EXPECT_EQ(&context_traits::get_store(ctx), &store);
+        EXPECT_EQ(&context_traits::get_store(ctx).to_underlying(), &store);
 
         context_traits::append(ctx, "1234");
         EXPECT_EQ(result, "1234");
@@ -357,7 +358,7 @@ TEST(TestCore, FormatContext)
 
     {
         std::string result;
-        dynamic_format_arg_store store;
+        mutable_format_arg_store store;
         basic_format_context ctx(
             std::back_inserter(result),
             store
@@ -365,7 +366,7 @@ TEST(TestCore, FormatContext)
         dynamic_format_context dyn_ctx(ctx);
 
         using context_traits = format_context_traits<decltype(dyn_ctx)>;
-        EXPECT_EQ(&context_traits::get_store(dyn_ctx), &store);
+        EXPECT_EQ(&context_traits::get_store(dyn_ctx).to_underlying(), &store);
 
         context_traits::append(dyn_ctx, "1234");
         EXPECT_EQ(result, "1234");
@@ -386,7 +387,7 @@ TEST(TestCore, CommonFormatSpec)
     auto helper = []<typename... Args>(std::string_view fmt, Args&&... args)
     {
         common_format_spec spec;
-        dynamic_format_arg_store store(std::forward<Args>(args)...);
+        mutable_format_arg_store store(std::forward<Args>(args)...);
         format_parse_context parse_ctx(fmt, store);
         parse_ctx.next_arg_id();
         format_spec_parse_context spec_ctx(parse_ctx, fmt.substr(2, fmt.size() - 3));

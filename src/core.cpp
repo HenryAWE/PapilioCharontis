@@ -589,65 +589,92 @@ namespace papilio
         return result;
     }
 
-    const format_arg& dynamic_format_arg_store::get(size_type i) const
+    namespace detail
+    {
+        const format_arg& format_arg_store_base::get(const indexing_value& idx) const
+        {
+            auto visitor = [&](auto&& v)->const format_arg&
+            {
+                using std::is_same_v;
+                using T = std::remove_cvref_t<decltype(v)>;
+
+                if constexpr(is_same_v<T, indexing_value::index_type>)
+                {
+                    if(v < 0)
+                        raise_index_out_of_range();
+                    size_type i = static_cast<size_type>(v);
+                    return get(i);
+                }
+                else if constexpr(is_same_v<T, string_container>)
+                {
+                    return get(string_view_type(v));
+                }
+                else
+                {
+                    throw std::invalid_argument("invalid indexing value");
+                }
+            };
+
+            return std::visit(visitor, idx.to_underlying());
+        }
+
+        bool format_arg_store_base::check(size_type i) const noexcept
+        {
+            return i < size();
+        }
+        bool format_arg_store_base::check(const indexing_value& idx) const noexcept
+        {
+            auto visitor = [this](auto&& v)->bool
+            {
+                using std::is_same_v;
+                using T = std::remove_cvref_t<decltype(v)>;
+
+                if constexpr(is_same_v<T, indexing_value::index_type>)
+                {
+                    if(v < 0)
+                        return false;
+                    return check(static_cast<size_type>(v));
+                }
+                else if constexpr(is_same_v<T, string_container>)
+                {
+                    return check(string_view_type(v));
+                }
+                else
+                {
+                    return false;
+                }
+            };
+
+            return std::visit(visitor, idx.to_underlying());
+        }
+
+        void format_arg_store_base::raise_index_out_of_range()
+        {
+            throw std::out_of_range("index out of range");
+        }
+        void format_arg_store_base::raise_invalid_named_argument()
+        {
+            throw std::out_of_range("invalid named argument");
+        }
+    }
+
+    const format_arg& mutable_format_arg_store::get(size_type i) const
     {
         if(i >= m_args.size())
-            throw std::out_of_range("index out of range");
+            raise_index_out_of_range();
         return m_args[i];
     }
-    const format_arg& dynamic_format_arg_store::get(string_view_type key) const
+    const format_arg& mutable_format_arg_store::get(string_view_type key) const
     {
         auto it = m_named_args.find(key);
         if(it == m_named_args.end())
-            throw std::out_of_range("invalid named argument");
+            raise_invalid_named_argument();
         return it->second;
     }
-    const format_arg& dynamic_format_arg_store::get(const indexing_value& idx) const
+
+    bool mutable_format_arg_store::check(string_view_type k) const noexcept
     {
-        auto visitor = [&](auto&& v)->const format_arg&
-        {
-            using std::is_same_v;
-            using T = std::remove_cvref_t<decltype(v)>;
-
-            if constexpr(is_same_v<T, indexing_value::index_type>)
-            {
-                size_type i = static_cast<size_type>(v);
-                if(i >= m_args.size())
-                    throw std::out_of_range("argument index out of range");
-                return m_args[i];
-            }
-            else if constexpr(is_same_v<T, string_container>)
-            {
-                auto it = m_named_args.find(v);
-                if(it == m_named_args.end())
-                    throw std::out_of_range("invalid named argument");
-                return it->second;
-            }
-            else
-            {
-                throw std::invalid_argument("invalid indexing value");
-            }
-        };
-
-        return std::visit(visitor, idx.to_underlying());
-    }
-
-    bool dynamic_format_arg_store::check(const indexing_value& idx) const noexcept
-    {
-        auto visitor = [this](auto&& v)->bool
-        {
-            using std::is_same_v;
-            using T = std::remove_cvref_t<decltype(v)>;
-
-            if constexpr(is_same_v<T, indexing_value::index_type>)
-                return  v < m_args.size();
-            else if constexpr(is_same_v<T, string_container>)
-                return m_named_args.contains(string_view_type(v));
-            else
-                return false;
-        };
-
-        return std::visit(visitor, idx.to_underlying());
+        return m_named_args.contains(k);
     }
 
     format_parse_context::format_parse_context(string_view_type str, const dynamic_format_arg_store& store)

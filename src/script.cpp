@@ -491,11 +491,11 @@ namespace papilio::script
         return std::make_pair(static_cast<operator_type>(0), 0);
     }
 
-    interpreter::string_type interpreter::run(string_view_type src, dynamic_format_arg_store args)
+    interpreter::string_type interpreter::run(string_view_type src, const dynamic_format_arg_store& args)
     {
         auto ex = compile(src);
 
-        executor::context ctx(std::move(args));
+        executor::context ctx(args);
         ex(ctx);
 
         return ctx.get_result();

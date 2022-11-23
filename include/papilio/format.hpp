@@ -185,12 +185,6 @@ namespace papilio
         std::iter_difference_t<OutputIt> size;
     };
 
-    template <typename... Args>
-    dynamic_format_arg_store make_format_args(Args&&... args)
-    {
-        return dynamic_format_arg_store(std::forward<Args>(args)...);
-    }
-
     template <typename OutputIt>
     OutputIt vformat_to(OutputIt out, std::string_view fmt, const dynamic_format_arg_store& store)
     {

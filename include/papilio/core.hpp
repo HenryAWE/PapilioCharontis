@@ -27,7 +27,7 @@ namespace papilio
     class indexing_value;
     class attribute_name;
     class format_arg;
-    template <typename OutputIt, typename Store>
+    template <typename OutputIt>
     class basic_format_context;
     class dynamic_format_context;
     class format_spec_parse_context;
@@ -488,6 +488,12 @@ namespace papilio
             : name(name_), value(value_) {}
 
         named_arg& operator=(const named_arg&) = delete;
+    };
+
+    template <typename T>
+    constexpr inline bool is_named_arg_v = requires()
+    {
+        typename T::named_arg_tag;
     };
 
     template <typename T>
@@ -1222,25 +1228,188 @@ namespace papilio
         member_storage m_members;
     };
 
-    class dynamic_format_arg_store
+    namespace detail
+    {
+        template <typename T>
+        consteval std::size_t count_if_index_arg() noexcept
+        {
+            using type = std::remove_cvref_t<T>;
+            if constexpr(!is_named_arg_v<type>)
+                return 1;
+            else
+                return 0;
+        }
+        template <typename T>
+        consteval std::size_t count_if_named_arg() noexcept
+        {
+            using type = std::remove_cvref_t<T>;
+            if constexpr(is_named_arg_v<type>)
+                return 1;
+            else
+                return 0;
+        }
+
+        template <typename... Ts>
+        consteval std::size_t get_index_arg_count() noexcept
+        {
+            if constexpr(sizeof...(Ts) == 0)
+                return 0;
+            else
+            {
+                using tuple_type = std::tuple<Ts...>;
+
+                auto helper = []<std::size_t... Is> (std::index_sequence<Is...>)
+                {
+                    return (count_if_index_arg<std::tuple_element_t<Is, tuple_type>>() + ...);
+                };
+
+                return helper(std::make_index_sequence<sizeof...(Ts)>());
+            }
+        }
+        template <typename... Ts>
+        consteval std::size_t get_named_arg_count() noexcept
+        {
+            if constexpr(sizeof...(Ts) == 0)
+                return 0;
+            else
+            {
+                using tuple_type = std::tuple<Ts...>;
+
+                auto helper = []<std::size_t... Is> (std::index_sequence<Is...>)
+                {
+                    return (count_if_named_arg<std::tuple_element_t<Is, tuple_type>>() + ...);
+                };
+
+                return helper(std::make_index_sequence<sizeof...(Ts)>());
+            }
+        }
+
+        class format_arg_store_base
+        {
+        public:
+            using char_type = char;
+            using string_type = std::basic_string<char_type>;
+            using string_view_type = std::basic_string_view<char_type>;
+            using size_type = std::size_t;
+
+            [[nodiscard]]
+            virtual const format_arg& get(size_type i) const = 0;
+            [[nodiscard]]
+            virtual const format_arg& get(string_view_type key) const = 0;
+            [[nodiscard]]
+            virtual const format_arg& get(const indexing_value& idx) const;
+
+            bool check(size_type i) const noexcept;
+            virtual bool check(string_view_type key) const noexcept = 0;
+            bool check(const indexing_value& idx) const noexcept;
+
+            virtual size_type size() const noexcept = 0;
+            virtual size_type named_size() const noexcept = 0;
+
+            [[nodiscard]]
+            const format_arg& operator[](const indexing_value& idx) const
+            {
+                return get(idx);
+            }
+
+        protected:
+            [[noreturn]]
+            static void raise_index_out_of_range();
+            [[noreturn]]
+            static void raise_invalid_named_argument();
+        };
+    }
+
+    template <std::size_t ArgumentCount, std::size_t NamedArgumentCount>
+    class static_format_arg_store final : public detail::format_arg_store_base
     {
     public:
-        using char_type = char;
-        using string_type = std::basic_string<char_type>;
-        using string_view_type = std::basic_string_view<char_type>;
-        using size_type = std::size_t;
-
-        dynamic_format_arg_store() = default;
-        dynamic_format_arg_store(const dynamic_format_arg_store&) = delete;
-        dynamic_format_arg_store(dynamic_format_arg_store&&) = default;
         template <typename... Args>
-        dynamic_format_arg_store(Args&&... args)
+        static_format_arg_store(Args&&... args)
         {
-            emplace(std::forward<Args>(args)...);
+            construct(std::forward<Args>(args)...);
+        }
+
+        const format_arg& get(size_type i) const override
+        {
+            if(i >= m_args.size())
+                raise_index_out_of_range();
+            return m_args[i];
+        }
+        const format_arg& get(string_view_type k) const override
+        {
+            auto it = m_named_args.find(k);
+            if(it == m_named_args.end())
+                raise_invalid_named_argument();
+            return it->second;
+        }
+        using format_arg_store_base::get;
+
+        bool check(string_view_type key) const noexcept
+        {
+            return m_named_args.contains(key);
+        }
+        using format_arg_store_base::check;
+
+        size_type size() const noexcept override
+        {
+            assert(m_args.size() == ArgumentCount);
+            return ArgumentCount;
+        }
+        size_type named_size() const noexcept override
+        {
+            assert(m_named_args.size() == NamedArgumentCount);
+            return NamedArgumentCount;
+        }
+
+    private:
+        template <typename... Args>
+        void construct(Args&&... args)
+        {
+            static_assert(
+                detail::get_index_arg_count<Args...>() == ArgumentCount,
+                "invalid argument count"
+            );
+            static_assert(
+                detail::get_named_arg_count<Args...>() == NamedArgumentCount,
+                "invalid named argument count"
+            );
+
+            (push(std::forward<Args>(args)), ...);
+        }
+
+        detail::fixed_vector<format_arg, ArgumentCount> m_args;
+        detail::fixed_flat_map<std::string_view, format_arg, NamedArgumentCount> m_named_args;
+
+        template <typename T>
+        void push(T&& val) requires(!is_named_arg_v<T>)
+        {
+            m_args.emplace_back(std::forward<T>(val));
+        }
+        template <typename T>
+        void push(named_arg<T> na)
+        {
+            m_named_args.insert_or_assign(
+                na.name,
+                na.value
+            );
+        }
+    };
+
+    class mutable_format_arg_store final : public detail::format_arg_store_base
+    {
+    public:
+        mutable_format_arg_store() = default;
+        mutable_format_arg_store(const mutable_format_arg_store&) = delete;
+        mutable_format_arg_store(mutable_format_arg_store&&) = default;
+        template <typename... Args>
+        mutable_format_arg_store(Args&&... args)
+        {
+            push(std::forward<Args>(args)...);
         }
 
         template <typename... Args>
-        void emplace(Args&&... args)
+        void push(Args&&... args)
         {
             auto helper = [&]<typename T> (T&& arg)
             {
@@ -1257,29 +1426,20 @@ namespace papilio
             (helper(std::forward<Args>(args)), ...);
         }
 
-        [[nodiscard]]
-        const format_arg& get(size_type i) const;
-        [[nodiscard]]
-        const format_arg& get(string_view_type key) const;
-        [[nodiscard]]
-        const format_arg& get(const indexing_value& idx) const;
+        const format_arg& get(size_type i) const override;
+        const format_arg& get(string_view_type key) const override;
+        using format_arg_store_base::get;
+
+        bool check(string_view_type key) const noexcept override;
+        using format_arg_store_base::check;
 
         [[nodiscard]]
-        bool check(const indexing_value& idx) const noexcept;
-
-        [[nodiscard]]
-        const format_arg& operator[](const indexing_value& idx) const
-        {
-            return get(idx);
-        }
-
-        [[nodiscard]]
-        size_type size() const noexcept
+        size_type size() const noexcept override
         {
             return m_args.size();
         }
         [[nodiscard]]
-        size_type named_size() const noexcept
+        size_type named_size() const noexcept override
         {
             return m_named_args.size();
         }
@@ -1294,6 +1454,71 @@ namespace papilio
         std::vector<format_arg> m_args;
         std::map<string_type, format_arg, std::less<>> m_named_args;
     };
+
+    // type-erased argument store
+    class dynamic_format_arg_store final : public detail::format_arg_store_base
+    {
+    public:
+        dynamic_format_arg_store() = delete;
+        dynamic_format_arg_store(const dynamic_format_arg_store&) noexcept = default;
+        dynamic_format_arg_store(const detail::format_arg_store_base& store) noexcept
+            : m_ref(&store)
+        {
+            assert(m_ref != this); // circular reference
+        }
+
+        const format_arg& get(size_type i) const override
+        {
+            return m_ref->get(i);
+        }
+        const format_arg& get(string_view_type k) const override
+        {
+            return m_ref->get(k);
+        }
+        using format_arg_store_base::get;
+
+        size_type size() const noexcept override
+        {
+            return m_ref->size();
+        }
+        size_type named_size() const noexcept override
+        {
+            return m_ref->named_size();
+        }
+
+        bool check(string_view_type k) const noexcept override
+        {
+            return m_ref->check(k);
+        }
+        using format_arg_store_base::check;
+
+        [[nodiscard]]
+        const detail::format_arg_store_base& to_underlying() const noexcept
+        {
+            return *m_ref;
+        }
+
+    private:
+        const detail::format_arg_store_base* m_ref;
+    };
+
+    template <typename T>
+    concept format_arg_store = std::is_base_of_v<detail::format_arg_store_base, T>;
+
+    template <typename... Args>
+    auto make_format_args(Args&&... args)
+    {
+        static_assert(
+            (!format_arg_store<Args> && ...),
+            "cannot use format_arg_store as format argument"
+        );
+
+        using store_type = static_format_arg_store<
+            detail::get_index_arg_count<Args...>(),
+            detail::get_named_arg_count<Args...>()
+        >;
+        return store_type(std::forward<Args>(args)...);
+    }
 
     // WARNING: This class only holds the view of string and reference of arguments
     // The invoker needs to handle lifetimes manually
@@ -1466,18 +1691,18 @@ namespace papilio
         const dynamic_format_arg_store* m_store;
     };
 
-    template <typename OutputIt, typename Store = dynamic_format_arg_store>
+    template <typename OutputIt>
     class basic_format_context
     {
     public:
         using char_type = char;
         using iterator = OutputIt;
-        using store_type = Store;
+        using store_type = dynamic_format_arg_store;
 
         basic_format_context(iterator it, const store_type& store)
-            : m_out(std::move(it)), m_store(&store) {}
+            : m_out(std::move(it)), m_store(store) {}
         basic_format_context(const std::locale& loc, iterator it, const store_type& store)
-            : m_loc(loc), m_out(std::move(it)), m_store(&store) {}
+            : m_loc(loc), m_out(std::move(it)), m_store(store) {}
 
         iterator out()
         {
@@ -1490,7 +1715,7 @@ namespace papilio
 
         const store_type& get_store() const noexcept
         {
-            return *m_store;
+            return m_store;
         }
         std::locale getloc() const
         {
@@ -1505,7 +1730,7 @@ namespace papilio
 
     private:
         iterator m_out;
-        const store_type* m_store;
+        store_type m_store;
         locale_ref m_loc;
     };
 
@@ -1525,15 +1750,15 @@ namespace papilio
                 return getloc_ref().get();
             }
         };
-        template <typename OutputIt, typename Store>
+        template <typename OutputIt>
         class dynamic_format_context_impl final : public dynamic_format_context_impl_base
         {
         public:
             using iterator = OutputIt;
-            using store_type = Store;
+            using store_type = dynamic_format_arg_store;
 
-            dynamic_format_context_impl(basic_format_context<OutputIt, Store>& ctx) noexcept
-                : m_out(ctx.out()), m_store(&ctx.get_store()), m_loc(ctx.getloc_ref()) {}
+            dynamic_format_context_impl(basic_format_context<OutputIt>& ctx) noexcept
+                : m_out(ctx.out()), m_store(ctx.get_store()), m_loc(ctx.getloc_ref()) {}
 
             void push_back(char_type ch) override
             {
@@ -1542,7 +1767,7 @@ namespace papilio
             }
             const dynamic_format_arg_store& get_store() const noexcept override
             {
-                return *m_store;
+                return m_store;
             }
             locale_ref getloc_ref() const noexcept override
             {
@@ -1550,7 +1775,7 @@ namespace papilio
             }
         private:
             iterator m_out;
-            const dynamic_format_arg_store* m_store;
+            dynamic_format_arg_store m_store;
             locale_ref m_loc;
         };
     }
@@ -1564,9 +1789,9 @@ namespace papilio
         using value_type = char_type;
 
         dynamic_format_context() = delete;
-        template <typename OutputIt, typename Store>
-        dynamic_format_context(basic_format_context<OutputIt, Store>& ctx)
-            : m_impl(std::make_unique<detail::dynamic_format_context_impl<OutputIt, Store>>(ctx)) {}
+        template <typename OutputIt>
+        dynamic_format_context(basic_format_context<OutputIt>& ctx)
+            : m_impl(std::make_unique<detail::dynamic_format_context_impl<OutputIt>>(ctx)) {}
 
         iterator out()
         {

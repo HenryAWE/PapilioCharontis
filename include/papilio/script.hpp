@@ -856,6 +856,12 @@ namespace papilio::script
         std::unique_ptr<base> m_ex;
     };
 
+    namespace detail
+    {
+        template <typename T>
+        concept not_foramt_arg_store = !format_arg_store<T>;
+    }
+
     class interpreter
     {
     public:
@@ -863,12 +869,13 @@ namespace papilio::script
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
 
-        string_type run(string_view_type src, dynamic_format_arg_store args);
-        template <typename... Args>
+        string_type run(string_view_type src, const dynamic_format_arg_store& args);
+        template <detail::not_foramt_arg_store... Args>
         string_type run(string_view_type src, Args&&... args)
         {
             return run(
-                src, dynamic_format_arg_store(std::forward<Args>(args)...)
+                src,
+                dynamic_format_arg_store(papilio::make_format_args(std::forward<Args>(args)...))
             );
         }
 
