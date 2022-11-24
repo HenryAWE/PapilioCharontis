@@ -12,6 +12,55 @@
 
 namespace papilio::detail
 {
+    template <std::size_t Capacity>
+    class static_storage
+    {
+    public:
+        constexpr static_storage() noexcept = default;
+        static_storage(const static_storage&) = delete;
+
+        [[nodiscard]]
+        constexpr std::byte* data() noexcept
+        {
+            return m_data;
+        }
+        [[nodiscard]]
+        constexpr const std::byte* data() const noexcept
+        {
+            return m_data;
+        }
+
+        [[nodiscard]]
+        static constexpr std::size_t size() noexcept
+        {
+            return Capacity;
+        }
+
+    private:
+        std::byte m_data[Capacity]{};
+    };
+    template <>
+    class static_storage<0>
+    {
+    public:
+        [[nodiscard]]
+        constexpr std::byte* data() noexcept
+        {
+            return nullptr;
+        }
+        [[nodiscard]]
+        constexpr const std::byte* data() const noexcept
+        {
+            return nullptr;
+        }
+
+        [[nodiscard]]
+        static constexpr std::size_t size() noexcept
+        {
+            return 0;
+        }
+    };
+
     class small_vector_base
     {
     public:
@@ -690,7 +739,7 @@ namespace papilio::detail
         {
             return m_size;
         }
-        static size_type max_size() noexcept
+        static constexpr size_type max_size() noexcept
         {
             return Capacity;
         }
@@ -774,7 +823,7 @@ namespace papilio::detail
         }
 
     private:
-        std::array<char, sizeof(T) * Capacity> m_buf;
+        static_storage<sizeof(T) * Capacity> m_buf;
         size_type m_size = 0;
 
         void* getbuf() noexcept

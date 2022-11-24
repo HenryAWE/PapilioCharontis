@@ -171,6 +171,8 @@ TEST(TestDetailContainer, FixedVector)
         EXPECT_EQ(fv.size(), 0);
         EXPECT_TRUE(fv.empty());
         EXPECT_EQ(fv.capacity(), 2);
+        EXPECT_EQ(fv.max_size(), 2);
+        static_assert(decltype(fv)::max_size() == 2);
 
         EXPECT_THROW(fv.at(0), std::out_of_range);
         EXPECT_THROW(std::as_const(fv).at(0), std::out_of_range);

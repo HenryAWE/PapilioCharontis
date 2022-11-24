@@ -27,6 +27,7 @@ if(${papilio_build_module})
 endif()
 file(GLOB_RECURSE papilio_src ${glob_expr})
 add_library(papilio ${papilio_src})
+target_sources(papilio PUBLIC "natvis/papilio.natvis")
 target_include_directories(papilio PUBLIC include)
 
 if(${papilio_build_example})
