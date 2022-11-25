@@ -54,4 +54,14 @@ License: MIT
             </LinkedListItems>
         </Expand>
     </Type>
+
+    <Type Name="papilio::utf8::codepoint">
+        <DisplayString>'{m_bytes,s8b}'</DisplayString>
+        <Expand>
+            <Item Name="[size]" Condition="(m_bytes[0] &amp; 0x80) == 0">1</Item>
+            <Item Name="[size]" Condition="(m_bytes[0] &amp; 0xE0) == 0xC0">2</Item>
+            <Item Name="[size]" Condition="(m_bytes[0] &amp; 0xF0) == 0xE0">3</Item>
+            <Item Name="[size]" Condition="(m_bytes[0] &amp; 0xF8) == 0xF0">4</Item>
+        </Expand>
+    </Type>
 </AutoVisualizer>
