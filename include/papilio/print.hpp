@@ -32,7 +32,7 @@ namespace papilio
     template <typename... Args>
     void println(std::string_view fmt, Args&&... args)
     {
-        papilio::vprintln_conv(fmt, papilio::make_format_args(std::forward<Args...>(args)...));
+        papilio::vprintln_conv(fmt, papilio::make_format_args(std::forward<Args>(args)...));
     }
 
     void println(std::FILE* file);
