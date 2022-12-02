@@ -5,6 +5,7 @@
 #include <system_error>
 #include <charconv>
 #include <sstream>
+#include "detail/iterstream.hpp"
 
 
 namespace papilio
@@ -55,19 +56,25 @@ namespace papilio
         else if constexpr(detail::has_ostream_support_helper<T>)
         {
             using context_traits = format_context_traits<Context>;
+            using streambuf_type = detail::basic_iterbuf<
+                char,
+                typename context_traits::iterator
+            >;
 
-            std::ostringstream oss;
-            std::string view(spec);
+            streambuf_type sbuf(context_traits::out(ctx));
+
+            std::ostream os(&sbuf);
+            std::string_view view(spec);
             if(view == "L")
-                oss.imbue(ctx.getloc());
+                os.imbue(ctx.getloc());
             else if(!view.empty())
             {
                 throw invalid_format("invalid format");
             }
 
-            oss << val;
+            os << val;
 
-            context_traits::append(ctx, std::move(oss).str());
+            context_traits::advance_to(ctx, sbuf.get());
         }
         else
         {
