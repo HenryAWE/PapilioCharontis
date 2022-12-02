@@ -16,6 +16,8 @@ define_papilio_test(test_core)
 
 define_papilio_test(test_detail_container)
 
+define_papilio_test(test_detail_iterstream)
+
 define_papilio_test(test_format)
 
 define_papilio_test(test_locale)
