@@ -385,7 +385,8 @@ namespace papilio
             using value_type = utf8::codepoint;
             using difference_type = std::size_t;
 
-            const_iterator() = default;
+            const_iterator() noexcept
+                : m_it(nullptr), m_len(0) {}
             const_iterator(const const_iterator&) noexcept = default;
             const_iterator(underlying_type it, utf8::codepoint::size_type len) noexcept
                 : m_it(it), m_len(len) {}
@@ -419,6 +420,7 @@ namespace papilio
                 return tmp;
             }
 
+            [[nodiscard]]
             value_type operator*() const noexcept
             {
                 if(m_len == 0)
@@ -428,6 +430,7 @@ namespace papilio
                 ).first;
             }
 
+            [[nodiscard]]
             constexpr bool operator==(const const_iterator& rhs) const noexcept
             {
                 return m_it == rhs.m_it;
@@ -532,6 +535,7 @@ namespace papilio
             return *this;
         }
 
+        [[nodiscard]]
         bool is_borrowed() const noexcept
         {
             return std::holds_alternative<string_view_type>(m_str);
@@ -636,17 +640,23 @@ namespace papilio
         // WARNING: call this function when string is empty will cause undefined behavior
         void pop_back() noexcept;
 
+        [[nodiscard]]
         const_iterator find(utf8::codepoint cp, size_type pos = 0) const noexcept;
+        [[nodiscard]]
         const_iterator find(const string_container& str, size_type pos = 0) const noexcept;
+        [[nodiscard]]
         const_iterator find(string_view_type str, size_type pos = 0) const noexcept;
+        [[nodiscard]]
         const_iterator find(const string_type& str, size_type pos = 0) const noexcept
         {
             return find(string_view_type(str), pos);
         }
+        [[nodiscard]]
         const_iterator find(const char* str, size_type pos = 0) const noexcept
         {
             return find(string_view_type(str), pos);
         }
+        [[nodiscard]]
         const_iterator find(const char* str, size_type pos, size_type count) const noexcept
         {
             return find(string_view_type(str, count), pos);
@@ -678,6 +688,7 @@ namespace papilio
             return find(str) != cend();
         }
 
+        [[nodiscard]]
         const_reference at(size_type i) const noexcept
         {
             string_view_type view = utf8::index(get_string_view(), i);
@@ -687,6 +698,7 @@ namespace papilio
             );
         }
         // reverse at
+        [[nodiscard]]
         const_reference rat(size_type i) const noexcept
         {
             string_view_type view = utf8::rindex(get_string_view(), i);
@@ -696,6 +708,7 @@ namespace papilio
             );
         }
 
+        [[nodiscard]]
         const_reference operator[](index_type i) const noexcept
         {
             if(i < 0)
@@ -704,8 +717,10 @@ namespace papilio
                 return at(i);
         }
         // equivalent to this->at(0)
+        [[nodiscard]]
         const_reference front() const noexcept;
         // equivalent to this->rat(0)
+        [[nodiscard]]
         const_reference back() const noexcept;
 
         operator string_view_type() const noexcept
@@ -713,34 +728,41 @@ namespace papilio
             return get_string_view();
         }
 
+        [[nodiscard]]
         string_container substr(size_type off, size_type count = npos) const noexcept
         {
             return utf8::substr(get_string_view(), off, count);
         }
+        [[nodiscard]]
         string_container substr(independent_t, size_type off, size_type count = npos) const
         {
             auto view =  utf8::substr(get_string_view(), off, count);
             return string_container(independent, view);
         }
+        [[nodiscard]]
         string_container substr(const slice& s) const noexcept
         {
             return utf8::substr(get_string_view(), s);
         }
+        [[nodiscard]]
         string_container substr(independent_t, const slice& s) const
         {
             auto view = utf8::substr(get_string_view(), s);
             return string_container(independent, view);
         }
 
+        [[nodiscard]]
         const_pointer c_str() noexcept
         {
             return get_string().data();
         }
+        [[nodiscard]]
         const_pointer data() const noexcept
         {
             return get_string_view().data();
         }
 
+        [[nodiscard]]
         const_iterator cbegin() const noexcept
         {
             const_pointer ptr = data();
@@ -748,37 +770,46 @@ namespace papilio
                 ptr, utf8::is_leading_byte(ptr[0])
             );
         }
+        [[nodiscard]]
         const_iterator cend() const noexcept
         {
             string_view_type view = get_string_view();
             return const_iterator(view.data() + view.size(), 0);
         }
+        [[nodiscard]]
         const_reverse_iterator crbegin() const
         {
             return const_reverse_iterator(cend());
         }
+        [[nodiscard]]
         const_reverse_iterator crend() const
         {
             return const_reverse_iterator(cbegin());
         }
+        [[nodiscard]]
         iterator begin() const noexcept
         {
             return cbegin();
         }
+        [[nodiscard]]
         iterator end() const noexcept
         {
             return cend();
         }
+        [[nodiscard]]
         reverse_iterator rbegin() const noexcept
         {
             return reverse_iterator(end());
         }
+        [[nodiscard]]
         reverse_iterator rend() const noexcept
         {
             return reverse_iterator(begin());
         }
 
+        [[nodiscard]]
         std::u8string to_u8string() const;
+        [[nodiscard]]
         std::u32string to_u32string() const;
 
         std::size_t estimate_width() const noexcept;
