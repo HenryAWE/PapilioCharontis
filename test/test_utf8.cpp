@@ -82,6 +82,17 @@ TEST(TestUTF8, Codepoint)
     }
 
     {
+        utf8::codepoint cp;
+
+        cp.assign(u'A', u'\0');
+        EXPECT_EQ(cp.size(), 1);
+        EXPECT_EQ(cp.to_int().first, U'A');
+
+        cp.assign(0xD852, 0xDF62);
+        EXPECT_EQ(cp.to_int().first, U'𤭢');
+    }
+
+    {
         utf8::codepoint cp = U'A';
         std::u8string_view view = cp;
         EXPECT_EQ(view, u8"A");

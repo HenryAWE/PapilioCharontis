@@ -48,6 +48,31 @@ namespace papilio
                     count
                 );
             }
+            static std::pair<codepoint, size_type> decode_u16be(std::u16string_view src)
+            {
+                if(src.empty())
+                    return std::make_pair(codepoint(), 0);
+
+                if(src[0] <= 0xD7FF || 0xE000 <= src[0])
+                {
+                    return std::make_pair(
+                        codepoint(static_cast<int_type>(src[0])),
+                        1
+                    );
+                }
+                else
+                {
+                    if(src.size() < 2)
+                        return std::make_pair(codepoint('?'), 1);
+                    char32_t ch32 =
+                        (src[0] - 0xD800) * 0x400 +
+                        (src[1] - 0xDC00) +
+                        0x10000;
+                    return std::make_pair(
+                        codepoint(ch32), 2
+                    );
+                }
+            }
             static std::pair<codepoint, size_type> decode(std::string_view src)
             {
                 return decode(
@@ -131,6 +156,11 @@ namespace papilio
                     m_bytes[1] = static_cast<char8_t>(((val >> 12) & 0b11'1111) | 0b1000'0000);
                     m_bytes[0] = static_cast<char8_t>((val >> 18) | 0b1111'0000);
                 }
+            }
+            void assign(char16_t high, char16_t low) noexcept
+            {
+                char16_t src[2] = { high, low };
+                *this = decode_u16be(std::u16string_view(src, 2)).first;
             }
 
             [[nodiscard]]
