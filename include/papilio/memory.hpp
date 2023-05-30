@@ -55,6 +55,22 @@ namespace papilio
             std::is_same_v<U, Pointer> ||
             std::is_same_v<U, std::nullptr_t> ||
             optional_arr_ptr_helper<U, Pointer, Element>;
+
+        template <typename Derived, typename Element>
+        class optional_ptr_base
+        {
+        public:
+            static Derived pointer_to(Element& val)
+            {
+                return Derived(std::addressof(val), false);
+            }
+        };
+        template <typename Derived>
+        class optional_ptr_base<Derived, void>
+        {
+        public:
+            // empty
+        };
     }
 
     template <typename T>
@@ -65,7 +81,7 @@ namespace papilio
     // Smart pointer that owns an optional ownership of another object.
     // It can acts like a unique_ptr or a raw pointer.
     template <typename T, typename Deleter = std::default_delete<T>>
-    class optional_ptr
+    class optional_ptr : public detail::optional_ptr_base<optional_ptr<T, Deleter>, T>
     {
     public:
         using pointer = typename detail::deleter_traits<T, Deleter>::pointer;
@@ -75,6 +91,10 @@ namespace papilio
         optional_ptr() noexcept(std::is_nothrow_default_constructible_v<Deleter>)
             : m_ptr(), m_del(), m_has_ownership(false) {}
         optional_ptr(std::nullptr_t) noexcept {}
+        optional_ptr(const optional_ptr& other) noexcept
+            : m_ptr(other.get()),
+            m_del(other.get_deleter()),
+            m_has_ownership(false) {}
         template <typename D>
         optional_ptr(const optional_ptr<T, D>& other)
             : m_ptr(other.m_ptr), m_has_ownership(false) {}
@@ -199,11 +219,6 @@ namespace papilio
             return m_ptr;
         }
 
-        static optional_ptr pointer_to(element_type& val)
-        {
-            return optional_ptr(std::addressof(val), false);
-        }
-
     private:
         pointer m_ptr;
         PAPILIO_NO_UNIQUE_ADDRESS Deleter m_del{};
@@ -221,6 +236,10 @@ namespace papilio
         optional_ptr() noexcept(std::is_nothrow_default_constructible_v<Deleter>)
             : m_ptr(), m_del(), m_has_ownership(false) {}
         optional_ptr(std::nullptr_t) noexcept {}
+        optional_ptr(const optional_ptr& other) noexcept
+            : m_ptr(other.get()),
+            m_del(other.get_deleter()),
+            m_has_ownership(false) {}
         template <typename D>
         optional_ptr(const optional_ptr<T, D>& other)
             : m_ptr(other.m_ptr), m_has_ownership(false) {}
