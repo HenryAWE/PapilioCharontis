@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/memory.hpp>
-#include <cstdlib>
+#include <cstring>
 
 
 TEST(TestMemory, Utilities)
