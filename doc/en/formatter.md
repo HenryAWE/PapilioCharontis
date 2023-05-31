@@ -1,5 +1,5 @@
 # Custom Formatter
-Define a custom type
+Define a custom type:
 ```c++
 class my_value
 {
@@ -8,9 +8,9 @@ public:
     int count;
 };
 ```
-Implement formatter:  
-- Ouput `(ch, count)` for empty specification, which is the default behavior
-- Output `ch` for `count` times for `s` specification
+Implement the formatter:  
+- Ouput `(ch, count)` for empty specification, which is the default behavior.
+- Output `ch` for `count` times for `s` specification.
 ```c++
 namespace papilio
 {
@@ -47,7 +47,7 @@ namespace papilio
     };
 }
 ```
-User code
+User code:
 ```c++
 my_value my_val('B', 3);
 format("{}", my_val); // Returns "(B, 3)"

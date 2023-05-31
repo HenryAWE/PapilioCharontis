@@ -1,10 +1,10 @@
-**English** [简体中文](README.zh-CN.md)
+**English** [中文（简体）](README.zh-CN.md)
 # Papilio Charontis
-A flexible formatting library for C++
+A flexible formatting library for C++.
 
 ## Overview
 ### Main Feature: Scripting
-Using embedded script to control the output
+Using embedded script to control the output.
 ```c++
 std::string_view fmt =
     "There "
@@ -16,7 +16,7 @@ papilio::format(fmt, 2); // Returns "There are 2 apples"
 ```
 
 ### Accessing Member
-Support indexing (integer or string), slicing and accessing member attributes
+Support indexing (integer or string), slicing and accessing member attributes.
 ```c++
 papilio::format("length of \"{0}\" is {0.length}", "hello");
 // Returns "length of "hello" is 5"
@@ -37,16 +37,16 @@ papilio::format("{text} and {0}", "world", "text"_a = "hello"); // Returns "hell
 ```
 
 ### Unicode Support
-You can conveniently use Unicode string in formatting function
+You can conveniently use Unicode string in formatting function.
 ```c++
 papilio::format("{[:2]}", "你好，世界");
 // Returns "你好" instead of first two bytes which cannot represent a valid character
 papilio::format("Length: {0.length}; Size: {0.size}", "你好，世界");
 // Returns "Length: 5; Size: 15"
 ```
-NOTE: In order to run the above code, you need to make sure you code is saved in UTF-8 encoding and correct compiler flags is set. You can use the "u8" prefix to force the string to use UTF-8 encoding
+NOTE: In order to run the above code, you need to make sure you code is saved in UTF-8 encoding and correct compiler flags is set. You can use the "u8" prefix to force the string to use UTF-8 encoding.
 
-## Document
+## Documentation
 1. [Build the Project](doc/en/build.md)
 2. [Introduction to the Script](doc/en/script.md)
 3. [Frequently Asked Questions](doc/en/faq.md)

@@ -1,22 +1,22 @@
-# Built-in Formatter
+# Built-In Formatter
 ## Format Specification for Common Types
-Used by fundamental types, character and string
+Used by fundamental types, character and string.
 ```
 fill-and-align sign # 0 width .precision L type
 ```
-These arguments are all optional
+These arguments are all optional.
 
 ### Fill and Align
-Fill can be any character, followed by align option which is one of the `<`, `>` and `^`  
+Fill can be any character, followed by align option which is one of the `<`, `>` and `^`.  
 Align Option:
 - `<`: Force the output to align to the beginning of available space. This is the default option for outputting non-integer or non-floating point values.
 - `>`: Force the output to align to the ending of available space. This is the default option for outputting integer and floating point values.
-- `^`: Force the output to align to the middle of available space. Given `n` characters waiting for insertion, this option will insert `n / 2` characters before the output and `n / 2 + n % 2` characters after the output.
+- `^`: Force the output to align to the middle of available space. Given `n` characters waiting for insertion, this option will insert $\lfloor\frac{n}{2}\rfloor$ (`n / 2` in C++) characters before the output and $\lceil\frac{n}{2}\rceil$ (`n / 2 + n % 2` in C++) characters after the output.
 
 ### Sign, # and 0
 Sign options:
 - `+`: Use sign for both negative and non-negative number. Output `+` sign before non-negative value.
-- `-`: Only negative number use sign. This is the default behavior
+- `-`: Only negative number use sign. This is the default behavior.
 - ` ` (space): Use a leading space for non-negative number and use `-` for negative number.
 
 The sign options are available for infinite values and NaN:
@@ -27,14 +27,14 @@ papilio::format("{0:},{0:+},{0:-},{0: }", inf); // "inf,+inf,inf, inf"
 papilio::format("{0:},{0:+},{0:-},{0: }", nan); // "nan,+nan,nan, nan"
 ```
 
-`#` Optional will enable the alternate form
+`#` Optional will enable the alternate form:
 - Integral type: When use binary, octal or hexadecimal for displaying, this option will insert prefix (`0b`, `0o` or `0x`) in the output.
 - Floating type: not implemented yet
 
 *NOTE: Different from `<format>` of C++ 20, this library use `0o` as the prefix for octal.*
 
 ### Width and Precision
-Width is a decimal positive integer and can be dynamically specified by a replacement field (`{}`)  
+Width is a decimal positive integer and can be dynamically specified by a replacement field (`{}`).  
 Precision is also a decimal positive integer and be dynamically specified by a replacement field (`{}`).  Precision is only available for floating point and string. For floating point, this value determines the precision for formatting output. For string, this value determines the upper bound of the estimated width (see below) of output string.  
 When width or precision values are dynamically specified by replacement fields, an exception will be thrown for any illegal value.
 ```c++

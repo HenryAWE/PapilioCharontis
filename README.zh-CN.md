@@ -1,10 +1,10 @@
-[English](README.md) **简体中文**
+[English](README.md) **中文（简体）**
 # 引蝶座（Papilio Charontis）
-功能灵活的 C++ 格式化库
+功能灵活的 C++ 格式化库。
 
 ## 概览
 ### 核心特性：脚本
-使用内嵌脚本控制输出
+使用内嵌脚本控制输出。
 ```c++
 std::string_view fmt =
     "There "
@@ -16,7 +16,7 @@ papilio::format(fmt, 2); // 返回 "There are 2 apples"
 ```
 
 ### 访问成员
-支持索引（整数或字符串）、切片和访问成员属性
+支持索引（整数或字符串）、切片和访问成员属性。
 ```c++
 papilio::format("length of \"{0}\" is {0.length}", "hello");
 // 返回 "length of "hello" is 5"
@@ -33,18 +33,18 @@ papilio::format("#{:08x}", 0xff); // 返回 "#000000ff"
 papilio::format("{1} and {0}", "second", "first"); // 返回 "first and second"
 using namespace papilio::literals;
 papilio::format("{text} and {0}", "world", "text"_a = "hello"); // 返回 "hello and world"
-// 如果你不想 using namespace，可以用 papilio::arg("text", "hello") 代替
+// 如果你不想使用 using namespace，可以用 papilio::arg("text", "hello") 代替
 ```
 
 ### Unicode 支持
-你可以在格式化函数中方便地使用 Unicode 字符串
+你可以在格式化函数中方便地使用 Unicode 字符串。
 ```c++
 papilio::format("{[:2]}", "你好，世界");
 // 返回 "你好"，而不是返回无法表达有意义字符的前两个字节
 papilio::format("长度：{0.length}；大小：{0.size}", "你好，世界");
 // 返回 "长度：5；大小：15"
 ```
-注意：要运行上文的代码，你需要保证你的代码是用 UTF-8 编码保存的并且设置了正确的编译器选项。你可以使用“u8”前缀以强制字符串使用 UTF-8 编码
+注意：要运行上文的代码，你需要保证你使用 UTF-8 编码保存了代码并且设置了正确的编译器选项。你可以使用“u8”前缀以强制字符串使用 UTF-8 编码。
 
 ## 文档
 1. [构建项目](doc/zh-CN/build.md)

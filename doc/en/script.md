@@ -1,6 +1,6 @@
 # Script
-Script used to control the formatting output  
-If you need to directly embed script into C++ code, [raw string literal](https://en.cppreference.com/w/cpp/language/string_literal) feature of C++ 11 is recommended.
+Script used to control the formatting output.  
+If you need to directly embed the script into C++ code, the [raw string literal](https://en.cppreference.com/w/cpp/language/string_literal) feature of C++ 11 is recommended.
 
 ## Arguments
 - Integral Argument: Only contains decimal number, cannot starts by `0`. Index starts from `0`, corresponding to the argument in argument list.
@@ -21,8 +21,8 @@ argument = "$", ( integral argument | named argument ) ;
 
 ### Examples
 
-1. `$0`：Refers to the first value in the argument list, whose index is `0`
-2. `$0 != $1`：Compares the first and second arguments for inequality
+1. `$0`：Refers to the first value in the argument list, whose index is `0`.
+2. `$0 != $1`：Compares the first and second arguments for inequality.
 3. `$name`：Refers to argument whose name is `name` in the argument list.
 
 Remark: When using argument in replacement field, the leading “`$`” can be omitted  
@@ -52,9 +52,7 @@ The script only supports one logical operator, the logical not (`!`). Complex lo
 ```
 if cond-1 : 'result-1' elif cond-2: 'result-2' else: 'other'
 ```
-If `cond-1` is true, it will return `'result-1'`; or, if `cond-2` is true, it will return `'result-2'`; otherwise, it will return `'other'`.  
-There can be any number (can be zero) of `elif` branches in a control flow  
-The `else` branch is optional. When this branch is not specified, it will be implicitly defined as `else: ''`, returning an empty string (`''`).
+If `cond-1` is true, it will return `'result-1'`; or, if `cond-2` is true, it will return `'result-2'`; otherwise, it will return `'other'`. There can be any number (can be zero) of `elif` branches in a control flow. The `else` branch is optional. When this branch is not specified, it will be implicitly defined as `else: ''`, returning an empty string (`''`).
 
 Conditional expressions can be a comparison of two inputs or constants (`$0 == 'hello'`), a logical not of an input (`!$0`), or a direct converted to Boolean value from an input (`$0`)
 | Input Type | Result |

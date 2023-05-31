@@ -1,5 +1,5 @@
 # 自定义格式化器（Formatter）
-定义自定义类型
+定义自定义类型：
 ```c++
 class my_value
 {
@@ -47,7 +47,7 @@ namespace papilio
     };
 }
 ```
-用户代码
+用户代码：
 ```c++
 my_value my_val('B', 3);
 format("{}", my_val); // 返回 "(B, 3)"
