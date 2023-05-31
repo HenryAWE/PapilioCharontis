@@ -119,14 +119,14 @@ namespace papilio::detail
             }
 
             m_size = other.m_size;
+            PAPILIO_ASSUME(m_size <= static_size());
+            PAPILIO_ASSUME(!m_dyn_alloc);
             for(size_type i = 0; i < m_size; ++i)
             {
-                std::allocator_traits<Allocator>::construct(
-                    m_alloc,
+                std::construct_at(
                     m_data.getbuf() + i,
                     std::move(other.m_data.getbuf()[i])
                 );
-                assert(i < static_size());
             }
 
             other.clear();
@@ -349,18 +349,18 @@ namespace papilio::detail
         {
             if(n <= m_capacity)
                 return;
-            resize_mem(n);
+            grow_mem(n);
         }
         void shrink_to_fit()
         {
-            resize_mem(m_size);
+            shrink_mem();
         }
 
         // modifiers
 
         void clear() noexcept
         {
-            destroy_all(data(), m_size);
+            destroy_all();
             m_size = 0;
         }
 
@@ -413,54 +413,61 @@ namespace papilio::detail
         void swap(small_vector& other) noexcept
         {
             using std::swap;
+
             if(m_dyn_alloc && other.m_dyn_alloc)
             {
+                // both are dynamic allocated
                 swap(m_size, other.m_size);
                 swap(m_data.ptr, other.m_data.ptr);
                 swap(m_capacity, other.m_capacity);
-                swap(m_alloc, other.m_alloc);
+                if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+                    swap(m_alloc, other.m_alloc);
             }
             else if(!m_dyn_alloc && other.m_dyn_alloc)
             {
-                swap_data_static_to_dyn(other);
+                swap_static_to_dyn(other);
             }
             else if(!other.m_dyn_alloc && m_dyn_alloc)
             {
-                other.swap_data_static_to_dyn(*this);
+                other.swap_static_to_dyn(*this);
             }
             else
             {
+                // both are using static storage
+                PAPILIO_ASSUME(!m_dyn_alloc && !other.m_dyn_alloc);
                 for(size_type i = 0; i < std::max(m_size, other.m_size); ++i)
                 {
                     if(i < m_size && i >= other.m_size)
                     {
-                        std::allocator_traits<Allocator>::construct(
-                            m_alloc,
+                        // this->size() > other.size()
+                        // copy elements to the other one
+                        std::construct_at(
                             other.m_data.getbuf() + i,
                             std::move(m_data.getbuf()[i])
                         );
-                        std::allocator_traits<Allocator>::destroy(
-                            m_alloc,
-                            m_data.getbuf() + i
-                        );
+                        std::destroy_at(m_data.getbuf() + i);
                     }
                     else if(i >= m_size && i < other.m_size)
                     {
-                        std::allocator_traits<Allocator>::construct(
-                            m_alloc,
+                        // this->size() < other.size()
+                        // copy elements from the other one
+                        std::construct_at(
                             m_data.getbuf() + i,
                             std::move(other.m_data.getbuf()[i])
                         );
-                        std::allocator_traits<Allocator>::destroy(
-                            other.m_alloc,
-                            other.m_data.getbuf() + i
-                        );
+                        std::destroy_at(other.m_data.getbuf() + i);
                     }
                     else
                     {
+                        // same size
+                        // 
                         swap(m_data.getbuf()[i], other.m_data.getbuf()[i]);
                     }
                 }
+
+                swap(m_size, other.m_size);
+                if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+                    swap(m_alloc, other.m_alloc);
             }
         }
 
@@ -492,12 +499,22 @@ namespace papilio::detail
         template <typename... Args>
         void emplace_back_raw(Args&&... args)
         {
-            assert(m_size < m_capacity);
-            std::allocator_traits<Allocator>::construct(
-                m_alloc,
-                data() + m_size,
-                std::forward<Args>(args)...
-            );
+            PAPILIO_ASSUME(m_size < m_capacity);
+            if(!m_dyn_alloc) [[likely]]
+            {
+                std::construct_at(
+                    data() + m_size,
+                    std::forward<Args>(args)...
+                );
+            }
+            else
+            {
+                std::allocator_traits<Allocator>::construct(
+                    m_alloc,
+                    data() + m_size,
+                    std::forward<Args>(args)...
+                );
+            }
             ++m_size;
         }
 
@@ -511,25 +528,33 @@ namespace papilio::detail
                 m_capacity
             );
         }
-        void destroy_all(pointer ptr, size_type count)
+        // Note: This function doesn't automatically set the m_size to 0.
+        void destroy_all() noexcept
         {
-            for(size_type i = 0; i < count; ++i)
+            if(!m_dyn_alloc)
             {
-                std::allocator_traits<Allocator>::destroy(
-                    m_alloc,
-                    ptr + i
-                );
+                std::destroy_n(data(), m_size);
+            }
+            else
+            {
+                for(size_type i = 0; i < m_size; ++i)
+                {
+                    std::allocator_traits<Allocator>::destroy(
+                        m_alloc,
+                        m_data.ptr + i
+                    );
+                }
             }
         }
 
-        void resize_mem(size_type new_cap)
+#ifdef PAPILIO_COMPILER_MSVC
+#   pragma warning(push)
+#   pragma warning(disable:26800) // lifetime.1
+#endif
+
+        void shrink_mem()
         {
-            if(new_cap > max_size())
-                raise_length_error();
-
-            assert(m_size <= new_cap);
-
-            if(new_cap <= static_size())
+            if(m_size <= static_size())
             {
                 if(!m_dyn_alloc)
                 {
@@ -537,43 +562,56 @@ namespace papilio::detail
                     return;
                 }
 
-                pointer ptr = m_data.ptr;
+                // move from dynamic allocated memory to static storage
+                pointer tmp_ptr = m_data.ptr;
+                m_dyn_alloc = false;
 
                 for(size_type i = 0; i < m_size; ++i)
                 {
-                    std::allocator_traits<Allocator>::construct(
-                        m_alloc,
+                    std::construct_at(
                         m_data.getbuf() + i,
-                        std::move(ptr[i])
+                        std::move(*(tmp_ptr + i))
+                    );
+                    std::allocator_traits<Allocator>::destroy(
+                        m_alloc,
+                        tmp_ptr + i
                     );
                 }
-                destroy_all(ptr, m_size);
 
                 std::allocator_traits<Allocator>::deallocate(
                     m_alloc,
-                    ptr,
+                    tmp_ptr,
                     m_capacity
                 );
 
-                m_dyn_alloc = false;
                 m_capacity = static_size();
-
-                return;
             }
+        }
+
+#ifdef PAPILIO_COMPILER_MSVC
+#   pragma warning(pop)
+#endif
+
+        void grow_mem(size_type new_cap)
+        {
+            assert(m_capacity < new_cap);
+            if(new_cap > max_size())
+                raise_length_error();
 
             pointer new_mem = m_alloc.allocate(new_cap);
+            size_type i = 0;
             try
             {
-                pointer ptr = data();
-                for(size_type i = 0; i < m_size; ++i)
+                pointer tmp_ptr = data();
+                for(i = 0; i < m_size; ++i)
                 {
                     std::allocator_traits<Allocator>::construct(
                         m_alloc,
                         new_mem + i,
-                        std::move(ptr[i])
+                        std::move(*(tmp_ptr + i))
                     );
                 }
-                destroy_all(ptr, m_size);
+                destroy_all(); // m_size is unchanged
                 free_mem();
                 m_dyn_alloc = true;
                 m_data.ptr = new_mem;
@@ -581,6 +619,13 @@ namespace papilio::detail
             }
             catch(...)
             {
+                for(size_type j = 0; j < i; ++j)
+                {
+                    std::allocator_traits<Allocator>::destroy(
+                        m_alloc,
+                        new_mem + j
+                    );
+                }
                 std::allocator_traits<Allocator>::deallocate(
                     m_alloc,
                     new_mem,
@@ -590,30 +635,33 @@ namespace papilio::detail
             }
         }
 
-        // this function doesn't do anything on the allocator
-        void swap_data_static_to_dyn(small_vector& other)
+        // Swap data from a small_vector using static storage to a small_vector using dynamic allocated memory.
+        // Note: This function assumes that current small_vector is using the static storage.
+        void swap_static_to_dyn(small_vector& other)
         {
-            assert(!m_dyn_alloc);
-            assert(other.m_dyn_alloc);
+            using std::swap;
 
-            pointer ptr = other.m_data.ptr;
+            PAPILIO_ASSUME(!m_dyn_alloc);
+
+            pointer tmp_ptr = other.m_data.ptr;
             size_type tmp_size = m_size;
-
             other.m_dyn_alloc = false;
+
             for(size_type i = 0; i < tmp_size; ++i)
             {
-                std::allocator_traits<Allocator>::construct(
-                    m_alloc,
+                std::construct_at(
                     other.m_data.getbuf() + i,
-                    std::move(m_data.getbuf()[i])
+                    std::move(*(m_data.getbuf() + i))
                 );
             }
-            clear();
+            destroy_all();
 
-            m_data.ptr = ptr;
+            m_data.ptr = tmp_ptr;
             m_dyn_alloc = true;
             m_capacity = std::exchange(other.m_capacity, static_size());
             m_size = std::exchange(other.m_size, tmp_size);
+            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+                swap(m_alloc, other.m_alloc);
         }
     };
 
@@ -823,7 +871,7 @@ namespace papilio::detail
         }
 
     private:
-        static_storage<sizeof(T) * Capacity> m_buf;
+        static_storage<sizeof(T)* Capacity> m_buf;
         size_type m_size = 0;
 
         void* getbuf() noexcept
@@ -904,6 +952,9 @@ namespace papilio::detail
 
             key_compare comp;
         };
+
+        fixed_flat_map()
+            : m_storage(), m_comp() {}
 
         // element access
 
@@ -1035,7 +1086,7 @@ namespace papilio::detail
                 static_assert(
                     std::is_same_v<std::remove_cvref_t<K>, Key>,
                     "transparent compare not available"
-                );
+                    );
             }
 
             std::iter_difference_t<Iterator> count = std::distance(start, stop);
