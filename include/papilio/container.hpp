@@ -7,10 +7,10 @@
 #include <utility>
 #include <numeric>
 #include <stdexcept>
-#include "../macros.hpp"
+#include "macros.hpp"
 
 
-namespace papilio::detail
+namespace papilio
 {
     template <std::size_t Capacity>
     class static_storage
@@ -61,25 +61,34 @@ namespace papilio::detail
         }
     };
 
-    class small_vector_base
+    namespace detail
+    {
+        class small_vector_impl_base
+        {
+        public:
+            using size_type = std::size_t;
+
+            [[noreturn]]
+            static void raise_out_of_range();
+            [[noreturn]]
+            static void raise_length_error();
+
+        protected:
+            [[nodiscard]]
+            static size_type calc_mem_size(size_type current, size_type required) noexcept;
+        };
+    }
+
+    template <typename T, typename Allocator = std::allocator<T>>
+    class small_vector_base : public detail::small_vector_impl_base
     {
     public:
-        using size_type = std::size_t;
-
-        [[noreturn]]
-        static void raise_out_of_range();
-        [[noreturn]]
-        static void raise_length_error();
-
-    protected:
-        [[nodiscard]]
-        static size_type calc_mem_size(size_type current, size_type required) noexcept;
     };
 
     template <typename T, std::size_t N, typename Allocator = std::allocator<T>>
-    class small_vector : public small_vector_base
+    class small_vector : public small_vector_base<T, Allocator>
     {
-        using base = detail::small_vector_base;
+        using base = small_vector_base<T, Allocator>;
     public:
         using value_type = T;
         using allocator_type = Allocator;
@@ -108,7 +117,7 @@ namespace papilio::detail
         small_vector(small_vector&& other) noexcept(std::is_nothrow_move_constructible_v<value_type>)
             : m_alloc(std::move(other.m_alloc))
         {
-            if(other.m_dyn_alloc)
+            if(other.dynamic_allocated())
             {
                 m_data.ptr = std::exchange(other.m_data.ptr, nullptr);
                 m_dyn_alloc = std::exchange(other.m_dyn_alloc, false);
@@ -120,7 +129,7 @@ namespace papilio::detail
 
             m_size = other.m_size;
             PAPILIO_ASSUME(m_size <= static_size());
-            PAPILIO_ASSUME(!m_dyn_alloc);
+            PAPILIO_ASSUME(!dynamic_allocated());
             for(size_type i = 0; i < m_size; ++i)
             {
                 std::construct_at(
@@ -204,13 +213,13 @@ namespace papilio::detail
         {
             if(i < size())
                 return data()[i];
-            raise_out_of_range();
+            this->raise_out_of_range();
         }
         const_reference at(size_type i) const
         {
             if(i < size())
                 return data()[i];
-            raise_out_of_range();
+            this->raise_out_of_range();
         }
         reference operator[](size_type i) noexcept
         {
@@ -377,7 +386,7 @@ namespace papilio::detail
         {
             size_type new_size = m_size + 1;
             if(new_size > static_size())
-                reserve(calc_mem_size(m_size, new_size));
+                reserve(this->calc_mem_size(m_size, new_size));
             emplace_back_raw(std::forward<Args>(args)...);
         }
 
@@ -460,7 +469,6 @@ namespace papilio::detail
                     else
                     {
                         // same size
-                        // 
                         swap(m_data.getbuf()[i], other.m_data.getbuf()[i]);
                     }
                 }
@@ -596,7 +604,7 @@ namespace papilio::detail
         {
             assert(m_capacity < new_cap);
             if(new_cap > max_size())
-                raise_length_error();
+                this->raise_length_error();
 
             pointer new_mem = m_alloc.allocate(new_cap);
             size_type i = 0;
@@ -665,20 +673,23 @@ namespace papilio::detail
         }
     };
 
-    class fixed_vector_base
+    namespace detail
     {
-    public:
-        using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
+        class fixed_vector_impl_base
+        {
+        public:
+            using size_type = std::size_t;
+            using difference_type = std::ptrdiff_t;
 
-        [[noreturn]]
-        static void raise_out_of_range();
-        [[noreturn]]
-        static void raise_length_error();
-    };
+            [[noreturn]]
+            static void raise_out_of_range();
+            [[noreturn]]
+            static void raise_length_error();
+        };
+    }
 
     template <typename T, std::size_t Capacity>
-    class fixed_vector : public fixed_vector_base
+    class fixed_vector : public detail::fixed_vector_impl_base
     {
     public:
         using value_type = T;
@@ -871,7 +882,7 @@ namespace papilio::detail
         }
 
     private:
-        static_storage<sizeof(T)* Capacity> m_buf;
+        static_storage<sizeof(T) * Capacity> m_buf;
         size_type m_size = 0;
 
         void* getbuf() noexcept
@@ -884,32 +895,42 @@ namespace papilio::detail
         }
     };
 
-    template <bool IsTransparent>
-    class value_compare_base {};
-    template <>
-    class value_compare_base<true>
+    namespace detail
     {
-        using is_transparent = void;
-    };
+        template <typename Compare>
+        concept is_transparent_helper = requires()
+        {
+            typename Compare::is_transparent;
+        };
+
+        template <bool IsTransparent>
+        class value_compare_impl_base {};
+        template <>
+        class value_compare_impl_base<true>
+        {
+            using is_transparent = void;
+        };
+
+        class fixed_flat_map_impl_base
+        {
+        public:
+            using size_type = std::size_t;
+            using difference_type = std::ptrdiff_t;
+
+            [[noreturn]]
+            static void raise_out_of_range();
+        };
+    }
 
     template <typename Compare>
-    inline constexpr bool is_transparent_v = requires()
-    {
-        typename Compare::is_transparent;
-    };
+    struct is_transparent :
+        public std::bool_constant<detail::is_transparent_helper<Compare>> {};
 
-    class fixed_flat_map_base
-    {
-    public:
-        using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
-
-        [[noreturn]]
-        static void raise_out_of_range();
-    };
+    template <typename Compare>
+    inline constexpr bool is_transparent_v = is_transparent<Compare>::value;
 
     template <typename Key, typename T, std::size_t Capacity, typename Compare = std::less<>>
-    class fixed_flat_map : public fixed_flat_map_base
+    class fixed_flat_map : public detail::fixed_flat_map_impl_base
     {
     public:
         using key_type = Key;
@@ -922,7 +943,7 @@ namespace papilio::detail
         using iterator = underlying_type::iterator;
         using const_iterator = underlying_type::const_iterator;
 
-        class value_compare : value_compare_base<is_transparent_v<Compare>>
+        class value_compare : detail::value_compare_impl_base<is_transparent_v<Compare>>
         {
         public:
             value_compare() = default;

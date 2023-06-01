@@ -1,41 +1,50 @@
-#include <papilio/detail/container.hpp>
+#include <papilio/container.hpp>
 #include <cassert>
 #include <stdexcept>
 
 
-namespace papilio::detail
+namespace papilio
 {
-    void small_vector_base::raise_out_of_range()
+    namespace detail
     {
-        throw std::out_of_range("small vector index out of range");
-    }
-    [[noreturn]]
-    void small_vector_base::raise_length_error()
-    {
-        throw std::length_error("length error");
+        void small_vector_impl_base::raise_out_of_range()
+        {
+            throw std::out_of_range("small vector index out of range");
+        }
+        [[noreturn]]
+        void small_vector_impl_base::raise_length_error()
+        {
+            throw std::length_error("length error");
+        }
+
+        small_vector_impl_base::size_type small_vector_impl_base::calc_mem_size(size_type current, size_type required) noexcept
+        {
+            assert(current < required);
+            if(current <= 1)
+                current = 2;
+            while(current < required)
+                current += current / 2;
+            return current;
+        }
     }
 
-    small_vector_base::size_type small_vector_base::calc_mem_size(size_type current, size_type required) noexcept
+    namespace detail
     {
-        assert(current < required);
-        if(current <= 1)
-            current = 2;
-        while(current < required)
-            current += current / 2;
-        return current;
+        void fixed_vector_impl_base::raise_out_of_range()
+        {
+            throw std::out_of_range("out of range");
+        }
+        void fixed_vector_impl_base::raise_length_error()
+        {
+            throw std::length_error("length error");
+        }
     }
 
-    void fixed_vector_base::raise_out_of_range()
+    namespace detail
     {
-        throw std::out_of_range("out of range");
-    }
-    void fixed_vector_base::raise_length_error()
-    {
-        throw std::length_error("length error");
-    }
-
-    void fixed_flat_map_base::raise_out_of_range()
-    {
-        throw std::out_of_range("out of range");
+        void fixed_flat_map_impl_base::raise_out_of_range()
+        {
+            throw std::out_of_range("out of range");
+        }
     }
 }

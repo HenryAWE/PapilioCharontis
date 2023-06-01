@@ -1,6 +1,7 @@
 #include <papilio/script.hpp>
 #include <algorithm>
 #include <papilio/core.hpp>
+#include <papilio/detail/detail.hpp>
 
 
 namespace papilio::script
@@ -296,6 +297,9 @@ namespace papilio::script
             case 16:
                 if(!detail::is_xdigit(ch))
                     goto end_loop;
+
+            default:
+                papilio::detail::unreachable();
             }
         }
     end_loop:

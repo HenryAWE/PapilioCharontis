@@ -13,7 +13,7 @@
 #include <iterator>
 #include <algorithm>
 #include <typeinfo>
-#include "detail/container.hpp"
+#include "container.hpp"
 #include "macros.hpp"
 #include "utf8.hpp"
 #include "error.hpp"
@@ -1207,7 +1207,7 @@ namespace papilio
             indexing_value,
             attribute_name
         >;
-        using member_storage = detail::small_vector<member_type, 2>;
+        using member_storage = small_vector<member_type, 2>;
 
         format_arg_access() noexcept : m_members() {}
         format_arg_access(const format_arg_access&) = delete;
@@ -1378,8 +1378,8 @@ namespace papilio
             (push(std::forward<Args>(args)), ...);
         }
 
-        detail::fixed_vector<format_arg, ArgumentCount> m_args;
-        detail::fixed_flat_map<std::string_view, format_arg, NamedArgumentCount> m_named_args;
+        fixed_vector<format_arg, ArgumentCount> m_args;
+        fixed_flat_map<std::string_view, format_arg, NamedArgumentCount> m_named_args;
 
         template <typename T>
         void push(T&& val) requires(!is_named_arg_v<T>)

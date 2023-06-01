@@ -30,7 +30,7 @@ License: MIT
         </Expand>
     </Type>
 
-    <Type Name="papilio::detail::small_vector&lt;*,*,*&gt;">
+    <Type Name="papilio::small_vector&lt;*,*,*&gt;">
         <Intrinsic Name="dyn_alloc" Expression="m_dyn_alloc" />
         <Intrinsic Name="size" Expression="m_size" />
         <Intrinsic Name="capacity" Expression="m_capacity" />
@@ -51,7 +51,7 @@ License: MIT
         </Expand>
     </Type>
 
-    <Type Name="papilio::detail::fixed_vector&lt;*,*&gt;">
+    <Type Name="papilio::fixed_vector&lt;*,*&gt;">
         <Intrinsic Name="size" Expression="m_size" />
         <Intrinsic Name="capacity" Expression="$T2" />
         <Intrinsic Name="data" Expression="(value_type*)m_buf.m_data" />
@@ -66,7 +66,7 @@ License: MIT
         </Expand>
     </Type>
 
-    <Type Name="papilio::detail::fixed_flat_map&lt;*,*&gt;" ExcludeView="ShowElementsByIndex">
+    <Type Name="papilio::fixed_flat_map&lt;*,*&gt;" ExcludeView="ShowElementsByIndex">
         <Intrinsic Name="size" Expression="m_storage.m_size" />
         <DisplayString>{{ size={size()} }}</DisplayString>
         <Expand>

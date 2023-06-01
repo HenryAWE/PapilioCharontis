@@ -13,7 +13,7 @@
 #include <charconv>
 #include <optional>
 #include <sstream>
-#include "detail/container.hpp"
+#include "container.hpp"
 #include "core.hpp"
 #include "error.hpp"
 
@@ -53,7 +53,7 @@ namespace papilio::script
 
     namespace detail
     {
-        using papilio::detail::small_vector;
+        using papilio::small_vector;
 
         [[nodiscard]]
         constexpr bool is_space(char ch) noexcept
@@ -530,7 +530,7 @@ namespace papilio::script
         using string_view_type = std::basic_string_view<char_type>;
         using const_iterator =  string_view_type::const_iterator;
         using iterator = const_iterator;
-        using lexeme_storage = detail::small_vector<lexeme, 8>;
+        using lexeme_storage = small_vector<lexeme, 8>;
 
         struct parse_result
         {
@@ -595,7 +595,7 @@ namespace papilio::script
         using string_type = std::basic_string<char_type>;
         using stack_type = std::stack<
             variable,
-            detail::small_vector<variable, 4>
+            small_vector<variable, 4>
         >;
 
         class context

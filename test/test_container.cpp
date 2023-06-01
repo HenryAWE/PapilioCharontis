@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
-#include <papilio/detail/container.hpp>
+#include <papilio/container.hpp>
 #include <list>
 #include <span>
 
 
-TEST(TestDetailContainer, SmallVector)
+TEST(TestContainer, SmallVector)
 {
-    using papilio::detail::small_vector;
+    using papilio::small_vector;
 
     {
         small_vector<int, 8> sv;
@@ -124,10 +124,55 @@ TEST(TestDetailContainer, SmallVector)
         EXPECT_EQ(sv_5.size(), 1);
         EXPECT_EQ(sv_5.at(0), "one");
     }
+
+    {
+        small_vector<std::string, 2> sv_1{ "A", "B", "C" };
+        small_vector<std::string, 2> sv_2{ "a", "b" };
+
+        EXPECT_TRUE(sv_1.dynamic_allocated());
+        EXPECT_EQ(sv_1.size(), 3);
+        EXPECT_FALSE(sv_2.dynamic_allocated());
+        EXPECT_EQ(sv_2.size(), 2);
+
+        sv_1.swap(sv_2);
+
+        EXPECT_FALSE(sv_1.dynamic_allocated());
+        EXPECT_EQ(sv_1.size(), 2);
+        EXPECT_TRUE(sv_2.dynamic_allocated());
+        EXPECT_EQ(sv_2.size(), 3);
+
+        EXPECT_EQ(sv_1[0], "a");
+        EXPECT_EQ(sv_1[1], "b");
+
+        EXPECT_EQ(sv_2[0], "A");
+        EXPECT_EQ(sv_2[1], "B");
+        EXPECT_EQ(sv_2[2], "C");
+
+        sv_2.pop_back();
+        sv_2.shrink_to_fit();
+        EXPECT_EQ(sv_2.size(), 2);
+        EXPECT_FALSE(sv_2.dynamic_allocated());
+
+        EXPECT_EQ(sv_1.size(), sv_2.size());
+        sv_1.swap(sv_2);
+        EXPECT_EQ(sv_1.size(), sv_2.size());
+
+        sv_1.pop_back();
+        EXPECT_EQ(sv_1.at(0), "A");
+        EXPECT_EQ(sv_1.size(), 1);
+        EXPECT_FALSE(sv_1.dynamic_allocated());
+
+        sv_1.swap(sv_2);
+        EXPECT_EQ(sv_2.at(0), "A");
+        EXPECT_EQ(sv_2.size(), 1);
+        EXPECT_EQ(sv_1.at(0), "a");
+        EXPECT_EQ(sv_1.at(1), "b");
+        EXPECT_EQ(sv_1.size(), 2);
+    }
 }
-TEST(TestDetailContainer, FixedVector)
+TEST(TestContainer, FixedVector)
 {
-    using papilio::detail::fixed_vector;
+    using papilio::fixed_vector;
 
     {
         fixed_vector<int, 2> fv;
@@ -237,12 +282,12 @@ TEST(TestDetailContainer, FixedVector)
         EXPECT_THROW(fv.push_back(0), std::length_error);
     }
 }
-TEST(TestDetailContainer, FixedFlatMap)
+TEST(TestContainer, FixedFlatMap)
 {
-    using papilio::detail::fixed_flat_map;
+    using papilio::fixed_flat_map;
 
     {
-        using papilio::detail::is_transparent_v;
+        using papilio::is_transparent_v;
 
         static_assert(is_transparent_v<std::less<>>);
         static_assert(!is_transparent_v<std::less<std::string>>);
