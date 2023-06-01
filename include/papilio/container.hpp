@@ -83,16 +83,9 @@ namespace papilio
     class small_vector_base : public detail::small_vector_impl_base
     {
     public:
-    };
-
-    template <typename T, std::size_t N, typename Allocator = std::allocator<T>>
-    class small_vector : public small_vector_base<T, Allocator>
-    {
-        using base = small_vector_base<T, Allocator>;
-    public:
         using value_type = T;
         using allocator_type = Allocator;
-        using size_type = base::size_type;
+        using size_type = small_vector_impl_base::size_type;
         using difference_type = std::ptrdiff_t;
         using reference = value_type&;
         using const_reference = const value_type&;
@@ -103,10 +96,185 @@ namespace papilio
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        small_vector() noexcept(noexcept(Allocator())) = default;
+        // element access
+
+        reference at(size_type i)
+        {
+            if(i < size())
+                return data()[i];
+            this->raise_out_of_range();
+        }
+        const_reference at(size_type i) const
+        {
+            if(i < size())
+                return data()[i];
+            this->raise_out_of_range();
+        }
+        reference operator[](size_type i) noexcept
+        {
+            return data()[i];
+        }
+        const_reference operator[](size_type i) const noexcept
+        {
+            return data()[i];
+        }
+
+        reference front() noexcept
+        {
+            assert(!empty());
+            return *begin();
+        }
+        const_reference front() const noexcept
+        {
+            assert(!empty());
+            return *begin();
+        }
+        reference back() noexcept
+        {
+            assert(!empty());
+            return *(end() - 1);
+        }
+        const_reference back() const noexcept
+        {
+            assert(!empty());
+            return *(end() - 1);
+        }
+
+        [[nodiscard]]
+        pointer data() noexcept
+        {
+            return m_p_begin;
+        }
+        [[nodiscard]]
+        const_pointer data() const noexcept
+        {
+            return m_p_begin;
+        }
+
+        // iterators
+
+        iterator begin() noexcept
+        {
+            return m_p_begin;
+        }
+        iterator end() noexcept
+        {
+            return m_p_end;
+        }
+        const_iterator begin() const noexcept
+        {
+            return m_p_begin;
+        }
+        const_iterator end() const noexcept
+        {
+            return m_p_end;
+        }
+        const_iterator cbegin() const noexcept
+        {
+            return begin();
+        }
+        const_iterator cend() const noexcept
+        {
+            return end();
+        }
+
+        reverse_iterator rbegin() noexcept
+        {
+            return reverse_iterator(end());
+        }
+        reverse_iterator rend() noexcept
+        {
+            return reverse_iterator(begin());
+        }
+        const_reverse_iterator rbegin() const noexcept
+        {
+            return const_reverse_iterator(end());
+        }
+        const_reverse_iterator rend() const noexcept
+        {
+            return const_reverse_iterator(begin());
+        }
+        const_reverse_iterator crbegin() const noexcept
+        {
+            return const_reverse_iterator(cend());
+        }
+        const_reverse_iterator crend() const noexcept
+        {
+            return const_reverse_iterator(cbegin());
+        }
+
+        // capacity
+
+        [[nodiscard]]
+        bool empty() const noexcept
+        {
+            return size() == 0;
+        }
+        [[nodiscard]]
+        size_type size() const noexcept
+        {
+            return m_p_end - m_p_begin;
+        }
+        [[nodiscard]]
+        size_type max_size() const noexcept
+        {
+            return std::numeric_limits<difference_type>::max();
+        }
+        [[nodiscard]]
+        size_type capacity() const noexcept
+        {
+            return m_p_capacity - m_p_begin;
+        }
+
+    protected:
+        pointer m_p_begin;
+        pointer m_p_end;
+        pointer m_p_capacity;
+
+        // construct an empty container
+        small_vector_base() noexcept
+            : m_p_begin(), m_p_end(), m_p_capacity() {}
+
+        void swap_ptrs(small_vector_base& other) noexcept
+        {
+            using std::swap;
+
+            swap(m_p_begin, other.m_p_begin);
+            swap(m_p_end, other.m_p_end);
+            swap(m_p_capacity, other.m_p_capacity);
+        }
+    };
+
+    template <typename T, std::size_t N, typename Allocator = std::allocator<T>>
+    class small_vector : public small_vector_base<T, Allocator>
+    {
+        using base = small_vector_base<T, Allocator>;
+    public:
+        using value_type = base::value_type;
+        using allocator_type = base::allocator_type;
+        using size_type = base::size_type;
+        using difference_type = base::size_type;
+        using reference = base::reference;
+        using const_reference = base::const_reference;
+        using pointer = base::pointer;
+        using const_pointer = base::const_pointer;
+        using iterator = base::iterator;
+        using const_iterator = base::const_iterator;
+        using reverse_iterator = base::reverse_iterator;
+        using const_reverse_iterator = base::const_reverse_iterator;
+
+        small_vector() noexcept(std::is_nothrow_default_constructible_v<Allocator>)
+            : base(), m_alloc()
+        {
+            set_ptrs(getbuf(), static_size());
+        }
         explicit small_vector(const Allocator& alloc) noexcept
-            : m_alloc(alloc) {}
+            : base(), m_alloc(alloc)
+        {
+            set_ptrs(getbuf(), static_size());
+        }
         small_vector(const small_vector& other)
+            : small_vector()
         {
             reserve(other.size());
             for(size_type i = 0; i < other.size(); ++i)
@@ -115,39 +283,35 @@ namespace papilio
             }
         }
         small_vector(small_vector&& other) noexcept(std::is_nothrow_move_constructible_v<value_type>)
-            : m_alloc(std::move(other.m_alloc))
+            : base(), m_alloc(std::move(other.m_alloc))
         {
             if(other.dynamic_allocated())
             {
-                m_data.ptr = std::exchange(other.m_data.ptr, nullptr);
-                m_dyn_alloc = std::exchange(other.m_dyn_alloc, false);
-                m_capacity = std::exchange(other.m_capacity, static_size());
-                m_size = std::exchange(other.m_size, 0);
-
-                return;
+                pointer other_buf = other.getbuf();
+                m_p_begin = std::exchange(other.m_p_begin, other_buf);
+                m_p_end = std::exchange(other.m_p_end, other_buf);
+                m_p_capacity = std::exchange(other.m_p_capacity, other_buf + static_size());
             }
-
-            m_size = other.m_size;
-            PAPILIO_ASSUME(m_size <= static_size());
-            PAPILIO_ASSUME(!dynamic_allocated());
-            for(size_type i = 0; i < m_size; ++i)
+            else [[likely]]
             {
-                std::construct_at(
-                    m_data.getbuf() + i,
-                    std::move(other.m_data.getbuf()[i])
-                );
-            }
+                set_ptrs(getbuf(), static_size());
 
-            other.clear();
+                assert(other.size() <= this->capacity());
+                for(auto&& i : other)
+                {
+                    emplace_back_raw(std::move(i));
+                }
+                other.clear();
+            }
         }
         template <typename Iterator>
         small_vector(Iterator first, Iterator last, const Allocator& alloc = Allocator())
-            : m_alloc(alloc)
+            : small_vector(alloc)
         {
             assign(first, last);
         }
         small_vector(std::initializer_list<value_type> il, const Allocator& alloc = Allocator())
-            : m_alloc(alloc)
+            : small_vector(alloc)
         {
             assign(il.begin(), il.end());
         }
@@ -207,156 +371,21 @@ namespace papilio
             return m_alloc;
         }
 
-        // element access
-
-        reference at(size_type i)
-        {
-            if(i < size())
-                return data()[i];
-            this->raise_out_of_range();
-        }
-        const_reference at(size_type i) const
-        {
-            if(i < size())
-                return data()[i];
-            this->raise_out_of_range();
-        }
-        reference operator[](size_type i) noexcept
-        {
-            return data()[i];
-        }
-        const_reference operator[](size_type i) const noexcept
-        {
-            return data()[i];
-        }
-
-        reference front() noexcept
-        {
-            assert(!empty());
-            return *begin();
-        }
-        const_reference front() const noexcept
-        {
-            assert(!empty());
-            return *begin();
-        }
-        reference back() noexcept
-        {
-            assert(!empty());
-            return *(end() - 1);
-        }
-        const_reference back() const noexcept
-        {
-            assert(!empty());
-            return *(end() - 1);
-        }
-
-        [[nodiscard]]
-        pointer data() noexcept
-        {
-            [[unlikely]]
-            if(m_dyn_alloc)
-                return m_data.ptr;
-            else
-                return m_data.getbuf();
-        }
-        [[nodiscard]]
-        const_pointer data() const noexcept
-        {
-            [[unlikely]]
-            if(m_dyn_alloc)
-                return m_data.ptr;
-            else
-                return m_data.getbuf();
-        }
-
-        // iterators
-
-        iterator begin() noexcept
-        {
-            return data();
-        }
-        iterator end() noexcept
-        {
-            return data() + m_size;
-        }
-        const_iterator begin() const noexcept
-        {
-            return data();
-        }
-        const_iterator end() const noexcept
-        {
-            return data() + m_size;
-        }
-        const_iterator cbegin() const noexcept
-        {
-            return begin();
-        }
-        const_iterator cend() const noexcept
-        {
-            return data() + m_size;
-        }
-
-        reverse_iterator rbegin() noexcept
-        {
-            return reverse_iterator(end());
-        }
-        reverse_iterator rend() noexcept
-        {
-            return reverse_iterator(begin());
-        }
-        const_reverse_iterator rbegin() const noexcept
-        {
-            return const_reverse_iterator(end());
-        }
-        const_reverse_iterator rend() const noexcept
-        {
-            return const_reverse_iterator(begin());
-        }
-        const_reverse_iterator crbegin() const noexcept
-        {
-            return const_reverse_iterator(cend());
-        }
-        const_reverse_iterator crend() const noexcept
-        {
-            return const_reverse_iterator(cbegin());
-        }
-
         // capacity
 
         [[nodiscard]]
-        bool empty() const noexcept
+        bool dynamic_allocated() const noexcept
         {
-            return m_size == 0;
-        }
-        [[nodiscard]]
-        size_type size() const noexcept
-        {
-            return m_size;
-        }
-        [[nodiscard]]
-        size_type max_size() const noexcept
-        {
-            return std::numeric_limits<difference_type>::max();
+            return m_p_begin != getbuf();
         }
         [[nodiscard]]
         static constexpr size_type static_size() noexcept
         {
             return N;
         }
-        [[nodiscard]]
-        size_type capacity() const noexcept
-        {
-            return m_capacity;
-        }
-        [[nodiscard]]
-        bool dynamic_allocated() const noexcept
-        {
-            return m_dyn_alloc;
-        }
         void reserve(size_type n)
         {
-            if(n <= m_capacity)
+            if(n <= this->capacity())
                 return;
             grow_mem(n);
         }
@@ -370,7 +399,7 @@ namespace papilio
         void clear() noexcept
         {
             destroy_all();
-            m_size = 0;
+            m_p_end = m_p_begin; // set size to 0
         }
 
         void push_back(const value_type& val)
@@ -384,33 +413,35 @@ namespace papilio
         template <typename... Args>
         void emplace_back(Args&&... args)
         {
-            size_type new_size = m_size + 1;
-            if(new_size > static_size())
-                reserve(this->calc_mem_size(m_size, new_size));
+            if(m_p_end == m_p_capacity)
+            {
+                size_type current = this->size();
+                reserve(this->calc_mem_size(current, current + 1));
+            }
             emplace_back_raw(std::forward<Args>(args)...);
         }
 
         void pop_back() noexcept
         {
-            assert(!empty());
+            assert(!this->empty());
             std::allocator_traits<Allocator>::destroy(
                 m_alloc,
-                data() + m_size - 1
+                m_p_end - 1
             );
-            --m_size;
+            --m_p_end;
         }
 
         void resize(size_type count, const value_type& val)
         {
-            if(count < m_size)
+            if(count < this->size())
             {
-                while(m_size != count)
+                while(this->size() != count)
                     pop_back();
             }
-            else if(count > m_size)
+            else if(count > this->size())
             {
                 reserve(count);
-                while(m_size != count)
+                while(this->size() != count)
                     emplace_back_raw(val);
             }
         }
@@ -423,95 +454,112 @@ namespace papilio
         {
             using std::swap;
 
-            if(m_dyn_alloc && other.m_dyn_alloc)
+            if(dynamic_allocated() && other.dynamic_allocated())
             {
                 // both are dynamic allocated
-                swap(m_size, other.m_size);
-                swap(m_data.ptr, other.m_data.ptr);
-                swap(m_capacity, other.m_capacity);
+                swap_ptrs(other);
                 if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
                     swap(m_alloc, other.m_alloc);
             }
-            else if(!m_dyn_alloc && other.m_dyn_alloc)
+            else if(!dynamic_allocated() && other.dynamic_allocated())
             {
                 swap_static_to_dyn(other);
             }
-            else if(!other.m_dyn_alloc && m_dyn_alloc)
+            else if(!other.dynamic_allocated() && dynamic_allocated())
             {
                 other.swap_static_to_dyn(*this);
             }
             else
             {
                 // both are using static storage
-                PAPILIO_ASSUME(!m_dyn_alloc && !other.m_dyn_alloc);
-                for(size_type i = 0; i < std::max(m_size, other.m_size); ++i)
+                PAPILIO_ASSUME(!dynamic_allocated() && !other.dynamic_allocated());
+
+                size_type tmp_size_1 = this->size();
+                size_type tmp_size_2 = other.size();
+                for(size_type i = 0; i < std::max(tmp_size_1, tmp_size_2); ++i)
                 {
-                    if(i < m_size && i >= other.m_size)
+                    if(i < this->size() && i >= other.size())
                     {
                         // this->size() > other.size()
                         // copy elements to the other one
                         std::construct_at(
-                            other.m_data.getbuf() + i,
-                            std::move(m_data.getbuf()[i])
+                            other.m_p_begin + i,
+                            std::move(*(m_p_begin + i))
                         );
-                        std::destroy_at(m_data.getbuf() + i);
+                        std::destroy_at(getbuf() + i);
                     }
-                    else if(i >= m_size && i < other.m_size)
+                    else if(i >= this->size() && i < other.size())
                     {
                         // this->size() < other.size()
                         // copy elements from the other one
                         std::construct_at(
-                            m_data.getbuf() + i,
-                            std::move(other.m_data.getbuf()[i])
+                            m_p_begin + i,
+                            std::move(*(other.m_p_begin + i))
                         );
-                        std::destroy_at(other.m_data.getbuf() + i);
+                        std::destroy_at(other.m_p_begin + i);
                     }
                     else
                     {
-                        // same size
-                        swap(m_data.getbuf()[i], other.m_data.getbuf()[i]);
+                        swap(*(m_p_begin + i), *(other.m_p_begin + i));
                     }
                 }
 
-                swap(m_size, other.m_size);
+                // set correct size values
+                m_p_end = m_p_begin + tmp_size_2;
+                other.m_p_end = other.m_p_begin + tmp_size_1;
                 if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
                     swap(m_alloc, other.m_alloc);
             }
         }
 
     private:
-        union underlying_type
-        {
-            underlying_type() noexcept
-                : buf{} {}
-
-            char buf[sizeof(value_type) * N];
-            pointer ptr;
-
-            pointer getbuf() noexcept
-            {
-                return reinterpret_cast<pointer>(buf);
-            }
-            const_pointer getbuf() const noexcept
-            {
-                return reinterpret_cast<const_pointer>(buf);
-            }
-        };
-
-        size_type m_size = 0;
-        size_type m_capacity = static_size();
-        underlying_type m_data;
-        bool m_dyn_alloc = false;
+        using base::m_p_begin;
+        using base::m_p_end;
+        using base::m_p_capacity;
+        static_storage<sizeof(value_type) * N> m_buf;
         PAPILIO_NO_UNIQUE_ADDRESS allocator_type m_alloc;
 
+        pointer getbuf() noexcept
+        {
+            return reinterpret_cast<pointer>(m_buf.data());
+        }
+        const_pointer getbuf() const noexcept
+        {
+            return reinterpret_cast<const_pointer>(m_buf.data());
+        }
+
+        void set_ptrs(pointer p_begin, size_type capacity_offset) noexcept
+        {
+            m_p_begin = p_begin;
+            m_p_end = p_begin;
+            m_p_capacity = p_begin + capacity_offset;
+        }
+        void set_ptrs(pointer p_begin, size_type size_offset, size_type capacity_offset) noexcept
+        {
+            assert(size_offset <= capacity_offset);
+
+            m_p_begin = p_begin;
+            m_p_end = p_begin + size_offset;
+            m_p_capacity = p_begin + capacity_offset;
+        }
+        void set_ptrs(pointer p_begin, pointer p_end, pointer p_capacity) noexcept
+        {
+            m_p_begin = p_begin;
+            m_p_end = p_end;
+            m_p_capacity = p_capacity;
+        }
+
+        using base::swap_ptrs;
+
+        // Note: This function assumes that the container has enough memory.
         template <typename... Args>
         void emplace_back_raw(Args&&... args)
         {
-            PAPILIO_ASSUME(m_size < m_capacity);
-            if(!m_dyn_alloc) [[likely]]
+            PAPILIO_ASSUME(m_p_end < m_p_capacity);
+            if(!dynamic_allocated()) [[likely]]
             {
                 std::construct_at(
-                    data() + m_size,
+                    m_p_end,
                     std::forward<Args>(args)...
                 );
             }
@@ -519,37 +567,38 @@ namespace papilio
             {
                 std::allocator_traits<Allocator>::construct(
                     m_alloc,
-                    data() + m_size,
+                    m_p_end,
                     std::forward<Args>(args)...
                 );
             }
-            ++m_size;
+            ++m_p_end;
         }
 
+        // Note: This function doesn't automatically reset the pointers.
         void free_mem() noexcept
         {
-            if(!m_dyn_alloc)
+            if(!dynamic_allocated())
                 return;
             std::allocator_traits<Allocator>::deallocate(
                 m_alloc,
-                m_data.ptr,
-                m_capacity
+                m_p_begin,
+                this->capacity()
             );
         }
-        // Note: This function doesn't automatically set the m_size to 0.
+        // Note: This function doesn't automatically reset the pointers.
         void destroy_all() noexcept
         {
-            if(!m_dyn_alloc)
+            if(!dynamic_allocated())
             {
-                std::destroy_n(data(), m_size);
+                std::destroy_n(m_p_begin, this->size());
             }
             else
             {
-                for(size_type i = 0; i < m_size; ++i)
+                for(pointer i = m_p_begin; i < m_p_end; ++i)
                 {
                     std::allocator_traits<Allocator>::destroy(
                         m_alloc,
-                        m_data.ptr + i
+                        i
                     );
                 }
             }
@@ -562,22 +611,24 @@ namespace papilio
 
         void shrink_mem()
         {
-            if(m_size <= static_size())
+            if(this->size() <= static_size())
             {
-                if(!m_dyn_alloc)
+                if(!dynamic_allocated())
                 {
-                    assert(m_capacity == static_size());
+                    assert(this->capacity() == static_size());
                     return;
                 }
 
                 // move from dynamic allocated memory to static storage
-                pointer tmp_ptr = m_data.ptr;
-                m_dyn_alloc = false;
+                pointer tmp_ptr = m_p_begin;
+                size_type tmp_size = this->size();
+                size_type tmp_capacity = this->capacity();
+                m_p_begin = getbuf();
 
-                for(size_type i = 0; i < m_size; ++i)
+                for(size_type i = 0; i < tmp_size; ++i)
                 {
                     std::construct_at(
-                        m_data.getbuf() + i,
+                        m_p_begin + i,
                         std::move(*(tmp_ptr + i))
                     );
                     std::allocator_traits<Allocator>::destroy(
@@ -585,14 +636,15 @@ namespace papilio
                         tmp_ptr + i
                     );
                 }
+                m_p_end = m_p_begin + tmp_size;
 
                 std::allocator_traits<Allocator>::deallocate(
                     m_alloc,
                     tmp_ptr,
-                    m_capacity
+                    tmp_capacity
                 );
 
-                m_capacity = static_size();
+                m_p_capacity = m_p_begin + static_size();
             }
         }
 
@@ -602,28 +654,26 @@ namespace papilio
 
         void grow_mem(size_type new_cap)
         {
-            assert(m_capacity < new_cap);
-            if(new_cap > max_size())
+            assert(this->capacity() < new_cap);
+            if(new_cap > this->max_size())
                 this->raise_length_error();
 
             pointer new_mem = m_alloc.allocate(new_cap);
             size_type i = 0;
             try
             {
-                pointer tmp_ptr = data();
-                for(i = 0; i < m_size; ++i)
+                size_type tmp_size = this->size();
+                for(i = 0; i < tmp_size; ++i)
                 {
                     std::allocator_traits<Allocator>::construct(
                         m_alloc,
                         new_mem + i,
-                        std::move(*(tmp_ptr + i))
+                        std::move(*(m_p_begin + i))
                     );
                 }
-                destroy_all(); // m_size is unchanged
+                destroy_all(); // size is unchanged
                 free_mem();
-                m_dyn_alloc = true;
-                m_data.ptr = new_mem;
-                m_capacity = new_cap;
+                set_ptrs(new_mem, tmp_size, new_cap);
             }
             catch(...)
             {
@@ -649,25 +699,22 @@ namespace papilio
         {
             using std::swap;
 
-            PAPILIO_ASSUME(!m_dyn_alloc);
+            assert(!dynamic_allocated());
 
-            pointer tmp_ptr = other.m_data.ptr;
-            size_type tmp_size = m_size;
-            other.m_dyn_alloc = false;
+            pointer tmp_p_begin = other.m_p_begin;
+            pointer tmp_p_end = other.m_p_end;
+            pointer tmp_p_capacity = other.m_p_capacity;
+            other.set_ptrs(other.getbuf(), static_size());
 
-            for(size_type i = 0; i < tmp_size; ++i)
+            for(size_type i = 0; i < this->size(); ++i)
             {
-                std::construct_at(
-                    other.m_data.getbuf() + i,
-                    std::move(*(m_data.getbuf() + i))
+                other.emplace_back_raw(
+                    std::move(*(m_p_begin + i))
                 );
             }
             destroy_all();
 
-            m_data.ptr = tmp_ptr;
-            m_dyn_alloc = true;
-            m_capacity = std::exchange(other.m_capacity, static_size());
-            m_size = std::exchange(other.m_size, tmp_size);
+            set_ptrs(tmp_p_begin, tmp_p_end, tmp_p_capacity);
             if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
                 swap(m_alloc, other.m_alloc);
         }
