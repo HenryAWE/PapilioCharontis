@@ -1,5 +1,3 @@
-#pragma once
-
 #include <papilio/detail/detail.hpp>
 
 

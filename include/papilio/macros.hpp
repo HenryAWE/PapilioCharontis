@@ -6,7 +6,7 @@
 #ifdef _MSC_VER
 #   define PAPILIO_COMPILER_MSVC 1
 #endif
-#ifdef __GUNC__
+#ifdef __GNUC__
 #   define PAPILIO_COMPILER_GCC 1
 #endif
 
@@ -22,7 +22,7 @@
 #elif defined PAPILIO_COMPILER_MSVC
 #   define PAPILIO_ASSUME(expr) __assume(expr)
 #elif defined PAPILIO_COMPILER_GCC
-#   define PAPILIO_ASSUME(expr) __attribute__((assume(expr)))
+#   define PAPILIO_ASSUME(expr) // __attribute__((assume(expr)))
 #else
 #   define PAPILIO_ASSUME(expr)
 #endif

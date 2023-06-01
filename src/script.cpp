@@ -288,15 +288,19 @@ namespace papilio::script
             case 2:
                 if(ch != '0' && ch != '1')
                     goto end_loop;
+                break;
             [[unlikely]] case 8:
                 if(!('0' <= ch && ch <= '7'))
                     goto end_loop;
+                break;
             [[likely]] case 10:
                 if(!detail::is_digit(ch))
                     goto end_loop;
+                break;
             case 16:
                 if(!detail::is_xdigit(ch))
                     goto end_loop;
+                break;
 
             default:
                 papilio::detail::unreachable();
