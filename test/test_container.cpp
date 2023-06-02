@@ -9,6 +9,11 @@ TEST(TestContainer, SmallVector)
     using papilio::small_vector;
 
     {
+        using sv_t = small_vector<int, 10>;
+        static_assert(sizeof(sv_t) == sizeof(sv_t::pointer) * 3 + sizeof(int) * 10);
+    }
+
+    {
         small_vector<int, 8> sv;
 
         static_assert(sv.static_size() == 8);

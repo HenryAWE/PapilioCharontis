@@ -8,6 +8,7 @@
 #include <numeric>
 #include <stdexcept>
 #include "macros.hpp"
+#include "memory.hpp"
 
 
 namespace papilio
@@ -264,12 +265,12 @@ namespace papilio
         using const_reverse_iterator = base::const_reverse_iterator;
 
         small_vector() noexcept(std::is_nothrow_default_constructible_v<Allocator>)
-            : base(), m_alloc()
+            : base()
         {
             set_ptrs(getbuf(), static_size());
         }
         explicit small_vector(const Allocator& alloc) noexcept
-            : base(), m_alloc(alloc)
+            : base()
         {
             set_ptrs(getbuf(), static_size());
         }
@@ -283,7 +284,7 @@ namespace papilio
             }
         }
         small_vector(small_vector&& other) noexcept(std::is_nothrow_move_constructible_v<value_type>)
-            : base(), m_alloc(std::move(other.m_alloc))
+            : base()
         {
             if(other.dynamic_allocated())
             {
@@ -368,7 +369,7 @@ namespace papilio
 
         allocator_type get_allocator() const noexcept
         {
-            return m_alloc;
+            return getal();
         }
 
         // capacity
@@ -425,7 +426,7 @@ namespace papilio
         {
             assert(!this->empty());
             std::allocator_traits<Allocator>::destroy(
-                m_alloc,
+                getal(),
                 m_p_end - 1
             );
             --m_p_end;
@@ -459,7 +460,7 @@ namespace papilio
                 // both are dynamic allocated
                 swap_ptrs(other);
                 if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
-                    swap(m_alloc, other.m_alloc);
+                    swap(getal(), other.getal());
             }
             else if(!dynamic_allocated() && other.dynamic_allocated())
             {
@@ -508,7 +509,7 @@ namespace papilio
                 m_p_end = m_p_begin + tmp_size_2;
                 other.m_p_end = other.m_p_begin + tmp_size_1;
                 if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
-                    swap(m_alloc, other.m_alloc);
+                    swap(getal(), other.getal());
             }
         }
 
@@ -516,16 +517,23 @@ namespace papilio
         using base::m_p_begin;
         using base::m_p_end;
         using base::m_p_capacity;
-        static_storage<sizeof(value_type) * N> m_buf;
-        PAPILIO_NO_UNIQUE_ADDRESS allocator_type m_alloc;
+        compressed_pair<
+            static_storage<sizeof(value_type)* N>,
+            allocator_type
+        > m_data;
 
         pointer getbuf() noexcept
         {
-            return reinterpret_cast<pointer>(m_buf.data());
+            return reinterpret_cast<pointer>(m_data.first().data());
         }
         const_pointer getbuf() const noexcept
         {
-            return reinterpret_cast<const_pointer>(m_buf.data());
+            return reinterpret_cast<const_pointer>(m_data.first().data());
+        }
+        // get reference of the allocator
+        allocator_type& getal() noexcept
+        {
+            return m_data.second();
         }
 
         void set_ptrs(pointer p_begin, size_type capacity_offset) noexcept
@@ -566,7 +574,7 @@ namespace papilio
             else
             {
                 std::allocator_traits<Allocator>::construct(
-                    m_alloc,
+                    getal(),
                     m_p_end,
                     std::forward<Args>(args)...
                 );
@@ -580,7 +588,7 @@ namespace papilio
             if(!dynamic_allocated())
                 return;
             std::allocator_traits<Allocator>::deallocate(
-                m_alloc,
+                getal(),
                 m_p_begin,
                 this->capacity()
             );
@@ -597,7 +605,7 @@ namespace papilio
                 for(pointer i = m_p_begin; i < m_p_end; ++i)
                 {
                     std::allocator_traits<Allocator>::destroy(
-                        m_alloc,
+                        getal(),
                         i
                     );
                 }
@@ -632,14 +640,14 @@ namespace papilio
                         std::move(*(tmp_ptr + i))
                     );
                     std::allocator_traits<Allocator>::destroy(
-                        m_alloc,
+                        getal(),
                         tmp_ptr + i
                     );
                 }
                 m_p_end = m_p_begin + tmp_size;
 
                 std::allocator_traits<Allocator>::deallocate(
-                    m_alloc,
+                    getal(),
                     tmp_ptr,
                     tmp_capacity
                 );
@@ -658,7 +666,7 @@ namespace papilio
             if(new_cap > this->max_size())
                 this->raise_length_error();
 
-            pointer new_mem = m_alloc.allocate(new_cap);
+            pointer new_mem = getal().allocate(new_cap);
             size_type i = 0;
             try
             {
@@ -666,7 +674,7 @@ namespace papilio
                 for(i = 0; i < tmp_size; ++i)
                 {
                     std::allocator_traits<Allocator>::construct(
-                        m_alloc,
+                        getal(),
                         new_mem + i,
                         std::move(*(m_p_begin + i))
                     );
@@ -680,12 +688,12 @@ namespace papilio
                 for(size_type j = 0; j < i; ++j)
                 {
                     std::allocator_traits<Allocator>::destroy(
-                        m_alloc,
+                        getal(),
                         new_mem + j
                     );
                 }
                 std::allocator_traits<Allocator>::deallocate(
-                    m_alloc,
+                    getal(),
                     new_mem,
                     new_cap
                 );
@@ -716,7 +724,7 @@ namespace papilio
 
             set_ptrs(tmp_p_begin, tmp_p_end, tmp_p_capacity);
             if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
-                swap(m_alloc, other.m_alloc);
+                swap(getal(), other.getal());
         }
     };
 
