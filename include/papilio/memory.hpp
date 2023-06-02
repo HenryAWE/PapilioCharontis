@@ -369,4 +369,180 @@ namespace papilio
 
     template <typename T, typename Deleter>
     optional_ptr(std::unique_ptr<T, Deleter>&&) -> optional_ptr<T, Deleter>;
+
+    namespace detail
+    {
+        template <typename T>
+        concept cp_is_empty = !std::is_final_v<T> && std::is_empty_v<T>;
+
+        template <typename T1, typename T2>
+        inline consteval int get_cp_impl_id() noexcept
+        {
+            using namespace std;
+            if constexpr(!cp_is_empty<T1> && !cp_is_empty<T2>)
+                return 0; // normal pair
+            else if constexpr(cp_is_empty<T1> && !cp_is_empty<T2>)
+                return 1; // only T1 is empty
+            else if constexpr(!cp_is_empty<T1> && cp_is_empty<T2>)
+                return 2; // only T2 is empty
+            else
+                return 3; // both are empty
+        }
+
+        template <typename T1, typename T2, int Id>
+        class compressed_pair_impl;
+
+        // normal pair
+        template <typename T1, typename T2>
+        class compressed_pair_impl<T1, T2, 0>
+        {
+        public:
+            using first_type = T1;
+            using second_type = T2;
+
+            constexpr compressed_pair_impl() = default;
+            constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
+            constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
+            constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+                : m_first(v1), m_second(v2) {}
+            template <typename U1, typename U2>
+            constexpr compressed_pair_impl(U1&& v1, U2&& v2)
+                : m_first(std::forward<U1>(v1)), m_second(std::forward<U2>(v2)) {}
+
+            [[nodiscard]]
+            constexpr first_type& first() noexcept { return m_first; }
+            [[nodiscard]]
+            constexpr const first_type& first() const noexcept { return m_first; }
+            [[nodiscard]]
+            constexpr second_type& second() noexcept { return m_second; }
+            [[nodiscard]]
+            constexpr const first_type& second() const noexcept { return m_second; }
+
+            constexpr void swap(compressed_pair_impl& other)
+                noexcept(std::is_nothrow_swappable_v<T1> && std::is_nothrow_swappable_v<T2>)
+            {
+                using std::swap;
+                swap(m_first, other.first());
+                swap(m_second, other.second());
+            }
+
+        private:
+            first_type m_first;
+            second_type m_second;
+        };
+
+        // T1 is empty
+        template <typename T1, typename T2>
+        class compressed_pair_impl<T1, T2, 1> : private std::remove_cv_t<T1>
+        {
+        public:
+            using first_type = T1;
+            using second_type = T2;
+
+            constexpr compressed_pair_impl() = default;
+            constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
+            constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
+            constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+                : T1(v1), m_second(v2) {}
+            template <typename U1, typename U2>
+            constexpr compressed_pair_impl(U1&& v1, U2&& v2)
+                : T1(std::forward<U1>(v1)), m_second(std::forward<U2>(v2)) {}
+
+            [[nodiscard]]
+            constexpr first_type& first() noexcept { return *this; }
+            [[nodiscard]]
+            constexpr const first_type& first() const noexcept { return *this; }
+            [[nodiscard]]
+            constexpr second_type& second() noexcept { return m_second; }
+            [[nodiscard]]
+            constexpr const first_type& second() const noexcept { return m_second; }
+
+            constexpr void swap(compressed_pair_impl& other)
+                noexcept(std::is_nothrow_swappable_v<T2>)
+            {
+                using std::swap;
+                swap(m_second, other.second());
+            }
+
+        private:
+            second_type m_second;
+        };
+
+        // T2 is empty
+        template <typename T1, typename T2>
+        class compressed_pair_impl<T1, T2, 2> : private std::remove_cv_t<T2>
+        {
+        public:
+            using first_type = T1;
+            using second_type = T2;
+
+            constexpr compressed_pair_impl() = default;
+            constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
+            constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
+            constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+                : T2(v2), m_first(v1) {}
+            template <typename U1, typename U2>
+            constexpr compressed_pair_impl(U1&& v1, U2&& v2)
+                : T2(std::forward<U1>(v2)), m_first(std::forward<U2>(v1)) {}
+
+            [[nodiscard]]
+            constexpr first_type& first() noexcept { return m_first; }
+            [[nodiscard]]
+            constexpr const first_type& first() const noexcept { return m_first; }
+            [[nodiscard]]
+            constexpr second_type& second() noexcept { return *this; }
+            [[nodiscard]]
+            constexpr const first_type& second() const noexcept { return *this; }
+
+            constexpr void swap(compressed_pair_impl& other)
+                noexcept(std::is_nothrow_swappable_v<T1>)
+            {
+                using std::swap;
+                swap(m_first, other.first());
+            }
+
+        private:
+            first_type m_first;
+        };
+
+        template <typename T1, typename T2>
+        class compressed_pair_impl<T1, T2, 3> : private std::remove_cv_t<T1>, private std::remove_cv_t<T2>
+        {
+        public:
+            using first_type = T1;
+            using second_type = T2;
+
+            constexpr compressed_pair_impl() = default;
+            constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
+            constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
+            constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+                : T1(v1), T2(v2) {}
+            template <typename U1, typename U2>
+            constexpr compressed_pair_impl(U1&& v1, U2&& v2)
+                : T1(std::forward<U1>(v1)), T2(std::forward<U2>(v2)) {}
+
+            [[nodiscard]]
+            constexpr first_type& first() noexcept { return *this; }
+            [[nodiscard]]
+            constexpr const first_type& first() const noexcept { return *this; }
+            [[nodiscard]]
+            constexpr second_type& second() noexcept { return *this; }
+            [[nodiscard]]
+            constexpr const first_type& second() const noexcept { return *this; }
+
+            constexpr void swap(compressed_pair_impl& other) noexcept
+            {
+                // empty
+            }
+        };
+    }
+
+    template <typename T1, typename T2>
+    class compressed_pair :
+        public detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>
+    {
+        using base = detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>;
+    public:
+        using base::base;
+    };
 }

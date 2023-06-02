@@ -3,9 +3,15 @@
 #include <cstring>
 
 
+namespace test_memory
+{
+    class empty_1 {};
+    class empty_2 {};
+}
 TEST(TestMemory, Utilities)
 {
     using namespace papilio;
+    using namespace test_memory;
 
     {
         static_assert(pointer_like<optional_ptr<int>>);
@@ -17,6 +23,36 @@ TEST(TestMemory, Utilities)
         static_assert(pointer_like<int*>);
         static_assert(pointer_like<int[]>);
         static_assert(!pointer_like<int>);
+    }
+
+    {
+        compressed_pair<int, int> p_1{ 0, 1 };
+        static_assert(sizeof(p_1) == sizeof(int) * 2);
+
+        EXPECT_EQ(p_1.first(), 0);
+        EXPECT_EQ(p_1.second(), 1);
+
+        compressed_pair<int, int> p_2 = p_1;
+        EXPECT_EQ(p_2.first(), 0);
+        EXPECT_EQ(p_2.second(), 1);
+
+        p_2.first() = 2;
+        p_2.second() = 3;
+        p_1.swap(p_2);
+        EXPECT_EQ(p_1.first(), 2);
+        EXPECT_EQ(p_1.second(), 3);
+        EXPECT_EQ(p_2.first(), 0);
+        EXPECT_EQ(p_2.second(), 1);
+    }
+
+    {
+        compressed_pair<std::string, empty_1> p_1;
+        static_assert(sizeof(p_1) == sizeof(std::string));
+        compressed_pair<empty_1, std::string> p_2;
+        static_assert(sizeof(p_2) == sizeof(std::string));
+        compressed_pair<empty_1, empty_2> p_3;
+        static_assert(sizeof(p_3) == 1);
+        static_assert(std::is_empty_v<compressed_pair<empty_1, empty_2>>);
     }
 }
 namespace test_memory
