@@ -7,6 +7,47 @@ License: MIT
 -->
 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="papilio::detail::compressed_pair_impl&lt;*,*,0&gt;">
+        <Intrinsic Name="first" Expression="m_first" />
+        <Intrinsic Name="second" Expression="m_second" />
+        <DisplayString IncludeView="noparens">{first()}, {second()}</DisplayString>
+        <DisplayString ExcludeView="noparens">({first()}, {second()})</DisplayString>
+        <Expand>
+            <Item Name="first">m_first</Item>
+            <Item Name="second">m_second</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::detail::compressed_pair_impl&lt;*,*,1&gt;">
+        <Intrinsic Name="first" Expression="*($T1*)this" />
+        <Intrinsic Name="second" Expression="m_second" />
+        <DisplayString IncludeView="noparens">{first()}, {second()}</DisplayString>
+        <DisplayString ExcludeView="noparens">({first()}, {second()})</DisplayString>
+        <Expand>
+            <Item Name="first">first()</Item>
+            <Item Name="second">m_second</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::detail::compressed_pair_impl&lt;*,*,2&gt;">
+        <Intrinsic Name="first" Expression="m_first" />
+        <Intrinsic Name="second" Expression="*($T2*)this" />
+        <DisplayString IncludeView="noparens">{first()}, {second()}</DisplayString>
+        <DisplayString ExcludeView="noparens">({first()}, {second()})</DisplayString>
+        <Expand>
+            <Item Name="first">m_first</Item>
+            <Item Name="second">second()</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::detail::compressed_pair_impl&lt;*,*,3&gt;">
+        <Intrinsic Name="first" Expression="*($T1*)this" />
+        <Intrinsic Name="second" Expression="*($T2*)this" />
+        <DisplayString IncludeView="noparens">{first()}, {second()}</DisplayString>
+        <DisplayString ExcludeView="noparens">({first()}, {second()})</DisplayString>
+        <Expand>
+            <Item Name="first">first()</Item>
+            <Item Name="second">second()</Item>
+        </Expand>
+    </Type>
+
     <Type Name="papilio::optional_ptr&lt;void,*&gt;">
         <SmartPointer Usage="Minimal">m_ptr</SmartPointer>
         <DisplayString Condition="m_ptr == 0">empty</DisplayString>
@@ -31,7 +72,7 @@ License: MIT
     </Type>
 
     <Type Name="papilio::small_vector&lt;*,*,*&gt;">
-        <Intrinsic Name="dyn_alloc" Expression="(void*)m_p_begin != (void*)m_buf.m_data" />
+        <Intrinsic Name="dyn_alloc" Expression="(void*)m_p_begin != (void*)m_data.m_first.m_data" />
         <Intrinsic Name="size" Expression="m_p_end - m_p_begin" />
         <Intrinsic Name="capacity" Expression="m_p_capacity - m_p_begin" />
         <DisplayString>{{ size={size()} }}</DisplayString>
@@ -39,7 +80,7 @@ License: MIT
             <Item Name="[dynamically allocated]">dyn_alloc()</Item>
             <Item Name="[size]" ExcludeView="simple">size()</Item>
             <Item Name="[capacity]" ExcludeView="simple">capacity()</Item>
-            <Item Name="[allocator]" ExcludeView="simple">m_alloc</Item>
+            <Item Name="[allocator]" ExcludeView="simple">m_data.second()</Item>
             <ArrayItems Condition="size() != 0" Optional="true">
                 <Size>size()</Size>
                 <ValuePointer>m_p_begin</ValuePointer>
@@ -63,14 +104,14 @@ License: MIT
     </Type>
 
     <Type Name="papilio::fixed_flat_map&lt;*,*&gt;" ExcludeView="ShowElementsByIndex">
-        <Intrinsic Name="size" Expression="m_storage.m_size" />
+        <Intrinsic Name="size" Expression="m_data.m_first.m_size" />
         <DisplayString>{{ size={size()} }}</DisplayString>
         <Expand>
-            <Item Name="[size]" ExcludeView="simple">m_storage.m_size</Item>
-            <Item Name="[comparator]" ExcludeView="simple">m_comp</Item>
+            <Item Name="[size]" ExcludeView="simple">size()</Item>
+            <Item Name="[comparator]" ExcludeView="simple">m_data.second()</Item>
             <LinkedListItems Condition="size() != 0" Optional="true">
                 <Size>size()</Size>
-                <HeadPointer>m_storage.data()</HeadPointer>
+                <HeadPointer>m_data.m_first.data()</HeadPointer>
                 <NextPointer>this + 1</NextPointer>
                 <ValueNode Name="[{this->first}]">*this,view(MapHelper)</ValueNode>
             </LinkedListItems>

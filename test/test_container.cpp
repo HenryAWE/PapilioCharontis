@@ -296,6 +296,10 @@ TEST(TestContainer, FixedFlatMap)
 
         static_assert(is_transparent_v<std::less<>>);
         static_assert(!is_transparent_v<std::less<std::string>>);
+
+        using ffm_t = fixed_flat_map<int, int, 8, std::less<>>;
+        static_assert(is_transparent_v<ffm_t::value_compare>);
+        static_assert(std::is_empty_v<ffm_t::value_compare>);
     }
 
     {

@@ -53,6 +53,11 @@ TEST(TestMemory, Utilities)
         compressed_pair<empty_1, empty_2> p_3;
         static_assert(sizeof(p_3) == 1);
         static_assert(std::is_empty_v<compressed_pair<empty_1, empty_2>>);
+
+        // only optimize for the first member when T1 == T2
+        compressed_pair<empty_1, empty_1> p_4;
+        static_assert(sizeof(p_4) == 1);
+        static_assert(!std::is_empty_v<compressed_pair<empty_1, empty_1>>);
     }
 }
 namespace test_memory

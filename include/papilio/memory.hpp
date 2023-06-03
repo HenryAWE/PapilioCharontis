@@ -386,7 +386,13 @@ namespace papilio
             else if constexpr(!cp_is_empty<T1> && cp_is_empty<T2>)
                 return 2; // only T2 is empty
             else
-                return 3; // both are empty
+            {
+                // both are empty
+                if constexpr(!is_same_v<T1, T2>)
+                    return 3; // T1 != T2
+                else
+                    return 1; // T1 == T2, fallback to implementation for only T1 is empty
+            }
         }
 
         template <typename T1, typename T2, int Id>
@@ -416,7 +422,7 @@ namespace papilio
             [[nodiscard]]
             constexpr second_type& second() noexcept { return m_second; }
             [[nodiscard]]
-            constexpr const first_type& second() const noexcept { return m_second; }
+            constexpr const second_type& second() const noexcept { return m_second; }
 
             constexpr void swap(compressed_pair_impl& other)
                 noexcept(std::is_nothrow_swappable_v<T1> && std::is_nothrow_swappable_v<T2>)
@@ -455,7 +461,7 @@ namespace papilio
             [[nodiscard]]
             constexpr second_type& second() noexcept { return m_second; }
             [[nodiscard]]
-            constexpr const first_type& second() const noexcept { return m_second; }
+            constexpr const second_type& second() const noexcept { return m_second; }
 
             constexpr void swap(compressed_pair_impl& other)
                 noexcept(std::is_nothrow_swappable_v<T2>)
@@ -492,7 +498,7 @@ namespace papilio
             [[nodiscard]]
             constexpr second_type& second() noexcept { return *this; }
             [[nodiscard]]
-            constexpr const first_type& second() const noexcept { return *this; }
+            constexpr const second_type& second() const noexcept { return *this; }
 
             constexpr void swap(compressed_pair_impl& other)
                 noexcept(std::is_nothrow_swappable_v<T1>)
@@ -505,6 +511,7 @@ namespace papilio
             first_type m_first;
         };
 
+        // T1 != T2, both are empty
         template <typename T1, typename T2>
         class compressed_pair_impl<T1, T2, 3> : private std::remove_cv_t<T1>, private std::remove_cv_t<T2>
         {
@@ -528,7 +535,7 @@ namespace papilio
             [[nodiscard]]
             constexpr second_type& second() noexcept { return *this; }
             [[nodiscard]]
-            constexpr const first_type& second() const noexcept { return *this; }
+            constexpr const second_type& second() const noexcept { return *this; }
 
             constexpr void swap(compressed_pair_impl& other) noexcept
             {

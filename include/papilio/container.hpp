@@ -13,7 +13,7 @@
 
 namespace papilio
 {
-    template <std::size_t Capacity>
+    template <std::size_t Capacity, std::size_t Align = alignof(std::max_align_t)>
     class static_storage
     {
     public:
@@ -38,10 +38,10 @@ namespace papilio
         }
 
     private:
-        std::byte m_data[Capacity]{};
+        alignas(Align) std::byte m_data[Capacity]{};
     };
-    template <>
-    class static_storage<0>
+    template <std::size_t Align>
+    class static_storage<0, Align>
     {
     public:
         [[nodiscard]]
@@ -451,6 +451,11 @@ namespace papilio
             resize(count, value_type());
         }
 
+#ifdef PAPILIO_COMPILER_MSVC
+#   pragma warning(push)
+#   pragma warning(disable:26800) // lifetime.1
+#endif
+
         void swap(small_vector& other) noexcept
         {
             using std::swap;
@@ -513,12 +518,16 @@ namespace papilio
             }
         }
 
+#ifdef PAPILIO_COMPILER_MSVC
+#   pragma warning(pop)
+#endif
+
     private:
         using base::m_p_begin;
         using base::m_p_end;
         using base::m_p_capacity;
         compressed_pair<
-            static_storage<sizeof(value_type)* N>,
+            static_storage<sizeof(value_type) * N, alignof(value_type)>,
             allocator_type
         > m_data;
 
@@ -937,7 +946,7 @@ namespace papilio
         }
 
     private:
-        static_storage<sizeof(T) * Capacity> m_buf;
+        static_storage<sizeof(T) * Capacity, alignof(T)> m_buf;
         size_type m_size = 0;
 
         void* getbuf() noexcept
@@ -958,12 +967,33 @@ namespace papilio
             typename Compare::is_transparent;
         };
 
-        template <bool IsTransparent>
-        class value_compare_impl_base {};
-        template <>
-        class value_compare_impl_base<true>
+        template <typename Compare, bool IsTransparent>
+        class value_compare_impl_base;
+        template <typename Compare>
+        class value_compare_impl_base<Compare, false> : protected Compare
         {
+        public:
+            value_compare_impl_base() = default;
+            value_compare_impl_base(const value_compare_impl_base&) = default;
+            value_compare_impl_base(value_compare_impl_base&&) = default;
+
+        protected:
+            value_compare_impl_base(Compare comp)
+                : Compare(comp) {}
+        };
+        template <typename Compare>
+        class value_compare_impl_base<Compare, true> : protected Compare
+        {
+        public:
             using is_transparent = void;
+
+            value_compare_impl_base() = default;
+            value_compare_impl_base(const value_compare_impl_base&) = default;
+            value_compare_impl_base(value_compare_impl_base&&) = default;
+
+        protected:
+            value_compare_impl_base(Compare comp)
+                : Compare(comp) {}
         };
 
         class fixed_flat_map_impl_base
@@ -998,8 +1028,10 @@ namespace papilio
         using iterator = underlying_type::iterator;
         using const_iterator = underlying_type::const_iterator;
 
-        class value_compare : detail::value_compare_impl_base<is_transparent_v<Compare>>
+        class value_compare :
+            public detail::value_compare_impl_base<key_compare, is_transparent_v<Compare>>
         {
+            using base = detail::value_compare_impl_base<key_compare, is_transparent_v<Compare>>;
         public:
             value_compare() = default;
             value_compare(const value_compare&) = default;
@@ -1007,30 +1039,33 @@ namespace papilio
 
             bool operator()(const value_type& lhs, const value_type& rhs) const
             {
-                return m_comp(lhs.first, rhs.first);
+                return as_key_comp()(lhs.first, rhs.first);
             }
             template <typename T1, typename T2>
             bool operator()(T1&& lhs, T2&& rhs) const requires is_transparent_v<Compare>
             {
-                return m_comp(std::forward<T1>(lhs), std::forward<T2>(rhs));
+                return as_key_comp()(std::forward<T1>(lhs), std::forward<T2>(rhs));
             }
 
-            Compare key_comp() const
+            key_compare key_comp() const
             {
-                return m_comp;
+                return as_key_comp();
             }
 
         protected:
             friend class fixed_flat_map;
 
-            value_compare(Compare comp_)
-                : comp(comp_) {}
+            using base::base;
 
-            key_compare comp;
+        private:
+            const key_compare& as_key_comp() const noexcept
+            {
+                return *this;
+            }
         };
 
         fixed_flat_map()
-            : m_storage(), m_comp() {}
+            : m_data() {}
 
         // element access
 
@@ -1057,20 +1092,20 @@ namespace papilio
 
         // iterators
 
-        iterator begin() noexcept { return m_storage.begin(); }
-        iterator end() noexcept { return m_storage.end(); }
-        const_iterator begin() const noexcept { return m_storage.begin(); }
-        const_iterator end() const noexcept { return m_storage.end(); }
+        iterator begin() noexcept { return get_storage().begin(); }
+        iterator end() noexcept { return get_storage().end(); }
+        const_iterator begin() const noexcept { return get_storage().begin(); }
+        const_iterator end() const noexcept { return get_storage().end(); }
 
         // capacity
 
         bool empty() const noexcept
         {
-            return m_storage.empty();
+            return get_storage().empty();
         }
         size_type size() const noexcept
         {
-            return m_storage.size();
+            return get_storage().size();
         }
         static size_type max_size() noexcept
         {
@@ -1083,14 +1118,14 @@ namespace papilio
             static_assert(std::is_assignable_v<mapped_type&, U&&>);
 
             auto pos = lower_bound(k);
-            if(pos != end() && is_equal(pos->first, k, m_comp.comp))
+            if(pos != end() && is_equal(pos->first, k, get_comp().as_key_comp()))
             {
                 pos->second = std::forward<U>(val);
 
                 return std::make_pair(pos, false);
             }
 
-            m_storage.emplace(
+            get_storage().emplace(
                 pos,
                 k, std::forward<U>(val)
             );
@@ -1102,12 +1137,12 @@ namespace papilio
         std::pair<iterator, bool> try_emplace(const Key& k, Args&&... args)
         {
             auto pos = lower_bound(k);
-            if(pos != end() && is_equal(pos->first, k, m_comp.comp))
+            if(pos != end() && is_equal(pos->first, k, get_comp().as_key_comp()))
             {
                 return std::make_pair(pos, false);
             }
 
-            m_storage.emplace(
+            get_storage().emplace(
                 pos,
                 std::piecewise_construct,
                 std::forward_as_tuple(k),
@@ -1124,12 +1159,12 @@ namespace papilio
         iterator find(const Key& k)
         {
             auto it = lower_bound(k);
-            return is_equal(it->first, k, m_comp.comp) ? it : end();
+            return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
         }
         const_iterator find(const Key& k) const
         {
             auto it = lower_bound(k);
-            return is_equal(it->first, k, m_comp.comp) ? it : end();
+            return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
         }
         bool contains(const Key& k) const
         {
@@ -1137,16 +1172,31 @@ namespace papilio
         }
         iterator lower_bound(const Key& k)
         {
-            return lower_bound_impl(begin(), end(), k, m_comp.comp);
+            return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());
         }
         const_iterator lower_bound(const Key& k) const
         {
-            return lower_bound_impl(begin(), end(), k, m_comp.comp);
+            return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());
         }
 
     private:
-        underlying_type m_storage;
-        PAPILIO_NO_UNIQUE_ADDRESS value_compare m_comp;
+        compressed_pair<
+            underlying_type,
+            value_compare
+        > m_data;
+
+        underlying_type& get_storage() noexcept
+        {
+            return m_data.first();
+        }
+        const underlying_type& get_storage() const noexcept
+        {
+            return m_data.first();
+        }
+        const value_compare& get_comp() const noexcept
+        {
+            return m_data.second();
+        }
 
         template <typename T1, typename T2, typename Comp>
         static bool is_equal(T1&& lhs, T2&& rhs, Comp&& c)
