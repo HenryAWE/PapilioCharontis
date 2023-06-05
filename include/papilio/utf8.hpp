@@ -5,12 +5,23 @@
 #include <span>
 #include <memory>
 #include <concepts>
+#include <type_traits>
 #include <variant>
+#include "memory.hpp"
 
 
 namespace papilio
 {
     class slice;
+
+    template <typename T, typename CharT>
+    concept basic_string_like =
+        std::is_same_v<std::decay_t<T>, CharT*> ||
+        std::is_same_v<std::decay_t<T>, const CharT*> ||
+        std::is_same_v<T, std::basic_string<CharT>> ||
+        std::is_same_v<T, std::basic_string_view<CharT>>;
+    template <typename T>
+    concept string_like = basic_string_like<T, char>;
 
     namespace utf8
     {
@@ -377,23 +388,6 @@ namespace papilio
         using namespace utf8::literals;
     }
 
-    namespace detail
-    {
-        struct make_independent_proxy
-        {
-            std::string_view str;
-        };
-    }
-    struct independent_t
-    {
-        [[nodiscard]]
-        constexpr detail::make_independent_proxy operator()(std::string_view v) const noexcept
-        {
-            return detail::make_independent_proxy(v);
-        }
-    };
-    inline constexpr independent_t independent{};
-
     // copy-on-write and UTF-8 encoded string class
     class string_container
     {
@@ -516,8 +510,9 @@ namespace papilio
         template <std::contiguous_iterator Iterator>
         string_container(Iterator begin, Iterator end) noexcept
             : m_str(std::in_place_type<string_view_type>, begin, end) {}
-        string_container(detail::make_independent_proxy str)
-            : m_str(std::make_shared<string_type>(str.str)) {}
+        template <typename T>
+        string_container(independent_t::proxy<T> str)
+            : m_str(std::make_shared<string_type>(str.get())) {}
         string_container(string_type&& str)
             : m_str(std::make_shared<string_type>(std::move(str))) {}
         string_container(independent_t, string_type str)
@@ -559,9 +554,10 @@ namespace papilio
             m_str.emplace<string_view_type>(str);
             return *this;
         }
-        string_container& operator=(detail::make_independent_proxy str)
+        template <typename T>
+        string_container& operator=(independent_t::proxy<T> str)
         {
-            m_str = std::make_shared<string_type>(str.str);
+            m_str = std::make_shared<string_type>(str.get());
             return *this;
         }
 

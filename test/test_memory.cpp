@@ -14,8 +14,8 @@ TEST(TestMemory, Utilities)
     using namespace test_memory;
 
     {
-        static_assert(pointer_like<optional_ptr<int>>);
-        static_assert(pointer_like<optional_ptr<int[]>>);
+        static_assert(pointer_like<optional_unique_ptr<int>>);
+        static_assert(pointer_like<optional_unique_ptr<int[]>>);
         static_assert(pointer_like<std::unique_ptr<int>>);
         static_assert(pointer_like<std::unique_ptr<int[]>>);
         static_assert(pointer_like<std::shared_ptr<int>>);
@@ -73,14 +73,14 @@ namespace test_memory
         }
     };
 }
-TEST(TestMemory, OptionalPtr)
+TEST(TestMemory, OptionalUniquePtr)
 {
     using namespace papilio;
     using namespace test_memory;
     using std::is_same_v;
 
     {
-        using traits = std::pointer_traits<optional_ptr<int>>;
+        using traits = std::pointer_traits<optional_unique_ptr<int>>;
 
         int val = 42;
         auto ptr = traits::pointer_to(val);
@@ -102,13 +102,13 @@ TEST(TestMemory, OptionalPtr)
     }
 
     {
-        using ptr_t = optional_ptr<void*, c_deleter>;
+        using ptr_t = optional_unique_ptr<void*, c_deleter>;
         static_assert(is_same_v<ptr_t::pointer, c_deleter::pointer>);
         static_assert(std::is_same_v<ptr_t::pointer, void*>);
     }
 
     {
-        optional_ptr<void, c_deleter> p;
+        optional_unique_ptr<void, c_deleter> p;
         EXPECT_FALSE(p.has_ownership());
         EXPECT_EQ(p, nullptr);
         EXPECT_EQ(nullptr, p);
@@ -136,15 +136,15 @@ TEST(TestMemory, OptionalPtr)
     }
 
     {
-        optional_ptr opt_int = std::make_unique<int>(42);
+        optional_unique_ptr opt_int = std::make_unique<int>(42);
 
-        static_assert(std::is_same_v<decltype(opt_int), optional_ptr<int, std::default_delete<int>>>);
+        static_assert(std::is_same_v<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
 
         EXPECT_EQ(*opt_int, 42);
     }
 
     {
-        optional_ptr<int[]> opt_int_arr(new int[4] { 0, 1, 2, 3 });
+        optional_unique_ptr<int[]> opt_int_arr(new int[4] { 0, 1, 2, 3 });
         ASSERT_TRUE(opt_int_arr.has_ownership());
 
         for(std::size_t i = 0; i < 4; ++i)
@@ -162,7 +162,7 @@ TEST(TestMemory, OptionalPtr)
 
     {
         int arr[4] = { 0, 1, 2, 3 };
-        optional_ptr<int[]> opt_int_arr(arr, false);
+        optional_unique_ptr<int[]> opt_int_arr(arr, false);
         ASSERT_FALSE(opt_int_arr.has_ownership());
 
         for(std::size_t i = 0; i < 4; ++i)

@@ -48,22 +48,22 @@ License: MIT
         </Expand>
     </Type>
 
-    <Type Name="papilio::optional_ptr&lt;void,*&gt;">
+    <Type Name="papilio::optional_unique_ptr&lt;void,*&gt;">
         <SmartPointer Usage="Minimal">m_ptr</SmartPointer>
         <DisplayString Condition="m_ptr == 0">empty</DisplayString>
-        <DisplayString Condition="m_ptr != 0 &amp;&amp; m_has_ownership">optional_ptr void [has ownership]</DisplayString>
-        <DisplayString Condition="m_ptr != 0 &amp;&amp; !m_has_ownership">optional_ptr void [observer]</DisplayString>
+        <DisplayString Condition="m_ptr != 0 &amp;&amp; m_has_ownership">optional_unique_ptr void [has ownership]</DisplayString>
+        <DisplayString Condition="m_ptr != 0 &amp;&amp; !m_has_ownership">optional_unique_ptr void [observer]</DisplayString>
         <Expand>
             <Item Condition="m_ptr != 0" Name="[ptr]">m_ptr</Item>
             <Item Condition="m_ptr != 0" Name="[has ownership]">m_has_ownership</Item>
             <Item Condition="m_ptr != 0" Name="[deleter]">m_del</Item>
         </Expand>
     </Type>
-    <Type Name="papilio::optional_ptr&lt;*&gt;">
+    <Type Name="papilio::optional_unique_ptr&lt;*&gt;">
         <SmartPointer Usage="Minimal">m_ptr</SmartPointer>
         <DisplayString Condition="m_ptr == 0">empty</DisplayString>
-        <DisplayString Condition="m_ptr != 0 &amp;&amp; m_has_ownership">optional_ptr {*m_ptr} [has ownership]</DisplayString>
-        <DisplayString Condition="m_ptr != 0 &amp;&amp; !m_has_ownership">optional_ptr {*m_ptr} [observer]</DisplayString>
+        <DisplayString Condition="m_ptr != 0 &amp;&amp; m_has_ownership">optional_unique_ptr {*m_ptr} [has ownership]</DisplayString>
+        <DisplayString Condition="m_ptr != 0 &amp;&amp; !m_has_ownership">optional_unique_ptr {*m_ptr} [observer]</DisplayString>
         <Expand>
             <Item Condition="m_ptr != 0" Name="[ptr]">m_ptr</Item>
             <Item Condition="m_ptr != 0" Name="[has ownership]">m_has_ownership</Item>
