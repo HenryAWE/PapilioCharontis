@@ -3,6 +3,7 @@
 #include <string>
 #include <variant>
 #include <stdexcept>
+#include <limits>
 #include "../utf8.hpp"
 
 
