@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <utility>
 #include "macros.hpp"
@@ -218,6 +219,55 @@ namespace papilio
         using base = detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>;
     public:
         using base::base;
+    };
+
+    template <std::size_t Capacity, std::size_t Align = alignof(std::max_align_t)>
+    class static_storage
+    {
+    public:
+        constexpr static_storage() noexcept = default;
+        static_storage(const static_storage&) = delete;
+
+        [[nodiscard]]
+        constexpr std::byte* data() noexcept
+        {
+            return m_data;
+        }
+        [[nodiscard]]
+        constexpr const std::byte* data() const noexcept
+        {
+            return m_data;
+        }
+
+        [[nodiscard]]
+        static constexpr std::size_t size() noexcept
+        {
+            return Capacity;
+        }
+
+    private:
+        alignas(Align) std::byte m_data[Capacity]{};
+    };
+    template <std::size_t Align>
+    class static_storage<0, Align>
+    {
+    public:
+        [[nodiscard]]
+        constexpr std::byte* data() noexcept
+        {
+            return nullptr;
+        }
+        [[nodiscard]]
+        constexpr const std::byte* data() const noexcept
+        {
+            return nullptr;
+        }
+
+        [[nodiscard]]
+        static constexpr std::size_t size() noexcept
+        {
+            return 0;
+        }
     };
 
     namespace detail
