@@ -53,8 +53,6 @@ namespace papilio::script
 
     namespace detail
     {
-        using papilio::small_vector;
-
         [[nodiscard]]
         constexpr bool is_space(char ch) noexcept
         {

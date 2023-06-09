@@ -8,20 +8,12 @@
 #include <type_traits>
 #include <variant>
 #include "memory.hpp"
+#include "type.hpp"
 
 
 namespace papilio
 {
     class slice;
-
-    template <typename T, typename CharT>
-    concept basic_string_like =
-        std::is_same_v<std::decay_t<T>, CharT*> ||
-        std::is_same_v<std::decay_t<T>, const CharT*> ||
-        std::is_same_v<T, std::basic_string<CharT>> ||
-        std::is_same_v<T, std::basic_string_view<CharT>>;
-    template <typename T>
-    concept string_like = basic_string_like<T, char>;
 
     namespace utf8
     {

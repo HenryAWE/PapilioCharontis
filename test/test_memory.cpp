@@ -144,6 +144,14 @@ TEST(TestMemory, OptionalUniquePtr)
     }
 
     {
+        optional_unique_ptr opt_int = make_optional_unique<int>(42);
+
+        static_assert(std::is_same_v<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
+
+        EXPECT_EQ(*opt_int, 42);
+    }
+
+    {
         optional_unique_ptr<int[]> opt_int_arr(new int[4] { 0, 1, 2, 3 });
         ASSERT_TRUE(opt_int_arr.has_ownership());
 
@@ -172,6 +180,12 @@ TEST(TestMemory, OptionalUniquePtr)
         ASSERT_FALSE(observer_arr_ptr.has_ownership());
         EXPECT_EQ(observer_arr_ptr, opt_int_arr);
         EXPECT_EQ(opt_int_arr, observer_arr_ptr);
+    }
+
+    {
+        optional_unique_ptr opt_int_arr = make_optional_unique<int[]>(4);
+        for(std::size_t i = 0; i < 4; ++i)
+            EXPECT_EQ(opt_int_arr[i], 0);
     }
 }
 

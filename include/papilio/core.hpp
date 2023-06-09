@@ -13,6 +13,7 @@
 #include <iterator>
 #include <algorithm>
 #include <typeinfo>
+#include "type.hpp"
 #include "container.hpp"
 #include "macros.hpp"
 #include "utf8.hpp"
@@ -51,14 +52,6 @@ namespace papilio
 
             return ('A' <= ch && ch <= 'z') || digit || ch == '_';
         }
-
-        template <typename T>
-        concept char_type =
-            std::is_same_v<T, char> ||
-            std::is_same_v<T, wchar_t> ||
-            std::is_same_v<T, char16_t> ||
-            std::is_same_v<T, char32_t> ||
-            std::is_same_v<T, char8_t>;
     }
 
     enum class format_align : std::uint8_t
@@ -559,7 +552,7 @@ namespace papilio
             using type = std::remove_const_t<T>;
         };
 
-        template <std::integral T> requires(!char_type<T> && !std::is_same_v<T, bool>)
+        template <std::integral T> requires(!char_like<T> && !std::is_same_v<T, bool>)
         struct formatter_selector_helper<T>
         {
             using type = best_int_type_t<T>;
@@ -570,18 +563,18 @@ namespace papilio
             using type = bool;
         };
 
-        template <char_type T>
+        template <char_like T>
         struct formatter_selector_helper<T>
         {
             using type = utf8::codepoint;
         };
 
-        template <typename T> requires(!char_type<T>)
+        template <typename T> requires(!char_like<T>)
         struct formatter_selector_helper<T*>
         {
             using type = const T*;
         };
-        template <typename T> requires(!char_type<T>)
+        template <typename T> requires(!char_like<T>)
         struct formatter_selector_helper<const T*>
         {
             using type = const T*;
@@ -822,12 +815,12 @@ namespace papilio
         template <typename T>
         concept integral_type =
             std::integral<T> &&
-            !char_type<T>;
+            !char_like<T>;
 
         template <typename T>
         concept use_handle =
             !std::is_same_v<T, utf8::codepoint> &&
-            !char_type<T> &&
+            !char_like<T> &&
             !integral_type<T> &&
             !std::floating_point<T> &&
             !std::is_same_v<T, string_container> &&
@@ -929,7 +922,7 @@ namespace papilio
             : m_val(std::in_place_type<bool>, val) {}
         format_arg(utf8::codepoint cp) noexcept
             : m_val(std::in_place_type<utf8::codepoint>, cp) {}
-        template <detail::char_type Char>
+        template <char_like Char>
         format_arg(Char ch) noexcept
             : m_val(std::in_place_type<utf8::codepoint>, char32_t(ch)) {}
         template <detail::integral_type Integral>
@@ -949,7 +942,7 @@ namespace papilio
         template <typename T, typename... Args>
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
-        template <typename T> requires(!detail::char_type<T>)
+        template <typename T> requires(!char_like<T>)
         format_arg(const T* ptr) noexcept
             : m_val(std::in_place_type<const void*>, ptr) {}
         format_arg(std::nullptr_t) noexcept
@@ -982,7 +975,7 @@ namespace papilio
         [[nodiscard]]
         friend const auto& get(const format_arg& val)
         {
-            if constexpr(detail::char_type<T>)
+            if constexpr(char_like<T>)
                 return std::get<utf8::codepoint>(val.m_val);
             else if constexpr(std::integral<T>)
                 return std::get<detail::best_int_type_t<T>>(val.m_val);
@@ -1664,7 +1657,7 @@ namespace papilio
         {
             append(ctx, str.begin(), str.end());
         }
-        template <detail::char_type Char>
+        template <char_like Char>
         static void append(context_type& ctx, Char ch, std::size_t count = 1)
         {
             if constexpr(std::is_same_v<Char, char> || std::is_same_v<Char, char8_t>)

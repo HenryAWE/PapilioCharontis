@@ -4,6 +4,7 @@
 #include <memory>
 #include <utility>
 #include "macros.hpp"
+#include "type.hpp"
 
 
 namespace papilio
@@ -272,19 +273,12 @@ namespace papilio
 
     namespace detail
     {
-        template <typename T>
-        concept pointer_like_helper = requires(T ptr, std::size_t idx)
-        {
-            typename std::pointer_traits<T>::pointer;
-            ptr[idx];
-        };
-
         template <bool HasMemberType, typename T, typename Deleter>
         struct deleter_traits_helper;
         template <typename T, typename Deleter>
         struct deleter_traits_helper<false, T, Deleter>
         {
-            using pointer = T*;
+            using pointer = std::add_pointer_t<T>;
         };
         template <typename T, typename Deleter>
         struct deleter_traits_helper<true, T, Deleter>
@@ -320,7 +314,7 @@ namespace papilio
             optional_arr_ptr_helper<U, Pointer, Element>;
 
         template <typename Derived, typename Element>
-        class optional_ptr_base
+        class optional_ptr_base // non-void type
         {
         public:
             static Derived pointer_to(Element& val)
@@ -335,11 +329,6 @@ namespace papilio
             // empty
         };
     }
-
-    template <typename T>
-    concept pointer_like =
-        (requires(T ptr) { *ptr; ptr.operator->(); } || requires(T ptr, std::size_t i) { ptr[i]; })
-        && requires(T ptr) { static_cast<bool>(ptr); };
 
     // Smart pointer that owns an optional ownership of another object.
     // It can acts like a unique_ptr or a raw pointer.
@@ -632,4 +621,18 @@ namespace papilio
 
     template <typename T, typename Deleter>
     optional_unique_ptr(std::unique_ptr<T, Deleter>&&) -> optional_unique_ptr<T, Deleter>;
+
+    template <typename T, typename... Args> requires(!std::is_array_v<T>)
+    optional_unique_ptr<T> make_optional_unique(Args&&... args)
+    {
+        return optional_unique_ptr<T>(new T(std::forward<Args>(args)...));
+    }
+    template <typename T, typename... Args> requires(std::is_array_v<T> && std::extent_v<T> == 0)
+    optional_unique_ptr<T> make_optional_unique(std::size_t n)
+    {
+        using element_type = std::remove_extent_t<T>;
+        return optional_unique_ptr<T>(new element_type[n]());
+    }
+    template <typename T, typename... Args> requires(std::is_array_v<T>&& std::extent_v<T> != 0)
+    optional_unique_ptr<T> make_optional_unique(std::size_t n) = delete;
 }
