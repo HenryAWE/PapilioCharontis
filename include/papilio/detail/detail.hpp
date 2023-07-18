@@ -20,4 +20,6 @@ namespace papilio::detail
         // An empty function body and the [[noreturn]] attribute is enough to raise undefined behavior.
 #endif
     }
+
+#define PAPILIO_UNREACHABLE() (::papilio::detail::unreachable())
 }
