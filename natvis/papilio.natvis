@@ -127,4 +127,37 @@ License: MIT
             <Item Name="[size]" Condition="(m_bytes[0] &amp; 0xF8) == 0xF0">4</Item>
         </Expand>
     </Type>
+
+    <Type Name="papilio::utf::codepoint">
+        <Intrinsic Name="size" Expression="
+            (m_data[0] &amp; 0x80) == 0u ? 1u :
+            (m_data[0] &amp; 0xE0) == 0xC0 ? 2u :
+            (m_data[0] &amp; 0xF0) == 0xE0 ? 3u :
+            (m_data[0] &amp; 0xF8) == 0xF0 ? 4u :
+            0u"
+        />
+        <Intrinsic Name="value" Category="Data" ReturnType="unsigned" Expression="
+            size() == 1 ? unsigned(m_data[0]) :
+            size() == 2 ? ((unsigned(m_data[0]&amp;0x1F) &lt;&lt; 6) | (unsigned(m_data[1])&amp;0x3F)) :
+            size() == 3 ? ((unsigned(m_data[0]&amp;0xF) &lt;&lt; 12) | (unsigned(m_data[1]&amp;0x3F) &lt;&lt; 6) | (unsigned(m_data[2]&amp;0x3F))) :
+            size() == 4 ? ((unsigned(m_data[0]&amp;0xF) &lt;&lt; 18) | (unsigned(m_data[1]&amp;0x3F) &lt;&lt; 12) | (unsigned(m_data[2]&amp;0x3F) &lt;&lt; 6) | (unsigned(m_data[3]&amp;0x3F))) :
+            0u
+        "/>
+        <DisplayString Condition="size() != 0">{value()} '{m_data, [size()]s8b}'</DisplayString>
+        <DisplayString Condition="size() == 0">invalid</DisplayString>
+        <Expand>
+            <Item Name="[value]" Condition="size() != 0">value(), X</Item>
+            <Synthetic Name="[value]" Condition="size() == 0">
+                <DisplayString>invalid</DisplayString>
+            </Synthetic>
+            <Item Name="[size]" Condition="size() != 0">size()</Item>
+            <Synthetic Name="[size]" Condition="size() == 0">
+                <DisplayString>invalid</DisplayString>
+            </Synthetic>
+            <ArrayItems Condition="size() != 0">
+                <Size>size()</Size>
+                <ValuePointer>(const unsigned char*)m_data</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
 </AutoVisualizer>
