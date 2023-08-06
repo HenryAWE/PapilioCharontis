@@ -5,7 +5,7 @@
 
 namespace papilio::utf
 {
-    constexpr auto decoder<char32_t>::size_bytes(char32_t ch) noexcept->size_type
+    constexpr auto decoder<char32_t>::size_bytes(char32_t ch) noexcept->std::uint8_t
     {
         if(ch <= 0x7F)
             return 1;
@@ -17,9 +17,9 @@ namespace papilio::utf
             return 4;
     }
 
-    constexpr auto decoder<char32_t>::to_codepoint(char32_t ch)->std::pair<codepoint, size_type>
+    constexpr auto decoder<char32_t>::to_codepoint(char32_t ch)->std::pair<codepoint, std::uint8_t>
     {
-        size_type len = size_bytes(ch);
+        std::uint8_t len = size_bytes(ch);
         char8_t bytes[4] = { 0, 0, 0, 0 };
         switch(len)
         {
@@ -52,7 +52,7 @@ namespace papilio::utf
         return std::make_pair(codepoint(bytes, len), len);
     }
 
-    constexpr auto decoder<char32_t>::from_codepoint(codepoint cp) noexcept -> std::pair<char32_t, size_type>
+    constexpr auto decoder<char32_t>::from_codepoint(codepoint cp) noexcept -> std::pair<char32_t, std::uint8_t>
     {
         const char8_t* bytes = cp.u8data();
 
@@ -101,16 +101,16 @@ namespace papilio::utf
         return std::make_pair(U'\0', 0);
     }
 
-    constexpr auto decoder<char8_t>::size_bytes(char8_t ch) noexcept -> size_type
+    constexpr std::uint8_t decoder<char8_t>::size_bytes(char8_t ch) noexcept
     {
         return byte_count(ch);
     }
 
-    constexpr auto decoder<char8_t>::to_codepoint(std::u8string_view ch) -> std::pair<codepoint, size_type>
+    constexpr auto decoder<char8_t>::to_codepoint(std::u8string_view ch) -> std::pair<codepoint, std::uint8_t>
     {
         if(ch.empty()) [[unlikely]]
             return std::make_pair(codepoint(), 0);
-        size_type len = size_bytes(ch[0]);
+        std::uint8_t len = size_bytes(ch[0]);
         return std::make_pair(codepoint(ch.data(), len), len);
     }
 }

@@ -8,7 +8,7 @@
 
 namespace papilio::utf
 {
-    template <char_like CharT>
+    template <typename CharT>
     class basic_string_ref;
 
     namespace detail
@@ -333,7 +333,7 @@ namespace papilio::utf
             class const_iterator
             {
             public:
-                using size_type = size_type;
+                using size_type = std::size_t;
                 using difference_type = std::ptrdiff_t;
                 using value_type = codepoint;
                 using reference = codepoint;
@@ -680,7 +680,7 @@ namespace papilio::utf
             class const_iterator
             {
             public:
-                using size_type = size_type;
+                using size_type = std::size_t;
                 using difference_type = std::ptrdiff_t;
                 using value_type = codepoint;
                 using reference = codepoint;
@@ -1009,7 +1009,7 @@ namespace papilio::utf
             class const_iterator
             {
             public:
-                using size_type = size_type;
+                using size_type = std::size_t;
                 using difference_type = std::ptrdiff_t;
                 using value_type = codepoint;
                 using reference = codepoint;
@@ -1123,7 +1123,7 @@ namespace papilio::utf
                 [[nodiscard]]
                 constexpr reference operator*() const
                 {
-                    return decoder<CharT>::to_codepoint(*m_iter).first;
+                    return decoder<char32_t>::to_codepoint(*m_iter).first;
                 }
 
                 explicit operator bool() const noexcept

@@ -1,12 +1,10 @@
-#pragma once
-
 #include <papilio/utf/codepoint.hpp>
 #include <papilio/format.hpp>
 
 
 namespace papilio::utf
 {
-    auto decoder<char16_t>::to_char32_t(std::u16string_view ch) -> std::pair<char32_t, size_type>
+    auto decoder<char16_t>::to_char32_t(std::u16string_view ch) -> std::pair<char32_t, std::uint8_t>
     {
         if(ch.empty()) [[unlikely]]
             return std::make_pair(U'\0', 0);
@@ -30,14 +28,14 @@ namespace papilio::utf
             return std::make_pair(result, 2);
         }
     }
-    auto decoder<char16_t>::to_char32_t(char16_t first, char16_t second) -> std::pair<char32_t, size_type>
+    auto decoder<char16_t>::to_char32_t(char16_t first, char16_t second) -> std::pair<char32_t, std::uint8_t>
     {
         char16_t tmp[2] = { first, second };
 
         return to_char32_t(std::u16string_view(tmp, 2));
     }
 
-    auto decoder<char16_t>::size_bytes(char16_t ch) noexcept -> size_type
+    std::uint8_t decoder<char16_t>::size_bytes(char16_t ch) noexcept
     {
         if(!is_high_surrogate(ch))
         {
@@ -49,11 +47,11 @@ namespace papilio::utf
         }
     }
 
-    auto decoder<char16_t>::to_codepoint(std::u16string_view ch) -> std::pair<codepoint, size_type>
+    auto decoder<char16_t>::to_codepoint(std::u16string_view ch) -> std::pair<codepoint, std::uint8_t>
     {
         return decoder<char32_t>::to_codepoint(to_char32_t(ch).first);
     }
-    auto decoder<char16_t>::to_codepoint(char16_t first, char16_t second) -> std::pair<codepoint, size_type>
+    auto decoder<char16_t>::to_codepoint(char16_t first, char16_t second) -> std::pair<codepoint, std::uint8_t>
     {
         return decoder<char32_t>::to_codepoint(to_char32_t(first, second).first);
     }
@@ -84,7 +82,7 @@ namespace papilio::utf
         return result;
     }
 
-    auto decoder<wchar_t>::to_char32_t(std::wstring_view ch)->std::pair<char32_t, size_type>
+    auto decoder<wchar_t>::to_char32_t(std::wstring_view ch)->std::pair<char32_t, std::uint8_t>
     {
         if(ch.empty()) [[unlikely]]
             return std::make_pair(U'\0', 0);
@@ -95,14 +93,12 @@ namespace papilio::utf
         }
         else
         {
-            static_assert(sizeof(wchar_t) == sizeof(char16_t));
-
             std::u16string_view sv(reinterpret_cast<const char16_t*>(ch.data()), ch.size());
             return decoder<char16_t>::to_char32_t(sv);
         }
     }
 
-    auto decoder<wchar_t>::to_codepoint(std::wstring_view ch) -> std::pair<codepoint, size_type>
+    auto decoder<wchar_t>::to_codepoint(std::wstring_view ch) -> std::pair<codepoint, std::uint8_t>
     {
         return decoder<char32_t>::to_codepoint(to_char32_t(ch).first);
     }

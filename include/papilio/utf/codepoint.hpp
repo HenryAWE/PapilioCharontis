@@ -21,50 +21,42 @@ namespace papilio::utf
     class decoder<char32_t>
     {
     public:
-        using size_type = std::uint8_t;
+        static constexpr std::uint8_t size_bytes(char32_t ch) noexcept;
 
-        static constexpr auto size_bytes(char32_t ch) noexcept -> size_type;
+        static constexpr auto to_codepoint(char32_t ch) -> std::pair<codepoint, std::uint8_t>;
 
-        static constexpr auto to_codepoint(char32_t ch) -> std::pair<codepoint, size_type>;
-
-        static constexpr auto from_codepoint(codepoint cp) noexcept -> std::pair<char32_t, size_type>;
+        static constexpr auto from_codepoint(codepoint cp) noexcept -> std::pair<char32_t, std::uint8_t>;
     };
     template <>
     class decoder<char8_t>
     {
     public:
-        using size_type = std::uint8_t;
+        static constexpr std::uint8_t size_bytes(char8_t ch) noexcept;
 
-        static constexpr auto size_bytes(char8_t ch) noexcept -> size_type;
-
-        static constexpr auto to_codepoint(std::u8string_view ch) -> std::pair<codepoint, size_type>;
+        static constexpr auto to_codepoint(std::u8string_view ch) -> std::pair<codepoint, std::uint8_t>;
     };
     template <>
     class decoder<char16_t>
     {
     public:
-        using size_type = std::uint8_t;
+        static auto to_char32_t(std::u16string_view ch) -> std::pair<char32_t, std::uint8_t>;
+        static auto to_char32_t(char16_t first, char16_t second = u'\0') -> std::pair<char32_t, std::uint8_t>;
 
-        static auto to_char32_t(std::u16string_view ch) -> std::pair<char32_t, size_type>;
-        static auto to_char32_t(char16_t first, char16_t second = u'\0') -> std::pair<char32_t, size_type>;
+        static std::uint8_t size_bytes(char16_t ch) noexcept;
 
-        static auto size_bytes(char16_t ch) noexcept -> size_type;
-
-        static auto to_codepoint(std::u16string_view ch) -> std::pair<codepoint, size_type>;
-        static auto to_codepoint(char16_t first, char16_t second = u'\0') -> std::pair<codepoint, size_type>;
+        static auto to_codepoint(std::u16string_view ch) -> std::pair<codepoint, std::uint8_t>;
+        static auto to_codepoint(char16_t first, char16_t second = u'\0') -> std::pair<codepoint, std::uint8_t>;
 
         struct from_codepoint_result
         {
-            using size_type = size_type;
-
             constexpr from_codepoint_result() noexcept = default;
             constexpr from_codepoint_result(const from_codepoint_result&) noexcept = default;
 
             constexpr from_codepoint_result& operator=(from_codepoint_result&) noexcept = default;
 
             char16_t chars[2] = {};
-            size_type size = 0;
-            size_type processed_size = 0;
+            std::uint8_t size = 0;
+            std::uint8_t processed_size = 0;
 
             [[nodiscard]]
             std::u16string_view get() const noexcept
@@ -83,22 +75,18 @@ namespace papilio::utf
     class decoder<wchar_t>
     {
     public:
-        using size_type = std::uint8_t;
-
-        static auto to_char32_t(std::wstring_view ch) -> std::pair<char32_t, size_type>;
+        static auto to_char32_t(std::wstring_view ch) -> std::pair<char32_t, std::uint8_t>;
 
         struct from_codepoint_result
         {
-            using size_type = size_type;
-
             constexpr from_codepoint_result() noexcept = default;
             constexpr from_codepoint_result(const from_codepoint_result&) noexcept = default;
 
             constexpr from_codepoint_result& operator=(from_codepoint_result&) noexcept = default;
 
             wchar_t chars[sizeof(wchar_t) == sizeof(char16_t) ? 2 : 1] = {};
-            size_type size = 0;
-            size_type processed_size = 0;
+            std::uint8_t size = 0;
+            std::uint8_t processed_size = 0;
 
             [[nodiscard]]
             std::wstring_view get() const noexcept
@@ -111,7 +99,7 @@ namespace papilio::utf
             }
         };
 
-        static auto to_codepoint(std::wstring_view ch) -> std::pair<codepoint, size_type>;
+        static auto to_codepoint(std::wstring_view ch) -> std::pair<codepoint, std::uint8_t>;
 
         static auto from_codepoint(codepoint cp) -> from_codepoint_result;
     };
@@ -119,7 +107,6 @@ namespace papilio::utf
     class codepoint
     {
     public:
-        using size_type = std::uint8_t;
         using value_type = char8_t;
 
         constexpr codepoint() noexcept = default;
@@ -130,11 +117,11 @@ namespace papilio::utf
         {
             assign(bytes);
         }
-        constexpr codepoint(const value_type* ptr, size_type len) noexcept
+        constexpr codepoint(const value_type* ptr, std::uint8_t len) noexcept
         {
             assign(ptr, len);
         }
-        constexpr codepoint(const char* ptr, size_type len) noexcept
+        constexpr codepoint(const char* ptr, std::uint8_t len) noexcept
         {
             assign(ptr, len);
         }
@@ -180,7 +167,7 @@ namespace papilio::utf
                 static_cast<value_type>(bytes[3])
             );
         }
-        constexpr codepoint& assign(const char8_t* ptr, size_type len) noexcept
+        constexpr codepoint& assign(const char8_t* ptr, std::uint8_t len) noexcept
         {
             if(len == 0)
             {
@@ -188,12 +175,12 @@ namespace papilio::utf
                 return *this;
             }
             PAPILIO_ASSUME(len <= 4);
-            for(size_type i = 0; i < len; ++i)
+            for(std::uint8_t i = 0; i < len; ++i)
                 m_data[i] = ptr[i];
 
             return *this;
         }
-        constexpr codepoint& assign(const char* ptr, size_type len) noexcept
+        constexpr codepoint& assign(const char* ptr, std::uint8_t len) noexcept
         {
             if(len == 0)
             {
@@ -201,7 +188,7 @@ namespace papilio::utf
                 return *this;
             }
             PAPILIO_ASSUME(len <= 4);
-            for(size_type i = 0; i < len; ++i)
+            for(std::uint8_t i = 0; i < len; ++i)
                 m_data[i] = static_cast<char8_t>(ptr[i]);
 
             return *this;
@@ -223,7 +210,7 @@ namespace papilio::utf
             return std::bit_cast<const char*>(u8data());
         }
         [[nodiscard]]
-        size_type size() const noexcept
+        constexpr std::uint8_t size() const noexcept
         {
             return byte_count(m_data[0]);
         }
@@ -243,7 +230,7 @@ namespace papilio::utf
 
         template <std::integral To = char8_t>
             requires(sizeof(To) == 1)
-        constexpr std::pair<std::array<To, 4>, size_type> as_array() const noexcept
+        constexpr std::pair<std::array<To, 4>, std::uint8_t> as_array() const noexcept
         {
             std::array<To, 4> arr{
                 static_cast<To>(m_data[0]),
