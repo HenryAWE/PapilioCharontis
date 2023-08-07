@@ -117,6 +117,10 @@ namespace papilio::utf
         {
             assign(bytes);
         }
+        constexpr codepoint(char32_t ch) noexcept
+        {
+            assign(ch);
+        }
         constexpr codepoint(const value_type* ptr, std::uint8_t len) noexcept
         {
             assign(ptr, len);
@@ -126,6 +130,12 @@ namespace papilio::utf
             assign(ptr, len);
         }
 
+        constexpr codepoint& assign(char32_t ch) noexcept
+        {
+            *this = decoder<char32_t>::to_codepoint(ch).first;
+
+            return *this;
+        }
         constexpr codepoint& assign(value_type b0) noexcept
         {
             m_data[0] = b0;
@@ -282,6 +292,14 @@ namespace papilio::utf
     private:
         char8_t m_data[4];
     };
+
+    inline namespace literals
+    {
+        constexpr codepoint operator""_cp(char32_t ch) noexcept
+        {
+            return decoder<char32_t>::to_codepoint(ch).first;
+        }
+    }
 }
 
 #ifdef PAPILIO_COMPILER_MSVC

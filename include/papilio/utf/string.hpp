@@ -96,8 +96,7 @@ namespace papilio::utf
             [[nodiscard]]
             constexpr auto find(codepoint ch, size_type pos = 0) const noexcept
             {
-                string_view_type v(ch);
-                return find_impl(Derived(v), pos);
+                return find_impl(ch, pos);
             }
             [[nodiscard]]
             constexpr auto find(const CharT* str, size_type pos, size_type count) const noexcept
@@ -123,6 +122,38 @@ namespace papilio::utf
             constexpr bool contains(codepoint ch) const noexcept
             {
                 return this->find(ch) != this->end();
+            }
+
+            [[nodiscard]]
+            constexpr bool starts_with(Derived str) const noexcept
+            {
+                return starts_with_impl(str);
+            }
+            [[nodiscard]]
+            constexpr bool starts_with(const CharT* str) const noexcept
+            {
+                return starts_with_impl(Derived(str));
+            }
+            [[nodiscard]]
+            constexpr bool starts_with(codepoint cp) const noexcept
+            {
+                return starts_with_impl(cp);
+            }
+
+            [[nodiscard]]
+            constexpr bool ends_with(Derived str) const noexcept
+            {
+                return ends_with_impl(str);
+            }
+            [[nodiscard]]
+            constexpr bool ends_with(const CharT* str) const noexcept
+            {
+                return ends_with_impl(Derived(str));
+            }
+            [[nodiscard]]
+            constexpr bool ends_with(codepoint cp) const noexcept
+            {
+                return ends_with_impl(cp);
             }
 
             constexpr void swap(str_ref_impl_base& other) noexcept
@@ -290,8 +321,7 @@ namespace papilio::utf
                 auto v_end = v.cend();
                 for(; it != as_derived().cend(); ++it)
                 {
-                    auto result = std::mismatch(it, sentinel, v_begin, v_end).second;
-                    if(result == v_end)
+                    if(Derived(it, sentinel).starts_with(v))
                         break;
                 }
 
@@ -309,6 +339,27 @@ namespace papilio::utf
                 }
 
                 return std::find(it, as_derived().cend(), cp);
+            }
+
+            constexpr bool starts_with_impl(const Derived& str) const noexcept
+            {
+                return this->get_view().substr(0, str.size()) == string_view_type(str);
+            }
+            constexpr bool starts_with_impl(codepoint cp) const noexcept
+            {
+                return !empty() && front() == cp;
+            }
+            
+            constexpr bool ends_with_impl(const Derived& str) const noexcept
+            {
+                string_view_type view = this->get_view();
+                if(view.size() < str.size())
+                    return false;
+                return view.substr(view.size() - str.size(), str.size()) == string_view_type(str);
+            }
+            constexpr bool ends_with_impl(codepoint cp) const noexcept
+            {
+                return !empty() && back() == cp;
             }
 
         private:

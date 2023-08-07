@@ -7,6 +7,10 @@ License: MIT
 -->
 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="papilio::reverse_index_t">
+        <DisplayString>reverse_index</DisplayString>
+    </Type>
+
     <Type Name="papilio::detail::compressed_pair_impl&lt;*,*,0&gt;">
         <Intrinsic Name="first" Expression="m_first" />
         <Intrinsic Name="second" Expression="m_second" />
@@ -145,6 +149,7 @@ License: MIT
         "/>
         <DisplayString Condition="size() != 0">{value()} '{m_data, [size()]s8b}'</DisplayString>
         <DisplayString Condition="size() == 0">invalid</DisplayString>
+        <StringView Condition="size() != 0">m_data, [size()]</StringView>
         <Expand>
             <Item Name="[value]" Condition="size() != 0">value(), X</Item>
             <Synthetic Name="[value]" Condition="size() == 0">
@@ -158,6 +163,46 @@ License: MIT
                 <Size>size()</Size>
                 <ValuePointer>(const unsigned char*)m_data</ValuePointer>
             </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="papilio::utf::basic_string_ref&lt;*&gt;">
+        <Intrinsic Name="size" Expression="m_str.size()" />
+        <Intrinsic Name="data" Expression="m_str.data()" />
+        <DisplayString>{data(), [size()]}</DisplayString>
+        <StringView>data(), [size()]</StringView>
+        <Expand>
+            <Item Name="[size]" ExcludeView="simple">size()</Item>
+            <ArrayItems>
+                <Size>size()</Size>
+                <ValuePointer>data()</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+    <Type Name="papilio::utf::detail::str_ref_impl&lt;char,*&gt;::const_iterator">
+        <AlternativeType Name="papilio::utf::detail::str_ref_impl&lt;char8_t,*&gt;::const_iterator"/>
+        <DisplayString>{m_str.data()+m_offset, [m_len]}</DisplayString>
+        <Expand>
+            <Item Name="[ptr]">m_str.data() + m_offset</Item>
+            <Item Name="[offset]">m_offset</Item>
+            <Item Name="[size]">(size_t)m_len</Item>
+            <Item Name="[string_ref]">m_str</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::utf::detail::str_ref_impl&lt;wchar_t,*&gt;::const_iterator">
+        <AlternativeType Name="papilio::utf::detail::str_ref_impl&lt;char16_t,*&gt;::const_iterator"/>
+        <DisplayString>{m_str.data()+m_offset, [m_len]}</DisplayString>
+        <Expand>
+            <Item Name="[ptr]">m_str.data() + m_offset</Item>
+            <Item Name="[offset]">m_offset</Item>
+            <Item Name="[size]">(size_t)m_len</Item>
+            <Item Name="[string_ref]">m_str</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::utf::detail::str_ref_impl&lt;char32_t,*&gt;::const_iterator">
+        <DisplayString>{*m_iter}</DisplayString>
+        <Expand>
+            <Item Name="[iter]">m_iter</Item>
         </Expand>
     </Type>
 </AutoVisualizer>

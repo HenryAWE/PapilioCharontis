@@ -57,7 +57,24 @@ TEST(TestUTFString, StringRef)
     }
 
     {
+        using namespace utf::literals;
+
         u8string_ref ref = u8"ABCDEFG ABC";
+
+        EXPECT_TRUE(ref.starts_with(u8"ABC"));
+        EXPECT_TRUE(ref.starts_with(u8"ABCDEFG ABC"));
+        EXPECT_FALSE(ref.starts_with(u8"BCD"));
+        EXPECT_FALSE(ref.starts_with(u8"ABCDEFG ABCD"));
+        EXPECT_TRUE(ref.starts_with(U'A'));
+        EXPECT_FALSE(ref.starts_with(U'B'));
+
+        EXPECT_TRUE(ref.ends_with(u8"ABC"));
+        EXPECT_TRUE(ref.ends_with(u8"ABCDEFG ABC"));
+        EXPECT_FALSE(ref.ends_with(u8"BCD"));
+        EXPECT_FALSE(ref.ends_with(u8"ABCDEFG ABCD"));
+        EXPECT_TRUE(ref.ends_with(U'C'));
+        EXPECT_FALSE(ref.ends_with(U'D'));
+
         auto it = ref.find(u8"ABC");
         EXPECT_EQ(it, ref.begin());
         it = ref.find(u8"BCD");
@@ -87,6 +104,9 @@ TEST(TestUTFString, StringRef)
         EXPECT_EQ(ref.to_u16string(), u"🔊我");
         EXPECT_EQ(ref.to_u32string(), U"🔊我");
         EXPECT_EQ(ref.to_wstring(), L"🔊我");
+
+        auto it = ref.find(U'我');
+        EXPECT_EQ(it, ref.begin() + 1);
     }
 
     {
@@ -103,6 +123,9 @@ TEST(TestUTFString, StringRef)
         EXPECT_EQ(ref.to_u16string(), u"🔊我");
         EXPECT_EQ(ref.to_u32string(), U"🔊我");
         EXPECT_EQ(ref.to_wstring(), L"🔊我");
+
+        auto it = ref.find(U'我');
+        EXPECT_EQ(it, ref.begin() + 1);
     }
 
     {
@@ -122,6 +145,9 @@ TEST(TestUTFString, StringRef)
         EXPECT_EQ(ref.to_u16string(), u"🔊我");
         EXPECT_EQ(ref.to_u32string(), U"🔊我");
         EXPECT_EQ(ref.to_wstring(), L"🔊我");
+
+        auto it = ref.find(U'我');
+        EXPECT_EQ(it, ref.begin() + 1);
     }
 }
 
