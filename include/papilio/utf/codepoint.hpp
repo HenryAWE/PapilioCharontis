@@ -265,15 +265,15 @@ namespace papilio::utf
             return lhs == static_cast<char32_t>(rhs);
         }
 
-        constexpr std::strong_ordering operator<=>(codepoint rhs) const noexcept
+        friend constexpr std::strong_ordering operator<=>(codepoint lhs, codepoint rhs) noexcept
         {
-            return static_cast<char32_t>(*this) <=> static_cast<char32_t>(rhs);
+            return static_cast<char32_t>(lhs) <=> static_cast<char32_t>(rhs);
         }
         friend constexpr std::strong_ordering operator<=>(codepoint lhs, char32_t rhs) noexcept
         {
             return static_cast<char32_t>(lhs) <=> rhs;
         }
-        friend constexpr std::strong_ordering operator<=>(char32_t rhs, codepoint lhs) noexcept
+        friend constexpr std::strong_ordering operator<=>(char32_t lhs, codepoint rhs) noexcept
         {
             return lhs <=> static_cast<char32_t>(rhs);
         }
