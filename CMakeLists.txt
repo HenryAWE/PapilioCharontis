@@ -12,7 +12,7 @@ add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
 option(papilio_build_unit_test "build unit tests" OFF)
-option(papilio_build_example "build unit examples" OFF)
+option(papilio_build_example "build examples" OFF)
 option(papilio_build_module "build module (experimental)" OFF)
 
 project(
