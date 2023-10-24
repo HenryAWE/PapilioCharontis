@@ -6,7 +6,7 @@ include(GoogleTest)
 macro(define_papilio_test test_name)
     add_executable(${test_name} ${test_name}.cpp)
     target_link_libraries(${test_name} PRIVATE papilio)
-    target_link_libraries(${test_name} PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
+    target_link_libraries(${test_name} PRIVATE GTest::gtest GTest::gtest_main)
     gtest_discover_tests(${test_name})
 endmacro()
 
