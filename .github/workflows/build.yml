@@ -18,7 +18,7 @@ jobs:
             sudo apt-get install -y cmake ninja-build gcc-12 libgtest-dev
 
         - name: Build
-          run: ./build.sh -Dpapilio_build_unit_test=1 -Dpapilio_build_example=1
+          run: ./build.sh -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -Dpapilio_build_unit_test=1 -Dpapilio_build_example=1
 
         - name: Test
           working-directory: ${{github.workspace}}/build
@@ -39,7 +39,6 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          choco install ninja
           C:\vcpkg\vcpkg.exe install gtest
 
       - name: Build
