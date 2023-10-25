@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include <papilio/utf/common.hpp>
-#include <format>
+
 
 TEST(TestUTFCommon, Common)
 {
