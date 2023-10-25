@@ -1,0 +1,25 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+    Linux:
+        runs-on: ubuntu-22.04
+
+        env:
+            BUILD_TYPE: Release
+
+        steps:
+        - uses: actions/checkout@v3
+
+        - name: Install Dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y cmake ninja-build gcc-12 libgtest-dev
+
+        - name: Build
+          run: ./build.sh -Dpapilio_build_unit_test=1 -Dpapilio_build_example=1
+
+        - name: Test
+          working-directory: ${{github.workspace}}/build
+          run: ctest
