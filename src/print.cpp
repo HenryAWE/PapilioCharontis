@@ -175,22 +175,22 @@ namespace papilio
         cfile_iterator m_underlying;
     };
 
-    void vprint(std::FILE* file, std::string_view fmt, const dynamic_format_arg_store& store)
+    void vprint(std::FILE* file, std::string_view fmt, const dynamic_format_args& store)
     {
-        vformat_to(cfile_iterator(file), fmt, store);
+        PAPILIO_NS vformat_to(cfile_iterator(file), fmt, store);
     }
-    void vprintln(std::FILE* file, std::string_view fmt, const dynamic_format_arg_store& store)
+    void vprintln(std::FILE* file, std::string_view fmt, const dynamic_format_args& store)
     {
-        auto it = vformat_to(cfile_iterator(file), fmt, store);
+        auto it = PAPILIO_NS vformat_to(cfile_iterator(file), fmt, store);
         *it = '\n';
     }
-    void vprint_conv(std::FILE* file, std::string_view fmt, const dynamic_format_arg_store& store)
+    void vprint_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args& store)
     {
-        vformat_to(cfile_iterator_utf8(file), fmt, store);
+        PAPILIO_NS vformat_to(cfile_iterator_utf8(file), fmt, store);
     }
-    void vprintln_conv(std::FILE* file, std::string_view fmt, const dynamic_format_arg_store& store)
+    void vprintln_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args& store)
     {
-        auto it = vformat_to(cfile_iterator_utf8(file), fmt, store);
+        auto it = PAPILIO_NS vformat_to(cfile_iterator_utf8(file), fmt, store);
         *it = '\n';
     }
 
@@ -202,13 +202,13 @@ namespace papilio
         return 0;
 #endif
     }
-    void vprint_conv(std::string_view fmt, const dynamic_format_arg_store& store)
+    void vprint_conv(std::string_view fmt, const dynamic_format_args& store)
     {
-        vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, store);
+        PAPILIO_NS vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, store);
     }
-    void vprintln_conv(std::string_view fmt, const dynamic_format_arg_store& store)
+    void vprintln_conv(std::string_view fmt, const dynamic_format_args& store)
     {
-        auto it = vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, store);
+        auto it = PAPILIO_NS  vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, store);
         *it = '\n';
     }
 
@@ -222,7 +222,7 @@ namespace papilio
         println(stdout);
     }
 
-    void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_arg_store& store)
+    void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_args& store)
     {
         vformat_to(std::ostream_iterator<char>(os), os.getloc(), fmt, store);
     }

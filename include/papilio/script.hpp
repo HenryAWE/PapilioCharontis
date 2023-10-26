@@ -600,7 +600,7 @@ namespace papilio::script
         {
         public:
             context() = delete;
-            context(const dynamic_format_arg_store& arg_store)
+            context(const dynamic_format_args& arg_store)
                 : m_arg_store(arg_store) {}
 
             [[nodiscard]]
@@ -615,7 +615,7 @@ namespace papilio::script
             }
 
             [[nodiscard]]
-            const dynamic_format_arg_store& get_store() const noexcept
+            const dynamic_format_args& get_store() const noexcept
             {
                 return m_arg_store;
             }
@@ -660,7 +660,7 @@ namespace papilio::script
 
         private:
             stack_type m_var_stack;
-            dynamic_format_arg_store m_arg_store;
+            dynamic_format_args m_arg_store;
         };
 
         class base
@@ -859,13 +859,13 @@ namespace papilio::script
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
 
-        string_type run(string_view_type src, const dynamic_format_arg_store& args);
+        string_type run(string_view_type src, const dynamic_format_args& args);
         template <detail::not_foramt_arg_store... Args>
         string_type run(string_view_type src, Args&&... args)
         {
             return run(
                 src,
-                dynamic_format_arg_store(papilio::make_format_args(std::forward<Args>(args)...))
+                dynamic_format_args(papilio::make_format_args(std::forward<Args>(args)...))
             );
         }
 

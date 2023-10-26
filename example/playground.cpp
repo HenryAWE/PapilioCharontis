@@ -255,7 +255,7 @@ namespace playground
         {
             papilio::println("Formatting result:");
 
-            papilio::mutable_format_arg_store arg_store;
+            papilio::mutable_format_args arg_store;
             for(auto& i : m_args)
             {
                 auto visitor = [&](auto&& v)

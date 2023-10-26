@@ -27,7 +27,9 @@ namespace papilio
             return *this;
         }
 
+        [[nodiscard]]
         std::locale get() const;
+
         operator std::locale() const
         {
             return get();

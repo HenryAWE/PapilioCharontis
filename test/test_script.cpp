@@ -429,7 +429,7 @@ TEST(TestScript, Executor)
         int a1 = 1;
         float a2 = 2.0f;
         std::string a3 = "test";
-        mutable_format_arg_store store(a1, a2, "string"_a = a3);
+        mutable_format_args store(a1, a2, "string"_a = a3);
         executor::context ctx(store);
 
         executor ex1(std::in_place_type<executor::argument>, 0);
@@ -653,7 +653,7 @@ TEST(TestScript, Interpreter)
         interpreter intp;
         auto acc = intp.access("0[0]");
 
-        mutable_format_arg_store store("testing");
+        mutable_format_args store("testing");
         EXPECT_EQ(
             get<utf8::codepoint>(acc.second.access(store[acc.first])),
             U't'
@@ -664,7 +664,7 @@ TEST(TestScript, Interpreter)
         interpreter intp;
         auto acc = intp.access("string[0]");
 
-        mutable_format_arg_store store("string"_a = "testing");
+        mutable_format_args store("string"_a = "testing");
         EXPECT_EQ(
             get<utf8::codepoint>(acc.second.access(store[acc.first])),
             U't'
@@ -679,7 +679,7 @@ TEST(TestScript, Interpreter)
         interpreter intp;
         auto ex = intp.compile(l.lexemes());
 
-        mutable_format_arg_store store(0);
+        mutable_format_args store(0);
         executor::context ctx(std::move(store));
 
         ex(ctx);

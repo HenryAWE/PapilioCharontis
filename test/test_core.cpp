@@ -11,46 +11,6 @@ TEST(TestCore, Utilities)
     {
         using namespace papilio;
 
-        static_assert(string_like<char*>);
-        static_assert(string_like<const char*>);
-        static_assert(string_like<char[10]>);
-        static_assert(string_like<const char[10]>);
-        static_assert(string_like<std::string>);
-        static_assert(string_like<std::string_view>);
-    }
-
-    {
-        using namespace papilio;
-
-        static_assert(!accessor_traits<int>::has_index());
-        static_assert(!accessor_traits<float>::has_index());
-        static_assert(accessor_traits<string_container>::has_index());
-        static_assert(accessor_traits<string_container>::has_custom_index());
-        static_assert(!accessor_traits<string_container>::has_key());
-        static_assert(accessor_traits<string_container>::has_slice());
-        static_assert(accessor_traits<string_container>::has_custom_slice());
-
-        string_container test = "hello world";
-        EXPECT_EQ(accessor_traits<string_container>::get(test, 0), U'h');
-        EXPECT_EQ(accessor_traits<string_container>::get(test, slice(6, slice::npos)), "world");
-
-        EXPECT_EQ(
-            accessor_traits<string_container>::get_arg(test, -1).as_variable(),
-            "d"
-        );
-        EXPECT_EQ(
-            accessor_traits<string_container>::get_attr(test, "length").as_variable(),
-            test.length()
-        );
-        EXPECT_EQ(
-            accessor_traits<string_container>::get_attr(test, "size").as_variable(),
-            test.size()
-        );
-    }
-
-    {
-        using namespace papilio;
-
         const std::string str_val = "hello world";
         const auto a_0 = arg("string", str_val);
         EXPECT_STREQ(a_0.name, "string");
@@ -234,10 +194,10 @@ TEST(TestCore, MutableFormatArgStore)
 {
     using namespace papilio;
 
-    static_assert(format_arg_store<mutable_format_arg_store>);
+    static_assert(format_arg_store<mutable_format_args>);
 
     {
-        mutable_format_arg_store store(1, "three"_a = 3, 2);
+        mutable_format_args store(1, "three"_a = 3, 2);
 
         EXPECT_EQ(store.size(), 2);
         EXPECT_EQ(store.named_size(), 1);
@@ -266,11 +226,11 @@ TEST(TestCore, DynamicFormatArgStore)
 {
     using namespace papilio;
 
-    static_assert(format_arg_store<dynamic_format_arg_store>);
+    static_assert(format_arg_store<dynamic_format_args>);
 
     {
-        mutable_format_arg_store underlying_store;
-        dynamic_format_arg_store dyn_store(underlying_store);
+        mutable_format_args underlying_store;
+        dynamic_format_args dyn_store(underlying_store);
 
         EXPECT_EQ(&dyn_store.to_underlying(), &underlying_store);
     }
@@ -281,7 +241,7 @@ TEST(TestCore, FormatContext)
 
     {
         std::string result;
-        mutable_format_arg_store store;
+        mutable_format_args store;
         basic_format_context ctx(
             std::back_inserter(result),
             store
@@ -304,7 +264,7 @@ TEST(TestCore, FormatContext)
 
     {
         std::string result;
-        mutable_format_arg_store store;
+        mutable_format_args store;
         basic_format_context ctx(
             std::back_inserter(result),
             store
@@ -324,72 +284,6 @@ TEST(TestCore, FormatContext)
         result.clear();
         context_traits::append(dyn_ctx, U'ä', 2);
         EXPECT_EQ(result, (const char*)u8"ää");
-    }
-}
-TEST(TestCore, CommonFormatSpec)
-{
-    using namespace papilio;
-
-    auto helper = []<typename... Args>(std::string_view fmt, Args&&... args)
-    {
-        common_format_spec spec;
-        mutable_format_arg_store store(std::forward<Args>(args)...);
-        format_parse_context parse_ctx(fmt, store);
-        parse_ctx.next_arg_id();
-        format_spec_parse_context spec_ctx(parse_ctx, fmt.substr(2, fmt.size() - 3));
-
-        spec.parse(spec_ctx);
-        return spec;
-    };
-
-    {
-        common_format_spec spec;
-        spec = helper("{:}", 0);
-        EXPECT_FALSE(spec.has_type_char());
-        EXPECT_EQ(spec.type_char_or('d'), 'd');
-
-        spec = helper("{: }", 0);
-        EXPECT_FALSE(spec.has_type_char());
-        EXPECT_EQ(spec.sign(), format_sign::space);
-
-        spec = helper("{:d}", 0);
-        EXPECT_EQ(spec.precision(), -1);
-        EXPECT_EQ(spec.width(), 0);
-        EXPECT_EQ(spec.type_char(), 'd');
-
-        spec = helper("{:.10d}", 0);
-        EXPECT_EQ(spec.precision(), 10);
-        EXPECT_EQ(spec.type_char(), 'd');
-
-        spec = helper("{:10d}", 0);
-        EXPECT_EQ(spec.width(), 10);
-        EXPECT_EQ(spec.type_char(), 'd');
-
-        spec = helper("{:10.6d}", 0);
-        EXPECT_EQ(spec.width(), 10);
-        EXPECT_EQ(spec.precision(), 6);
-        EXPECT_EQ(spec.type_char(), 'd');
-
-        spec = helper("{: >}", "");
-        EXPECT_FALSE(spec.has_type_char());
-        EXPECT_EQ(spec.fill(), ' ');
-        EXPECT_EQ(spec.align(), format_align::right);
-    }
-    {
-        common_format_spec spec;
-
-        spec = helper("{:.{}d}", 0, 10);
-        EXPECT_EQ(spec.precision(), 10);
-        EXPECT_EQ(spec.type_char(), 'd');
-
-        spec = helper("{:{}d}", 0, 10);
-        EXPECT_EQ(spec.width(), 10);
-        EXPECT_EQ(spec.type_char(), 'd');
-
-        spec = helper("{:{}.{}d}", 0, 10, 6);
-        EXPECT_EQ(spec.width(), 10);
-        EXPECT_EQ(spec.precision(), 6);
-        EXPECT_EQ(spec.type_char(), 'd');
     }
 }
 

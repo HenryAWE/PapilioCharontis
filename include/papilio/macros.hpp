@@ -3,6 +3,8 @@
 #include <version>
 
 
+#define PAPILIO_NS ::papilio::
+
 #ifdef _MSC_VER
 #   define PAPILIO_COMPILER_MSVC 1
 #endif

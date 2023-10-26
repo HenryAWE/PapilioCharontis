@@ -31,7 +31,7 @@ target_sources(papilio PUBLIC "natvis/papilio.natvis")
 target_include_directories(papilio PUBLIC include)
 
 if(${papilio_build_example})
-    add_subdirectory(example)
+    #add_subdirectory(example)
 endif()
 if(${papilio_build_unit_test})
     enable_testing()
