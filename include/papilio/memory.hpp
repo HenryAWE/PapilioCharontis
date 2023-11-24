@@ -9,32 +9,33 @@
 
 namespace papilio
 {
-    namespace detail
-    {
-        template <typename T>
-        struct make_independent_proxy
-        {
-            using reference = std::add_lvalue_reference_t<T>;
+    template <typename T>
+    struct independent_proxy : public std::reference_wrapper<T> {};
 
-            reference ref;
-
-            [[nodiscard]]
-            reference get() const noexcept
-            {
-                return ref;
-            }
-        };
-    }
     struct independent_t
     {
         template <typename T>
-        using proxy = detail::make_independent_proxy<T>;
+        using proxy = independent_proxy<T>;
 
         template <typename T>
         [[nodiscard]]
-        constexpr proxy<T> operator()(T&& v) const noexcept
+        constexpr proxy<T> operator()(T& v) const noexcept
         {
             return proxy<T>(v);
+        }
+
+        template <typename T>
+        [[nodiscard]]
+        constexpr proxy<T> operator()(proxy<T> v) const noexcept
+        {
+            return v;
+        }
+
+        template <typename T>
+        [[nodiscard]]
+        constexpr proxy<const T> operator()(const T& v) const noexcept
+        {
+            return proxy<const T>(v);
         }
     };
     inline constexpr independent_t independent{};

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <papilio/memory.hpp>
 #include <cstring>
+#include <papilio/memory.hpp>
 
 
 namespace test_memory
@@ -8,22 +8,58 @@ namespace test_memory
     class empty_1 {};
     class empty_2 {};
 }
-TEST(TestMemory, Utilities)
+
+static_assert(papilio::pointer_like<papilio::optional_unique_ptr<int>>);
+static_assert(papilio::pointer_like<papilio::optional_unique_ptr<int[]>>);
+static_assert(papilio::pointer_like<std::unique_ptr<int>>);
+static_assert(papilio::pointer_like<std::unique_ptr<int[]>>);
+static_assert(papilio::pointer_like<std::shared_ptr<int>>);
+static_assert(papilio::pointer_like<std::shared_ptr<int[]>>);
+static_assert(papilio::pointer_like<int*>);
+static_assert(papilio::pointer_like<int[]>);
+static_assert(!papilio::pointer_like<int>);
+
+TEST(utilities, independent_proxy)
+{
+    using namespace papilio;
+
+    {
+        std::string str = "hello";
+        auto str_proxy = independent(str);
+
+        static_assert(std::is_same_v<decltype(str_proxy), independent_proxy<std::string>>);
+
+        EXPECT_EQ(&str, &str_proxy.get());
+    }
+
+    {
+        std::string str = "hello";
+        auto str_proxy = independent(std::as_const(str));
+
+        static_assert(std::is_same_v<decltype(str_proxy), independent_proxy<const std::string>>);
+
+        EXPECT_EQ(&str, &str_proxy.get());
+    }
+
+    {
+        std::string str = "hello";
+        auto str_proxy_1 = independent(str);
+        auto str_proxy_2 = independent(str_proxy_1);
+        auto str_proxy_3 = str_proxy_2;
+
+        EXPECT_EQ(&str, &str_proxy_1.get());
+        EXPECT_EQ(&str, &str_proxy_2.get());
+        EXPECT_EQ(&str, &str_proxy_3.get());
+
+        EXPECT_EQ(&str_proxy_1.get(), &str_proxy_2.get());
+        EXPECT_EQ(&str_proxy_1.get(), &str_proxy_3.get());
+        EXPECT_EQ(&str_proxy_2.get(), &str_proxy_3.get());
+    }
+}
+TEST(compressed_pair, compressed_pair)
 {
     using namespace papilio;
     using namespace test_memory;
-
-    {
-        static_assert(pointer_like<optional_unique_ptr<int>>);
-        static_assert(pointer_like<optional_unique_ptr<int[]>>);
-        static_assert(pointer_like<std::unique_ptr<int>>);
-        static_assert(pointer_like<std::unique_ptr<int[]>>);
-        static_assert(pointer_like<std::shared_ptr<int>>);
-        static_assert(pointer_like<std::shared_ptr<int[]>>);
-        static_assert(pointer_like<int*>);
-        static_assert(pointer_like<int[]>);
-        static_assert(!pointer_like<int>);
-    }
 
     {
         compressed_pair<int, int> p_1{ 0, 1 };
@@ -45,6 +81,7 @@ TEST(TestMemory, Utilities)
         EXPECT_EQ(p_2.second(), 1);
     }
 
+    // static checks
     {
         compressed_pair<std::string, empty_1> p_1;
         static_assert(sizeof(p_1) == sizeof(std::string));
@@ -60,6 +97,7 @@ TEST(TestMemory, Utilities)
         static_assert(!std::is_empty_v<compressed_pair<empty_1, empty_1>>);
     }
 }
+
 namespace test_memory
 {
     class c_deleter
@@ -73,11 +111,11 @@ namespace test_memory
         }
     };
 }
-TEST(TestMemory, OptionalUniquePtr)
+
+TEST(optional_unique_ptr, ownership)
 {
     using namespace papilio;
     using namespace test_memory;
-    using std::is_same_v;
 
     {
         using traits = std::pointer_traits<optional_unique_ptr<int>>;
@@ -100,10 +138,16 @@ TEST(TestMemory, OptionalUniquePtr)
         EXPECT_NE(observer_ptr, nullptr);
         EXPECT_NE(nullptr, observer_ptr);
     }
+}
+
+TEST(optional_unique_ptr, compatibility)
+{
+    using namespace papilio;
+    using namespace test_memory;
 
     {
         using ptr_t = optional_unique_ptr<void*, c_deleter>;
-        static_assert(is_same_v<ptr_t::pointer, c_deleter::pointer>);
+        static_assert(std::is_same_v<ptr_t::pointer, c_deleter::pointer>);
         static_assert(std::is_same_v<ptr_t::pointer, void*>);
     }
 
