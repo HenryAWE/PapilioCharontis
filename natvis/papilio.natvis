@@ -11,6 +11,17 @@ License: MIT
         <DisplayString>reverse_index</DisplayString>
     </Type>
 
+    <Type Name="papilio::slice">
+        <DisplayString IncludeView="noparens" Condition="second == npos">{first}, npos</DisplayString>
+        <DisplayString ExcludeView="noparens" Condition="second == npos">({first}, npos)</DisplayString>
+        <DisplayString IncludeView="noparens" Condition="second != npos">{first}, {second}</DisplayString>
+        <DisplayString ExcludeView="noparens" Condition="second != npos">({first}, {second})</DisplayString>
+        <Expand>
+            <Item Name="first">first</Item>
+            <Item Name="second">second</Item>
+        </Expand>
+    </Type>
+
     <Type Name="papilio::detail::compressed_pair_impl&lt;*,*,0&gt;">
         <Intrinsic Name="first" Expression="m_first" />
         <Intrinsic Name="second" Expression="m_second" />

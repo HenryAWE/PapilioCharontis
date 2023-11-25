@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cstring>
 #include <papilio/memory.hpp>
+#include <papilio/type.hpp>
 
 
 namespace test_memory
@@ -11,13 +12,6 @@ namespace test_memory
 
 static_assert(papilio::pointer_like<papilio::optional_unique_ptr<int>>);
 static_assert(papilio::pointer_like<papilio::optional_unique_ptr<int[]>>);
-static_assert(papilio::pointer_like<std::unique_ptr<int>>);
-static_assert(papilio::pointer_like<std::unique_ptr<int[]>>);
-static_assert(papilio::pointer_like<std::shared_ptr<int>>);
-static_assert(papilio::pointer_like<std::shared_ptr<int[]>>);
-static_assert(papilio::pointer_like<int*>);
-static_assert(papilio::pointer_like<int[]>);
-static_assert(!papilio::pointer_like<int>);
 
 TEST(utilities, independent_proxy)
 {

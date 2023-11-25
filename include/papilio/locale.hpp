@@ -5,6 +5,8 @@
 
 namespace papilio
 {
+    // Reference to a locale object
+    // The member function "get()" will return the C locale if the reference is empty.
     class locale_ref
     {
     public:
@@ -28,7 +30,12 @@ namespace papilio
         }
 
         [[nodiscard]]
-        std::locale get() const;
+        std::locale get() const
+        {
+            return m_loc == nullptr ?
+                std::locale("C") :
+                *m_loc;
+        }
 
         operator std::locale() const
         {

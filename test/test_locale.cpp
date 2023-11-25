@@ -20,26 +20,28 @@ namespace test_locale
     };
 }
 
-TEST(TestLocale, LocaleRef)
+TEST(locale_ref, locale_ref)
 {
     using namespace papilio;
+
+    auto bool_helper = [](bool value, const std::locale& loc) -> std::string
+    {
+        auto& f = std::use_facet<std::numpunct<char>>(loc);
+        return value ?
+            f.truename() :
+            f.falsename();
+    };
 
     {
         locale_ref c_loc;
         EXPECT_TRUE(std::isalpha('A', c_loc));
         EXPECT_FALSE(std::isalpha('1', c_loc));
 
-        auto bool_helper = [](bool value, const std::locale& loc)->std::string
-        {
-            auto& f = std::use_facet<std::numpunct<char>>(loc);
-            return value ?
-                f.truename() :
-                f.falsename();
-        };
-
         EXPECT_EQ(bool_helper(true, c_loc), "true");
         EXPECT_EQ(bool_helper(false, c_loc), "false");
+    }
 
+    {
         std::locale custom(std::locale("C"), new test_locale::yes_no);
         locale_ref custom_ref = custom;
 

@@ -296,45 +296,6 @@ namespace papilio
         }
     }
 
-    class slice
-    {
-    public:
-        using index_type = std::make_signed_t<std::size_t>; // ssize_t
-
-        static constexpr index_type npos = std::numeric_limits<index_type>::max();
-
-        constexpr slice() noexcept
-            : m_begin(0), m_end(npos) {}
-        constexpr slice(const slice&) noexcept = default;
-        constexpr explicit slice(index_type begin_, index_type end_) noexcept
-            : m_begin(begin_), m_end(end_) {}
-
-        slice& operator=(const slice&) noexcept = default;
-
-        constexpr void normalize(index_type length) noexcept
-        {
-            if(m_begin < 0)
-                m_begin = length + m_begin;
-            if(m_end)
-                m_end = length + m_end;
-        }
-
-        [[nodiscard]]
-        constexpr index_type begin() const noexcept
-        {
-            return m_begin;
-        }
-        [[nodiscard]]
-        constexpr index_type end() const noexcept
-        {
-            return m_end;
-        }
-
-    private:
-        index_type m_begin;
-        index_type m_end;
-    };
-
     class indexing_value
     {
     public:

@@ -22,15 +22,13 @@ define_papilio_test(test_format)
 
 define_papilio_test(test_locale)
 
-if(${papilio_build_module})
-    define_papilio_test(test_module)
-endif()
-
 define_papilio_test(test_print)
 
 define_papilio_test(test_script)
 
 define_papilio_test(test_stl_container)
+
+define_papilio_test(test_type)
 
 define_papilio_test(test_utf8)
 

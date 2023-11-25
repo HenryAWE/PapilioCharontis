@@ -4,7 +4,6 @@
 #include <memory>
 #include <utility>
 #include "macros.hpp"
-#include "type.hpp"
 
 
 namespace papilio

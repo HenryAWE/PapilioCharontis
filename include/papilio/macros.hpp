@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <version>
 
 
@@ -28,3 +29,5 @@
 #else
 #   define PAPILIO_ASSUME(expr)
 #endif
+
+#define PAPILIO_ASSERT(expr) assert(expr)
