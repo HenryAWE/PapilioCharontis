@@ -1,6 +1,7 @@
 #pragma once
 
 #include "codepoint.hpp"
+#include <tuple> // std::tie
 
 
 namespace papilio::utf
