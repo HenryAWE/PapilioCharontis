@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstddef>
+#include <limits>
 #include <type_traits>
 #include <concepts>
 #include <string>
@@ -67,8 +68,7 @@ namespace papilio
     // [begin, end) range
     // Negative value means reverse index like Python.
     // For example, -1 refers to the last element, and -2 refers to the second to last element.
-    class slice :
-        public std::pair<ssize_t, ssize_t>
+    class slice : public std::pair<ssize_t, ssize_t>
     {
     public:
         using size_type = std::size_t;
@@ -122,6 +122,7 @@ namespace papilio
         {
             PAPILIO_ASSERT(first > 0);
             PAPILIO_ASSERT(second > 0);
+            PAPILIO_ASSERT(second != npos);
             return second - first;
         }
     };

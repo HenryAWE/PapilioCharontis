@@ -1,14 +1,9 @@
 #pragma once
 
-#include <cassert>
 #include <string>
 #include <variant>
-#include <concepts>
-#include <stdexcept>
 #include <vector>
 #include <map>
-#include <charconv>
-#include <limits>
 #include <iostream>
 #include <iterator>
 #include <algorithm>
@@ -25,7 +20,6 @@
 namespace papilio
 {
     // forward declarations
-    class slice;
     class indexing_value;
     class attribute_name;
     class format_arg;
@@ -1083,12 +1077,12 @@ namespace papilio
 
         size_type size() const noexcept override
         {
-            assert(m_args.size() == ArgumentCount);
+            PAPILIO_ASSERT(m_args.size() == ArgumentCount);
             return ArgumentCount;
         }
         size_type named_size() const noexcept override
         {
-            assert(m_named_args.size() == NamedArgumentCount);
+            PAPILIO_ASSERT(m_named_args.size() == NamedArgumentCount);
             return NamedArgumentCount;
         }
 
@@ -1194,7 +1188,7 @@ namespace papilio
         dynamic_format_args(const detail::format_args_base& store) noexcept
             : m_ref(&store)
         {
-            assert(m_ref != this); // circular reference
+            PAPILIO_ASSERT(m_ref != this); // circular reference
         }
 
         const format_arg& get(size_type i) const override
