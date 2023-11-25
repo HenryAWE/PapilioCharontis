@@ -17,7 +17,7 @@ namespace papilio::utf
             return 4;
     }
 
-    constexpr auto decoder<char32_t>::to_codepoint(char32_t ch)->std::pair<codepoint, std::uint8_t>
+    constexpr auto decoder<char32_t>::to_codepoint(char32_t ch) -> std::pair<codepoint, std::uint8_t>
     {
         std::uint8_t len = size_bytes(ch);
         char8_t bytes[4] = { 0, 0, 0, 0 };
@@ -49,7 +49,7 @@ namespace papilio::utf
             PAPILIO_UNREACHABLE();
         }
 
-        return std::make_pair(codepoint(bytes, len), len);
+        return std::make_pair(codepoint(bytes, len), 1);
     }
 
     constexpr auto decoder<char32_t>::from_codepoint(codepoint cp) noexcept -> std::pair<char32_t, std::uint8_t>
@@ -112,5 +112,72 @@ namespace papilio::utf
             return std::make_pair(codepoint(), 0);
         std::uint8_t len = size_bytes(ch[0]);
         return std::make_pair(codepoint(ch.data(), len), len);
+    }
+
+    constexpr auto decoder<char16_t>::to_char32_t(std::u16string_view ch) -> std::pair<char32_t, std::uint8_t>
+    {
+        if(ch.empty()) [[unlikely]]
+            return std::make_pair(U'\0', 0);
+
+        if(!is_high_surrogate(ch[0])) [[likely]]
+        {
+            char32_t result = ch[0];
+            return std::make_pair(result, 1);
+        }
+        else
+        {
+            if(ch.size() < 2) [[unlikely]]
+                throw invalid_surrogate(ch[0]);
+            else if(!is_low_surrogate(ch[1])) [[unlikely]]
+                throw invalid_surrogate(ch[1]);
+
+            char32_t result =
+                (ch[0] - 0xD800 << 10) +
+                (ch[1] - 0xDC00) +
+                0x10000;
+            return std::make_pair(result, 2);
+        }
+    }
+    constexpr auto decoder<char16_t>::to_char32_t(char16_t first, char16_t second) -> std::pair<char32_t, std::uint8_t>
+    {
+        char16_t tmp[2] = { first, second };
+
+        return to_char32_t(std::u16string_view(tmp, 2));
+    }
+
+    constexpr auto decoder<char16_t>::to_codepoint(std::u16string_view ch) -> std::pair<codepoint, std::uint8_t>
+    {
+        auto [ch32, processed_size] = to_char32_t(ch);
+        return std::make_pair(decoder<char32_t>::to_codepoint(ch32).first, processed_size);
+    }
+    constexpr auto decoder<char16_t>::to_codepoint(char16_t first, char16_t second) -> std::pair<codepoint, std::uint8_t>
+    {
+        return decoder<char32_t>::to_codepoint(to_char32_t(first, second).first);
+    }
+
+    constexpr auto decoder<char16_t>::from_codepoint(codepoint cp) -> from_codepoint_result
+    {
+        from_codepoint_result result;
+
+        char32_t ch32;
+        std::tie(ch32, result.processed_size) = decoder<char32_t>::from_codepoint(cp);
+        if(ch32 <= 0xD7FF || (0xE000 <= ch32 && ch32 <= 0xFFFF))
+        {
+            result.chars[0] = static_cast<char16_t>(ch32);
+            result.size = 1;
+        }
+        else if(0x10000 <= ch32 && ch32 <= 0x10FFFF)
+        {
+            std::uint32_t tmp = ch32 - 0x10000;
+            result.chars[0] = 0xD800 + (tmp >> 10);
+            result.chars[1] = 0xDC00 + (tmp & 0x3FF);
+            result.size = 2;
+        }
+        else
+        {
+            throw std::invalid_argument("invalid codepoint"); // TODO: Better exception
+        }
+
+        return result;
     }
 }

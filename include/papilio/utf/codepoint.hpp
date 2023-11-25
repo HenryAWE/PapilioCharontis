@@ -11,6 +11,7 @@
 
 #ifdef PAPILIO_COMPILER_MSVC
 #   pragma warning(push)
+// Variable 'variable' is uninitialized. Always initialize a member variable (type.6).
 #   pragma warning(disable:26495)
 #endif
 
@@ -39,13 +40,11 @@ namespace papilio::utf
     class decoder<char16_t>
     {
     public:
-        static auto to_char32_t(std::u16string_view ch) -> std::pair<char32_t, std::uint8_t>;
-        static auto to_char32_t(char16_t first, char16_t second = u'\0') -> std::pair<char32_t, std::uint8_t>;
+        static constexpr auto to_char32_t(std::u16string_view ch) -> std::pair<char32_t, std::uint8_t>;
+        static constexpr auto to_char32_t(char16_t first, char16_t second = u'\0') -> std::pair<char32_t, std::uint8_t>;
 
-        static std::uint8_t size_bytes(char16_t ch) noexcept;
-
-        static auto to_codepoint(std::u16string_view ch) -> std::pair<codepoint, std::uint8_t>;
-        static auto to_codepoint(char16_t first, char16_t second = u'\0') -> std::pair<codepoint, std::uint8_t>;
+        static constexpr auto to_codepoint(std::u16string_view ch) -> std::pair<codepoint, std::uint8_t>;
+        static constexpr auto to_codepoint(char16_t first, char16_t second = u'\0') -> std::pair<codepoint, std::uint8_t>;
 
         struct from_codepoint_result
         {
@@ -59,17 +58,17 @@ namespace papilio::utf
             std::uint8_t processed_size = 0;
 
             [[nodiscard]]
-            std::u16string_view get() const noexcept
+            constexpr std::u16string_view get() const noexcept
             {
                 return std::u16string_view(chars, size);
             }
-            operator std::u16string_view() const noexcept
+            constexpr operator std::u16string_view() const noexcept
             {
                 return get();
             }
         };
 
-        static auto from_codepoint(codepoint cp) -> from_codepoint_result;
+        static constexpr auto from_codepoint(codepoint cp) -> from_codepoint_result;
     };
     template <>
     class decoder<wchar_t>
@@ -220,7 +219,7 @@ namespace papilio::utf
             return std::bit_cast<const char*>(u8data());
         }
         [[nodiscard]]
-        constexpr std::uint8_t size() const noexcept
+        constexpr std::uint8_t size_bytes() const noexcept
         {
             return byte_count(m_data[0]);
         }
@@ -231,11 +230,11 @@ namespace papilio::utf
         }
         explicit constexpr operator std::u8string_view() const noexcept
         {
-            return std::u8string_view(m_data, size());
+            return std::u8string_view(m_data, size_bytes());
         }
         explicit constexpr operator std::string_view() const noexcept
         {
-            return std::string_view(data(), size());
+            return std::string_view(data(), size_bytes());
         }
 
         template <std::integral To = char8_t>
@@ -249,7 +248,7 @@ namespace papilio::utf
                 static_cast<To>(m_data[3])
             };
 
-            return std::make_pair(arr, size());
+            return std::make_pair(arr, size_bytes());
         }
 
         constexpr bool operator==(codepoint rhs) const noexcept
@@ -288,6 +287,37 @@ namespace papilio::utf
         friend std::basic_ostream<char8_t>& operator<<(std::basic_ostream<char8_t>& os, codepoint cp);
         friend std::basic_ostream<char16_t>& operator<<(std::basic_ostream<char16_t>& os, codepoint cp);
         friend std::basic_ostream<char32_t>& operator<<(std::basic_ostream<char32_t>& os, codepoint cp);
+
+        constexpr std::size_t estimate_width() const
+        {
+            // [begin, end) intervals
+            constexpr std::pair<char32_t, char32_t> estimate_intervals[] =
+            {
+                { 0x1100u, 0x1160u },
+                { 0x2329u, 0x232Bu },
+                { 0x2E80u, 0x303Fu },
+                { 0x3040u, 0xA4D0u },
+                { 0xAC00u, 0xD7A4u },
+                { 0xF900u, 0xFB00u },
+                { 0xFE10u, 0xFE1Au },
+                { 0xFE30u, 0xFE70u },
+                { 0xFF00u, 0xFF61u },
+                { 0xFFE0u, 0xFFE7u },
+                { 0x1F300u, 0x1F650u },
+                { 0x1F900u, 0x1FA00u },
+                { 0x20000u, 0x2FFFEu },
+                { 0x30000u, 0x3FFFEu }
+            };
+
+            char32_t ch = static_cast<char32_t>(*this);
+            for(const auto& i : estimate_intervals)
+            {
+                if(i.first <= ch && ch < i.second)
+                    return 2;
+            }
+
+            return 1;
+        }
 
     private:
         char8_t m_data[4];
