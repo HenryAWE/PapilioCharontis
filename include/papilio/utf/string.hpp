@@ -438,9 +438,15 @@ namespace papilio::utf
             {
                 return index(i);
             }
-#ifdef __cpp_multidimensional_subscript
-            // TODO: Support multidimensional subscript operator in C++ 23
-            // codepoint operator[](reverse_index_t, size_type i) const noexcept
+
+#if __cpp_multidimensional_subscript >= 202110L
+
+            [[nodiscard]]
+            constexpr codepoint operator[](reverse_index_t, size_type i) const noexcept
+            {
+                return index(reverse_index, i);
+            }
+
 #endif
 
             // for consistency
