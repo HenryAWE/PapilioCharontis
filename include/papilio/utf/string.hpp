@@ -526,12 +526,12 @@ namespace papilio::utf
             [[nodiscard]]
             constexpr codepoint front() const noexcept
             {
-                return *as_derived().begin();
+                return index(0);
             }
             [[nodiscard]]
             constexpr codepoint back() const noexcept
             {
-                return *std::prev(as_derived().end());
+                return index(reverse_index, 0);
             }
 
             [[nodiscard]]
@@ -695,7 +695,7 @@ namespace papilio::utf
             constexpr codepoint cp_from_off(size_type off) const noexcept
             {
                 string_view_type str = get_view();
-                PAPILIO_ASSUME(off < str.size());
+                PAPILIO_ASSERT(off < str.size());
 
                 if constexpr(char_8b<CharT>)
                 {
@@ -709,7 +709,7 @@ namespace papilio::utf
                 }
                 else if constexpr(char_32b<CharT>)
                 {
-                    return decoder<CharT>::to_codepoint(str[off]).first;
+                    return decoder<char32_t>::to_codepoint(str[off]).first;
                 }
             }
         };
@@ -1583,7 +1583,7 @@ namespace papilio::utf
                 string_view_type* p_str = std::get_if<string_view_type>(&m_data);
                 if(p_str)
                 {
-                    return m_data.emplace<string_type>(*p_str);
+                    return m_data.template emplace<string_type>(*p_str);
                 }
                 else
                 {
@@ -1594,7 +1594,7 @@ namespace papilio::utf
             template <typename T, typename... Args>
             T& emplace_data(Args&&... args) const noexcept(std::is_nothrow_constructible_v<T, Args...>)
             {
-                return m_data.emplace<T>(std::forward<Args>(args)...);
+                return m_data.template emplace<T>(std::forward<Args>(args)...);
             }
 
             static constexpr string_ref_type create_ref(const_iterator start, const_iterator stop) noexcept
@@ -1718,24 +1718,24 @@ namespace papilio::utf
         }
         basic_string_container& assign(const CharT* str) noexcept
         {
-            this->emplace_data<string_view_type>(str);
+            this->template emplace_data<string_view_type>(str);
             return *this;
         }
         basic_string_container& assign(const CharT* str, size_type count) noexcept
         {
-            this->emplace_data<string_view_type>(str, count);
+            this->template emplace_data<string_view_type>(str, count);
             return *this;
         }
 
         basic_string_container& assign(string_view_type str)
         {
-            this->emplace_data<string_view_type>(str);
+            this->template emplace_data<string_view_type>(str);
             return *this;
         }
 
         basic_string_container& assign(independent_t, string_view_type str)
         {
-            this->emplace_data<string_type>(str);
+            this->template emplace_data<string_type>(str);
             return *this;
         }
 
