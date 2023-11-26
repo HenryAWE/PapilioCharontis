@@ -4,7 +4,7 @@
 #include <variant>
 #include <stdexcept>
 #include <limits>
-#include "../utf8.hpp"
+#include "../utf/utf.hpp"
 
 
 namespace papilio::script
@@ -22,7 +22,7 @@ namespace papilio::script
             bool,
             int_type,
             float_type,
-            string_container
+            utf::string_container
         >;
 
         variable() = delete;
@@ -36,14 +36,14 @@ namespace papilio::script
         template <std::floating_point T>
         variable(T f)
             : m_var(static_cast<float_type>(f)) {}
-        variable(string_container str)
+        variable(utf::string_container str)
             : m_var(std::move(str)) {}
         template <string_like String>
         variable(String&& str)
-            : m_var(std::in_place_type<string_container>, std::forward<String>(str)) {}
+            : m_var(std::in_place_type<utf::string_container>, std::forward<String>(str)) {}
         template <string_like String>
         variable(independent_t, String&& str)
-            : m_var(std::in_place_type<string_container>, independent, std::forward<String>(str)) {}
+            : m_var(std::in_place_type<utf::string_container>, independent, std::forward<String>(str)) {}
 
         variable& operator=(const variable&) = default;
         variable& operator=(bool v)
@@ -68,15 +68,15 @@ namespace papilio::script
             m_var = std::move(str);
             return *this;
         }
-        variable& operator=(string_container str)
+        variable& operator=(utf::string_container str)
         {
-            m_var.emplace<string_container>(std::move(str));
+            m_var.emplace<utf::string_container>(std::move(str));
             return *this;
         }
         template <string_like String>
         variable& operator=(String&& str)
         {
-            m_var.emplace<string_container>(std::forward<String>(str));
+            m_var.emplace<utf::string_container>(std::forward<String>(str));
             return *this;
         }
 
@@ -106,7 +106,7 @@ namespace papilio::script
 
                 if constexpr(is_same_v<T, bool>)
                 {
-                    if constexpr(is_same_v<U, string_container>)
+                    if constexpr(is_same_v<U, utf::string_container>)
                     {
                         return !v.empty();
                     }
@@ -117,7 +117,7 @@ namespace papilio::script
                 }
                 else if constexpr(std::integral<T> || std::floating_point<T>)
                 {
-                    if constexpr(is_same_v<U, string_container>)
+                    if constexpr(is_same_v<U, utf::string_container>)
                     {
                         invalid_conversion();
                     }
@@ -126,9 +126,9 @@ namespace papilio::script
                         return static_cast<T>(v);
                     }
                 }
-                else if constexpr(is_same_v<T, string_container> || string_like<T>)
+                else if constexpr(is_same_v<T, utf::string_container> || string_like<T>)
                 {
-                    if constexpr(is_same_v<U, string_container>)
+                    if constexpr(is_same_v<U, utf::string_container>)
                     {
                         return T(string_view_type(v));
                     }
@@ -191,7 +191,7 @@ namespace papilio::script
             std::is_same_v<T, bool> ||
             std::is_same_v<T, variable::int_type> ||
             std::is_same_v<T, variable::float_type> ||
-            std::is_same_v<T, string_container>;
+            std::is_same_v<T, utf::string_container>;
     };
     template <typename T>
     inline constexpr bool is_variable_type_v = is_variable_type<T>::value;

@@ -49,8 +49,8 @@ TEST(TestCore, FormatArg)
 
     {
         format_arg arg('a');
-        EXPECT_TRUE(arg.holds<utf8::codepoint>());
-        EXPECT_EQ(get<utf8::codepoint>(arg), U'a');
+        EXPECT_TRUE(arg.holds<utf::codepoint>());
+        EXPECT_EQ(get<utf::codepoint>(arg), U'a');
     }
 
     {
@@ -67,56 +67,56 @@ TEST(TestCore, FormatArg)
 
     {
         papilio::format_arg fmt_arg("test");
-        EXPECT_TRUE(fmt_arg.holds<string_container>());
-        EXPECT_TRUE(get<string_container>(fmt_arg).is_borrowed());
+        EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
+        EXPECT_FALSE(get<utf::string_container>(fmt_arg).has_ownership());
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), std::string("test").length());
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(0)), U't');
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(1)), U'e');
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(2)), U's');
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(3)), U't');
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(4)), utf8::codepoint());
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(0)), U't');
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(1)), U'e');
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(2)), U's');
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(3)), U't');
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(4)), utf::codepoint());
     }
 
     {
         using namespace std::literals;
         format_arg fmt_arg("test"s);
-        EXPECT_TRUE(fmt_arg.holds<string_container>());
-        EXPECT_FALSE(get<string_container>(fmt_arg).is_borrowed());
+        EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
+        EXPECT_TRUE(get<utf::string_container>(fmt_arg).has_ownership());
     }
 
     {
         using namespace std::literals;
         std::string s = "test"s;
         format_arg fmt_arg(s);
-        EXPECT_TRUE(fmt_arg.holds<string_container>());
-        EXPECT_TRUE(get<string_container>(fmt_arg).is_borrowed());
+        EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
+        EXPECT_FALSE(get<utf::string_container>(fmt_arg).has_ownership());
     }
 
     {
         papilio::format_arg fmt_arg((const char*)u8"测试");
-        EXPECT_TRUE(fmt_arg.holds<string_container>());
+        EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), 2);
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(0)), U'测');
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(1)), U'试');
-        EXPECT_EQ(get<utf8::codepoint>(fmt_arg.index(2)), utf8::codepoint());
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(0)), U'测');
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(1)), U'试');
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg.index(2)), utf::codepoint());
     }
 
     {
         papilio::format_arg fmt_arg("test");
 
         auto var = fmt_arg.as_variable();
-        EXPECT_EQ(var.as<string_container>(), "test");
+        EXPECT_EQ(var.as<utf::string_container>(), "test");
     }
 
     {
         papilio::format_arg fmt_arg("long sentence for testing slicing");
 
-        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(0, 4))), "long");
-        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
-        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(14, -16))), "for");
-        EXPECT_EQ(get<string_container>(fmt_arg.index(slice(-slice::npos, -20))), "long sentence");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(0, 4))), "long");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(14, -16))), "for");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(-slice::npos, -20))), "long sentence");
 
         EXPECT_EQ(get<std::string>(fmt_arg.index(slice(0, 4))), "long");
         EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(0, 4))), "long");
@@ -136,7 +136,7 @@ namespace papilio
             auto it = m.find(k);
             if(it == m.end())
                 return format_arg();
-            return string_container(it->second);
+            return utf::string_container(independent, it->second);
         }
 
         static format_arg get_attr(const map_type& m, const attribute_name& attr)
@@ -165,19 +165,19 @@ TEST(TestCore, FormatArgHandle)
         m["2"] = "two";
 
         EXPECT_EQ(get<std::size_t>(accessor_traits<map_type>::get_attr(m, "size")), 2);
-        EXPECT_EQ(get<string_container>(accessor_traits<map_type>::get_arg(m, "1")), "one");
-        EXPECT_EQ(get<string_container>(accessor_traits<map_type>::get_arg(m, "2")), "two");
+        EXPECT_EQ(get<utf::string_container>(accessor_traits<map_type>::get_arg(m, "1")), "one");
+        EXPECT_EQ(get<utf::string_container>(accessor_traits<map_type>::get_arg(m, "2")), "two");
         EXPECT_TRUE(accessor_traits<map_type>::get_arg(m, "3").empty());
 
         format_arg::handle h = m;
         EXPECT_EQ(get<std::size_t>(h.attribute("size")), 2);
-        EXPECT_EQ(get<string_container>(h.index("1")), "one");
-        EXPECT_EQ(get<string_container>(h.index("2")), "two");
+        EXPECT_EQ(get<utf::string_container>(h.index("1")), "one");
+        EXPECT_EQ(get<utf::string_container>(h.index("2")), "two");
 
         format_arg arg = m;
         EXPECT_EQ(get<std::size_t>(arg.attribute("size")), 2);
-        EXPECT_EQ(get<string_container>(arg.index("1")), "one");
-        EXPECT_EQ(get<string_container>(arg.index("2")), "two");
+        EXPECT_EQ(get<utf::string_container>(arg.index("1")), "one");
+        EXPECT_EQ(get<utf::string_container>(arg.index("2")), "two");
     }
 }
 
@@ -216,10 +216,10 @@ TEST(TestCore, MutableFormatArgStore)
         EXPECT_EQ(store.size(), 2);
         EXPECT_EQ(store.named_size(), 2);
 
-        EXPECT_EQ(get<utf8::codepoint>(store[0]), U'a');
-        EXPECT_EQ(get<utf8::codepoint>(store[1]), U'b');
-        EXPECT_EQ(get<utf8::codepoint>(store["c"]), U'c');
-        EXPECT_EQ(get<utf8::codepoint>(store["d"]), U'd');
+        EXPECT_EQ(get<utf::codepoint>(store[0]), U'a');
+        EXPECT_EQ(get<utf::codepoint>(store[1]), U'b');
+        EXPECT_EQ(get<utf::codepoint>(store["c"]), U'c');
+        EXPECT_EQ(get<utf::codepoint>(store["d"]), U'd');
     }
 }
 TEST(TestCore, DynamicFormatArgStore)

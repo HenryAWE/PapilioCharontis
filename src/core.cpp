@@ -79,9 +79,9 @@ namespace papilio
         {
             using T = std::remove_cvref_t<decltype(v)>;
 
-            if constexpr(std::is_same_v<T, utf8::codepoint>)
+            if constexpr(std::is_same_v<T, utf::codepoint>)
             {
-                return variable(string_container(v, 1));
+                return variable(utf::string_container(1, v));
             }
             if constexpr(std::integral<T>)
             {
@@ -91,7 +91,7 @@ namespace papilio
             {
                 return static_cast<variable::float_type>(v);
             }
-            else if constexpr(std::is_same_v<T, string_container>)
+            else if constexpr(std::is_same_v<T, utf::string_container>)
             {
                 return variable(v);
             }
@@ -147,7 +147,7 @@ namespace papilio
                     size_type i = static_cast<size_type>(v);
                     return get(i);
                 }
-                else if constexpr(is_same_v<T, string_container>)
+                else if constexpr(is_same_v<T, utf::string_container>)
                 {
                     return get(string_view_type(v));
                 }
@@ -177,7 +177,7 @@ namespace papilio
                         return false;
                     return check(static_cast<size_type>(v));
                 }
-                else if constexpr(is_same_v<T, string_container>)
+                else if constexpr(is_same_v<T, utf::string_container>)
                 {
                     return check(string_view_type(v));
                 }

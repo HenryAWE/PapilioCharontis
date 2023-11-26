@@ -94,7 +94,7 @@ namespace papilio
         {
             if(m_byte_len == 0)
             {
-                m_byte_len = utf8::is_leading_byte(ch);
+                m_byte_len = utf::is_leading_byte(ch);
                 if(m_byte_len == 0) // invalid UTF-8 data
                 {
                     throw std::system_error(
@@ -170,8 +170,8 @@ namespace papilio
 
     private:
         char8_t m_buf[4] = { u8'\0', u8'\0', u8'\0', u8'\0' };
-        utf8::codepoint::size_type m_byte_len = 0;
-        utf8::codepoint::size_type m_byte_idx = 0;
+        std::uint8_t m_byte_len = 0;
+        std::uint8_t m_byte_idx = 0;
         cfile_iterator m_underlying;
     };
 

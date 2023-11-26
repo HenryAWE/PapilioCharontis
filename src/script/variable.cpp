@@ -15,7 +15,7 @@ namespace papilio::script
             {
                 return lhs <=> rhs;
             }
-            else if constexpr(is_same_v<T, string_container> || is_same_v<U, string_container>)
+            else if constexpr(is_same_v<T, utf::string_container> || is_same_v<U, utf::string_container>)
             {
                 throw std::invalid_argument("invalid argument");
             }
@@ -52,7 +52,7 @@ namespace papilio::script
             }
             else
             {
-                if constexpr(is_same_v<T, string_container> || is_same_v<U, string_container>)
+                if constexpr(is_same_v<T, utf::string_container> || is_same_v<U, utf::string_container>)
                 {
                     return false;
                 }

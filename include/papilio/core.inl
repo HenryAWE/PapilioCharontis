@@ -85,22 +85,28 @@ namespace papilio
     }
 
     template <>
-    struct accessor<string_container>
+    struct accessor<utf::string_container>
     {
         using has_index = void;
         using has_slice = void;
 
-        static utf8::codepoint get(const string_container& str, indexing_value::index_type i)
+        static utf::codepoint get(const utf::string_container& str, indexing_value::index_type i)
         {
-            return str[i];
+            if(i >= 0)
+                return str.index_or(i, utf::codepoint());
+            else
+            {
+                i = -(i + 1);
+                return str.index_or(reverse_index, i, utf::codepoint());
+            }
         }
 
-        static string_container get(const string_container& str, slice s)
+        static utf::string_container get(const utf::string_container& str, slice s)
         {
-            return str.substr(s);
+            return str.substr<utf::substr_behavior::empty_string>(s);
         }
 
-        static format_arg get_attr(const string_container& str, const attribute_name& attr)
+        static format_arg get_attr(const utf::string_container& str, const attribute_name& attr)
         {
             using namespace std::literals;
 

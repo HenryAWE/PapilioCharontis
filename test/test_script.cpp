@@ -13,7 +13,7 @@ TEST(TestScript, Variable)
     static_assert(is_variable_type_v<variable::int_type>);
     static_assert(is_variable_type_v<variable::float_type>);
     static_assert(!is_variable_type_v<variable::string_type>);
-    static_assert(is_variable_type_v<string_container>);
+    static_assert(is_variable_type_v<utf::string_container>);
 
     {
         variable var = 10;
@@ -23,15 +23,15 @@ TEST(TestScript, Variable)
 
     {
         variable var = "test";
-        EXPECT_TRUE(var.holds<string_container>());
-        EXPECT_EQ(var.get<string_container>(), "test");
+        EXPECT_TRUE(var.holds<utf::string_container>());
+        EXPECT_EQ(var.get<utf::string_container>(), "test");
         EXPECT_TRUE(var.as<bool>());
     }
 
     {
         variable var = std::string("test");
-        EXPECT_TRUE(var.holds<string_container>());
-        EXPECT_EQ(var.get<string_container>(), "test");
+        EXPECT_TRUE(var.holds<utf::string_container>());
+        EXPECT_EQ(var.get<utf::string_container>(), "test");
         EXPECT_TRUE(var.as<bool>());
     }
 
@@ -410,7 +410,7 @@ TEST(TestScript, Executor)
     {
         executor::context ctx(empty_arg_store);
         ctx.push("string");
-        EXPECT_EQ(ctx.top().get<string_container>(), "string");
+        EXPECT_EQ(ctx.top().get<utf::string_container>(), "string");
     }
 
     {
@@ -445,7 +445,7 @@ TEST(TestScript, Executor)
         executor ex3(std::in_place_type<executor::argument>, "string"s);
         ex3(ctx);
 
-        EXPECT_EQ(ctx.copy_and_pop().get<string_container>(), "test");
+        EXPECT_EQ(ctx.copy_and_pop().get<utf::string_container>(), "test");
 
         executor ex4(
             std::in_place_type<executor::argument>,
@@ -655,7 +655,7 @@ TEST(TestScript, Interpreter)
 
         mutable_format_args store("testing");
         EXPECT_EQ(
-            get<utf8::codepoint>(acc.second.access(store[acc.first])),
+            get<utf::codepoint>(acc.second.access(store[acc.first])),
             U't'
         );
     }
@@ -666,7 +666,7 @@ TEST(TestScript, Interpreter)
 
         mutable_format_args store("string"_a = "testing");
         EXPECT_EQ(
-            get<utf8::codepoint>(acc.second.access(store[acc.first])),
+            get<utf::codepoint>(acc.second.access(store[acc.first])),
             U't'
         );
     }
@@ -698,8 +698,8 @@ namespace papilio
         {
             auto it = m.find(i);
             if(it == m.end())
-                return format_arg(string_container());
-            return string_container(it->second);
+                return format_arg(utf::string_container());
+            return utf::string_container(it->second);
         }
 
         static format_arg get_attr(const map_type& m, const attribute_name& attr)
@@ -724,7 +724,7 @@ TEST(TestScript, CustomType)
 
         format_arg fmt_arg = m;
         auto member = acc.access(fmt_arg);
-        EXPECT_EQ(get<string_container>(member), "zero");
+        EXPECT_EQ(get<utf::string_container>(member), "zero");
     }
 
     {

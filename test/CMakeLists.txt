@@ -30,8 +30,6 @@ define_papilio_test(test_stl_container)
 
 define_papilio_test(test_type)
 
-define_papilio_test(test_utf8)
-
 define_papilio_test(test_utf_common)
 
 define_papilio_test(test_utf_codepoint)

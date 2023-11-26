@@ -410,7 +410,7 @@ namespace papilio::script
                 [](char_type ch) { return detail::is_identifier(ch, false); }
             );
 
-            return std::make_pair(string_container(begin, next), next);
+            return std::make_pair(utf::string_container(begin, next), next);
         }
         else
         {
@@ -744,13 +744,13 @@ namespace papilio::script
                     {
                         auto& c = l.as<lexeme::constant>();
                             
-                        if(!c.holds<string_container>())
+                        if(!c.holds<utf::string_container>())
                         {
                             raise_syntax_error("result type is not string");
                         }
 
                         return std::make_pair(
-                            std::make_unique<executor::constant<string_container>>(c.get_string()),
+                            std::make_unique<executor::constant<utf::string_container>>(c.get_string()),
                             end
                         );
                     }
@@ -897,7 +897,7 @@ namespace papilio::script
                                 raise_syntax_error("too many values for index");
                             }
 
-                            if(c.holds<string_container>())
+                            if(c.holds<utf::string_container>())
                                 return std::make_pair(c.get_string(), std::next(right_bracket));
                             else
                                 return std::make_pair(c.get_int(), std::next(right_bracket));

@@ -11,7 +11,7 @@
 #include "type.hpp"
 #include "container.hpp"
 #include "macros.hpp"
-#include "utf8.hpp"
+#include "utf/utf.hpp"
 #include "error.hpp"
 #include "locale.hpp"
 #include "script/variable.hpp"
@@ -129,16 +129,16 @@ namespace papilio
             return m_fill != U'\0';
         }
         [[nodiscard]]
-        utf8::codepoint fill() const noexcept
+        utf::codepoint fill() const noexcept
         {
             return m_fill;
         }
-        void fill(utf8::codepoint cp) noexcept
+        void fill(utf::codepoint cp) noexcept
         {
             m_fill = cp;
         }
         [[nodiscard]]
-        utf8::codepoint fill_or(utf8::codepoint or_cp) const noexcept
+        utf::codepoint fill_or(utf::codepoint or_cp) const noexcept
         {
             return has_fill() ? m_fill : or_cp;
         }
@@ -211,22 +211,22 @@ namespace papilio
             return m_type_char != U'\0';
         }
         [[nodiscard]]
-        utf8::codepoint type_char() const noexcept
+        utf::codepoint type_char() const noexcept
         {
             return m_type_char;
         }
-        void type_char(utf8::codepoint cp) noexcept
+        void type_char(utf::codepoint cp) noexcept
         {
             m_type_char = cp;
         }
         [[nodiscard]]
-        utf8::codepoint type_char_or(utf8::codepoint or_cp) const noexcept
+        utf::codepoint type_char_or(utf::codepoint or_cp) const noexcept
         {
             return has_type_char() ? m_type_char : or_cp;
         }
 
     private:
-        utf8::codepoint m_fill = U'\0';
+        utf::codepoint m_fill = U'\0';
         format_align m_align = format_align::default_align;
         format_sign m_sign = format_sign::default_sign;
         bool m_alternate_form = false; // specified by '#'
@@ -234,7 +234,7 @@ namespace papilio
         std::size_t m_width = 0;
         std::size_t m_precision = -1;
         bool m_use_locale = false;
-        utf8::codepoint m_type_char = U'\0';
+        utf::codepoint m_type_char = U'\0';
     };
 
     template <typename T>
@@ -300,7 +300,7 @@ namespace papilio
         using underlying_type = std::variant<
             index_type,
             slice,
-            string_container
+            utf::string_container
         >;
 
         indexing_value() = delete;
@@ -310,14 +310,14 @@ namespace papilio
             : m_val(index) {}
         indexing_value(slice s)
             : m_val(s) {}
-        indexing_value(string_container key)
+        indexing_value(utf::string_container key)
             : m_val(std::move(key)) {}
         template <string_like String>
         indexing_value(String&& key)
-            : m_val(std::in_place_type<string_container>, std::forward<String>(key)) {}
+            : m_val(std::in_place_type<utf::string_container>, std::forward<String>(key)) {}
         template <string_like String>
         indexing_value(independent_t, String&& key)
-            : m_val(std::in_place_type<string_container>, independent, std::forward<String>(key)) {}
+            : m_val(std::in_place_type<utf::string_container>, independent, std::forward<String>(key)) {}
 
         template <typename T>
         [[nodiscard]]
@@ -339,7 +339,7 @@ namespace papilio
         [[nodiscard]]
         bool is_key() const noexcept
         {
-            return holds<string_container>();
+            return holds<utf::string_container>();
         }
 
         [[nodiscard]]
@@ -354,9 +354,9 @@ namespace papilio
             return *std::get_if<slice>(&m_val);
         }
         [[nodiscard]]
-        const string_container& as_key() const noexcept
+        const utf::string_container& as_key() const noexcept
         {
-            return *std::get_if<string_container>(&m_val);
+            return *std::get_if<utf::string_container>(&m_val);
         }
 
         [[nodiscard]]
@@ -383,7 +383,7 @@ namespace papilio
         attribute_name() = delete;
         attribute_name(const attribute_name&) = default;
         attribute_name(attribute_name&&) noexcept = default;
-        template <typename... Args> requires(std::constructible_from<string_container, Args...>)
+        template <typename... Args> requires(std::constructible_from<utf::string_container, Args...>)
         attribute_name(Args&&... args)
             : m_name(std::forward<Args>(args)...) {}
 
@@ -421,27 +421,27 @@ namespace papilio
         }
 
         [[nodiscard]]
-        const string_container& name() const noexcept
+        const utf::string_container& name() const noexcept
         {
             return m_name;
         }
         [[nodiscard]]
         operator string_view_type() const noexcept
         {
-            return m_name;
+            return static_cast<string_view_type>(m_name);
         }
 
         [[nodiscard]]
         static bool validate(string_view_type name) noexcept;
 
     private:
-        string_container m_name;
+        utf::string_container m_name;
     };
     class invalid_attribute : public std::invalid_argument
     {
     public:
         invalid_attribute(attribute_name attr)
-            : invalid_argument("invalid attribute name \"" + std::string(attr.name()) + '\"'),
+            : invalid_argument("invalid attribute name \"" + attr.name().str() + '\"'),
             m_attr(independent, attr.name()) {}
 
         [[nodiscard]]
@@ -495,7 +495,7 @@ namespace papilio
         template <char_like T>
         struct formatter_selector_helper<T>
         {
-            using type = utf8::codepoint;
+            using type = utf::codepoint;
         };
 
         template <typename T> requires(!char_like<T>)
@@ -518,7 +518,7 @@ namespace papilio
         template <string_like T>
         struct formatter_selector_helper<T>
         {
-            using type = string_container;
+            using type = utf::string_container;
         };
     }
 
@@ -674,6 +674,11 @@ namespace papilio
             }
         }
         template <typename U>
+        static decltype(auto) index_handler(U&& object, const utf::string_container& str)
+        {
+            return index_handler(std::forward<U>(object), std::string_view(str));
+        }
+        template <typename U>
         static decltype(auto) index_handler(U&& object, slice s)
         {
             if constexpr(!has_slice())
@@ -748,11 +753,11 @@ namespace papilio
 
         template <typename T>
         concept use_handle =
-            !std::is_same_v<T, utf8::codepoint> &&
+            !std::is_same_v<T, utf::codepoint> &&
             !char_like<T> &&
             !integral_type<T> &&
             !std::floating_point<T> &&
-            !std::is_same_v<T, string_container> &&
+            !std::is_same_v<T, utf::string_container> &&
             !string_like<T>;
     }
 
@@ -830,7 +835,7 @@ namespace papilio
         using underlying_type = std::variant<
             std::monostate,
             bool,
-            utf8::codepoint,
+            utf::codepoint,
             int,
             unsigned int,
             long long int,
@@ -838,7 +843,7 @@ namespace papilio
             float,
             double,
             long double,
-            string_container,
+            utf::string_container,
             const void*,
             handle
         >;
@@ -849,25 +854,25 @@ namespace papilio
         format_arg(format_arg&&) noexcept = default;
         format_arg(bool val) noexcept
             : m_val(std::in_place_type<bool>, val) {}
-        format_arg(utf8::codepoint cp) noexcept
-            : m_val(std::in_place_type<utf8::codepoint>, cp) {}
+        format_arg(utf::codepoint cp) noexcept
+            : m_val(std::in_place_type<utf::codepoint>, cp) {}
         template <char_like Char>
         format_arg(Char ch) noexcept
-            : m_val(std::in_place_type<utf8::codepoint>, char32_t(ch)) {}
+            : m_val(std::in_place_type<utf::codepoint>, char32_t(ch)) {}
         template <detail::integral_type Integral>
         format_arg(Integral val) noexcept
             : m_val(static_cast<detail::best_int_type_t<Integral>>(val)) {}
         template <std::floating_point Float>
         format_arg(Float val) noexcept
             : m_val(val) {}
-        format_arg(string_container str) noexcept
-            : m_val(std::in_place_type<string_container>, std::move(str)) {}
+        format_arg(utf::string_container str) noexcept
+            : m_val(std::in_place_type<utf::string_container>, std::move(str)) {}
         template <string_like String>
         format_arg(String&& str)
-            : m_val(std::in_place_type<string_container>, std::forward<String>(str)) {}
+            : m_val(std::in_place_type<utf::string_container>, std::forward<String>(str)) {}
         template <string_like String>
         format_arg(independent_t, String&& str)
-            : m_val(std::in_place_type<string_container>, independent, std::forward<String>(str)) {}
+            : m_val(std::in_place_type<utf::string_container>, independent, std::forward<String>(str)) {}
         template <typename T, typename... Args>
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
@@ -905,11 +910,11 @@ namespace papilio
         friend const auto& get(const format_arg& val)
         {
             if constexpr(char_like<T>)
-                return std::get<utf8::codepoint>(val.m_val);
+                return std::get<utf::codepoint>(val.m_val);
             else if constexpr(std::integral<T>)
                 return std::get<detail::best_int_type_t<T>>(val.m_val);
-            else if constexpr(std::is_same_v<T, string_container> || string_like<T>)
-                return std::get<string_container>(val.m_val);
+            else if constexpr(std::is_same_v<T, utf::string_container> || string_like<T>)
+                return std::get<utf::string_container>(val.m_val);
             else
                 return std::get<T>(val.m_val);
         }
@@ -1504,11 +1509,11 @@ namespace papilio
             }
             else
             {
-                utf8::codepoint cp(static_cast<char32_t>(ch));
+                utf::codepoint cp(static_cast<char32_t>(ch));
                 append(ctx, cp, count);
             }
         }
-        static void append(context_type& ctx, utf8::codepoint cp, std::size_t count = 1)
+        static void append(context_type& ctx, utf::codepoint cp, std::size_t count = 1)
         {
             for(std::size_t i = 0; i < count; ++i)
                 append(ctx, string_view_type(cp));
