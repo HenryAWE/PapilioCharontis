@@ -8,13 +8,23 @@
 
 namespace papilio
 {
-    bool attribute_name::validate(string_view_type name) noexcept
+    static bool is_identifier_ch(char32_t ch, bool first = false) noexcept
+    {
+        bool digit = utf::is_digit(ch);
+        if(first && digit)
+            return false;
+
+        return digit || ('A' <= ch && ch <= 'z') || ch == '_' || ch >= 128;
+    }
+
+    bool attribute_name::validate(utf::string_ref name) noexcept
     {
         bool first = true;
-        for(char_type c : name)
+        for(char32_t c : name)
         {
-            if(!detail::is_identifier_ch(c, first))
+            if(!is_identifier_ch(c, first))
                 return false;
+
             if(first)
                 first = false;
         }

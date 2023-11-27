@@ -14,7 +14,7 @@ define_papilio_test(test_core)
 
 define_papilio_test(test_container)
 
-define_papilio_test(test_detail_iterstream)
+define_papilio_test(test_iterstream)
 
 define_papilio_test(test_memory)
 

@@ -4,24 +4,6 @@
 #include <papilio/core.hpp>
 
 
-TEST(TestCore, Utilities)
-{
-    using namespace std::literals;
-
-    {
-        using namespace papilio;
-
-        const std::string str_val = "hello world";
-        const auto a_0 = arg("string", str_val);
-        EXPECT_STREQ(a_0.name, "string");
-        EXPECT_EQ(a_0.value, "hello world");
-
-        const int int_val = 1;
-        const auto a_1 = "integer"_a = int_val;
-        EXPECT_STREQ(a_1.name, "integer");
-        EXPECT_EQ(a_1.value, int_val);
-    }
-}
 TEST(TestCore, AttributeName)
 {
     using namespace std::literals;

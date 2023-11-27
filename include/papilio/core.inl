@@ -5,7 +5,7 @@
 #include <system_error>
 #include <charconv>
 #include <sstream>
-#include "detail/iterstream.hpp"
+#include "iterstream.hpp"
 
 
 namespace papilio
@@ -56,7 +56,7 @@ namespace papilio
         else if constexpr(detail::has_ostream_support_helper<T>)
         {
             using context_traits = format_context_traits<Context>;
-            using streambuf_type = detail::basic_iterbuf<
+            using streambuf_type = basic_iterbuf<
                 char,
                 typename context_traits::iterator
             >;

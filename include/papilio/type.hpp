@@ -126,4 +126,107 @@ namespace papilio
             return second - first;
         }
     };
+
+    template <typename CharT, typename T>
+    struct basic_named_arg
+    {
+        static_assert(!std::is_reference_v<T>, "T cannot be a reference");
+
+        using named_arg_tag = void;
+
+        using char_type = CharT;
+        using string_view_type = std::basic_string_view<CharT>;
+        using value_type = T;
+        using reference = std::add_lvalue_reference_t<T>;
+
+        string_view_type name;
+        reference value;
+
+        basic_named_arg() = delete;
+        constexpr basic_named_arg(const basic_named_arg&) noexcept = default;
+        constexpr basic_named_arg(string_view_type arg_name, reference arg_value) noexcept
+            : name(arg_name), value(arg_value) {}
+
+        basic_named_arg& operator=(const basic_named_arg&) = delete;
+
+        [[nodiscard]]
+        constexpr reference get() const noexcept
+        {
+            return value;
+        }
+
+        constexpr operator reference() const noexcept
+        {
+            return value;
+        }
+    };
+
+    template <typename T>
+    using named_arg = basic_named_arg<char, T>;
+    template <typename T>
+    using wnamed_arg = basic_named_arg<wchar_t, T>;
+
+    namespace detail
+    {
+        template <typename T>
+        concept is_named_arg_helper = requires() { typename T::named_arg_tag; };
+    }
+
+    template <typename T>
+    struct is_named_arg : public std::bool_constant<detail::is_named_arg_helper<T>> {};
+
+    template <typename T>
+    constexpr inline bool is_named_arg_v = is_named_arg<T>::value;
+
+    template <typename CharT, typename T>
+    constexpr auto arg(const CharT* name, T&& value) noexcept
+    {
+        return basic_named_arg<CharT, std::remove_reference_t<T>>(name, value);
+    }
+    template <typename CharT, typename T>
+    constexpr auto arg(const std::basic_string_view<CharT> name, T&& value) noexcept
+    {
+        return basic_named_arg<CharT, std::remove_reference_t<T>>(name, value);
+    }
+
+    namespace detail
+    {
+        template <typename CharT>
+        struct named_arg_proxy
+        {
+            using string_view_type = std::basic_string_view<CharT>;
+
+            string_view_type name;
+
+            named_arg_proxy() = delete;
+            named_arg_proxy(const named_arg_proxy&) = delete;
+            constexpr named_arg_proxy(const CharT* arg_name, std::size_t size) noexcept
+                : name(arg_name, size) {}
+
+            named_arg_proxy& operator=(const named_arg_proxy&) = delete;
+
+            template <typename T>
+            [[nodiscard]]
+            constexpr auto operator=(T&& value) noexcept
+            {
+                return PAPILIO_NS arg(name, std::forward<T>(value));
+            }
+        };
+    }
+
+    inline namespace literals
+    {
+        inline namespace named_arg_literals
+        {
+            constexpr auto operator""_a(const char* name, std::size_t size) noexcept
+            {
+                return PAPILIO_NS detail::named_arg_proxy<char>(name, size);
+            }
+
+            constexpr auto operator""_a(const wchar_t* name, std::size_t size) noexcept
+            {
+                return PAPILIO_NS detail::named_arg_proxy<wchar_t>(name, size);
+            }
+        }
+    }
 }

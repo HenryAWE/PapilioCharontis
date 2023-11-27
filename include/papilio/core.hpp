@@ -8,9 +8,9 @@
 #include <iterator>
 #include <algorithm>
 #include <typeinfo>
+#include "macros.hpp"
 #include "type.hpp"
 #include "container.hpp"
-#include "macros.hpp"
 #include "utf/utf.hpp"
 #include "error.hpp"
 #include "locale.hpp"
@@ -28,26 +28,6 @@ namespace papilio
     class dynamic_format_context;
     class format_spec_parse_context;
 
-    namespace detail
-    {
-        [[nodiscard]]
-        constexpr bool is_digit(char ch) noexcept
-        {
-            return '0' <= ch && ch <= '9';
-        }
-
-        template <typename CharT>
-        [[nodiscard]]
-        constexpr bool is_identifier_ch(CharT ch, bool first = false) noexcept
-        {
-            bool digit = is_digit(ch);
-            if(first && digit)
-                return false;
-
-            return ('A' <= ch && ch <= 'z') || digit || ch == '_';
-        }
-    }
-
     enum class format_align : std::uint8_t
     {
         default_align = 0,
@@ -63,240 +43,13 @@ namespace papilio
         space
     };
 
-    class common_format_spec
-    {
-    public:
-        common_format_spec() = default;
-        common_format_spec(const common_format_spec&) noexcept = default;
-
-        void reset() noexcept
-        {
-            *this = common_format_spec();
-        }
-
-        [[nodiscard]]
-        static constexpr bool is_align_spec(char32_t ch) noexcept
-        {
-            return
-                ch == '<' ||
-                ch == '^' ||
-                ch == '>';
-        }
-        [[nodiscard]]
-        static constexpr format_align get_align(char32_t ch) noexcept
-        {
-            switch(ch)
-            {
-                using enum format_align;
-            case '<':
-                return left;
-            case '^':
-                return middle;
-            case '>':
-                return right;
-            default:
-                return default_align;
-            }
-        }
-
-        [[nodiscard]]
-        static constexpr bool is_sign_spec(char32_t ch) noexcept
-        {
-            return
-                ch == '+' ||
-                ch == ' ' ||
-                ch == '-';
-        }
-        [[nodiscard]]
-        static constexpr format_sign get_sign(char32_t ch) noexcept
-        {
-            switch(ch)
-            {
-                using enum format_sign;
-            [[likely]] case '+':
-                return positive;
-            case ' ':
-                return space;
-            default:
-            case '-':
-                return negative;
-            }
-        }
-
-        [[nodiscard]]
-        bool has_fill() const noexcept
-        {
-            return m_fill != U'\0';
-        }
-        [[nodiscard]]
-        utf::codepoint fill() const noexcept
-        {
-            return m_fill;
-        }
-        void fill(utf::codepoint cp) noexcept
-        {
-            m_fill = cp;
-        }
-        [[nodiscard]]
-        utf::codepoint fill_or(utf::codepoint or_cp) const noexcept
-        {
-            return has_fill() ? m_fill : or_cp;
-        }
-        [[nodiscard]]
-        format_align align() const noexcept
-        {
-            return m_align;
-        }
-        void align(format_align val) noexcept
-        {
-            m_align = val;
-        }
-        [[nodiscard]]
-        format_sign sign() const noexcept
-        {
-            return m_sign;
-        }
-        void sign(format_sign val) noexcept
-        {
-            m_sign = val;
-        }
-        [[nodiscard]]
-        bool alternate_form() const noexcept
-        {
-            return m_alternate_form;
-        }
-        void alternate_form(bool val) noexcept
-        {
-            m_alternate_form = val;
-        }
-        [[nodiscard]]
-        bool fill_zero() const noexcept
-        {
-            return m_fill_zero;
-        }
-        void fill_zero(bool val) noexcept
-        {
-            m_fill_zero = val;
-        }
-        [[nodiscard]]
-        std::size_t width() const noexcept
-        {
-            return m_width;
-        }
-        void width(std::size_t val) noexcept
-        {
-            m_width = val;
-        }
-        [[nodiscard]]
-        std::size_t precision() const noexcept
-        {
-            return m_precision;
-        }
-        void precision(std::size_t val) noexcept
-        {
-            m_precision = val;
-        }
-        [[nodiscard]]
-        bool use_locale() const noexcept
-        {
-            return m_use_locale;
-        }
-        void use_locale(bool val) noexcept
-        {
-            m_use_locale = val;
-        }
-        [[nodiscard]]
-        bool has_type_char() const noexcept
-        {
-            return m_type_char != U'\0';
-        }
-        [[nodiscard]]
-        utf::codepoint type_char() const noexcept
-        {
-            return m_type_char;
-        }
-        void type_char(utf::codepoint cp) noexcept
-        {
-            m_type_char = cp;
-        }
-        [[nodiscard]]
-        utf::codepoint type_char_or(utf::codepoint or_cp) const noexcept
-        {
-            return has_type_char() ? m_type_char : or_cp;
-        }
-
-    private:
-        utf::codepoint m_fill = U'\0';
-        format_align m_align = format_align::default_align;
-        format_sign m_sign = format_sign::default_sign;
-        bool m_alternate_form = false; // specified by '#'
-        bool m_fill_zero = false;
-        std::size_t m_width = 0;
-        std::size_t m_precision = -1;
-        bool m_use_locale = false;
-        utf::codepoint m_type_char = U'\0';
-    };
-
-    template <typename T>
-    struct named_arg
-    {
-        using named_arg_tag = void;
-
-        const char* name;
-        const T& value;
-
-        named_arg() = delete;
-        constexpr named_arg(const named_arg&) noexcept = default;
-        constexpr named_arg(const char* name_, const T& value_) noexcept
-            : name(name_), value(value_) {}
-
-        named_arg& operator=(const named_arg&) = delete;
-    };
-
-    template <typename T>
-    constexpr inline bool is_named_arg_v = requires()
-    {
-        typename T::named_arg_tag;
-    };
-
-    template <typename T>
-    constexpr named_arg<T> arg(const char* name, const T& value) noexcept
-    {
-        return named_arg<T>(name, value);
-    }
-
-    inline namespace literals
-    {
-        struct named_arg_proxy
-        {
-            const char* name;
-
-            named_arg_proxy() = delete;
-            named_arg_proxy(const named_arg_proxy&) = delete;
-            constexpr named_arg_proxy(const char* name_) noexcept
-                : name(name_) {}
-
-            template <typename T>
-            constexpr named_arg<T> operator=(const T& value) noexcept
-            {
-                return named_arg(name, value);
-            }
-        };
-
-        [[nodiscard]]
-        constexpr named_arg_proxy operator""_a(const char* name, std::size_t) noexcept
-        {
-            return named_arg_proxy(name);
-        }
-    }
-
     class indexing_value
     {
     public:
         using char_type = char;
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
-        using index_type = std::make_signed_t<std::size_t>; // ssize_t
+        using index_type = ssize_t;
         using underlying_type = std::variant<
             index_type,
             slice,
@@ -432,7 +185,7 @@ namespace papilio
         }
 
         [[nodiscard]]
-        static bool validate(string_view_type name) noexcept;
+        static bool validate(utf::string_ref name) noexcept;
 
     private:
         utf::string_container m_name;

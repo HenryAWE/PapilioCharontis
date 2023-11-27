@@ -84,6 +84,29 @@ TEST(slice, slice)
     }
 }
 
+TEST(named_arg, named_arg)
+{
+    {
+        using namespace papilio;
+
+        const std::string str_val = "hello world";
+        const auto a_0 = arg("string", str_val);
+        EXPECT_EQ(a_0.name, "string");
+        EXPECT_EQ(a_0.value, "hello world");
+        EXPECT_EQ(&a_0.get(), &str_val);
+        EXPECT_EQ(&static_cast<const std::string&>(a_0), &str_val);
+    }
+
+    {
+        using namespace papilio::literals;
+
+        const int int_val = 1;
+        const auto a_1 = "integer"_a = int_val;
+        EXPECT_EQ(a_1.name, "integer");
+        EXPECT_EQ(a_1.value, int_val);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

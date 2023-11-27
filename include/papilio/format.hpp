@@ -66,7 +66,7 @@ namespace papilio
     template <typename OutputIt>
     format_to_n_result<OutputIt> vformat_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, std::string_view fmt, const dynamic_format_args& store)
     {
-        auto result = vformat_to(
+        auto result = PAPILIO_NS vformat_to(
             detail::format_to_n_wrapper<OutputIt>(out, n),
             fmt,
             store
@@ -76,7 +76,7 @@ namespace papilio
     template <typename OutputIt>
     format_to_n_result<OutputIt> vformat_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, const std::locale& loc, std::string_view fmt, const dynamic_format_args& store)
     {
-        auto result = vformat_to(
+        auto result = PAPILIO_NS vformat_to(
             detail::format_to_n_wrapper<OutputIt>(out, n),
             loc,
             fmt,
@@ -93,46 +93,43 @@ namespace papilio
     OutputIt format_to(OutputIt out, std::string_view fmt, Args&&... args)
     {
         // use namespace prefix to avoid collision with std::format caused by ADL
-        return vformat_to(out, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformat_to(out, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
     template <typename OutputIt, typename... Args>
     OutputIt format_to(OutputIt out, std::locale& loc, std::string_view fmt, Args&&... args)
     {
         // use namespace prefix to avoid collision with std::format caused by ADL
-        return vformat_to(out, loc, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformat_to(out, loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
     template <typename OutputIt, typename... Args>
     format_to_n_result<OutputIt> format_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, std::string_view fmt, Args&&... args)
     {
-        return vformat_to_n(out, n, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformat_to_n(out, n, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
     template <typename OutputIt, typename... Args>
     format_to_n_result<OutputIt> format_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, const std::locale& loc, std::string_view fmt, Args&&... args)
     {
-        return vformat_to_n(out, n, loc, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformat_to_n(out, n, loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
     template <typename... Args>
     std::size_t formatted_size(std::string_view fmt, Args&&... args)
     {
-        // use namespace prefix to avoid collision with std::format caused by ADL
-        return vformatted_size(fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformatted_size(fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
     template <typename... Args>
     std::size_t formatted_size(const std::locale& loc, std::string_view fmt, Args&&... args)
     {
-        // use namespace prefix to avoid collision with std::format caused by ADL
-        return vformatted_size(loc, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformatted_size(loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
     template <typename... Args>
     std::string format(std::string_view fmt, Args&&... args)
     {
-        // use namespace prefix to avoid collision with std::format caused by ADL
-        return vformat(fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformat(fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
     template <typename... Args>
     std::string format(const std::locale& loc, std::string_view fmt, Args&&... args)
     {
         // use namespace prefix to avoid collision with std::format caused by ADL
-        return PAPILIO_NS vformat(loc, fmt, papilio::make_format_args(std::forward<Args>(args)...));
+        return vformat(loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
     }
 }

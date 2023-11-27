@@ -18,6 +18,8 @@
 
 namespace papilio::utf
 {
+    // vvv decoders vvv
+
     template <>
     class decoder<char32_t>
     {
@@ -102,6 +104,8 @@ namespace papilio::utf
 
         static auto from_codepoint(codepoint cp) -> from_codepoint_result;
     };
+
+    // ^^^ decoders ^^^ / vvv codepoint vvv
 
     class codepoint
     {
@@ -317,6 +321,14 @@ namespace papilio::utf
             }
 
             return 1;
+        }
+
+        // Locale independent APIs
+
+        [[nodiscard]]
+        constexpr bool is_digit() const noexcept
+        {
+            return utf::is_digit(*this);
         }
 
     private:

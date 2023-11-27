@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <papilio/macros.hpp>
-#include <papilio/detail/detail.hpp>
+#include <papilio/detail/compat.hpp>
 #include <papilio/type.hpp>
 
 
@@ -432,6 +432,14 @@ namespace papilio::utf
 
 #undef PAPILIO_UTF_INDEX_OFFSET
 #undef PAPILIO_UTF_INDEX_OFFSET_R
+
+    // vvv locale independent APIs vvv
+
+    [[nodiscard]]
+    constexpr bool is_digit(char32_t ch) noexcept
+    {
+        return U'0' <= ch && ch <= U'9';
+    }
 
     inline namespace literals {}
 }

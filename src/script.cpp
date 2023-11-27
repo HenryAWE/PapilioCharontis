@@ -1,7 +1,7 @@
 #include <papilio/script.hpp>
 #include <algorithm>
 #include <papilio/core.hpp>
-#include <papilio/detail/detail.hpp>
+#include <papilio/detail/compat.hpp>
 
 
 namespace papilio::script
@@ -303,7 +303,7 @@ namespace papilio::script
                 break;
 
             default:
-                papilio::detail::unreachable();
+                PAPILIO_UNREACHABLE();
             }
         }
     end_loop:
