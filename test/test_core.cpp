@@ -176,22 +176,22 @@ TEST(TestCore, FormatArgHandle)
 
 namespace test_core
 {
-    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<0, 0>>);
-    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<1, 0>>);
-    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<0, 1>>);
-    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<1, 1>>);
+    static_assert(papilio::format_args<papilio::static_format_args<0, 0>>);
+    static_assert(papilio::format_args<papilio::static_format_args<1, 0>>);
+    static_assert(papilio::format_args<papilio::static_format_args<0, 1>>);
+    static_assert(papilio::format_args<papilio::static_format_args<1, 1>>);
 }
 
-TEST(TestCore, MutableFormatArgStore)
+TEST(format_args, mutable)
 {
     using namespace papilio;
 
-    static_assert(format_arg_store<mutable_format_args>);
+    static_assert(format_args<mutable_format_args>);
 
     {
         mutable_format_args store(1, "three"_a = 3, 2);
 
-        EXPECT_EQ(store.size(), 2);
+        EXPECT_EQ(store.indexed_size(), 2);
         EXPECT_EQ(store.named_size(), 1);
 
         EXPECT_EQ(get<int>(store[0]), 1);
@@ -200,12 +200,12 @@ TEST(TestCore, MutableFormatArgStore)
 
         store.clear();
 
-        EXPECT_EQ(store.size(), 0);
+        EXPECT_EQ(store.indexed_size(), 0);
         EXPECT_EQ(store.named_size(), 0);
 
         store.push('a', 'b', "c"_a = 'c', "d"_a = 'd');
 
-        EXPECT_EQ(store.size(), 2);
+        EXPECT_EQ(store.indexed_size(), 2);
         EXPECT_EQ(store.named_size(), 2);
 
         EXPECT_EQ(get<utf::codepoint>(store[0]), U'a');
@@ -214,19 +214,19 @@ TEST(TestCore, MutableFormatArgStore)
         EXPECT_EQ(get<utf::codepoint>(store["d"]), U'd');
     }
 }
-TEST(TestCore, DynamicFormatArgStore)
+
+TEST(format_args, dynamic)
 {
     using namespace papilio;
 
-    static_assert(format_arg_store<dynamic_format_args>);
+    static_assert(format_args<dynamic_format_args>);
 
-    {
-        mutable_format_args underlying_store;
-        dynamic_format_args dyn_store(underlying_store);
+    mutable_format_args underlying_fmt_args;
+    dynamic_format_args dyn_fmt_args(underlying_fmt_args);
 
-        EXPECT_EQ(&dyn_store.to_underlying(), &underlying_store);
-    }
+    EXPECT_EQ(&dyn_fmt_args.cast_to<mutable_format_args>(), &underlying_fmt_args);
 }
+
 TEST(TestCore, FormatContext)
 {
     using namespace papilio;
@@ -240,7 +240,7 @@ TEST(TestCore, FormatContext)
         );
 
         using context_traits = format_context_traits<decltype(ctx)>;
-        EXPECT_EQ(&context_traits::get_store(ctx).to_underlying(), &store);
+        EXPECT_EQ(&context_traits::get_store(ctx).cast_to<mutable_format_args>(), &store);
 
         context_traits::append(ctx, "1234");
         EXPECT_EQ(result, "1234");
@@ -264,7 +264,7 @@ TEST(TestCore, FormatContext)
         dynamic_format_context dyn_ctx(ctx);
 
         using context_traits = format_context_traits<decltype(dyn_ctx)>;
-        EXPECT_EQ(&context_traits::get_store(dyn_ctx).to_underlying(), &store);
+        EXPECT_EQ(&context_traits::get_store(dyn_ctx).cast_to<mutable_format_args>(), &store);
 
         context_traits::append(dyn_ctx, "1234");
         EXPECT_EQ(result, "1234");

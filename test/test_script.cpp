@@ -5,60 +5,6 @@
 #include <papilio/papilio.hpp>
 
 
-TEST(TestScript, Variable)
-{
-    using namespace papilio;
-    using namespace script;
-
-    static_assert(is_variable_type_v<variable::int_type>);
-    static_assert(is_variable_type_v<variable::float_type>);
-    static_assert(!is_variable_type_v<variable::string_type>);
-    static_assert(is_variable_type_v<utf::string_container>);
-
-    {
-        variable var = 10;
-        EXPECT_TRUE(var.holds<variable::int_type>());
-        EXPECT_EQ(var.get<variable::int_type>(), 10);
-    }
-
-    {
-        variable var = "test";
-        EXPECT_TRUE(var.holds<utf::string_container>());
-        EXPECT_EQ(var.get<utf::string_container>(), "test");
-        EXPECT_TRUE(var.as<bool>());
-    }
-
-    {
-        variable var = std::string("test");
-        EXPECT_TRUE(var.holds<utf::string_container>());
-        EXPECT_EQ(var.get<utf::string_container>(), "test");
-        EXPECT_TRUE(var.as<bool>());
-    }
-
-    {
-        variable var1 = 2;
-        variable var2 = 2.1f;
-        EXPECT_LT(var1, var2);
-    }
-
-    {
-        variable var1 = 1.0f;
-        variable var2 = 1.0f;
-        EXPECT_EQ(var1, var2);
-    }
-
-    {
-        variable var1 = 1.0f;
-        variable var2 = 1;
-        EXPECT_EQ(var1, var2);
-    }
-
-    {
-        variable var1 = "1";
-        variable var2 = 1;
-        EXPECT_NE(var1, var2);
-    }
-}
 TEST(TestScript, Lexer)
 {
     using namespace papilio;

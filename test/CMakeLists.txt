@@ -24,6 +24,8 @@ define_papilio_test(test_locale)
 
 define_papilio_test(test_print)
 
+define_papilio_test(test_script_variable)
+
 define_papilio_test(test_script)
 
 define_papilio_test(test_type)

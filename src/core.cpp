@@ -172,7 +172,7 @@ namespace papilio
 
         bool format_args_base::check(size_type i) const noexcept
         {
-            return i < size();
+            return i < indexed_size();
         }
         bool format_args_base::check(const indexing_value& idx) const noexcept
         {
@@ -227,10 +227,5 @@ namespace papilio
     bool mutable_format_args::check(string_view_type k) const noexcept
     {
         return m_named_args.contains(k);
-    }
-
-    format_parse_context::format_parse_context(string_view_type str, const dynamic_format_args& store)
-        : m_view(str), m_store(store) {
-        m_it = str.begin();
     }
 }

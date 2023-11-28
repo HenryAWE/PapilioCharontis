@@ -849,7 +849,7 @@ namespace papilio::script
     namespace detail
     {
         template <typename T>
-        concept not_foramt_arg_store = !format_arg_store<T>;
+        concept not_foramt_arg_store = !format_args<T>;
     }
 
     class interpreter
