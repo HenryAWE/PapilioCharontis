@@ -2,6 +2,53 @@
 #include <vector>
 #include <papilio/utf/string.hpp>
 
+// Peach Emoji, CJK Unified Ideographs 4E00, Capital A with Diaeresis, A
+// "🍑一ÄA"
+#define PAPILIO_TEST_UTF_STRING_TEST_DATA(prefix, suffix) prefix##"\U0001f351\u4e00\u00c4A"##suffix
+
+
+namespace test_utf_string
+{
+    template <typename CharT>
+    void test_string_ref_index(papilio::utf::basic_string_ref<CharT> ref)
+    {
+        using papilio::reverse_index;
+
+        EXPECT_EQ(ref[0], U'\U0001f351');
+        EXPECT_EQ(ref[1], U'\u4e00');
+        EXPECT_EQ(ref[2], U'\u00c4');
+        EXPECT_EQ(ref[3], U'A');
+
+        EXPECT_EQ(ref.index(reverse_index, 3), U'\U0001f351');
+        EXPECT_EQ(ref.index(reverse_index, 2), U'\u4e00');
+        EXPECT_EQ(ref.index(reverse_index, 1), U'\u00c4');
+        EXPECT_EQ(ref.index(reverse_index, 0), U'A');
+
+         EXPECT_THROW((void)ref.at(4), std::out_of_range);
+         EXPECT_THROW((void)ref.at(reverse_index, 4), std::out_of_range);
+         EXPECT_THROW((void)ref.at(-1), std::out_of_range);
+         EXPECT_THROW((void)ref.at(reverse_index, -1), std::out_of_range);
+    }
+
+    template <typename CharT>
+    void test_string_ref_interoperability(papilio::utf::basic_string_ref<CharT> ref)
+    {
+        // GoogleTest doesn't support char8_t
+        EXPECT_TRUE(ref.to_u8string() == PAPILIO_TEST_UTF_STRING_TEST_DATA(u8,));
+        EXPECT_EQ(ref.to_u16string(), PAPILIO_TEST_UTF_STRING_TEST_DATA(u,));
+        EXPECT_EQ(ref.to_u32string(), PAPILIO_TEST_UTF_STRING_TEST_DATA(U,));
+        EXPECT_EQ(ref.to_wstring(), PAPILIO_TEST_UTF_STRING_TEST_DATA(L,));
+
+        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(,));
+        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(,), ref);
+        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(u,));
+        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(u,), ref);
+        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(U,));
+        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(U,), ref);
+        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(L,));
+        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(L,), ref);
+    }
+}
 
 TEST(basic_string_ref, u8string_ref)
 {
@@ -9,40 +56,30 @@ TEST(basic_string_ref, u8string_ref)
     using namespace utf;
 
     {
-        u8string_ref ref = u8"🔊我ÄA"_sr;
+        u8string_ref ref = PAPILIO_TEST_UTF_STRING_TEST_DATA(u8, _sr);
+        EXPECT_EQ(ref.size(), 10);
         EXPECT_EQ(ref.length(), 4);
 
-        EXPECT_EQ(ref.index(0), U'🔊');
-        EXPECT_EQ(ref.index(reverse_index, 3), U'🔊');
+        test_utf_string::test_string_ref_index(ref);
 
-        EXPECT_THROW((void)ref.at(4), std::out_of_range);
-        EXPECT_THROW((void)ref.at(reverse_index, 4), std::out_of_range);
+        test_utf_string::test_string_ref_interoperability(ref);
 
-        EXPECT_EQ(ref.to_u16string(), u"🔊我ÄA");
-        EXPECT_EQ(ref.to_u32string(), U"🔊我ÄA");
-        EXPECT_EQ(ref.to_wstring(), L"🔊我ÄA");
-
-        EXPECT_EQ(ref, u"🔊我ÄA");
-        EXPECT_EQ(u"🔊我ÄA", ref);
-        EXPECT_EQ(ref, U"🔊我ÄA");
-        EXPECT_EQ(U"🔊我ÄA", ref);
-
-        EXPECT_EQ(ref.substr(0, 2), u8"🔊我");
+        EXPECT_EQ(ref.substr(0, 2), u8"\U0001f351\u4e00");
         EXPECT_TRUE(ref.substr(4, 2).empty());
         EXPECT_THROW((void)ref.substr(5, 2), std::out_of_range);
         EXPECT_TRUE(ref.substr<substr_behavior::empty_string>(5, 2).empty());
     }
 
     {
-        u8string_ref ref = u8"🔊我ÄA";
+        u8string_ref ref = u8"\U0001f351\u4e00\u00c4A";
         ref.remove_prefix(2);
-        EXPECT_EQ(ref, u8"ÄA");
+        EXPECT_EQ(ref, u8"\u00c4A");
     }
 
     {
-        u8string_ref ref = u8"🔊我ÄA";
+        u8string_ref ref = u8"\U0001f351\u4e00\u00c4A";
         ref.remove_suffix(2);
-        EXPECT_EQ(ref, u8"🔊我");
+        EXPECT_EQ(ref, u8"\U0001f351\u4e00");
     }
 
     {
@@ -112,21 +149,15 @@ TEST(basic_string_ref, u16string_ref)
     using namespace utf;
 
     {
-        u16string_ref ref = u"🔊我"_sr;
-        EXPECT_EQ(ref.length(), 2);
-        EXPECT_EQ(ref.size(), 3);
+        u16string_ref ref = PAPILIO_TEST_UTF_STRING_TEST_DATA(u, _sr);
+        EXPECT_EQ(ref.size(), 5);
+        EXPECT_EQ(ref.length(), 4);
 
-        EXPECT_EQ(ref[0], U'🔊');
-        EXPECT_EQ(ref[1], U'我');
-        EXPECT_EQ(ref.index(reverse_index, 1), U'🔊');
-        EXPECT_EQ(ref.index(reverse_index, 0), U'我');
+        test_utf_string::test_string_ref_index(ref);
 
-        EXPECT_TRUE(ref.to_u8string() == u8"🔊我"); // GoogleTest doesn't support u8string
-        EXPECT_EQ(ref.to_u16string(), u"🔊我");
-        EXPECT_EQ(ref.to_u32string(), U"🔊我");
-        EXPECT_EQ(ref.to_wstring(), L"🔊我");
+        test_utf_string::test_string_ref_interoperability(ref);
 
-        auto it = ref.find(U'我');
+        auto it = ref.find(U'\u4e00');
         EXPECT_EQ(it, ref.begin() + 1);
     }
 }
@@ -137,21 +168,15 @@ TEST(basic_string_ref, u32string_ref)
     using namespace utf;
 
     {
-        u32string_ref ref = U"🔊我"_sr;
-        EXPECT_EQ(ref.length(), 2);
-        EXPECT_EQ(ref.size(), 2);
+        u32string_ref ref = PAPILIO_TEST_UTF_STRING_TEST_DATA(U, _sr);
+        EXPECT_EQ(ref.size(), 4);
+        EXPECT_EQ(ref.length(), 4);
 
-        EXPECT_EQ(ref[0], U'🔊');
-        EXPECT_EQ(ref[1], U'我');
-        EXPECT_EQ(ref.index(reverse_index, 1), U'🔊');
-        EXPECT_EQ(ref.index(reverse_index, 0), U'我');
+        test_utf_string::test_string_ref_index(ref);
 
-        EXPECT_TRUE(ref.to_u8string() == u8"🔊我"); // GoogleTest doesn't support u8string
-        EXPECT_EQ(ref.to_u16string(), u"🔊我");
-        EXPECT_EQ(ref.to_u32string(), U"🔊我");
-        EXPECT_EQ(ref.to_wstring(), L"🔊我");
+        test_utf_string::test_string_ref_interoperability(ref);
 
-        auto it = ref.find(U'我');
+        auto it = ref.find(U'\u4e00');
         EXPECT_EQ(it, ref.begin() + 1);
     }
 }
@@ -162,24 +187,18 @@ TEST(basic_string_ref, wstring_ref)
     using namespace utf;
 
     {
-        wstring_ref ref = L"🔊我"_sr;
-        EXPECT_EQ(ref.length(), 2);
+        wstring_ref ref = PAPILIO_TEST_UTF_STRING_TEST_DATA(L, _sr);
         if constexpr(sizeof(wchar_t) == 2)
-            EXPECT_EQ(ref.size(), 3);
+            EXPECT_EQ(ref.size(), 5);
         else
-            EXPECT_EQ(ref.size(), 2);
+            EXPECT_EQ(ref.size(), 4);
+        EXPECT_EQ(ref.length(), 4);
 
-        EXPECT_EQ(ref[0], U'🔊');
-        EXPECT_EQ(ref[1], U'我');
-        EXPECT_EQ(ref.index(reverse_index, 1), U'🔊');
-        EXPECT_EQ(ref.index(reverse_index, 0), U'我');
+        test_utf_string::test_string_ref_index(ref);
 
-        EXPECT_TRUE(ref.to_u8string() == u8"🔊我"); // GoogleTest doesn't support u8string
-        EXPECT_EQ(ref.to_u16string(), u"🔊我");
-        EXPECT_EQ(ref.to_u32string(), U"🔊我");
-        EXPECT_EQ(ref.to_wstring(), L"🔊我");
+        test_utf_string::test_string_ref_interoperability(ref);
 
-        auto it = ref.find(U'我');
+        auto it = ref.find(U'\u4e00');
         EXPECT_EQ(it, ref.begin() + 1);
     }
 }

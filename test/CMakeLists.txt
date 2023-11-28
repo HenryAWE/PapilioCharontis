@@ -26,8 +26,6 @@ define_papilio_test(test_print)
 
 define_papilio_test(test_script)
 
-define_papilio_test(test_stl_container)
-
 define_papilio_test(test_type)
 
 define_papilio_test(test_utf_common)

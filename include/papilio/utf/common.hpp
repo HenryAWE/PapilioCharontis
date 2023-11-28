@@ -338,7 +338,7 @@ namespace papilio::utf
             std::size_t ch_count = 0;
             for(std::size_t i = 0; i < max_chars; ++i)
             {
-                if(len != 0)
+                if(len == 2)
                 {
                     --len;
                     continue;
@@ -348,7 +348,7 @@ namespace papilio::utf
                     return i;
                 }
 
-                std::uint8_t ch = str[i];
+                std::uint16_t ch = static_cast<std::uint16_t>(str[i]);
                 if(is_low_surrogate(ch))
                 {
                     return npos;
@@ -382,7 +382,7 @@ namespace papilio::utf
         template <char_32b CharT>
         constexpr std::size_t index_offset_impl(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
         {
-            return idx <= max_chars ? idx : npos;
+            return idx < max_chars ? idx : npos;
         }
         template <char_32b CharT>
         constexpr std::size_t index_offset_impl_r(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept

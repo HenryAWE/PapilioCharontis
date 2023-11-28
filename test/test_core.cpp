@@ -4,15 +4,25 @@
 #include <papilio/core.hpp>
 
 
-TEST(TestCore, AttributeName)
+TEST(attribute_name, compare)
 {
     using namespace std::literals;
-    using namespace papilio;
-    
-    auto attr = attribute_name("name");
+    using papilio::attribute_name;
 
+    auto attr = attribute_name("name");
+    EXPECT_FALSE(attr.name().has_ownership());
+
+    EXPECT_EQ("name", attr);
+    EXPECT_EQ(attr, "name");
+    EXPECT_EQ("name"s, attr);
+    EXPECT_EQ(attr, "name"s);
     EXPECT_EQ("name"sv, attr);
     EXPECT_EQ(attr, "name"sv);
+}
+
+TEST(attribute_name, validate)
+{
+    using papilio::attribute_name;
 
     EXPECT_TRUE(attribute_name::validate("name"));
     EXPECT_TRUE(attribute_name::validate("_name"));
@@ -24,6 +34,7 @@ TEST(TestCore, AttributeName)
     EXPECT_FALSE(attribute_name::validate("$name"));
     EXPECT_FALSE(attribute_name::validate("!name"));
 }
+
 TEST(TestCore, FormatArg)
 {
     using namespace std::literals;
@@ -163,15 +174,14 @@ TEST(TestCore, FormatArgHandle)
     }
 }
 
-TEST(TestCore, StaticFormatArgStore)
+namespace test_core
 {
-    using namespace papilio;
-
-    static_assert(format_arg_store<static_format_arg_store<0, 0>>);
-    static_assert(format_arg_store<static_format_arg_store<1, 0>>);
-    static_assert(format_arg_store<static_format_arg_store<0, 1>>);
-    static_assert(format_arg_store<static_format_arg_store<1, 1>>);
+    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<0, 0>>);
+    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<1, 0>>);
+    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<0, 1>>);
+    static_assert(papilio::format_arg_store<papilio::static_format_arg_store<1, 1>>);
 }
+
 TEST(TestCore, MutableFormatArgStore)
 {
     using namespace papilio;
