@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <papilio/utf/common.hpp>
+#include <papilio/utf/stralgo.hpp>
 
 
 TEST(strlen, char8_t)

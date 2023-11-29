@@ -7,7 +7,7 @@
 #include <span>
 #include <string>
 #include <array>
-#include "common.hpp"
+#include "stralgo.hpp"
 
 #ifdef PAPILIO_COMPILER_MSVC
 #   pragma warning(push)

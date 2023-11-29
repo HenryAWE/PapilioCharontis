@@ -9,25 +9,53 @@
 
 namespace test_utf_string
 {
+    static_assert(papilio::string_like<papilio::utf::string_ref>);
+    static_assert(papilio::string_like<papilio::utf::string_container>);
+
     template <typename CharT>
     void test_string_ref_index(papilio::utf::basic_string_ref<CharT> ref)
     {
-        using papilio::reverse_index;
+        using namespace papilio;
 
         EXPECT_EQ(ref[0], U'\U0001f351');
         EXPECT_EQ(ref[1], U'\u4e00');
         EXPECT_EQ(ref[2], U'\u00c4');
         EXPECT_EQ(ref[3], U'A');
 
+        EXPECT_EQ(ref.index(0), U'\U0001f351');
+        EXPECT_EQ(ref.index(1), U'\u4e00');
+        EXPECT_EQ(ref.index(2), U'\u00c4');
+        EXPECT_EQ(ref.index(3), U'A');
+
         EXPECT_EQ(ref.index(reverse_index, 3), U'\U0001f351');
         EXPECT_EQ(ref.index(reverse_index, 2), U'\u4e00');
         EXPECT_EQ(ref.index(reverse_index, 1), U'\u00c4');
         EXPECT_EQ(ref.index(reverse_index, 0), U'A');
 
-         EXPECT_THROW((void)ref.at(4), std::out_of_range);
-         EXPECT_THROW((void)ref.at(reverse_index, 4), std::out_of_range);
-         EXPECT_THROW((void)ref.at(-1), std::out_of_range);
-         EXPECT_THROW((void)ref.at(reverse_index, -1), std::out_of_range);
+        EXPECT_EQ(ref.at(0), U'\U0001f351');
+        EXPECT_EQ(ref.at(1), U'\u4e00');
+        EXPECT_EQ(ref.at(2), U'\u00c4');
+        EXPECT_EQ(ref.at(3), U'A');
+
+        EXPECT_EQ(ref.at(reverse_index, 3), U'\U0001f351');
+        EXPECT_EQ(ref.at(reverse_index, 2), U'\u4e00');
+        EXPECT_EQ(ref.at(reverse_index, 1), U'\u00c4');
+        EXPECT_EQ(ref.at(reverse_index, 0), U'A');
+
+        EXPECT_EQ(ref.index_or(0, utf::codepoint()), U'\U0001f351');
+        EXPECT_EQ(ref.index_or(1, utf::codepoint()), U'\u4e00');
+        EXPECT_EQ(ref.index_or(2, utf::codepoint()), U'\u00c4');
+        EXPECT_EQ(ref.index_or(3, utf::codepoint()), U'A');
+
+        EXPECT_THROW((void)ref.at(4), std::out_of_range);
+        EXPECT_THROW((void)ref.at(reverse_index, 4), std::out_of_range);
+        EXPECT_THROW((void)ref.at(-1), std::out_of_range);
+        EXPECT_THROW((void)ref.at(reverse_index, -1), std::out_of_range);
+
+        EXPECT_EQ(ref.index_or(4, utf::codepoint(U'?')), U'?');
+        EXPECT_EQ(ref.index_or(reverse_index, 4, utf::codepoint(U'?')), U'?');
+        EXPECT_EQ(ref.index_or(-1, utf::codepoint(U'?')), U'?');
+        EXPECT_EQ(ref.index_or(reverse_index, -1, utf::codepoint(U'?')), U'?');
     }
 
     template <typename CharT>

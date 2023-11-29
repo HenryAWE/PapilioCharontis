@@ -28,9 +28,9 @@ define_papilio_test(test_script_variable)
 
 define_papilio_test(test_script)
 
-define_papilio_test(test_type)
+define_papilio_test(test_utility)
 
-define_papilio_test(test_utf_common)
+define_papilio_test(test_utf_stralgo)
 
 define_papilio_test(test_utf_codepoint)
 

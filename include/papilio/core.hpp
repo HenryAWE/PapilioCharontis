@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <typeinfo>
 #include "macros.hpp"
-#include "type.hpp"
+#include "utility.hpp"
 #include "container.hpp"
 #include "utf/utf.hpp"
 #include "error.hpp"
@@ -945,8 +945,8 @@ namespace papilio
     public:
         dynamic_format_args() = delete;
         constexpr dynamic_format_args(const dynamic_format_args&) noexcept = default;
-        constexpr dynamic_format_args(const detail::format_args_base& store) noexcept
-            : m_ptr(&store)
+        constexpr dynamic_format_args(const detail::format_args_base& args) noexcept
+            : m_ptr(&args)
         {
             PAPILIO_ASSERT(m_ptr != this); // avoid circular reference
         }
@@ -1096,31 +1096,37 @@ namespace papilio
     public:
         using char_type = char;
         using iterator = OutputIt;
-        using store_type = dynamic_format_args;
+        using format_args_type = dynamic_format_args;
 
-        basic_format_context(iterator it, const store_type& store)
-            : m_out(std::move(it)), m_store(store) {}
-        basic_format_context(const std::locale& loc, iterator it, const store_type& store)
-            : m_loc(loc), m_out(std::move(it)), m_store(store) {}
+        basic_format_context(iterator it, dynamic_format_args args)
+            : m_out(std::move(it)), m_args(args) {}
+        basic_format_context(const std::locale& loc, iterator it, dynamic_format_args args)
+            : m_loc(loc), m_out(std::move(it)), m_args(args) {}
 
+        [[nodiscard]]
         iterator out()
         {
             return m_out;
         }
+
         void advance_to(iterator it)
         {
             m_out = std::move(it);
         }
 
-        const store_type& get_store() const noexcept
+        [[nodiscard]]
+        const dynamic_format_args& get_args() const noexcept
         {
-            return m_store;
+            return m_args;
         }
+
+        [[nodiscard]]
         std::locale getloc() const
         {
             return m_loc.get();
         }
 
+        [[nodiscard]]
         locale_ref getloc_ref() const noexcept
         {
             return m_loc;
@@ -1128,98 +1134,208 @@ namespace papilio
 
     private:
         iterator m_out;
-        store_type m_store;
+        dynamic_format_args m_args;
         locale_ref m_loc;
     };
-
-    namespace detail
-    {
-        class dynamic_format_context_impl_base
-        {
-        public:
-            using char_type = char;
-
-            virtual void push_back(char_type ch) = 0;
-            virtual const dynamic_format_args& get_store() const noexcept = 0;
-            virtual locale_ref getloc_ref() const noexcept = 0;
-
-            std::locale getloc() const
-            {
-                return getloc_ref().get();
-            }
-        };
-        template <typename OutputIt>
-        class dynamic_format_context_impl final : public dynamic_format_context_impl_base
-        {
-        public:
-            using iterator = OutputIt;
-            using store_type = dynamic_format_args;
-
-            dynamic_format_context_impl(basic_format_context<OutputIt>& ctx) noexcept
-                : m_out(ctx.out()), m_store(ctx.get_store()), m_loc(ctx.getloc_ref()) {}
-
-            void push_back(char_type ch) override
-            {
-                *m_out = ch;
-                ++m_out;
-            }
-            const dynamic_format_args& get_store() const noexcept override
-            {
-                return m_store;
-            }
-            locale_ref getloc_ref() const noexcept override
-            {
-                return m_loc;
-            }
-        private:
-            iterator m_out;
-            dynamic_format_args m_store;
-            locale_ref m_loc;
-        };
-    }
 
     class dynamic_format_context
     {
     public:
         using char_type = char;
         using iterator = std::back_insert_iterator<dynamic_format_context>;
-        using store_type = dynamic_format_args;
+        using format_args_type = dynamic_format_args;
         using value_type = char_type;
 
+    private:
+        class handle_impl_base
+        {
+        public:
+            virtual ~handle_impl_base() = default;
+
+            virtual void write(char_type ch) = 0;
+
+            virtual const dynamic_format_args& get_args() const noexcept = 0;
+
+            virtual locale_ref getloc_ref() const noexcept = 0;
+
+            virtual std::size_t size_bytes() const noexcept = 0;
+            // Copy handle data to uninitialized memory
+            virtual void copy(handle_impl_base* mem) const = 0;
+        };
+
+        template <typename OutputIt>
+        class handle_impl final : public handle_impl_base
+        {
+        public:
+            handle_impl(OutputIt it, dynamic_format_args args, locale_ref loc) noexcept
+                : m_out(std::move(it)), m_args(args), m_loc(loc) {}
+
+            void write(char_type ch) override
+            {
+                *m_out = ch;
+                ++m_out;
+            }
+
+            const dynamic_format_args& get_args() const noexcept override
+            {
+                return m_args;
+            }
+
+            locale_ref getloc_ref() const noexcept override
+            {
+                return m_loc;
+            }
+
+            std::size_t size_bytes() const noexcept override
+            {
+                return sizeof(*this);
+            }
+            void copy(handle_impl_base* mem) const override
+            {
+                new(mem) handle_impl(m_out, m_args, m_loc);
+            }
+
+        private:
+            OutputIt m_out;
+            dynamic_format_args m_args;
+            locale_ref m_loc;
+        };
+
+        class handle
+        {
+        public:
+            handle() = delete;
+            handle(const handle& other)
+            {
+                other.copy(*this);
+            }
+            template <typename OutputIt>
+            handle(basic_format_context<OutputIt>& ctx)
+            {
+                construct<OutputIt>(ctx);
+            }
+
+            ~handle()
+            {
+                destroy();
+                if(m_use_ptr)
+                    deallocate();
+            }
+
+            handle_impl_base* operator->() const
+            {
+                return get();
+            }
+
+        private:
+            static constexpr std::size_t storage_size = 48;
+
+            union handle_data_t
+            {
+                handle_impl_base* ptr;
+                mutable static_storage<storage_size> storage;
+            };
+
+            handle_data_t m_data;
+            bool m_use_ptr = false;
+
+            handle_impl_base* get() const noexcept
+            {
+                if(m_use_ptr)
+                    return m_data.ptr;
+                else
+                    return reinterpret_cast<handle_impl_base*>(m_data.storage.data());
+            }
+
+            void allocate(std::size_t mem_size)
+            {
+                m_use_ptr = true;
+                m_data.ptr = reinterpret_cast<handle_impl_base*>(new std::byte[mem_size]);
+            }
+
+            void deallocate() noexcept
+            {
+                PAPILIO_ASSERT(m_use_ptr);
+                delete[] reinterpret_cast<std::byte*>(m_data.ptr);
+            }
+
+            template <typename OutputIt>
+            void construct(basic_format_context<OutputIt>& ctx)
+            {
+                if constexpr(sizeof(ctx) > storage_size)
+                {
+                    allocate(sizeof(handle_impl<OutputIt>));
+                    m_data.ptr = new handle_impl<OutputIt>(
+                        ctx.out(), ctx.get_args(), ctx.getloc_ref()
+                    );
+                }
+                else
+                {
+                    new(m_data.storage.data()) handle_impl<OutputIt>(
+                        ctx.out(), ctx.get_args(), ctx.getloc_ref()
+                    );
+                }
+            }
+
+            // Copy this handle to another uninitialized handle
+            void copy(handle& dst) const
+            {
+                PAPILIO_ASSERT(!dst.m_use_ptr);
+
+                handle_impl_base* ptr = get();
+                if(std::size_t size = ptr->size_bytes(); size > storage_size)
+                    dst.allocate(size);
+                ptr->copy(dst.get());
+            }
+
+            void destroy() noexcept
+            {
+                get()->~handle_impl_base();
+            }
+        };
+
+    public:
         dynamic_format_context() = delete;
+        dynamic_format_context(const dynamic_format_context&) = default;
         template <typename OutputIt>
         dynamic_format_context(basic_format_context<OutputIt>& ctx)
-            : m_impl(std::make_unique<detail::dynamic_format_context_impl<OutputIt>>(ctx)) {}
+            : m_handle(ctx) {}
 
+        [[nodiscard]]
         iterator out()
         {
             return std::back_inserter(*this);
         }
-        void advance_to(iterator) {}
-
-        const store_type& get_store() const noexcept
+        void advance_to(iterator)
         {
-            return m_impl->get_store();
+            PAPILIO_UNREACHABLE();
+        }
+
+        [[nodiscard]]
+        const dynamic_format_args& get_args() const noexcept
+        {
+            return m_handle->get_args();
         }
 
         void push_back(char_type ch)
         {
-            m_impl->push_back(ch);
+            m_handle->write(ch);
         }
 
+        [[nodiscard]]
         std::locale getloc() const
         {
-            return m_impl->getloc();
+            return getloc_ref();
         }
 
-        // internal API
+        [[nodiscard]]
         locale_ref getloc_ref() const noexcept
         {
-            return m_impl->getloc_ref();
+            return m_handle->getloc_ref();
         }
 
     private:
-        std::unique_ptr<detail::dynamic_format_context_impl_base> m_impl;
+        handle m_handle;
     };
 
     template <typename Context>
@@ -1231,7 +1347,7 @@ namespace papilio
         using string_view_type = std::basic_string_view<char_type>;
         using context_type = Context;
         using iterator = typename Context::iterator;
-        using store_type = typename Context::store_type;
+        using format_args_type = typename Context::format_args_type;
 
         format_context_traits() = delete;
 
@@ -1246,9 +1362,9 @@ namespace papilio
         }
 
         [[nodiscard]]
-        static const store_type& get_store(context_type& ctx) noexcept
+        static const format_args_type& get_args(context_type& ctx) noexcept
         {
-            return ctx.get_store();
+            return ctx.get_args();
         }
 
         template <typename InputIt>

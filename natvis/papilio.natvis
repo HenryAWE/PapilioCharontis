@@ -154,7 +154,7 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
             0u
         "/>
         <DisplayString Condition="size() != 0">{value()} '{m_data, [size()]s8b}'</DisplayString>
-        <DisplayString Condition="size() == 0">invalid</DisplayString>
+        <DisplayString Condition="size() == 0">[invalid]</DisplayString>
         <StringView Condition="size() != 0">m_data, [size()]</StringView>
         <Expand>
             <Item Name="[value]" Condition="size() != 0">value(), X</Item>
@@ -218,14 +218,32 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
             (m_data._Head.isShortString() ? m_data._Head._Mypair._Myval2._Bx._Buf : m_data._Head._Mypair._Myval2._Bx._Ptr) :
             m_data._Tail._Head.data()
         "/>
+        <Intrinsic Name="has_ownership" Expression="m_data.index() == 1" />
         <DisplayString>{data(), [size()]}</DisplayString>
         <StringView>data(), [size()]</StringView>
         <Expand>
             <Item Name="[size]" ExcludeView="simple">size()</Item>
+            <Item Name="[has_ownership]" ExcludeView="simple">has_ownership()</Item>
             <ArrayItems>
                 <Size>size()</Size>
                 <ValuePointer>data()</ValuePointer>
             </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="papilio::script::basic_variable&lt;*&gt;">
+        <Intrinsic Name="index" Expression="m_var.index()" />
+        <DisplayString Condition="index() &lt; 0">[invalid]</DisplayString>
+        <DisplayString Condition="index() == 0" Optional="true">{m_var._Head}</DisplayString>
+        <DisplayString Condition="index() == 1" Optional="true">{m_var._Tail._Head}</DisplayString>
+        <DisplayString Condition="index() == 2" Optional="true">{m_var._Tail._Tail._Head}</DisplayString>
+        <DisplayString Condition="index() == 3" Optional="true">{m_var._Tail._Tail._Tail._Head}</DisplayString>
+        <Expand>
+            <Item Name="index">index()</Item>
+            <Item Name="[value]" Condition="index() == 0" Optional="true">m_var._Head</Item>
+            <Item Name="[value]" Condition="index() == 1" Optional="true">m_var._Tail._Head</Item>
+            <Item Name="[value]" Condition="index() == 2" Optional="true">m_var._Tail._Tail._Head</Item>
+            <Item Name="[value]" Condition="index() == 3" Optional="true">m_var._Tail._Tail._Tail._Head</Item>
         </Expand>
     </Type>
 </AutoVisualizer>

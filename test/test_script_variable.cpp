@@ -135,6 +135,16 @@ TEST(variable, access)
     using namespace std::literals;
 
     {
+        variable var = true;
+        EXPECT_EQ(var.to_variant().index(), 0);
+        EXPECT_EQ(std::as_const(var).to_variant().index(), 0);
+
+        ASSERT_TRUE(var.get_if<bool>());
+        EXPECT_TRUE(*var.get_if<bool>());
+        EXPECT_TRUE(var.get<bool>());
+    }
+
+    {
         variable var = 10;
         ASSERT_TRUE(var.get_if<variable::int_type>());
         EXPECT_EQ(*var.get_if<variable::int_type>(), 10);

@@ -227,56 +227,109 @@ TEST(format_args, dynamic)
     EXPECT_EQ(&dyn_fmt_args.cast_to<mutable_format_args>(), &underlying_fmt_args);
 }
 
-TEST(TestCore, FormatContext)
+TEST(format_context, basic)
 {
     using namespace papilio;
 
+    std::string result;
+    mutable_format_args store;
+    basic_format_context ctx(
+        std::back_inserter(result),
+        store
+    );
+
+    using context_traits = format_context_traits<decltype(ctx)>;
+    EXPECT_EQ(&context_traits::get_args(ctx).cast_to<mutable_format_args>(), &store);
+
+    context_traits::append(ctx, "1234");
+    EXPECT_EQ(result, "1234");
+
+    result.clear();
+    context_traits::append(ctx, '1', 4);
+    EXPECT_EQ(result, "1111");
+
+    result.clear();
+    context_traits::append(ctx, U'\u00c4', 2);
+    EXPECT_EQ(result, (const char*)u8"\u00c4\u00c4");
+}
+
+TEST(format_context, dynamic_small)
+{
+    using namespace papilio;
+
+    std::string result;
+    mutable_format_args store;
+    basic_format_context ctx(
+        std::back_inserter(result),
+        store
+    );
+    dynamic_format_context dyn_ctx(ctx);
+
+    using context_traits = format_context_traits<decltype(dyn_ctx)>;
+    EXPECT_EQ(&context_traits::get_args(dyn_ctx).cast_to<mutable_format_args>(), &store);
+
+    context_traits::append(dyn_ctx, "1234");
+    EXPECT_EQ(result, "1234");
+
+    result.clear();
+    context_traits::append(dyn_ctx, '1', 4);
+    EXPECT_EQ(result, "1111");
+
+    result.clear();
+    context_traits::append(dyn_ctx, U'\u00c4', 2);
+    EXPECT_EQ(result, (const char*)u8"\u00c4\u00c4");
+
+    dynamic_format_context new_dyn_ctx(dyn_ctx);
+    result.clear();
+    context_traits::append(new_dyn_ctx, "new");
+    EXPECT_EQ(result, "new");
+}
+
+namespace test_core
+{
+    class big_insert_iterator : public std::back_insert_iterator<std::string>
     {
-        std::string result;
-        mutable_format_args store;
-        basic_format_context ctx(
-            std::back_inserter(result),
-            store
-        );
+        using base = std::back_insert_iterator<std::string>;
 
-        using context_traits = format_context_traits<decltype(ctx)>;
-        EXPECT_EQ(&context_traits::get_store(ctx).cast_to<mutable_format_args>(), &store);
+    public:
+        big_insert_iterator(std::string& str) noexcept
+            : base(std::back_inserter(str)) {}
 
-        context_traits::append(ctx, "1234");
-        EXPECT_EQ(result, "1234");
+    private:
+        std::byte m_dummy[1024]{};
+    };
+}
 
-        result.clear();
-        context_traits::append(ctx, '1', 4);
-        EXPECT_EQ(result, "1111");
+TEST(format_context, dynamic_big)
+{
+    using namespace papilio;
 
-        result.clear();
-        context_traits::append(ctx, U'ä', 2);
-        EXPECT_EQ(result, (const char*)u8"ää");
-    }
+    std::string result;
+    mutable_format_args store;
+    basic_format_context ctx(
+        test_core::big_insert_iterator(result),
+        store
+    );
+    dynamic_format_context dyn_ctx(ctx);
 
-    {
-        std::string result;
-        mutable_format_args store;
-        basic_format_context ctx(
-            std::back_inserter(result),
-            store
-        );
-        dynamic_format_context dyn_ctx(ctx);
+    using context_traits = format_context_traits<decltype(dyn_ctx)>;
+    EXPECT_EQ(&context_traits::get_args(dyn_ctx).cast_to<mutable_format_args>(), &store);
 
-        using context_traits = format_context_traits<decltype(dyn_ctx)>;
-        EXPECT_EQ(&context_traits::get_store(dyn_ctx).cast_to<mutable_format_args>(), &store);
+    context_traits::append(dyn_ctx, "1234");
+    EXPECT_EQ(result, "1234");
 
-        context_traits::append(dyn_ctx, "1234");
-        EXPECT_EQ(result, "1234");
+    result.clear();
+    context_traits::append(dyn_ctx, '1', 4);
+    EXPECT_EQ(result, "1111");
 
-        result.clear();
-        context_traits::append(dyn_ctx, '1', 4);
-        EXPECT_EQ(result, "1111");
+    result.clear();
+    context_traits::append(dyn_ctx, U'\u00c4', 2);
+    EXPECT_EQ(result, (const char*)u8"\u00c4\u00c4");
 
-        result.clear();
-        context_traits::append(dyn_ctx, U'ä', 2);
-        EXPECT_EQ(result, (const char*)u8"ää");
-    }
+    dynamic_format_context new_dyn_ctx(dyn_ctx);
+    result.clear();
+    context_traits::append(new_dyn_ctx, "new");
+    EXPECT_EQ(result, "new");
 }
 
 int main(int argc, char* argv[])

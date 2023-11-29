@@ -34,25 +34,28 @@ namespace papilio::script
                 throw bad_variable_access();
             }
         };
+
+        template <typename CharT>
+        using variable_data_type = std::variant<
+            bool,
+            std::int64_t,
+            long double,
+            utf::basic_string_container<CharT>
+        >;
     }
 
     template <typename CharT>
     class basic_variable : public detail::variable_base
     {
     public:
+        using variant_type = detail::variable_data_type<CharT>;
+
         using char_type = CharT;
-        using string_type = std::basic_string<char_type>;
-        using string_view_type = std::basic_string_view<char_type>;
+        using string_type = std::basic_string<CharT>;
+        using string_view_type = std::basic_string_view<CharT>;
         using string_container_type = utf::basic_string_container<CharT>;
         using int_type = std::int64_t;
         using float_type = long double;
-
-        using variant_type = std::variant<
-            bool,
-            int_type,
-            float_type,
-            string_container_type
-        >;
 
         basic_variable() = delete;
         basic_variable(const basic_variable&) = default;
@@ -122,18 +125,22 @@ namespace papilio::script
             return std::holds_alternative<T>(m_var);
         }
 
+        [[nodiscard]]
         bool holds_bool() const noexcept
         {
             return holds<bool>();
         }
+        [[nodiscard]]
         bool holds_int() const noexcept
         {
             return holds<int_type>();
         }
+        [[nodiscard]]
         bool holds_float() const noexcept
         {
             return holds<float_type>();
         }
+        [[nodiscard]]
         bool holds_string() const noexcept
         {
             return holds<string_container_type>();
@@ -156,62 +163,23 @@ namespace papilio::script
             return std::get_if<T>(&m_var);
         }
 
-        template <typename T>
+        template <typename Target>
         [[nodiscard]]
-        T as() const
+        Target as() const
         {
-            auto visitor = [](auto&& v) -> T
-            {
-                using std::is_same_v;
-                using U = std::remove_cvref_t<decltype(v)>;
-
-                if constexpr(is_same_v<T, bool>)
-                {
-                    if constexpr(is_same_v<U, string_container_type>)
-                    {
-                        return !v.empty();
-                    }
-                    else
-                    {
-                        return static_cast<bool>(v);
-                    }
-                }
-                else if constexpr(std::integral<T> || std::floating_point<T>)
-                {
-                    if constexpr(is_same_v<U, string_container_type>)
-                    {
-                        throw_invalid_conversion();
-                    }
-                    else // ind_type and float_type
-                    {
-                        return static_cast<T>(v);
-                    }
-                }
-                else if constexpr(is_same_v<T, string_container_type> || string_like<T>)
-                {
-                    if constexpr(is_same_v<U, string_container_type>)
-                    {
-                        return T(string_view_type(v));
-                    }
-                    else
-                    {
-                        throw_invalid_conversion();
-                    }
-                }
-                else
-                {
-                    static_assert(!sizeof(T), "invalid type");
-                }
-            };
-
-            return std::visit(visitor, m_var);
+            return std::visit(
+                [](const auto& v) { return as_impl<Target>(v); },
+                to_variant()
+            );
         }
 
-        variant_type& to_underlying() noexcept
+        [[nodiscard]]
+        variant_type& to_variant() noexcept
         {
             return m_var;
         }
-        const variant_type& to_underlying() const noexcept
+        [[nodiscard]]
+        const variant_type& to_variant() const noexcept
         {
             return m_var;
         }
@@ -219,28 +187,13 @@ namespace papilio::script
         [[nodiscard]]
         std::partial_ordering compare(const basic_variable& var) const noexcept
         {
-            auto visitor = [](auto&& lhs, auto&& rhs) -> std::partial_ordering
-            {
-                using std::is_same_v;
-                using T = std::remove_cvref_t<decltype(lhs)>;
-                using U = std::remove_cvref_t<decltype(rhs)>;
-
-                if constexpr(is_same_v<T, U>)
+            return std::visit(
+                [](const auto& lhs, const auto& rhs) noexcept
                 {
-                    return lhs <=> rhs;
-                }
-                else if constexpr(is_same_v<T, string_container_type> || is_same_v<U, string_container_type>)
-                {
-                    return std::partial_ordering::unordered;
-                }
-                else
-                {
-                    using R = std::common_type_t<T, U>;
-                    return static_cast<R>(lhs) <=> static_cast<R>(rhs);
-                }
-            };
-
-            return std::visit(visitor, m_var, var.m_var);
+                    return compare_impl(lhs, rhs);
+                },
+                m_var, var.m_var
+            );
         }
 
         [[nodiscard]]
@@ -254,45 +207,13 @@ namespace papilio::script
             const basic_variable& var,
             float_type epsilon = std::numeric_limits<float_type>::epsilon()
         ) const noexcept {
-            auto visitor = [epsilon](auto&& lhs, auto&& rhs)->bool
-            {
-                using std::is_same_v;
-                using T = std::remove_cvref_t<decltype(lhs)>;
-                using U = std::remove_cvref_t<decltype(rhs)>;
-
-                if constexpr(is_same_v<T, U>)
+            return std::visit(
+                [epsilon](const auto& lhs, const auto& rhs) noexcept
                 {
-                    if constexpr(std::floating_point<T>)
-                    {
-                        return std::abs(lhs - rhs) < epsilon;
-                    }
-                    else
-                    {
-                        return lhs == rhs;
-                    }
-                }
-                else
-                {
-                    if constexpr(is_same_v<T, string_container_type> || is_same_v<U, string_container_type>)
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        using R = std::common_type_t<T, U>;
-                        if constexpr(std::floating_point<R>)
-                        {
-                            return std::abs(static_cast<R>(lhs) - static_cast<R>(rhs)) < epsilon;
-                        }
-                        else
-                        {
-                            return static_cast<R>(lhs) == static_cast<R>(rhs);
-                        }
-                    }
-                }
-            };
-
-            return std::visit(visitor, m_var, var.m_var);
+                    return equal_impl(epsilon, lhs, rhs);
+                },
+                m_var, var.m_var
+            );
         }
 
         [[nodiscard]]
@@ -303,6 +224,105 @@ namespace papilio::script
 
     private:
         variant_type m_var;
+
+        template <typename Target, typename T>
+        static Target as_impl(const T& v)
+        {
+            using std::is_same_v;
+
+            if constexpr(is_same_v<Target, bool>)
+            {
+                if constexpr(is_same_v<T, string_container_type>)
+                    return !v.empty();
+                else
+                    return static_cast<bool>(v);
+            }
+            else if constexpr(std::is_arithmetic_v<Target>)
+            {
+                if constexpr(is_same_v<T, string_container_type>)
+                    throw_invalid_conversion();
+                else // bool, int_type, and float_type
+                    return static_cast<Target>(v);
+            }
+            else if constexpr(basic_string_like<Target, CharT>)
+            {
+                if constexpr(is_same_v<T, string_container_type>)
+                {
+                    if constexpr(is_same_v<T, Target>)
+                        return v;
+                    else if constexpr(std::is_constructible_v<Target, string_view_type>)
+                        return Target(string_view_type(v));
+                    else
+                        static_assert(!sizeof(Target), "invalid target type");
+                }
+                else
+                {
+                    throw_invalid_conversion();
+                }
+            }
+            else
+            {
+                static_assert(!sizeof(Target), "invalid target type");
+            }
+        }
+
+        template <typename T>
+        static std::partial_ordering compare_impl(const T& lhs, const T& rhs) noexcept
+        {
+            return lhs <=> rhs;
+        }
+        template <typename T, typename U> requires(std::is_arithmetic_v<T> && std::is_arithmetic_v<U>)
+        static std::partial_ordering compare_impl(T lhs, U rhs) noexcept
+        {
+            using common_t = std::common_type_t<std::remove_cvref_t<T>, std::remove_cvref_t<U>>;
+            return static_cast<common_t>(lhs) <=> static_cast<common_t>(rhs);
+        }
+        template <typename T> requires std::is_arithmetic_v<T>
+        static std::partial_ordering compare_impl(const string_container_type&, T) noexcept
+        {
+            return std::partial_ordering::unordered;
+        }
+        template <typename T> requires std::is_arithmetic_v<T>
+        static std::partial_ordering compare_impl(T, const string_container_type&) noexcept
+        {
+            return std::partial_ordering::unordered;
+        }
+
+        template <std::integral T, std::integral U>
+        static bool equal_impl(float_type, T lhs, U rhs) noexcept
+        {
+            // int_type and bool
+            using commont_t = std::common_type_t<T, U>;
+            return static_cast<commont_t>(lhs) == static_cast<commont_t>(rhs);
+        }
+        static bool equal_impl(float_type epsilon, float_type lhs, float_type rhs) noexcept
+        {
+            return std::abs(lhs - rhs) < epsilon;
+        }
+        template <std::integral T>
+        static bool equal_impl(float_type epsilon, T lhs, float_type rhs) noexcept
+        {
+            return equal_impl(epsilon, static_cast<float_type>(lhs), rhs);
+        }
+        template <std::integral T>
+        static bool equal_impl(float_type epsilon, float_type lhs, T rhs) noexcept
+        {
+            return equal_impl(epsilon, lhs, static_cast<float_type>(rhs));
+        }
+        static bool equal_impl(float_type, const string_container_type& lhs, const string_container_type& rhs) noexcept
+        {
+            return lhs == rhs;
+        }
+        template <typename T> requires std::is_arithmetic_v<T>
+        static bool equal_impl(float_type, T, const string_container_type&) noexcept
+        {
+            return false;
+        }
+        template <typename T> requires std::is_arithmetic_v<T>
+        static bool equal_impl(float_type, const string_container_type&, T) noexcept
+        {
+            return false;
+        }
     };
 
     using variable = basic_variable<char>;

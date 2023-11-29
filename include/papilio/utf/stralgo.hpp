@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <papilio/macros.hpp>
 #include <papilio/detail/compat.hpp>
-#include <papilio/type.hpp>
+#include <papilio/utility.hpp>
 
 
 namespace papilio::utf
@@ -19,7 +19,8 @@ namespace papilio::utf
     class invalid_byte : public std::invalid_argument
     {
     public:
-        invalid_byte(std::uint8_t ch);
+        invalid_byte(std::uint8_t ch)
+            : invalid_argument("invalid byte"), m_byte(ch) {}
 
         [[nodiscard]]
         std::uint8_t get() const noexcept
@@ -35,7 +36,8 @@ namespace papilio::utf
     class invalid_surrogate : public std::invalid_argument
     {
     public:
-        invalid_surrogate(std::uint16_t ch);
+        invalid_surrogate(std::uint16_t ch)
+            : invalid_argument("invalid surrogate"), m_ch(ch) {}
 
         [[nodiscard]]
         std::uint16_t get() const noexcept

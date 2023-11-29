@@ -1,5 +1,5 @@
 #pragma once
 
-#include "common.hpp"
+#include "stralgo.hpp"
 #include "codepoint.hpp"
 #include "string.hpp"

@@ -3,7 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <variant>
-#include "common.hpp"
+#include "stralgo.hpp"
 #include "codepoint.hpp"
 #include "../memory.hpp"
 
