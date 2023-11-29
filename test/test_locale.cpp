@@ -1,53 +1,56 @@
 #include <gtest/gtest.h>
 #include <sstream>
-#include <iomanip> // std::boolalpha
-#include <papilio/papilio.hpp>
+#include <papilio/locale.hpp>
 
 
 namespace test_locale
 {
-    class yes_no : public std::numpunct<char>
+    class bool_yes_no : public std::numpunct<char>
     {
     protected:
         string_type do_truename() const override
         {
             return "yes";
         }
+
         string_type do_falsename() const override
         {
             return "no";
         }
     };
-}
 
-TEST(locale_ref, locale_ref)
-{
-    using namespace papilio;
-
-    auto bool_helper = [](bool value, const std::locale& loc) -> std::string
+    std::string print_bool(bool value, const std::locale& loc)
     {
         auto& f = std::use_facet<std::numpunct<char>>(loc);
         return value ?
             f.truename() :
             f.falsename();
     };
+}
 
-    {
-        locale_ref c_loc;
-        EXPECT_TRUE(std::isalpha('A', c_loc));
-        EXPECT_FALSE(std::isalpha('1', c_loc));
+TEST(locale_ref, fallback)
+{
+    using namespace papilio;
+    using namespace test_locale;
 
-        EXPECT_EQ(bool_helper(true, c_loc), "true");
-        EXPECT_EQ(bool_helper(false, c_loc), "false");
-    }
+    locale_ref c_loc;
+    EXPECT_TRUE(std::isalpha('A', c_loc));
+    EXPECT_FALSE(std::isalpha('1', c_loc));
 
-    {
-        std::locale custom(std::locale("C"), new test_locale::yes_no);
-        locale_ref custom_ref = custom;
+    EXPECT_EQ(print_bool(true, c_loc), "true");
+    EXPECT_EQ(print_bool(false, c_loc), "false");
+}
 
-        EXPECT_EQ(bool_helper(true, custom_ref), "yes");
-        EXPECT_EQ(bool_helper(false, custom_ref), "no");
-    }
+TEST(locale_ref, custom_locale)
+{
+    using namespace papilio;
+    using namespace test_locale;
+
+    std::locale custom(std::locale("C"), new bool_yes_no);
+    locale_ref custom_ref = custom;
+
+    EXPECT_EQ(print_bool(true, custom_ref), "yes");
+    EXPECT_EQ(print_bool(false, custom_ref), "no");
 }
 
 int main(int argc, char* argv[])

@@ -1142,9 +1142,28 @@ namespace papilio
     {
     public:
         using char_type = char;
-        using iterator = std::back_insert_iterator<dynamic_format_context>;
         using format_args_type = dynamic_format_args;
         using value_type = char_type;
+
+        class iterator
+        {
+        public:
+            explicit iterator(dynamic_format_context& ctx)
+                : m_ctx(&ctx) {}
+
+            iterator& operator=(char_type val)
+            {
+                m_ctx->m_handle->write(val);
+                return *this;
+            }
+
+            iterator& operator*() { return *this; }
+            iterator& operator++() { return *this; }
+            iterator& operator++(int) { return *this; }
+
+        private:
+            dynamic_format_context* m_ctx;
+        };
 
     private:
         class handle_impl_base
@@ -1304,7 +1323,7 @@ namespace papilio
         [[nodiscard]]
         iterator out()
         {
-            return std::back_inserter(*this);
+            return iterator(*this);
         }
         void advance_to(iterator)
         {

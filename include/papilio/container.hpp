@@ -21,9 +21,9 @@ namespace papilio
             using size_type = std::size_t;
 
             [[noreturn]]
-            static void raise_out_of_range();
+            static void throw_out_of_range();
             [[noreturn]]
-            static void raise_length_error();
+            static void throw_length_error();
 
         protected:
             [[nodiscard]]
@@ -54,13 +54,13 @@ namespace papilio
         {
             if(i < size())
                 return data()[i];
-            this->raise_out_of_range();
+            this->throw_out_of_range();
         }
         const_reference at(size_type i) const
         {
             if(i < size())
                 return data()[i];
-            this->raise_out_of_range();
+            this->throw_out_of_range();
         }
         reference operator[](size_type i) noexcept
         {
@@ -73,22 +73,22 @@ namespace papilio
 
         reference front() noexcept
         {
-            assert(!empty());
+            PAPILIO_ASSERT(!empty());
             return *begin();
         }
         const_reference front() const noexcept
         {
-            assert(!empty());
+            PAPILIO_ASSERT(!empty());
             return *begin();
         }
         reference back() noexcept
         {
-            assert(!empty());
+            PAPILIO_ASSERT(!empty());
             return *(end() - 1);
         }
         const_reference back() const noexcept
         {
-            assert(!empty());
+            PAPILIO_ASSERT(!empty());
             return *(end() - 1);
         }
 
@@ -248,7 +248,7 @@ namespace papilio
             {
                 set_ptrs(getbuf(), static_size());
 
-                assert(other.size() <= this->capacity());
+                PAPILIO_ASSERT(other.size() <= this->capacity());
                 for(auto&& i : other)
                 {
                     emplace_back_raw(std::move(i));
@@ -375,7 +375,7 @@ namespace papilio
 
         void pop_back() noexcept
         {
-            assert(!this->empty());
+            PAPILIO_ASSERT(!this->empty());
             std::allocator_traits<Allocator>::destroy(
                 getal(),
                 m_p_end - 1
@@ -504,7 +504,7 @@ namespace papilio
         }
         void set_ptrs(pointer p_begin, size_type size_offset, size_type capacity_offset) noexcept
         {
-            assert(size_offset <= capacity_offset);
+            PAPILIO_ASSERT(size_offset <= capacity_offset);
 
             m_p_begin = p_begin;
             m_p_end = p_begin + size_offset;
@@ -583,7 +583,7 @@ namespace papilio
             {
                 if(!dynamic_allocated())
                 {
-                    assert(this->capacity() == static_size());
+                    PAPILIO_ASSERT(this->capacity() == static_size());
                     return;
                 }
 
@@ -622,9 +622,9 @@ namespace papilio
 
         void grow_mem(size_type new_cap)
         {
-            assert(this->capacity() < new_cap);
+            PAPILIO_ASSERT(this->capacity() < new_cap);
             if(new_cap > this->max_size())
-                this->raise_length_error();
+                this->throw_length_error();
 
             pointer new_mem = getal().allocate(new_cap);
             size_type i = 0;
@@ -667,7 +667,7 @@ namespace papilio
         {
             using std::swap;
 
-            assert(!dynamic_allocated());
+            PAPILIO_ASSERT(!dynamic_allocated());
 
             pointer tmp_p_begin = other.m_p_begin;
             pointer tmp_p_end = other.m_p_end;
@@ -697,9 +697,9 @@ namespace papilio
             using difference_type = std::ptrdiff_t;
 
             [[noreturn]]
-            static void raise_out_of_range();
+            static void throw_out_of_range();
             [[noreturn]]
-            static void raise_length_error();
+            static void throw_length_error();
         };
     }
 
@@ -748,14 +748,14 @@ namespace papilio
         {
             [[unlikely]]
             if(pos >= size())
-                raise_out_of_range();
+                throw_out_of_range();
             return data()[pos];
         }
         const_reference at(size_type pos) const
         {
             [[unlikely]]
             if(pos >= size())
-                raise_out_of_range();
+                throw_out_of_range();
             return data()[pos];
         }
 
@@ -833,8 +833,8 @@ namespace papilio
         template <typename... Args>
         iterator emplace(const_iterator pos, Args&&... args)
         {
-            assert(pos >= cbegin());
-            assert(pos <= cend());
+            PAPILIO_ASSERT(pos >= cbegin());
+            PAPILIO_ASSERT(pos <= cend());
 
             if(pos == cend())
             {
@@ -842,7 +842,7 @@ namespace papilio
             }
             else if(m_size == capacity())
             {
-                raise_length_error();
+                throw_length_error();
             }
 
             emplace_back(std::move(back()));
@@ -873,7 +873,7 @@ namespace papilio
         reference emplace_back(Args&&... args)
         {
             if(m_size == capacity())
-                raise_length_error();
+                throw_length_error();
             pointer new_val = std::construct_at<T>(data() + m_size, std::forward<Args>(args)...);
             ++m_size;
 
@@ -890,7 +890,7 @@ namespace papilio
 
         void pop_back() noexcept
         {
-            assert(!empty());
+            PAPILIO_ASSERT(!empty());
 
             std::destroy_at(data() + m_size - 1);
             --m_size;
@@ -954,7 +954,7 @@ namespace papilio
             using difference_type = std::ptrdiff_t;
 
             [[noreturn]]
-            static void raise_out_of_range();
+            static void throw_out_of_range();
         };
     }
 
@@ -1025,7 +1025,7 @@ namespace papilio
             auto it = find(k);
             if(it == end())
             {
-                raise_out_of_range();
+                throw_out_of_range();
             }
 
             return it->second;
@@ -1035,7 +1035,7 @@ namespace papilio
             auto it = find(k);
             if(it == end())
             {
-                raise_out_of_range();
+                throw_out_of_range();
             }
 
             return it->second;

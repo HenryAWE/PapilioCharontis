@@ -1,9 +1,17 @@
 #include <gtest/gtest.h>
 #include <sstream>
-#include <papilio/papilio.hpp>
+#include <papilio/print.hpp>
 
 
-// TODO
+TEST(print, stream)
+{
+    using namespace papilio;
+
+    std::ostringstream os;
+
+    PAPILIO_NS println(os);
+    EXPECT_EQ(os.str(), "\n");
+}
 
 int main(int argc, char* argv[])
 {
