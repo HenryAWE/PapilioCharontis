@@ -1308,7 +1308,7 @@ namespace papilio
         }
         void advance_to(iterator)
         {
-            PAPILIO_UNREACHABLE();
+           // no effect
         }
 
         [[nodiscard]]
