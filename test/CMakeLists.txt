@@ -10,6 +10,8 @@ macro(define_papilio_test test_name)
     gtest_discover_tests(${test_name})
 endmacro()
 
+define_papilio_test(test_access)
+
 define_papilio_test(test_core)
 
 define_papilio_test(test_container)

@@ -1,52 +1,13 @@
 #include <papilio/core.hpp>
 #include <papilio/script.hpp>
 #include <algorithm>
-#include <ranges>
-#include <cassert>
-#include <cstring> // std::memset
 
 
 namespace papilio
 {
-    static bool is_identifier_ch(char32_t ch, bool first = false) noexcept
-    {
-        bool digit = utf::is_digit(ch);
-        if(first && digit)
-            return false;
-
-        return digit || ('A' <= ch && ch <= 'z') || ch == '_' || ch >= 128;
-    }
-
-    bool attribute_name::validate(utf::string_ref name) noexcept
-    {
-        bool first = true;
-        for(char32_t c : name)
-        {
-            if(!is_identifier_ch(c, first))
-                return false;
-
-            if(first)
-                first = false;
-        }
-
-        return true;
-    }
-
-    void format_arg::handle::copy(const handle& other) noexcept
-    {
-        other.ptr()->reset(ptr());
-        m_has_value = true;
-    }
-    void format_arg::handle::destroy() noexcept
-    {
-        ptr()->~handle_impl_base();
-        std::memset(m_storage, 0, sizeof(m_storage));
-        m_has_value = false;
-    }
-
     format_arg format_arg::index(const indexing_value& idx) const
     {
-        auto visitor = [&idx]<typename T>(T&& v)->format_arg
+        auto visitor = [&idx]<typename T>(T&& v) -> format_arg
         {
             using type = std::remove_cvref_t<T>;
             if constexpr(std::is_same_v<type, handle>)
@@ -55,9 +16,8 @@ namespace papilio
             }
             else
             {
-                return accessor_traits<type>::get_arg(
-                    std::forward<T>(v),
-                    idx
+                return idx.visit(
+                    [&](auto&& i) { return accessor_traits<type>::index<format_arg>(v, i); }
                 );
             }
         };
@@ -75,7 +35,7 @@ namespace papilio
             }
             else
             {
-                return accessor_traits<type>::get_attr(v, attr);
+                return accessor_traits<type>::attribute<format_arg>(v, attr);
             }
         };
         return std::visit(visitor, m_val);
@@ -114,7 +74,7 @@ namespace papilio
         return std::visit(visitor, m_val);
     }
 
-    format_arg format_arg_access::access(format_arg arg) const
+    format_arg chained_access::access(format_arg arg) const
     {
         format_arg result = arg;
 
@@ -167,7 +127,7 @@ namespace papilio
                 }
             };
 
-            return std::visit(visitor, idx.to_underlying());
+            return idx.visit(visitor);
         }
 
         bool format_args_base::check(size_type i) const noexcept
@@ -197,7 +157,7 @@ namespace papilio
                 }
             };
 
-            return std::visit(visitor, idx.to_underlying());
+            return idx.visit(visitor);
         }
 
         void format_args_base::raise_index_out_of_range()

@@ -731,15 +731,15 @@ namespace papilio::script
         class argument final : public base
         {
         public:
-            using member_type = format_arg_access::member_type;
-            using member_storage = format_arg_access::member_storage;
+            using member_type = chained_access::member_type;
+            using member_storage = chained_access::member_storage;
 
             argument() = delete;
             argument(indexing_value arg_id)
                 : m_arg_id(std::move(arg_id)), m_access() {}
             argument(indexing_value arg_id, member_storage members)
                 : m_arg_id(std::move(arg_id)), m_access(std::move(members)) {}
-            argument(indexing_value arg_id, format_arg_access access)
+            argument(indexing_value arg_id, chained_access access)
                 : m_arg_id(std::move(arg_id)), m_access(std::move(access)) {}
 
             void execute(context& ctx) const override
@@ -754,7 +754,7 @@ namespace papilio::script
 
         private:
             indexing_value m_arg_id;
-            format_arg_access m_access;
+            chained_access m_access;
         };
 
         template <typename Compare>
@@ -872,14 +872,14 @@ namespace papilio::script
         executor compile(string_view_type src);
         executor compile(std::span<const lexeme> lexemes);
 
-        std::pair<indexing_value, format_arg_access> access(
+        std::pair<indexing_value, chained_access> access(
             string_view_type arg,
             std::optional<std::size_t> default_arg_id = std::nullopt
         );
-        std::pair<indexing_value, format_arg_access> access(std::span<const lexeme> lexemes);
+        std::pair<indexing_value, chained_access> access(std::span<const lexeme> lexemes);
 
     private:
         executor to_executor(std::span<const lexeme> lexemes);
-        std::pair<indexing_value, format_arg_access> to_access(std::span<const lexeme> lexemes);
+        std::pair<indexing_value, chained_access> to_access(std::span<const lexeme> lexemes);
     };
 }

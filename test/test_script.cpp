@@ -396,7 +396,7 @@ TEST(TestScript, Executor)
         executor ex4(
             std::in_place_type<executor::argument>,
             "string"s,
-            format_arg_access::member_storage{ attribute_name("length") }
+            chained_access::member_storage{ attribute_name("length") }
         );
         ex4(ctx);
 
@@ -640,7 +640,7 @@ namespace papilio
     {
         using has_index = void;
 
-        static format_arg get(const map_type& m, indexing_value::index_type i)
+        static format_arg index(const map_type& m, indexing_value::index_type i)
         {
             auto it = m.find(i);
             if(it == m.end())
@@ -648,7 +648,7 @@ namespace papilio
             return utf::string_container(it->second);
         }
 
-        static format_arg get_attr(const map_type& m, const attribute_name& attr)
+        static format_arg attribute(const map_type& m, const attribute_name& attr)
         {
             using namespace std::literals;
             if(attr == "size"sv)
@@ -666,7 +666,7 @@ TEST(TestScript, CustomType)
     {
         map_type m;
         m[0] = "zero";
-        format_arg_access acc({ 0 });
+        chained_access acc({ 0 });
 
         format_arg fmt_arg = m;
         auto member = acc.access(fmt_arg);

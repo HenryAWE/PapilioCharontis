@@ -14,19 +14,25 @@
 #include "utf/utf.hpp"
 #include "error.hpp"
 #include "locale.hpp"
+#include "access.hpp"
 #include "script/variable.hpp"
 
 
 namespace papilio
 {
     // forward declarations
-    class indexing_value;
-    class attribute_name;
     class format_arg;
+
+    class format_parse_context;
+
     template <typename OutputIt>
     class basic_format_context;
+
     class dynamic_format_context;
-    class format_spec_parse_context;
+
+    using format_context = basic_format_context<
+        std::back_insert_iterator<std::string>
+    >;
 
     enum class format_align : std::uint8_t
     {
@@ -41,170 +47,6 @@ namespace papilio
         positive,
         negative,
         space
-    };
-
-    class indexing_value
-    {
-    public:
-        using char_type = char;
-        using string_type = std::basic_string<char_type>;
-        using string_view_type = std::basic_string_view<char_type>;
-        using index_type = ssize_t;
-        using underlying_type = std::variant<
-            index_type,
-            slice,
-            utf::string_container
-        >;
-
-        indexing_value() = delete;
-        indexing_value(const indexing_value&) = default;
-        indexing_value(indexing_value&&) = default;
-        indexing_value(index_type index)
-            : m_val(index) {}
-        indexing_value(slice s)
-            : m_val(s) {}
-        indexing_value(utf::string_container key)
-            : m_val(std::move(key)) {}
-        template <string_like String>
-        indexing_value(String&& key)
-            : m_val(std::in_place_type<utf::string_container>, std::forward<String>(key)) {}
-        template <string_like String>
-        indexing_value(independent_t, String&& key)
-            : m_val(std::in_place_type<utf::string_container>, independent, std::forward<String>(key)) {}
-
-        template <typename T>
-        [[nodiscard]]
-        bool holds() const noexcept
-        {
-            return std::holds_alternative<T>(m_val);
-        }
-
-        [[nodiscard]]
-        bool is_index() const noexcept
-        {
-            return holds<index_type>();
-        }
-        [[nodiscard]]
-        bool is_slice() const noexcept
-        {
-            return holds<slice>();
-        }
-        [[nodiscard]]
-        bool is_key() const noexcept
-        {
-            return holds<utf::string_container>();
-        }
-
-        [[nodiscard]]
-        index_type as_index() const noexcept
-        {
-            // use std::get_if to avoid exception
-            return *std::get_if<index_type>(&m_val);
-        }
-        [[nodiscard]]
-        const slice& as_slice() const noexcept
-        {
-            return *std::get_if<slice>(&m_val);
-        }
-        [[nodiscard]]
-        const utf::string_container& as_key() const noexcept
-        {
-            return *std::get_if<utf::string_container>(&m_val);
-        }
-
-        [[nodiscard]]
-        underlying_type& to_underlying() noexcept
-        {
-            return m_val;
-        }
-        [[nodiscard]]
-        const underlying_type& to_underlying() const noexcept
-        {
-            return m_val;
-        }
-
-    private:
-        underlying_type m_val;
-    };
-    class attribute_name
-    {
-    public:
-        using char_type = char;
-        using string_type = std::basic_string<char_type>;
-        using string_view_type = std::basic_string_view<char_type>;
-
-        attribute_name() = delete;
-        attribute_name(const attribute_name&) = default;
-        attribute_name(attribute_name&&) noexcept = default;
-        template <typename... Args> requires(std::constructible_from<utf::string_container, Args...>)
-        attribute_name(Args&&... args)
-            : m_name(std::forward<Args>(args)...) {}
-
-        [[nodiscard]]
-        bool operator==(const attribute_name& rhs) const noexcept = default;
-        [[nodiscard]]
-        friend bool operator==(const attribute_name& lhs, const string_type& rhs) noexcept
-        {
-            return lhs.m_name == rhs;
-        }
-        [[nodiscard]]
-        friend bool operator==(const string_type& lhs, const attribute_name& rhs) noexcept
-        {
-            return lhs == rhs.m_name;
-        }
-        [[nodiscard]]
-        friend bool operator==(const attribute_name& lhs, string_view_type rhs) noexcept
-        {
-            return lhs.m_name == rhs;
-        }
-        [[nodiscard]]
-        friend bool operator==(string_view_type lhs, const attribute_name& rhs) noexcept
-        {
-            return lhs == rhs.m_name;
-        }
-        [[nodiscard]]
-        friend bool operator==(const attribute_name& lhs, const char* rhs) noexcept
-        {
-            return lhs.m_name == rhs;
-        }
-        [[nodiscard]]
-        friend bool operator==(const char* lhs, const attribute_name& rhs) noexcept
-        {
-            return lhs == rhs.m_name;
-        }
-
-        [[nodiscard]]
-        const utf::string_container& name() const noexcept
-        {
-            return m_name;
-        }
-        [[nodiscard]]
-        operator string_view_type() const noexcept
-        {
-            return static_cast<string_view_type>(m_name);
-        }
-
-        [[nodiscard]]
-        static bool validate(utf::string_ref name) noexcept;
-
-    private:
-        utf::string_container m_name;
-    };
-    class invalid_attribute : public std::invalid_argument
-    {
-    public:
-        invalid_attribute(attribute_name attr)
-            : invalid_argument("invalid attribute name \"" + attr.name().str() + '\"'),
-            m_attr(independent, attr.name()) {}
-
-        [[nodiscard]]
-        const attribute_name& attr() const noexcept
-        {
-            return m_attr;
-        }
-
-    private:
-        attribute_name m_attr;
     };
 
     namespace detail
@@ -287,166 +129,25 @@ namespace papilio
 
         template <typename Context = dynamic_format_context>
         [[nodiscard]]
-        static constexpr bool has_formatter() noexcept;
+        static constexpr bool has_formatter() noexcept
+        {
+            return requires(formatter<T> f, format_parse_context & parse_ctx, const type & val, Context & out_ctx)
+            {
+                typename formatter<T>;
+                f.parse(parse_ctx);
+                f.format(val, out_ctx);
+            };
+        }
 
-        // TODO: rename
+        static void parse(format_parse_context& ctx)
+        {
+
+        }
+
         template <typename Context>
-        static void format(format_spec_parse_context& spec, const type& val, Context& ctx);
-    };
+        static void format(const type& val, Context& ctx)
+        {
 
-    template <typename T>
-    struct accessor {};
-
-    template <typename T>
-    class accessor_traits
-    {
-    public:
-        using type = T;
-        using accessor_type = accessor<type>;
-
-        [[nodiscard]]
-        static constexpr bool has_index() noexcept
-        {
-            return requires() { typename accessor_type::has_index; };
-        }
-        [[nodiscard]]
-        static constexpr bool has_custom_index() noexcept
-        {
-            if constexpr(has_index())
-            {
-                return requires(T object, indexing_value::index_type i) { accessor_type::get(object, i); };
-            }
-            else
-                return false;
-        }
-
-        [[nodiscard]]
-        static constexpr bool has_key() noexcept
-        {
-            return requires() { typename accessor_type::has_key; };
-        }
-        [[nodiscard]]
-        static constexpr bool has_custom_key() noexcept
-        {
-            if constexpr(has_key())
-            {
-                return requires(T object, indexing_value::string_view_type str) { accessor_type::get(object, str); };
-            }
-            else
-                return false;
-        }
-
-        [[nodiscard]]
-        static constexpr bool has_slice() noexcept
-        {
-            return requires() { typename accessor_type::has_slice; };
-        }
-        [[nodiscard]]
-        static constexpr bool has_custom_slice() noexcept
-        {
-            if constexpr(has_slice())
-            {
-                return requires(T object, slice s) { accessor_type::get(object, s); };
-            }
-            else
-                return false;
-        }
-
-        [[noreturn]]
-        constexpr static void index_unavailable()
-        {
-            throw std::runtime_error("index unavailable");
-        }
-        [[noreturn]]
-        constexpr static void key_unavailable()
-        {
-            throw std::runtime_error("key unavailable");
-        }
-        [[noreturn]]
-        constexpr static void slice_unavailable()
-        {
-            throw std::runtime_error("slice unavailable");
-        }
-
-        template <typename U>
-        static format_arg get_arg(U&& object, const indexing_value& idx);
-
-        template <typename U>
-        static decltype(auto) get(U&& object, indexing_value::index_type i)
-        {
-            return index_handler(std::forward<U>(object), i);
-        }
-        template <typename U>
-        static decltype(auto) get(U&& object, indexing_value::string_view_type str)
-        {
-            return index_handler(std::forward<U>(object), str);
-        }
-        template <typename U>
-        static decltype(auto) get(U&& object, slice s)
-        {
-            return index_handler(std::forward<U>(object), s);
-        }
-
-        template <typename U>
-        static format_arg get_attr(U&& object, const attribute_name& attr);
-
-    private:
-        template <typename U>
-        static decltype(auto) index_handler(U&& object, indexing_value::index_type i)
-        {
-            if constexpr(!has_index())
-            {
-                index_unavailable();
-            }
-            else if constexpr(has_custom_index())
-            {
-                return accessor_type::get(std::forward<U>(object), i);
-            }
-            else
-            {
-                if(i < 0)
-                    throw std::runtime_error("reverse index unavailable");
-                return object[static_cast<std::size_t>(i)];
-            }
-        }
-        template <typename U>
-        static decltype(auto) index_handler(U&& object, indexing_value::string_view_type str)
-        {
-            if constexpr(!has_key())
-            {
-                key_unavailable();
-            }
-            else if constexpr(has_custom_key())
-            {
-                using Accessor = accessor<T>;
-                return Accessor::get(std::forward<U>(object), str);
-            }
-            else
-            {
-                return object[str];
-            }
-        }
-        template <typename U>
-        static decltype(auto) index_handler(U&& object, const utf::string_container& str)
-        {
-            return index_handler(std::forward<U>(object), std::string_view(str));
-        }
-        template <typename U>
-        static decltype(auto) index_handler(U&& object, slice s)
-        {
-            if constexpr(!has_slice())
-            {
-                slice_unavailable();
-            }
-            else if constexpr(has_custom_slice())
-            {
-                using Accessor = accessor<T>;
-                return Accessor::get(std::forward<U>(object), s);
-            }
-            else
-            {
-                return object[s];
-            }
         }
     };
 
@@ -463,7 +164,9 @@ namespace papilio
             virtual format_arg index(const indexing_value& idx) const = 0;
             virtual format_arg attribute(const attribute_name& attr) const = 0;
 
-            virtual void format(format_spec_parse_context& spec, dynamic_format_context& ctx) const = 0;
+            virtual void parse(format_parse_context& ctx) const = 0;
+
+            virtual void format(dynamic_format_context& ctx) const = 0;
 
             virtual void reset(handle_impl_base* mem) const = 0;
         };
@@ -478,7 +181,15 @@ namespace papilio
             format_arg index(const indexing_value& idx) const override;
             format_arg attribute(const attribute_name& attr) const override;
 
-            void format(format_spec_parse_context& spec, dynamic_format_context& ctx) const override;
+            void parse(format_parse_context& ctx) const override
+            {
+                // TODO
+            }
+
+            void format(dynamic_format_context& ctx) const override
+            {
+                // TODO
+            }
 
             void reset(handle_impl_base* mem) const override
             {
@@ -556,9 +267,14 @@ namespace papilio
                 return ptr()->attribute(attr);
             }
 
-            void format(format_spec_parse_context& spec, dynamic_format_context& ctx) const
+            void parse(format_parse_context& ctx) const
             {
-                ptr()->format(spec, ctx);
+                // TODO
+            }
+
+            void format(dynamic_format_context& ctx) const
+            {
+                // TODO
             }
 
         private:
@@ -581,8 +297,17 @@ namespace papilio
                 new(ptr()) detail::handle_impl<T>(val);
                 m_has_value = true;
             }
-            void copy(const handle& other) noexcept;
-            void destroy() noexcept;
+            void copy(const handle& other) noexcept
+            {
+                other.ptr()->reset(ptr());
+                m_has_value = true;
+            }
+            void destroy() noexcept
+            {
+                ptr()->~handle_impl_base();
+                std::memset(m_storage, 0, sizeof(m_storage));
+                m_has_value = false;
+            }
         };
 
         using underlying_type = std::variant<
@@ -674,15 +399,17 @@ namespace papilio
 
         script::variable as_variable() const;
 
+        void parse(format_parse_context& ctx);
+
         template <typename Context>
-        void format(format_spec_parse_context& spec, Context& ctx);
+        void format(Context& ctx);
 
     private:
         underlying_type m_val;
     };
 
     // access members of format argument
-    class format_arg_access
+    class chained_access
     {
     public:
         using member_type = std::variant<
@@ -691,10 +418,10 @@ namespace papilio
         >;
         using member_storage = small_vector<member_type, 2>;
 
-        format_arg_access() noexcept : m_members() {}
-        format_arg_access(const format_arg_access&) = delete;
-        format_arg_access(format_arg_access&&) noexcept = default;
-        format_arg_access(member_storage members)
+        chained_access() noexcept : m_members() {}
+        chained_access(const chained_access&) = delete;
+        chained_access(chained_access&&) noexcept = default;
+        chained_access(member_storage members)
             : m_members(std::move(members)) {}
 
         [[nodiscard]]

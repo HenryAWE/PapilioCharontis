@@ -1684,6 +1684,8 @@ namespace papilio::utf
         basic_string_container(std::nullptr_t) = delete;
         basic_string_container(const basic_string_container&) = default;
         basic_string_container(basic_string_container&&) noexcept = default;
+        basic_string_container(independent_t, const basic_string_container& str)
+            : base(std::in_place_type<string_type>, string_view_type(str)) {}
 
         basic_string_container(string_type&& str) noexcept
             : base(std::in_place_type<string_type>, std::move(str)) {}
@@ -1695,12 +1697,16 @@ namespace papilio::utf
         basic_string_container(string_view_type str) noexcept
             : base(std::in_place_type<string_view_type>, str) {}
 
-        basic_string_container(independent_t, const basic_string_container& str)
-            : base(std::in_place_type<string_type>, string_view_type(str)) {}
+
         basic_string_container(const CharT* str) noexcept
             : base(std::in_place_type<string_view_type>, str) {}
         constexpr basic_string_container(const CharT* str, size_type count) noexcept
             : base(std::in_place_type<string_view_type>, str, count) {}
+        basic_string_container(independent_t, const CharT* str) noexcept
+            : base(std::in_place_type<string_type>, str) {}
+        constexpr basic_string_container(independent_t, const CharT* str, size_type count) noexcept
+            : base(std::in_place_type<string_type>, str, count) {}
+
         basic_string_container(const_iterator start, const_iterator stop) noexcept
             : base(std::in_place_type<string_view_type>, start.to_address(), stop.to_address()) {}
 

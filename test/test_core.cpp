@@ -1,39 +1,6 @@
 #include <gtest/gtest.h>
-#include <list>
-#include <map>
 #include <papilio/core.hpp>
 
-
-TEST(attribute_name, compare)
-{
-    using namespace std::literals;
-    using papilio::attribute_name;
-
-    auto attr = attribute_name("name");
-    EXPECT_FALSE(attr.name().has_ownership());
-
-    EXPECT_EQ("name", attr);
-    EXPECT_EQ(attr, "name");
-    EXPECT_EQ("name"s, attr);
-    EXPECT_EQ(attr, "name"s);
-    EXPECT_EQ("name"sv, attr);
-    EXPECT_EQ(attr, "name"sv);
-}
-
-TEST(attribute_name, validate)
-{
-    using papilio::attribute_name;
-
-    EXPECT_TRUE(attribute_name::validate("name"));
-    EXPECT_TRUE(attribute_name::validate("_name"));
-    EXPECT_TRUE(attribute_name::validate("NAME"));
-    EXPECT_TRUE(attribute_name::validate("NAME_123"));
-
-    EXPECT_FALSE(attribute_name::validate("123name"));
-    EXPECT_FALSE(attribute_name::validate("NAME name"));
-    EXPECT_FALSE(attribute_name::validate("$name"));
-    EXPECT_FALSE(attribute_name::validate("!name"));
-}
 
 TEST(TestCore, FormatArg)
 {
@@ -113,64 +80,6 @@ TEST(TestCore, FormatArg)
 
         EXPECT_EQ(get<std::string>(fmt_arg.index(slice(0, 4))), "long");
         EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(0, 4))), "long");
-    }
-}
-
-using map_type = std::map<std::string, std::string, std::less<>>;
-namespace papilio
-{
-    template <>
-    struct accessor<map_type>
-    {
-        using has_key = void;
-
-        static format_arg get(const map_type& m, std::string_view k)
-        {
-            auto it = m.find(k);
-            if(it == m.end())
-                return format_arg();
-            return utf::string_container(independent, it->second);
-        }
-
-        static format_arg get_attr(const map_type& m, const attribute_name& attr)
-        {
-            using namespace std::literals;
-            if(attr == "size"sv)
-                return m.size();
-            else
-                throw invalid_attribute(attr);
-        }
-    };
-}
-TEST(TestCore, FormatArgHandle)
-{
-    using namespace papilio;
-
-    {
-        static_assert(!detail::use_handle<int>);
-        static_assert(!detail::use_handle<char>);
-        static_assert(detail::use_handle<map_type>);
-
-        static_assert(accessor_traits<map_type>::has_key());
-
-        map_type m;
-        m["1"] = "one";
-        m["2"] = "two";
-
-        EXPECT_EQ(get<std::size_t>(accessor_traits<map_type>::get_attr(m, "size")), 2);
-        EXPECT_EQ(get<utf::string_container>(accessor_traits<map_type>::get_arg(m, "1")), "one");
-        EXPECT_EQ(get<utf::string_container>(accessor_traits<map_type>::get_arg(m, "2")), "two");
-        EXPECT_TRUE(accessor_traits<map_type>::get_arg(m, "3").empty());
-
-        format_arg::handle h = m;
-        EXPECT_EQ(get<std::size_t>(h.attribute("size")), 2);
-        EXPECT_EQ(get<utf::string_container>(h.index("1")), "one");
-        EXPECT_EQ(get<utf::string_container>(h.index("2")), "two");
-
-        format_arg arg = m;
-        EXPECT_EQ(get<std::size_t>(arg.attribute("size")), 2);
-        EXPECT_EQ(get<utf::string_container>(arg.index("1")), "one");
-        EXPECT_EQ(get<utf::string_container>(arg.index("2")), "two");
     }
 }
 

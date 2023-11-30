@@ -519,7 +519,7 @@ namespace papilio::script
         return to_executor(lexemes);
     }
 
-    std::pair<indexing_value, format_arg_access> interpreter::access(
+    std::pair<indexing_value, chained_access> interpreter::access(
         string_view_type arg,
         std::optional<std::size_t> default_arg_id
     ) {
@@ -527,7 +527,7 @@ namespace papilio::script
         l.parse(arg, lexer_mode::replacement_field, default_arg_id);
         return access(l.lexemes());
     }
-    std::pair<indexing_value, format_arg_access> interpreter::access(std::span<const lexeme> lexemes)
+    std::pair<indexing_value, chained_access> interpreter::access(std::span<const lexeme> lexemes)
     {
         return to_access(lexemes);
     }
@@ -806,14 +806,14 @@ namespace papilio::script
                 return std::make_pair(std::move(ex), next_it);
             }
 
-            std::pair<std::pair<indexing_value, format_arg_access>, iterator> build_access(
+            std::pair<std::pair<indexing_value, chained_access>, iterator> build_access(
                 iterator begin, iterator end
             ) {
                 assert(begin != end);
                 assert(begin->type() == lexeme_type::argument);
 
                 auto& a = begin->as<lexeme::argument>();
-                format_arg_access::member_storage members;
+                chained_access::member_storage members;
 
                 auto it = std::next(begin);
                 for(; it != end;)
@@ -1056,7 +1056,7 @@ namespace papilio::script
         return std::move(result);
     }
 
-    std::pair<indexing_value, format_arg_access> interpreter::to_access(std::span<const lexeme> lexemes)
+    std::pair<indexing_value, chained_access> interpreter::to_access(std::span<const lexeme> lexemes)
     {
         detail::executor_builder builder;
 
