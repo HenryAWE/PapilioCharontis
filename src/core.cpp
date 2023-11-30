@@ -17,7 +17,7 @@ namespace papilio
             else
             {
                 return idx.visit(
-                    [&](auto&& i) { return accessor_traits<type>::index<format_arg>(v, i); }
+                    [&](auto&& i) { return accessor_traits<type>::template index<format_arg>(v, i); }
                 );
             }
         };
@@ -35,7 +35,7 @@ namespace papilio
             }
             else
             {
-                return accessor_traits<type>::attribute<format_arg>(v, attr);
+                return accessor_traits<type>::template attribute<format_arg>(v, attr);
             }
         };
         return std::visit(visitor, m_val);

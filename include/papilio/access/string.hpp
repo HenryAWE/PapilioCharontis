@@ -26,7 +26,7 @@ namespace papilio
 
         static utf::string_container index(const string_container_type& str, slice s)
         {
-            return str.substr<utf::substr_behavior::empty_string>(s);
+            return str.template substr<utf::substr_behavior::empty_string>(s);
         }
 
         static std::size_t attribute(const string_container_type& str, const attribute_name_type& attr)

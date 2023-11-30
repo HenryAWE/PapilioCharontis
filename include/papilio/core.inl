@@ -16,13 +16,13 @@ namespace papilio
         format_arg handle_impl<T>::index(const indexing_value& idx) const
         {
             return idx.visit(
-                [this](auto&& i) { return accessor_traits<T>::index<format_arg>(*m_ptr, i); }
+                [this](auto&& i) { return accessor_traits<T>::template index<format_arg>(*m_ptr, i); }
             );
         }
         template <typename T>
         format_arg handle_impl<T>::attribute(const attribute_name& attr) const
         {
-            return accessor_traits<T>::attribute<format_arg>(*m_ptr, attr);
+            return accessor_traits<T>::template attribute<format_arg>(*m_ptr, attr);
         }
     }
 }
