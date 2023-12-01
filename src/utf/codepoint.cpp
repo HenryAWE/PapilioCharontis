@@ -1,5 +1,5 @@
 #include <papilio/utf/codepoint.hpp>
-#include <papilio/format.hpp>
+#include <iostream>
 
 
 namespace papilio::utf
