@@ -18,6 +18,11 @@
 #include "access.hpp"
 #include "script/variable.hpp"
 
+#ifdef PAPILIO_COMPILER_MSVC
+#   pragma warning(push)
+#   pragma warning(disable:26495) // uninitialized member variable
+#endif
+
 
 namespace papilio
 {
@@ -129,63 +134,6 @@ namespace papilio
 
     namespace detail
     {
-        class handle_impl_base
-        {
-        public:
-            handle_impl_base() = default;
-            handle_impl_base(const handle_impl_base&) = delete;
-
-            virtual ~handle_impl_base() = default;
-
-            virtual format_arg index(const indexing_value& idx) const = 0;
-            virtual format_arg attribute(const attribute_name& attr) const = 0;
-
-            virtual void parse(format_parse_context& ctx) const = 0;
-
-            virtual void format(dynamic_format_context& ctx) const = 0;
-
-            virtual void reset(handle_impl_base* mem) const = 0;
-        };
-
-        template <typename T>
-        class handle_impl final : public handle_impl_base
-        {
-        public:
-            handle_impl(const T& val) noexcept
-                : m_ptr(&val) {}
-
-            format_arg index(const indexing_value& idx) const override;
-            format_arg attribute(const attribute_name& attr) const override;
-
-            void parse(format_parse_context& ctx) const override
-            {
-                // TODO
-            }
-
-            void format(dynamic_format_context& ctx) const override
-            {
-                // TODO
-            }
-
-            void reset(handle_impl_base* mem) const override
-            {
-                new(mem) handle_impl(*m_ptr);
-            }
-
-        private:
-            const T* m_ptr;
-        };
-        // Used to calculate storage space
-        template <>
-        class handle_impl<void> final : public handle_impl_base
-        {
-        public:
-            handle_impl() = delete;
-
-        private:
-            const void* m_ptr;
-        };
-
         template <typename T>
         concept integral_type =
             std::integral<T> &&
@@ -208,21 +156,94 @@ namespace papilio
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
 
+    private:
+        class handle_impl_base
+        {
+        public:
+            handle_impl_base() = default;
+            handle_impl_base(const handle_impl_base&) = delete;
+
+            virtual ~handle_impl_base() = default;
+
+            virtual format_arg index(const indexing_value& idx) const = 0;
+            virtual format_arg attribute(const attribute_name& attr) const = 0;
+
+            virtual void parse(format_parse_context& ctx) const = 0;
+
+            virtual void format(dynamic_format_context& ctx) const = 0;
+
+            virtual void copy(void* mem) const noexcept = 0;
+        };
+
+        template <typename T>
+        class handle_impl final : public handle_impl_base
+        {
+        public:
+            handle_impl(const T& val) noexcept
+                : m_ptr(std::addressof(val)) {}
+            handle_impl(const handle_impl& other) noexcept
+                : m_ptr(other.m_ptr) {}
+
+            format_arg index(const indexing_value& idx) const override
+            {
+                return idx.visit(
+                    [this](auto&& i) { return accessor_traits<T>::template index<format_arg>(*m_ptr, i); }
+                );
+            }
+            format_arg attribute(const attribute_name& attr) const override
+            {
+                return accessor_traits<T>::template attribute<format_arg>(*m_ptr, attr);
+            }
+
+            void parse(format_parse_context& ctx) const override
+            {
+                // TODO
+            }
+
+            void format(dynamic_format_context& ctx) const override
+            {
+                // TODO
+            }
+
+            void copy(void* mem) const noexcept override
+            {
+                new(mem) handle_impl(*this);
+            }
+
+        private:
+            const T* m_ptr;
+        };
+        // Used to calculate storage space 
+        template <std::same_as<void> T> // workaround for GCC
+        class handle_impl<T> final : public handle_impl_base
+        {
+        public:
+            handle_impl() = delete;
+
+        private:
+            const void* m_ptr;
+        };
+
+    public:
         class handle
         {
         public:
-            handle() noexcept
-                : m_storage{}, m_has_value(false) {}
+            handle() noexcept = default;
             handle(const handle& other) noexcept
                 : handle()
             {
-                copy(other);
+                other.copy(*this);
             }
             template <typename T>
-            handle(const T& val)
+            handle(const T& val) noexcept
                 : handle()
             {
                 construct<T>(val);
+            }
+
+            ~handle()
+            {
+                destroy();
             }
 
             handle& operator=(const handle& rhs) noexcept
@@ -230,7 +251,8 @@ namespace papilio
                 if(this == &rhs)
                     return *this;
                 destroy();
-                copy(rhs);
+                rhs.copy(*this);
+
                 return *this;
             }
 
@@ -245,44 +267,37 @@ namespace papilio
 
             void parse(format_parse_context& ctx) const
             {
-                // TODO
+                ptr()->parse(ctx);
             }
 
             void format(dynamic_format_context& ctx) const
             {
-                // TODO
+                ptr()->format(ctx);
             }
 
         private:
-            char m_storage[sizeof(detail::handle_impl<void>)]{};
-            bool m_has_value = false;
+            mutable static_storage<sizeof(handle_impl<void>)> m_storage;
 
-            detail::handle_impl_base* ptr() noexcept
+            handle_impl_base* ptr() const noexcept
             {
-                return reinterpret_cast<detail::handle_impl_base*>(m_storage);
-            }
-            const detail::handle_impl_base* ptr() const noexcept
-            {
-                return reinterpret_cast<const detail::handle_impl_base*>(m_storage);
+                return reinterpret_cast<handle_impl_base*>(m_storage.data());
             }
 
             template <typename T>
             void construct(const T& val) noexcept
             {
-                static_assert(sizeof(detail::handle_impl<T>) <= sizeof(m_storage));
-                new(ptr()) detail::handle_impl<T>(val);
-                m_has_value = true;
+                static_assert(sizeof(handle_impl<T>) <= m_storage.size());
+
+                new(ptr()) handle_impl<T>(val);
             }
-            void copy(const handle& other) noexcept
+            // Copy this handle to another uninitialized handle
+            void copy(handle& other) const noexcept
             {
-                other.ptr()->reset(ptr());
-                m_has_value = true;
+                ptr()->copy(other.ptr());
             }
             void destroy() noexcept
             {
                 ptr()->~handle_impl_base();
-                std::memset(m_storage, 0, sizeof(m_storage));
-                m_has_value = false;
             }
         };
 
@@ -1119,4 +1134,6 @@ namespace papilio
     };
 }
 
-#include "core.inl"
+#ifdef PAPILIO_COMPILER_MSVC
+#   pragma warning(pop)
+#endif
