@@ -140,6 +140,8 @@ namespace papilio
             m_has_ownership(std::exchange(other.m_has_ownership, false)) {}
         explicit optional_unique_ptr(pointer ptr, bool ownership = true) noexcept
             : m_ptr(std::move(ptr)), m_has_ownership(ownership) {}
+        optional_unique_ptr(independent_t, pointer ptr) noexcept
+            : m_ptr(std::move(ptr)), m_has_ownership(true) {}
         template <typename D>
         optional_unique_ptr(std::unique_ptr<T, D>&& ptr) noexcept
             : m_ptr(ptr.release())
@@ -182,6 +184,10 @@ namespace papilio
                 m_ptr = std::move(ptr);
                 m_has_ownership = ownership;
             }
+        }
+        void reset(independent_t, pointer ptr)
+        {
+            reset(std::move(ptr), true);
         }
         template <typename D>
         void reset(std::unique_ptr<T, D>&& ptr) noexcept
@@ -238,7 +244,7 @@ namespace papilio
 
         explicit operator bool() const noexcept
         {
-            return (bool)m_ptr;
+            return static_cast<bool>(m_ptr);
         }
 
         [[nodiscard]]

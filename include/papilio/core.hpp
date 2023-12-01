@@ -122,34 +122,9 @@ namespace papilio
     class formatter;
 
     template <typename T>
-    class formatter_traits
+    concept formattable = requires()
     {
-    public:
-        using type = detail::formatter_selector_helper<T>::type;
-        using formatter_type = formatter<type>;
-
-        template <typename Context = dynamic_format_context>
-        [[nodiscard]]
-        static constexpr bool has_formatter() noexcept
-        {
-            return requires(formatter<T> f, format_parse_context & parse_ctx, const type & val, Context & out_ctx)
-            {
-                typename formatter<T>;
-                f.parse(parse_ctx);
-                f.format(val, out_ctx);
-            };
-        }
-
-        static void parse(format_parse_context& ctx)
-        {
-
-        }
-
-        template <typename Context>
-        static void format(const type& val, Context& ctx)
-        {
-
-        }
+        typename formatter<T>;
     };
 
     namespace detail
