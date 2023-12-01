@@ -2,10 +2,7 @@
 #include <papilio/format.hpp>
 
 
-TEST(TestFormat, Format)
-{
-
-}
+// TODO
 
 int main(int argc, char* argv[])
 {

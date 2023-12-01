@@ -9,10 +9,8 @@
 #include <algorithm>
 #include <memory>
 #include <utility>
-#include <cassert>
 #include <charconv>
 #include <optional>
-#include <sstream>
 #include "container.hpp"
 #include "core.hpp"
 #include "error.hpp"
@@ -731,8 +729,8 @@ namespace papilio::script
         class argument final : public base
         {
         public:
-            using member_type = chained_access::member_type;
-            using member_storage = chained_access::member_storage;
+            using member_type = chained_access::variant_type;
+            using member_storage = chained_access::container_type;
 
             argument() = delete;
             argument(indexing_value arg_id)
@@ -746,7 +744,7 @@ namespace papilio::script
             {
                 format_arg arg = ctx.get_store().get(m_arg_id);
                 if(!m_access.empty())
-                    arg = m_access.access(arg);
+                    arg = arg.access(m_access);
 
                 auto var = arg.as_variable();
                 ctx.push(std::move(var));

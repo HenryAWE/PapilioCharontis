@@ -27,7 +27,15 @@ namespace papilio
 
         protected:
             [[nodiscard]]
-            static size_type calc_mem_size(size_type current, size_type required) noexcept;
+            static size_type calc_mem_size(size_type current, size_type required) noexcept
+            {
+                PAPILIO_ASSERT(current < required);
+                if(current <= 1)
+                    current = 2;
+                while(current < required)
+                    current += current / 2;
+                return current;
+            }
         };
     }
 

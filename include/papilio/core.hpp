@@ -1,14 +1,9 @@
 #pragma once
 
-#include <cstring>
 #include <string>
 #include <variant>
 #include <vector>
 #include <map>
-#include <iostream>
-#include <iterator>
-#include <algorithm>
-#include <typeinfo>
 #include "macros.hpp"
 #include "utility.hpp"
 #include "container.hpp"
@@ -155,6 +150,7 @@ namespace papilio
         using char_type = char;
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
+        using string_container_type = utf::basic_string_container<char_type>;
 
     private:
         class handle_impl_base
@@ -312,7 +308,7 @@ namespace papilio
             float,
             double,
             long double,
-            utf::string_container,
+            string_container_type,
             const void*,
             handle
         >;
@@ -334,14 +330,14 @@ namespace papilio
         template <std::floating_point Float>
         format_arg(Float val) noexcept
             : m_val(val) {}
-        format_arg(utf::string_container str) noexcept
-            : m_val(std::in_place_type<utf::string_container>, std::move(str)) {}
+        format_arg(string_container_type str) noexcept
+            : m_val(std::in_place_type<string_container_type>, std::move(str)) {}
         template <string_like String>
         format_arg(String&& str)
-            : m_val(std::in_place_type<utf::string_container>, std::forward<String>(str)) {}
+            : m_val(std::in_place_type<string_container_type>, std::forward<String>(str)) {}
         template <string_like String>
         format_arg(independent_t, String&& str)
-            : m_val(std::in_place_type<utf::string_container>, independent, std::forward<String>(str)) {}
+            : m_val(std::in_place_type<string_container_type>, independent, std::forward<String>(str)) {}
         template <typename T, typename... Args>
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
@@ -358,9 +354,72 @@ namespace papilio
         format_arg& operator=(format_arg&&) noexcept = default;
 
         [[nodiscard]]
-        format_arg index(const indexing_value& idx) const;
+        format_arg index(const indexing_value& idx) const
+        {
+            return std::visit(
+                [&idx]<typename T>(const T& v) -> format_arg
+                {
+                    using target_type = std::remove_cvref_t<T>;
+
+                    if constexpr(std::is_same_v<target_type, handle>)
+                    {
+                        return v.index(idx);
+                    }
+                    else
+                    {
+                        return idx.visit(
+                            [&](auto&& i)
+                            {
+                                return accessor_traits<target_type>::template index<format_arg>(v, i);
+                            }
+                        );
+                    }
+                },
+                m_val
+            );
+        }
         [[nodiscard]]
-        format_arg attribute(const attribute_name& attr) const;
+        format_arg attribute(const attribute_name& attr) const
+        {
+            return std::visit(
+                [&attr]<typename T>(const T& v) -> format_arg
+                {
+                    using target_type = std::remove_cvref_t<T>;
+
+                    if constexpr(std::is_same_v<target_type, handle>)
+                    {
+                        return v.attribute(attr);
+                    }
+                    else
+                    {
+                        return accessor_traits<target_type>::template attribute<format_arg>(v, attr);
+                    }
+                },
+                m_val
+            );
+        }
+
+        format_arg access(const chained_access& acc) const
+        {
+            format_arg result = *this;
+
+            auto visitor = [&result]<typename T>(const T& v) -> format_arg
+            {
+                if constexpr(std::is_same_v<T, indexing_value>)
+                {
+                    return result.index(v);
+                }
+                else if constexpr(std::is_same_v<T, attribute_name>)
+                {
+                    return result.attribute(v);
+                }
+            };
+
+            for (const auto &i : acc)
+                result = std::visit(visitor, i);
+
+            return result;
+        }
 
         template <typename T>
         [[nodiscard]]
@@ -382,13 +441,45 @@ namespace papilio
                 return std::get<utf::codepoint>(val.m_val);
             else if constexpr(std::integral<T>)
                 return std::get<detail::best_int_type_t<T>>(val.m_val);
-            else if constexpr(std::is_same_v<T, utf::string_container> || string_like<T>)
-                return std::get<utf::string_container>(val.m_val);
+            else if constexpr(basic_string_like<T, char_type>)
+                return std::get<string_container_type>(val.m_val);
             else
                 return std::get<T>(val.m_val);
         }
 
-        script::variable as_variable() const;
+        script::variable as_variable() const
+        {
+            using script::variable;
+
+            return std::visit(
+                []<typename T>(const T& v) -> variable
+                {
+                    using target_type = std::remove_cvref_t<decltype(v)>;
+
+                    if constexpr(std::is_same_v<target_type, utf::codepoint>)
+                    {
+                        return variable(string_container_type(1, v));
+                    }
+                    if constexpr(std::integral<target_type>)
+                    {
+                        return static_cast<variable::int_type>(v);
+                    }
+                    else if constexpr(std::floating_point<target_type>)
+                    {
+                        return static_cast<variable::float_type>(v);
+                    }
+                    else if constexpr(std::is_same_v<target_type, string_container_type>)
+                    {
+                        return variable(v);
+                    }
+                    else
+                    {
+                        throw std::invalid_argument("invalid type");
+                    }
+                },
+                m_val
+            );
+        }
 
         void parse(format_parse_context& ctx);
 
@@ -397,35 +488,6 @@ namespace papilio
 
     private:
         underlying_type m_val;
-    };
-
-    // access members of format argument
-    class chained_access
-    {
-    public:
-        using member_type = std::variant<
-            indexing_value,
-            attribute_name
-        >;
-        using member_storage = small_vector<member_type, 2>;
-
-        chained_access() noexcept : m_members() {}
-        chained_access(const chained_access&) = delete;
-        chained_access(chained_access&&) noexcept = default;
-        chained_access(member_storage members)
-            : m_members(std::move(members)) {}
-
-        [[nodiscard]]
-        format_arg access(format_arg arg) const;
-
-        [[nodiscard]]
-        bool empty() const noexcept
-        {
-            return m_members.empty();
-        }
-
-    private:
-        member_storage m_members;
     };
 
     namespace detail
@@ -490,18 +552,68 @@ namespace papilio
             using char_type = char;
             using string_type = std::basic_string<char_type>;
             using string_view_type = std::basic_string_view<char_type>;
+            using string_container_type = utf::basic_string_container<char>;
+            using indexing_value_type = basic_indexing_value<char>;
             using size_type = std::size_t;
 
             [[nodiscard]]
             virtual const format_arg& get(size_type i) const = 0;
             [[nodiscard]]
             virtual const format_arg& get(string_view_type key) const = 0;
-            [[nodiscard]]
-            virtual const format_arg& get(const indexing_value& idx) const;
 
-            bool check(size_type i) const noexcept;
+            [[nodiscard]]
+            virtual const format_arg& get(const indexing_value_type& idx) const
+            {
+                return idx.visit(
+                    [&]<typename T>(const T& v) -> const format_arg&
+                    {
+                        if constexpr(std::is_same_v<T, indexing_value_type::index_type>)
+                        {
+                            if(v < 0)
+                                throw_index_out_of_range();
+                            size_type i = static_cast<size_type>(v);
+                            return get(i);
+                        }
+                        else if constexpr(std::is_same_v<T, string_container_type>)
+                        {
+                            return get(string_view_type(v));
+                        }
+                        else
+                        {
+                            throw std::invalid_argument("invalid indexing value");
+                        }
+                    }
+                );
+            }
+
+            bool check(size_type i) const noexcept
+            {
+                return i < indexed_size();
+            }
             virtual bool check(string_view_type key) const noexcept = 0;
-            bool check(const indexing_value& idx) const noexcept;
+
+            bool check(const indexing_value_type& idx) const noexcept
+            {
+                return idx.visit(
+                    [this]<typename T>(const T& v) -> bool
+                    {
+                        if constexpr(std::is_same_v<T, indexing_value_type::index_type>)
+                        {
+                            if(v < 0)
+                                return false;
+                            return check(static_cast<size_type>(v));
+                        }
+                        else if constexpr(std::is_same_v<T, string_container_type>)
+                        {
+                            return check(string_view_type(v));
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                );
+            }
 
             virtual size_type indexed_size() const noexcept = 0;
             virtual size_type named_size() const noexcept = 0;
@@ -514,9 +626,15 @@ namespace papilio
 
         protected:
             [[noreturn]]
-            static void raise_index_out_of_range();
+            static void throw_index_out_of_range()
+            {
+                throw std::out_of_range("index out of range");
+            }
             [[noreturn]]
-            static void raise_invalid_named_argument();
+            static void throw_invalid_named_argument()
+            {
+                throw std::out_of_range("invalid named argument");
+            }
         };
     }
 
@@ -534,14 +652,14 @@ namespace papilio
         const format_arg& get(size_type i) const override
         {
             if(i >= m_indexed_args.size())
-                raise_index_out_of_range();
+                throw_index_out_of_range();
             return m_indexed_args[i];
         }
         const format_arg& get(string_view_type k) const override
         {
             auto it = m_named_args.find(k);
             if(it == m_named_args.end())
-                raise_invalid_named_argument();
+                throw_invalid_named_argument();
             return it->second;
         }
         using base::get;
@@ -627,11 +745,25 @@ namespace papilio
             (helper(std::forward<Args>(args)), ...);
         }
 
-        const format_arg& get(size_type i) const override;
-        const format_arg& get(string_view_type key) const override;
+        const format_arg& get(size_type i) const override
+        {
+            if(i >= m_args.size())
+                throw_index_out_of_range();
+            return m_args[i];
+        }
+        const format_arg& get(string_view_type key) const override
+        {
+            auto it = m_named_args.find(key);
+            if(it == m_named_args.end())
+                throw_invalid_named_argument();
+            return it->second;
+        }
         using format_args_base::get;
 
-        bool check(string_view_type key) const noexcept override;
+        bool check(string_view_type key) const noexcept override
+        {
+            return m_named_args.contains(key);
+        }
         using format_args_base::check;
 
         [[nodiscard]]

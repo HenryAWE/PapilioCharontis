@@ -396,7 +396,7 @@ TEST(TestScript, Executor)
         executor ex4(
             std::in_place_type<executor::argument>,
             "string"s,
-            chained_access::member_storage{ attribute_name("length") }
+            chained_access::container_type{ attribute_name("length") }
         );
         ex4(ctx);
 
@@ -601,7 +601,7 @@ TEST(TestScript, Interpreter)
 
         mutable_format_args store("testing");
         EXPECT_EQ(
-            get<utf::codepoint>(acc.second.access(store[acc.first])),
+            get<utf::codepoint>(store[acc.first].access(acc.second)),
             U't'
         );
     }
@@ -612,7 +612,7 @@ TEST(TestScript, Interpreter)
 
         mutable_format_args store("string"_a = "testing");
         EXPECT_EQ(
-            get<utf::codepoint>(acc.second.access(store[acc.first])),
+            get<utf::codepoint>(store[acc.first].access(acc.second)),
             U't'
         );
     }
@@ -669,7 +669,7 @@ TEST(TestScript, CustomType)
         chained_access acc({ 0 });
 
         format_arg fmt_arg = m;
-        auto member = acc.access(fmt_arg);
+        auto member = fmt_arg.access(acc);
         EXPECT_EQ(get<utf::string_container>(member), "zero");
     }
 

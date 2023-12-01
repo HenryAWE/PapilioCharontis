@@ -813,7 +813,7 @@ namespace papilio::script
                 assert(begin->type() == lexeme_type::argument);
 
                 auto& a = begin->as<lexeme::argument>();
-                chained_access::member_storage members;
+                chained_access::container_type members;
 
                 auto it = std::next(begin);
                 for(; it != end;)
