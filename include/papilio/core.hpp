@@ -118,7 +118,7 @@ namespace papilio
         };
     }
 
-    template <typename T>
+    template <typename T, typename CharT = char>
     class formatter;
 
     template <typename T>
@@ -941,6 +941,8 @@ namespace papilio
         basic_format_context(iterator it, dynamic_format_args args)
             : m_out(std::move(it)), m_args(args) {}
         basic_format_context(const std::locale& loc, iterator it, dynamic_format_args args)
+            : m_loc(loc), m_out(std::move(it)), m_args(args) {}
+        basic_format_context(locale_ref loc, iterator it, dynamic_format_args args)
             : m_loc(loc), m_out(std::move(it)), m_args(args) {}
 
         [[nodiscard]]
