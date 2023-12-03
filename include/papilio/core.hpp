@@ -344,6 +344,12 @@ namespace papilio
         format_arg& operator=(const format_arg&) = default;
         format_arg& operator=(format_arg&&) noexcept = default;
 
+        template <typename Visitor>
+        decltype(auto) visit(Visitor&& vis) const // GCC needs this function to be defined in the front of the class
+        {
+            return std::visit(std::forward<Visitor>(vis), m_val);
+        }
+
         [[nodiscard]]
         format_arg index(const indexing_value& idx) const
         {
@@ -468,12 +474,6 @@ namespace papilio
                     }
                 }
             );
-        }
-
-        template <typename Visitor>
-        decltype(auto) visit(Visitor&& vis) const
-        {
-            return std::visit(std::forward<Visitor>(vis), m_val);
         }
 
     private:
@@ -690,7 +690,7 @@ namespace papilio
         fixed_vector<format_arg, IndexedArgumentCount> m_indexed_args;
         fixed_flat_map<std::string_view, format_arg, NamedArgumentCount> m_named_args;
 
-        template <typename T> requires !is_named_arg_v<T>
+        template <typename T> requires(!is_named_arg_v<T>)
         void push(T&& val) noexcept(std::is_nothrow_constructible_v<format_arg, T>)
         {
             m_indexed_args.emplace_back(std::forward<T>(val));
