@@ -3,11 +3,80 @@
 #include "macros.hpp"
 #include "core.hpp"
 #include "script.hpp"
+#include "error.hpp"
 #include <cmath>
 
 
 namespace papilio
 {
+    namespace detail
+    {
+        template <typename OutputIt>
+        OutputIt vformat_to_impl(OutputIt out, locale_ref loc, std::string_view fmt, const dynamic_format_args& args)
+        {
+            format_parse_context parse_ctx(fmt, args);
+            basic_format_context<OutputIt> fmt_ctx(out, args);
+
+            using context_t = format_context_traits<basic_format_context<OutputIt>>;
+
+            auto parse_it = parse_ctx.begin();
+
+            while(parse_it != parse_ctx.end())
+            {
+                utf::codepoint ch = *parse_it;
+
+                if(ch == U'}')
+                {
+                    ++parse_it;
+                    if(parse_it == parse_ctx.end())
+                        throw invalid_format("invalid format");
+
+                    ch = *parse_it;
+                    if(ch != U'}')
+                        throw invalid_format("invalid format");
+
+                    context_t::append(fmt_ctx, U'}');
+                    ++parse_it;
+                }
+                else if(ch == U'{')
+                {
+                    ++parse_it;
+                    if(parse_it == parse_ctx.end())
+                        throw invalid_format("invalid format");
+
+                    ch = *parse_it;
+                    if(ch == U'{')
+                    {
+                        context_t::append(fmt_ctx, '{');
+
+                        ++parse_it;
+                    }
+                    else if(ch == U'$')
+                    {
+                        ++parse_it;
+                        // TODO: invoke script interpreter
+
+                        ++parse_it;
+                    }
+                    else
+                    {
+                        // TODO: invoke formatter
+
+                        ++parse_it;
+                    }
+                }
+                else
+                {
+                    // normal character
+                    context_t::append(fmt_ctx, ch);
+                    ++parse_it;
+                }
+            }
+
+            return context_t::out(fmt_ctx);
+        }
+    }
+
     template <typename OutputIt>
     struct format_to_n_result
     {
@@ -16,16 +85,24 @@ namespace papilio
     };
 
     template <typename OutputIt>
-    OutputIt vformat_to(OutputIt out, std::string_view fmt, const dynamic_format_args& store)
+    OutputIt vformat_to(OutputIt out, std::string_view fmt, const dynamic_format_args& args)
     {
-        // TODO
-        return out; // placeholder
+        return detail::vformat_to_impl<OutputIt>(
+            std::move(out),
+            nullptr,
+            fmt,
+            args
+        );
     }
     template <typename OutputIt>
-    OutputIt vformat_to(OutputIt out, const std::locale& loc, std::string_view fmt, const dynamic_format_args& store)
+    OutputIt vformat_to(OutputIt out, const std::locale& loc, std::string_view fmt, const dynamic_format_args& args)
     {
-        // TODO
-        return out; // placeholder
+        return detail::vformat_to_impl<OutputIt>(
+            std::move(out),
+            loc,
+            fmt,
+            args
+        );
     }
 
     namespace detail
