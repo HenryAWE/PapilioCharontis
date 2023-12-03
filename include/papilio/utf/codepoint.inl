@@ -6,7 +6,7 @@
 
 namespace papilio::utf
 {
-    constexpr auto decoder<char32_t>::size_bytes(char32_t ch) noexcept->std::uint8_t
+    constexpr std::uint8_t decoder<char32_t>::size_bytes(char32_t ch) noexcept
     {
         if(ch <= 0x7F)
             return 1;
@@ -18,7 +18,7 @@ namespace papilio::utf
             return 4;
     }
 
-    constexpr auto decoder<char32_t>::to_codepoint(char32_t ch) -> std::pair<codepoint, std::uint8_t>
+    constexpr std::pair<codepoint, std::uint8_t> decoder<char32_t>::to_codepoint(char32_t ch) noexcept
     {
         std::uint8_t len = size_bytes(ch);
         char8_t bytes[4] = { 0, 0, 0, 0 };
@@ -53,7 +53,7 @@ namespace papilio::utf
         return std::make_pair(codepoint(bytes, len), 1);
     }
 
-    constexpr auto decoder<char32_t>::from_codepoint(codepoint cp) noexcept -> std::pair<char32_t, std::uint8_t>
+    constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(codepoint cp) noexcept
     {
         const char8_t* bytes = cp.u8data();
 
@@ -107,7 +107,7 @@ namespace papilio::utf
         return byte_count(ch);
     }
 
-    constexpr auto decoder<char8_t>::to_codepoint(std::u8string_view ch) -> std::pair<codepoint, std::uint8_t>
+    constexpr std::pair<codepoint, std::uint8_t> decoder<char8_t>::to_codepoint(std::u8string_view ch)
     {
         if(ch.empty()) [[unlikely]]
             return std::make_pair(codepoint(), 0);
@@ -115,7 +115,7 @@ namespace papilio::utf
         return std::make_pair(codepoint(ch.data(), len), len);
     }
 
-    constexpr auto decoder<char16_t>::to_char32_t(std::u16string_view ch) -> std::pair<char32_t, std::uint8_t>
+    constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(std::u16string_view ch)
     {
         if(ch.empty()) [[unlikely]]
             return std::make_pair(U'\0', 0);
@@ -139,19 +139,19 @@ namespace papilio::utf
             return std::make_pair(result, 2);
         }
     }
-    constexpr auto decoder<char16_t>::to_char32_t(char16_t first, char16_t second) -> std::pair<char32_t, std::uint8_t>
+    constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(char16_t first, char16_t second)
     {
         char16_t tmp[2] = { first, second };
 
         return to_char32_t(std::u16string_view(tmp, 2));
     }
 
-    constexpr auto decoder<char16_t>::to_codepoint(std::u16string_view ch) -> std::pair<codepoint, std::uint8_t>
+    constexpr std::pair<codepoint, std::uint8_t> decoder<char16_t>::to_codepoint(std::u16string_view ch)
     {
         auto [ch32, processed_size] = to_char32_t(ch);
         return std::make_pair(decoder<char32_t>::to_codepoint(ch32).first, processed_size);
     }
-    constexpr auto decoder<char16_t>::to_codepoint(char16_t first, char16_t second) -> std::pair<codepoint, std::uint8_t>
+    constexpr std::pair<codepoint, std::uint8_t> decoder<char16_t>::to_codepoint(char16_t first, char16_t second)
     {
         return decoder<char32_t>::to_codepoint(to_char32_t(first, second).first);
     }

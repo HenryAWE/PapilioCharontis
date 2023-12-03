@@ -164,9 +164,7 @@ namespace papilio
             virtual format_arg index(const indexing_value& idx) const = 0;
             virtual format_arg attribute(const attribute_name& attr) const = 0;
 
-            virtual void parse(format_parse_context& ctx) const = 0;
-
-            virtual void format(dynamic_format_context& ctx) const = 0;
+            virtual void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const = 0;
 
             virtual void copy(void* mem) const noexcept = 0;
         };
@@ -191,12 +189,7 @@ namespace papilio
                 return accessor_traits<T>::template attribute<format_arg>(*m_ptr, attr);
             }
 
-            void parse(format_parse_context& ctx) const override
-            {
-                // TODO
-            }
-
-            void format(dynamic_format_context& ctx) const override
+            void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const override
             {
                 // TODO
             }
@@ -209,8 +202,11 @@ namespace papilio
         private:
             const T* m_ptr;
         };
-        // Used to calculate storage space 
-        template <std::same_as<void> T> // workaround for GCC
+
+        // Used to calculate storage space
+        // Use workaround for GCC to solve "full specialization in non-namespace scope"
+        // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85282
+        template <std::same_as<void> T>
         class handle_impl<T> final : public handle_impl_base
         {
         public:
@@ -261,14 +257,9 @@ namespace papilio
                 return ptr()->attribute(attr);
             }
 
-            void parse(format_parse_context& ctx) const
+            void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const
             {
-                ptr()->parse(ctx);
-            }
-
-            void format(dynamic_format_context& ctx) const
-            {
-                ptr()->format(ctx);
+                ptr()->format(parse_ctx, out_ctx);
             }
 
         private:
@@ -356,7 +347,7 @@ namespace papilio
         [[nodiscard]]
         format_arg index(const indexing_value& idx) const
         {
-            return std::visit(
+            return visit(
                 [&idx]<typename T>(const T& v) -> format_arg
                 {
                     using target_type = std::remove_cvref_t<T>;
@@ -367,21 +358,16 @@ namespace papilio
                     }
                     else
                     {
-                        return idx.visit(
-                            [&](auto&& i)
-                            {
-                                return accessor_traits<target_type>::template index<format_arg>(v, i);
-                            }
-                        );
+                        using accessor_t = accessor_traits<target_type>;
+                        return accessor_t::template access<format_arg>(v, idx);
                     }
-                },
-                m_val
+                }
             );
         }
         [[nodiscard]]
         format_arg attribute(const attribute_name& attr) const
         {
-            return std::visit(
+            return visit(
                 [&attr]<typename T>(const T& v) -> format_arg
                 {
                     using target_type = std::remove_cvref_t<T>;
@@ -392,31 +378,35 @@ namespace papilio
                     }
                     else
                     {
-                        return accessor_traits<target_type>::template attribute<format_arg>(v, attr);
+                        using accessor_t = accessor_traits<target_type>;
+                        return accessor_t::template attribute<format_arg>(v, attr);
                     }
-                },
-                m_val
+                }
             );
         }
 
+        [[nodiscard]]
         format_arg access(const chained_access& acc) const
         {
             format_arg result = *this;
 
-            auto visitor = [&result]<typename T>(const T& v) -> format_arg
+            for(const auto& i : acc)
             {
-                if constexpr(std::is_same_v<T, indexing_value>)
-                {
-                    return result.index(v);
-                }
-                else if constexpr(std::is_same_v<T, attribute_name>)
-                {
-                    return result.attribute(v);
-                }
-            };
-
-            for (const auto &i : acc)
-                result = std::visit(visitor, i);
+                result = std::visit(
+                    [&result]<typename T>(const T& v) -> format_arg
+                    {
+                        if constexpr(std::is_same_v<T, indexing_value>)
+                        {
+                            return result.index(v);
+                        }
+                        else if constexpr(std::is_same_v<T, attribute_name>)
+                        {
+                            return result.attribute(v);
+                        }
+                    },
+                    i
+                );
+            }
 
             return result;
         }
@@ -451,7 +441,7 @@ namespace papilio
         {
             using script::variable;
 
-            return std::visit(
+            return visit(
                 []<typename T>(const T& v) -> variable
                 {
                     using target_type = std::remove_cvref_t<decltype(v)>;
@@ -476,15 +466,15 @@ namespace papilio
                     {
                         throw std::invalid_argument("invalid type");
                     }
-                },
-                m_val
+                }
             );
         }
 
-        void parse(format_parse_context& ctx);
-
-        template <typename Context>
-        void format(Context& ctx);
+        template <typename Visitor>
+        decltype(auto) visit(Visitor&& vis) const
+        {
+            return std::visit(std::forward<Visitor>(vis), m_val);
+        }
 
     private:
         underlying_type m_val;
@@ -638,7 +628,7 @@ namespace papilio
         };
     }
 
-    template <std::size_t ArgumentCount, std::size_t NamedArgumentCount>
+    template <std::size_t IndexedArgumentCount, std::size_t NamedArgumentCount>
     class static_format_args final : public detail::format_args_base
     {
         using base = detail::format_args_base;
@@ -672,8 +662,8 @@ namespace papilio
 
         size_type indexed_size() const noexcept override
         {
-            PAPILIO_ASSERT(m_indexed_args.size() == ArgumentCount);
-            return ArgumentCount;
+            PAPILIO_ASSERT(m_indexed_args.size() == IndexedArgumentCount);
+            return IndexedArgumentCount;
         }
         size_type named_size() const noexcept override
         {
@@ -683,10 +673,10 @@ namespace papilio
 
     private:
         template <typename... Args>
-        void construct(Args&&... args)
+        void construct(Args&&... args) noexcept
         {
             static_assert(
-                detail::get_indexed_arg_count<Args...>() == ArgumentCount,
+                detail::get_indexed_arg_count<Args...>() == IndexedArgumentCount,
                 "invalid indexed argument count"
             );
             static_assert(
@@ -697,16 +687,16 @@ namespace papilio
             (push(std::forward<Args>(args)), ...);
         }
 
-        fixed_vector<format_arg, ArgumentCount> m_indexed_args;
+        fixed_vector<format_arg, IndexedArgumentCount> m_indexed_args;
         fixed_flat_map<std::string_view, format_arg, NamedArgumentCount> m_named_args;
 
-        template <typename T>
-        void push(T&& val) requires(!is_named_arg_v<T>)
+        template <typename T> requires !is_named_arg_v<T>
+        void push(T&& val) noexcept(std::is_nothrow_constructible_v<format_arg, T>)
         {
             m_indexed_args.emplace_back(std::forward<T>(val));
         }
         template <typename T>
-        void push(named_arg<T> na)
+        void push(named_arg<T> na) noexcept(std::is_nothrow_constructible_v<format_arg, T>)
         {
             m_named_args.insert_or_assign(
                 na.name,
@@ -1211,7 +1201,7 @@ namespace papilio
     class format_context_traits
     {
     public:
-        using char_type = char;
+        using char_type = typename Context::char_type;
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
         using context_type = Context;

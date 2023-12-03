@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <vector>
 #include <papilio/utf/codepoint.hpp>
 
 
@@ -179,6 +178,30 @@ TEST(codepoint, estimate_width)
         // "文"
         codepoint cjk_6587 = U'\u6587'_cp;
         EXPECT_EQ(cjk_6587.estimate_width(), 2);
+    }
+}
+
+TEST(codepoint, append_to)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    {
+        codepoint a = U'a'_cp;
+
+        std::string result;
+        a.append_to(result);
+        EXPECT_EQ(result, "a");
+    }
+
+    {
+        // CJK Unified Ideographs 6587
+        // "文"
+        codepoint cjk_6587 = U'\u6587'_cp;
+
+        std::string result;
+        cjk_6587.append_to(result);
+        EXPECT_EQ(result, "\u6587");
     }
 }
 

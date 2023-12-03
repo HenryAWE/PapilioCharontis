@@ -93,6 +93,7 @@ namespace papilio
     };
 
     using indexing_value = basic_indexing_value<char>;
+    using windexing_value = basic_indexing_value<wchar_t>;
 
     template <typename CharT>
     class basic_attribute_name
@@ -191,6 +192,7 @@ namespace papilio
     };
 
     using attribute_name = basic_attribute_name<char>;
+    using wattribute_name = basic_attribute_name<wchar_t>;
 
     class invalid_attribute_base : public std::invalid_argument
     {
@@ -312,6 +314,14 @@ namespace papilio
         }
 
         template <typename R, typename U>
+        static R access(U&& object, const indexing_value_type& idx)
+        {
+            return idx.visit(
+                [&](const auto& i) -> R { return index<R>(std::forward<U>(object), i); }
+            );
+        }
+
+        template <typename R, typename U>
         static R index(U&& object, slice s)
         {
             if constexpr(!has_slice_index())
@@ -403,6 +413,7 @@ namespace papilio
     };
 
     using chained_access = basic_chained_access<char>;
+    using wchained_access = basic_chained_access<wchar_t>;
 }
 
 #include "access/string.hpp"

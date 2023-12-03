@@ -155,13 +155,6 @@ TEST(basic_string_ref, u8string_ref)
     }
 
     {
-        u8string_ref ref(string_ref(""));
-    }
-    {
-        string_ref ref(u8string_ref(""));
-    }
-
-    {
         string_ref ref = "123456";
 
         ref.remove_prefix(2);
@@ -325,6 +318,21 @@ TEST(basic_string_container, string_container)
 
         EXPECT_EQ("test"_sc.size(), 4);
         EXPECT_EQ(u8"test"_sc.size(), 4);
+    }
+}
+
+TEST(basic_string_container, wstring_container)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    {
+        wstring_container sc = L"test";
+
+        EXPECT_EQ(sc[0], U't');
+        EXPECT_EQ(sc[1], U'e');
+        EXPECT_EQ(sc[2], U's');
+        EXPECT_EQ(sc[3], U't');
     }
 }
 

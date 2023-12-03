@@ -7,6 +7,7 @@
 #include <span>
 #include <string>
 #include <array>
+#include <iterator>
 #include "stralgo.hpp"
 
 #ifdef PAPILIO_COMPILER_MSVC
@@ -18,6 +19,11 @@
 
 namespace papilio::utf
 {
+    // forward declarations
+    template <char_like Char>
+    class decoder;
+    class codepoint;
+
     // vvv decoders vvv
 
     template <>
@@ -26,9 +32,9 @@ namespace papilio::utf
     public:
         static constexpr std::uint8_t size_bytes(char32_t ch) noexcept;
 
-        static constexpr auto to_codepoint(char32_t ch) -> std::pair<codepoint, std::uint8_t>;
+        static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(char32_t ch) noexcept;
 
-        static constexpr auto from_codepoint(codepoint cp) noexcept -> std::pair<char32_t, std::uint8_t>;
+        static constexpr std::pair<char32_t, std::uint8_t> from_codepoint(codepoint cp) noexcept;
     };
     template <>
     class decoder<char8_t>
@@ -36,17 +42,17 @@ namespace papilio::utf
     public:
         static constexpr std::uint8_t size_bytes(char8_t ch) noexcept;
 
-        static constexpr auto to_codepoint(std::u8string_view ch) -> std::pair<codepoint, std::uint8_t>;
+        static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(std::u8string_view ch);
     };
     template <>
     class decoder<char16_t>
     {
     public:
-        static constexpr auto to_char32_t(std::u16string_view ch) -> std::pair<char32_t, std::uint8_t>;
-        static constexpr auto to_char32_t(char16_t first, char16_t second = u'\0') -> std::pair<char32_t, std::uint8_t>;
+        static constexpr std::pair<char32_t, std::uint8_t> to_char32_t(std::u16string_view ch);
+        static constexpr std::pair<char32_t, std::uint8_t> to_char32_t(char16_t first, char16_t second = u'\0');
 
-        static constexpr auto to_codepoint(std::u16string_view ch) -> std::pair<codepoint, std::uint8_t>;
-        static constexpr auto to_codepoint(char16_t first, char16_t second = u'\0') -> std::pair<codepoint, std::uint8_t>;
+        static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(std::u16string_view ch);
+        static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(char16_t first, char16_t second = u'\0');
 
         struct from_codepoint_result
         {
@@ -76,7 +82,7 @@ namespace papilio::utf
     class decoder<wchar_t>
     {
     public:
-        static auto to_char32_t(std::wstring_view ch) -> std::pair<char32_t, std::uint8_t>;
+        static std::pair<char32_t, std::uint8_t> to_char32_t(std::wstring_view ch);
 
         struct from_codepoint_result
         {
@@ -100,7 +106,7 @@ namespace papilio::utf
             }
         };
 
-        static auto to_codepoint(std::wstring_view ch) -> std::pair<codepoint, std::uint8_t>;
+        static std::pair<codepoint, std::uint8_t> to_codepoint(std::wstring_view ch);
 
         static auto from_codepoint(codepoint cp) -> from_codepoint_result;
     };
@@ -321,6 +327,42 @@ namespace papilio::utf
             }
 
             return 1;
+        }
+
+        template <char_like CharT, typename Iterator>
+        Iterator append_to_as(Iterator iter) const
+        {
+            if constexpr(char8_like<CharT>)
+            {
+                for(std::uint8_t i = 0; i < size_bytes(); ++i)
+                {
+                    *iter = static_cast<CharT>(m_data[i]);
+                    ++iter;
+                }
+            }
+            else if constexpr(char16_like<CharT>)
+            {
+                auto result = decoder<CharT>::from_codepoint(*this);
+                for(std::uint8_t i = 0; i < result.size; ++i)
+                {
+                    *iter = static_cast<CharT>(result.chars[i]);
+                    ++iter;
+                }
+            }
+            else if constexpr(char32_like<CharT>)
+            {
+                *iter = static_cast<CharT>(static_cast<char32_t>(*this));
+                ++iter;
+            }
+
+            return iter;
+        }
+
+        template <typename CharT>
+        std::basic_string<CharT>& append_to(std::basic_string<CharT>& out) const
+        {
+            append_to_as<CharT>(std::back_inserter(out));
+            return out;
         }
 
         // Locale independent APIs

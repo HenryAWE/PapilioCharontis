@@ -22,13 +22,13 @@ namespace papilio
         std::is_same_v<T, char8_t>;
 
     template <typename CharT>
-    concept char_8b = std::is_same_v<CharT, char> || std::is_same_v<CharT, char8_t>;
+    concept char8_like = std::is_same_v<CharT, char> || std::is_same_v<CharT, char8_t>;
     template <typename CharT>
-    concept char_16b =
+    concept char16_like =
         std::is_same_v<CharT, char16_t> ||
         (sizeof(wchar_t) == 2 && std::is_same_v<CharT, wchar_t>);
     template <typename CharT>
-    concept char_32b =
+    concept char32_like =
         std::is_same_v<CharT, char32_t> ||
         (sizeof(wchar_t) == 4 && std::is_same_v<CharT, wchar_t>);
 

@@ -9,11 +9,6 @@
 
 namespace papilio::utf
 {
-    // forward declarations
-    template <char_like Char>
-    class decoder;
-    class codepoint;
-
     constexpr inline std::size_t npos = std::u8string::npos;
 
     class invalid_byte : public std::invalid_argument
@@ -101,7 +96,7 @@ namespace papilio::utf
 
     namespace detail
     {
-        template <char_8b CharT, strlen_behavior OnInvalid>
+        template <char8_like CharT, strlen_behavior OnInvalid>
         constexpr std::size_t strlen_impl(const CharT* str, std::size_t max_chars)
             noexcept(OnInvalid != strlen_behavior::exception)
         {
@@ -158,7 +153,7 @@ namespace papilio::utf
             }
             return result;
         }
-        template <char_8b CharT, strlen_behavior OnInvalid>
+        template <char8_like CharT, strlen_behavior OnInvalid>
         constexpr std::size_t strlen_impl(std::basic_string_view<CharT> str)
             noexcept(OnInvalid != strlen_behavior::exception)
         {
@@ -214,7 +209,7 @@ namespace papilio::utf
             return result;
         }
 
-        template <char_16b CharT, strlen_behavior OnInvalid>
+        template <char16_like CharT, strlen_behavior OnInvalid>
         constexpr std::size_t strlen_impl(const CharT* str, std::size_t max_chars)
             noexcept(OnInvalid != strlen_behavior::exception)
         {
@@ -229,7 +224,7 @@ namespace papilio::utf
 
             return result;
         }
-        template <char_16b CharT, strlen_behavior OnInvalid>
+        template <char16_like CharT, strlen_behavior OnInvalid>
         constexpr std::size_t strlen_impl(std::basic_string_view<CharT> str)
             noexcept(OnInvalid != strlen_behavior::exception)
         {
@@ -244,7 +239,7 @@ namespace papilio::utf
             return result;
         }
 
-        template <char_32b CharT, strlen_behavior OnInvalid /* unused */>
+        template <char32_like CharT, strlen_behavior OnInvalid /* unused */>
         constexpr std::size_t strlen_impl(const CharT* str, std::size_t max_chars) noexcept
         {
             for(std::size_t i = 0; i < max_chars; ++i)
@@ -253,7 +248,7 @@ namespace papilio::utf
                     return i;
             }
         }
-        template <char_32b CharT, strlen_behavior OnInvalid /* unused */>
+        template <char32_like CharT, strlen_behavior OnInvalid /* unused */>
         constexpr std::size_t strlen_impl(std::basic_string_view<CharT> str) noexcept
         {
             return str.size();
@@ -286,7 +281,7 @@ namespace papilio::utf
 
     namespace detail
     {
-        template <char_8b CharT>
+        template <char8_like CharT>
         constexpr std::size_t index_offset_impl(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
         {
             std::uint8_t len = 0;
@@ -315,7 +310,7 @@ namespace papilio::utf
 
             return npos;
         }
-        template <char_8b CharT>
+        template <char8_like CharT>
         constexpr std::size_t index_offset_impl_r(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
         {
             std::size_t ch_count = 0;
@@ -333,7 +328,7 @@ namespace papilio::utf
             return npos;
         }
 
-        template <char_16b CharT>
+        template <char16_like CharT>
         constexpr std::size_t index_offset_impl(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
         {
             std::uint8_t len = 0;
@@ -362,7 +357,7 @@ namespace papilio::utf
 
             return npos;
         }
-        template <char_16b CharT>
+        template <char16_like CharT>
         constexpr std::size_t index_offset_impl_r(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
         {
             std::uint8_t len = 0;
@@ -381,12 +376,12 @@ namespace papilio::utf
             return npos;
         }
 
-        template <char_32b CharT>
+        template <char32_like CharT>
         constexpr std::size_t index_offset_impl(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
         {
             return idx < max_chars ? idx : npos;
         }
-        template <char_32b CharT>
+        template <char32_like CharT>
         constexpr std::size_t index_offset_impl_r(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
         {
             if(idx > max_chars - 1)
