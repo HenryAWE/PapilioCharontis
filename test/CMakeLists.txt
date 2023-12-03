@@ -30,7 +30,7 @@ define_papilio_test(test_format_integral)
 
 define_papilio_test(test_script_variable)
 
-define_papilio_test(test_script)
+define_papilio_test(test_script_interpreter)
 
 define_papilio_test(test_utility)
 
