@@ -336,6 +336,34 @@ TEST(basic_string_container, wstring_container)
     }
 }
 
+
+TEST(basic_string_container, push_back)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    {
+        string_container sc = "hello";
+        EXPECT_FALSE(sc.has_ownership());
+
+        sc.push_back('!');
+        ASSERT_TRUE(sc.has_ownership());
+        EXPECT_EQ(sc, "hello!");
+
+        sc.push_back('!');
+        EXPECT_EQ(sc, "hello!!");
+    }
+
+    {
+        string_container sc = "hello";
+        // '！'
+        auto fullwidth_exclamation = U'\uff01'_cp;
+
+        sc.push_back(fullwidth_exclamation);
+        EXPECT_EQ(sc, "hello\uff01");
+    }
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);
