@@ -70,6 +70,7 @@ TEST(attribute_name, validate)
     EXPECT_FALSE(attribute_name::validate("NAME name"));
     EXPECT_FALSE(attribute_name::validate("$name"));
     EXPECT_FALSE(attribute_name::validate("!name"));
+    EXPECT_FALSE(attribute_name::validate("name[0]"));
 }
 
 int main(int argc, char* argv[])

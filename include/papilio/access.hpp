@@ -187,7 +187,7 @@ namespace papilio
             if(first && digit)
                 return false;
 
-            return digit || ('A' <= ch && ch <= 'z') || ch == '_' || ch >= 128;
+            return digit || ('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z') || ch == '_' || ch >= 128;
         };
     };
 
