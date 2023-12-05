@@ -20,6 +20,12 @@
 #   define PAPILIO_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#   define PAPILIO_PLATFORM_WINDOWS 1
+#elif defined(__linux__) || defined(__gnu_linux__)
+#   define PAPILIO_PLATFORM_LINUX 1
+#endif
+
 #if __has_cpp_attribute(assume)
 #   define PAPILIO_ASSUME(expr) [[assume(expr)]]
 #elif defined PAPILIO_COMPILER_MSVC
