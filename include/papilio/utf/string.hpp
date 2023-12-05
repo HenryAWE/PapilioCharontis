@@ -1390,6 +1390,15 @@ namespace papilio::utf
             return this->compare_impl(basic_string_ref<U>(other));
         }
 
+        void push_back(CharT ch)
+        {
+            to_str().push_back(ch);
+        }
+        void push_back(codepoint cp)
+        {
+            cp.append_to(to_str());
+        }
+
         using base::begin;
         using base::end;
 
@@ -1408,7 +1417,8 @@ namespace papilio::utf
             string_view_type* p_str = std::get_if<string_view_type>(&m_data);
             if(p_str)
             {
-                return m_data.template emplace<string_type>(*p_str);
+                string_type tmp(*p_str);
+                return m_data.template emplace<string_type>(std::move(tmp));
             }
             else
             {

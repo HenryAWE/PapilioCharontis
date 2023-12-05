@@ -438,6 +438,14 @@ namespace papilio::utf
         return U'0' <= ch && ch <= U'9';
     }
 
+    [[nodiscard]]
+    constexpr bool is_whitespace(char32_t ch) noexcept
+    {
+        using namespace std::literals;
+
+        return U" \n\t\r\v\f"sv.find(ch) != std::u32string_view::npos;
+    }
+
     inline namespace literals {}
 }
 

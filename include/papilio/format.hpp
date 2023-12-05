@@ -54,12 +54,24 @@ namespace papilio
                     else if(ch == U'$')
                     {
                         ++parse_it;
-                        // TODO: invoke script interpreter
 
+                        script::interpreter intp;
+                        parse_ctx.advance_to(parse_it);
+                        auto [result, next_it] = intp.run(parse_ctx);
+
+                        auto sc = result.as_variable().as<utf::string_container>();
+
+                        for(utf::codepoint cp : sc)
+                            context_t::append(fmt_ctx, cp);
+
+                        parse_it = next_it;
+                        if(parse_it == parse_ctx.end() || *parse_it != U'}')
+                            throw invalid_format("invalid format");
                         ++parse_it;
                     }
                     else
                     {
+                        parse_ctx.advance_to(parse_it);
                         // TODO: invoke formatter
 
                         ++parse_it;

@@ -19,6 +19,13 @@ TEST(format, exception)
     EXPECT_THROW(PAPILIO_NS format("}"), papilio::invalid_format);
 }
 
+TEST(format, script)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{$ {val}: 'true'}", "val"_a = 1), "true");
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

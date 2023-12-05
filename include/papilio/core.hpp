@@ -897,7 +897,9 @@ namespace papilio
         {
             if(m_manual_indexing)
                 invalid_default_argument();
-            return ++m_default_arg_idx;
+            ++m_default_arg_idx;
+            get_args().check(m_default_arg_idx);
+            return m_default_arg_idx;
         }
         std::size_t check_arg_id(std::size_t i) const
         {
