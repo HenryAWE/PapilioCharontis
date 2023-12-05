@@ -30,24 +30,17 @@ namespace papilio::script
             bool cond_result;
             std::tie(cond_result, start) = parse_condition(ctx, start, sentinel);
 
-            if(start == sentinel)
-                throw_error("invalid script");
-            if(*start != U':')
-                throw_error("invalid script");
-
-            ++start;
             start = skip_ws(start, sentinel);
             if(start == sentinel)
                 throw_error("invalid script");
-
             if(*start != U'\'')
                 throw_error("invalid script");
 
             utf::string_container result_1;
             ++start;
             std::tie(result_1, start) = parse_string(start, sentinel);
-
             start = skip_ws(start, sentinel);
+
             if(start != sentinel && *start == U':')
             {
                 ++start;
@@ -55,7 +48,6 @@ namespace papilio::script
 
                 if(*start != U'\'')
                     throw_error("invalid script");
-
                 ++start;
 
                 utf::string_container result_2;
@@ -97,6 +89,98 @@ namespace papilio::script
                 (U'a' <= ch && ch <= U'z') ||
                 ch == U'_' ||
                 ch >= 128;
+        }
+
+        enum class op_id
+        {
+            equal, // !=
+            not_equal, // = and ==
+            greater_equal, // >=
+            less_equal, // <=
+            greater, // >
+            less // <
+        };
+
+        static bool is_op_ch(char32_t ch) noexcept
+        {
+            return
+                ch == U'=' ||
+                ch == U'!' ||
+                ch == U'>' ||
+                ch == U'<';
+        }
+
+        static std::pair<op_id, iterator> parse_op(iterator start, iterator stop)
+        {
+            if(start == stop)
+                throw_error("invalid operator");
+
+            char32_t first_ch = *start;
+            if(first_ch == U'=')
+            {
+                ++start;
+                if(start != stop)
+                {
+                    if(*start != U'=')
+                        throw_error("invalid operator");
+                    ++start;
+                }
+
+                return std::make_pair(op_id::equal, start);
+            }
+            else if(first_ch == U'!')
+            {
+                ++start;
+                if(start == stop || *start != U'=')
+                    throw_error("invalid operator");
+                ++start;
+                return std::make_pair(op_id::not_equal, start);
+            }
+            else if(first_ch == U'>' || first_ch == '<')
+            {
+                ++start;
+                if(start != stop && *start == U'=')
+                {
+                    ++start;
+                    if(first_ch == U'>')
+                        return std::make_pair(op_id::greater_equal, start);
+                    if(first_ch == U'<')
+                        return std::make_pair(op_id::less_equal, start);
+                    PAPILIO_UNREACHABLE();
+                }
+                else
+                {
+                    if(first_ch == U'>')
+                        return std::make_pair(op_id::greater, start);
+                    if(first_ch == U'<')
+                        return std::make_pair(op_id::less, start);
+                    PAPILIO_UNREACHABLE();
+                }
+            }
+
+            throw_error("invalid operator");
+        }
+
+        static bool execute_op(op_id op, const variable& lhs, const variable& rhs)
+        {
+            switch(op)
+            {
+            case op_id::equal:
+                return lhs == rhs;
+            case op_id::not_equal:
+                return lhs != rhs;
+            case op_id::greater_equal:
+                return lhs >= rhs;
+            case op_id::less_equal:
+                return lhs <= rhs;
+            case op_id::greater:
+                return lhs > rhs;
+            case op_id::less:
+                return lhs < rhs;
+
+            default:
+                PAPILIO_UNREACHABLE();
+            }
         }
 
         // Skips white spaces
@@ -175,16 +259,55 @@ namespace papilio::script
                 throw_error("invalid condition");
 
             char32_t first_ch = *start;
-            bool op_not = false;
             if(first_ch == U'!')
             {
-                op_not = true;
                 ++start;
                 start = skip_ws(start, stop);
-            }
 
-            auto [var, next_it] = parse_variable(ctx, start, stop);
-            return std::make_pair(op_not ^ var.as<bool>(), skip_ws(next_it, stop));
+                auto [var, next_it] = parse_variable(ctx, start, stop);
+                next_it = skip_ws(next_it, stop);
+                if(next_it == stop)
+                    throw_error("invalid condition");
+                if(*next_it != U':')
+                    throw_error("invalid condition");
+
+                ++next_it;
+                return std::make_pair(!var.as<bool>(), next_it);
+            }
+            else if(first_ch == U'{')
+            {
+                auto [var, next_it] = parse_variable(ctx, start, stop);
+
+                next_it = skip_ws(next_it, stop);
+                if(next_it == stop)
+                    throw_error("invalid condition");
+
+                char32_t ch = *next_it;
+                if(ch == U':')
+                {
+                    ++next_it;
+                    return std::make_pair(var.as<bool>(), next_it);
+                }
+                else if(is_op_ch(ch))
+                {
+                    op_id op;
+                    std::tie(op, next_it) = parse_op(next_it, stop);
+
+                    next_it = skip_ws(next_it, stop);
+
+                    auto [var_2, next_it_2] = parse_variable(ctx, next_it, stop);
+                    next_it = skip_ws(next_it_2, stop);
+
+                    if(next_it == stop || *next_it != U':')
+                        throw_error("invalid condition");
+
+                    ++next_it;
+                    return std::make_pair(
+                        execute_op(op, var, var_2),
+                        next_it
+                    );
+                }
+            }
 
             throw_error("invalid condition");
         }

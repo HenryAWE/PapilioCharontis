@@ -180,6 +180,12 @@ TEST(interpreter, run)
 
         EXPECT_EQ(arg.as_variable(), "false");
     }
+
+    {
+        auto arg = run_script("{$ {val} == 0: 'zero'}", "val"_a = 0);
+
+        EXPECT_EQ(arg.as_variable(), "zero");
+    }
 }
 
 int main(int argc, char* argv[])
