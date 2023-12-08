@@ -4,7 +4,7 @@
 #include "core.hpp"
 #include "script.hpp"
 #include "error.hpp"
-#include <cmath>
+#include "format/fundamental.hpp"
 
 
 namespace papilio
@@ -72,8 +72,20 @@ namespace papilio
                     else
                     {
                         parse_ctx.advance_to(parse_it);
-                        // TODO: invoke formatter
+                        script::interpreter intp;
+                        auto [arg, next_it] = intp.access(parse_ctx);
 
+                        if(next_it == parse_ctx.end())
+                            throw invalid_format("invalid format");
+                        if(*next_it == U':')
+                            ++next_it;
+                        parse_ctx.advance_to(next_it);
+
+                        arg.format(parse_ctx, fmt_ctx);
+
+                        parse_it = parse_ctx.begin();
+                        if(parse_it == parse_ctx.end() || *parse_it != U'}')
+                            throw invalid_format("invalid format");
                         ++parse_it;
                     }
                 }

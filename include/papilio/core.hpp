@@ -121,12 +121,6 @@ namespace papilio
     template <typename T, typename CharT = char>
     class formatter;
 
-    template <typename T>
-    concept formattable = requires()
-    {
-        typename formatter<T>;
-    };
-
     namespace detail
     {
         template <typename T>
@@ -442,6 +436,9 @@ namespace papilio
             else
                 return std::get<T>(val.m_val);
         }
+
+        template <typename FormatContext>
+        void format(format_parse_context& parse_ctx, FormatContext& out_ctx) const;
 
         script::variable as_variable() const
         {
@@ -1258,8 +1255,16 @@ namespace papilio
                 append(ctx, string_view_type(cp));
         }
     };
+
+    template <typename T, typename CharT = char>
+    concept formattable = std::semiregular<formatter<T, CharT>> && requires()
+    {
+        typename PAPILIO_NS formatter<T, CharT>;
+    };
 }
 
 #ifdef PAPILIO_COMPILER_MSVC
 #   pragma warning(pop)
 #endif
+
+#include "core.inl"
