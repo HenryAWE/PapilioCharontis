@@ -1257,10 +1257,10 @@ namespace papilio
     };
 
     template <typename T, typename CharT = char>
-    concept formattable = std::semiregular<formatter<T, CharT>> && requires()
+    concept formattable = requires()
     {
-        typename PAPILIO_NS formatter<T, CharT>;
-    };
+        PAPILIO_NS formatter<T, CharT>();
+    } && std::semiregular<formatter<T, CharT>>;
 }
 
 #ifdef PAPILIO_COMPILER_MSVC
