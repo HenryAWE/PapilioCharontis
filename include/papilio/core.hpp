@@ -64,58 +64,6 @@ namespace papilio
 
         template <std::integral Integral>
         using best_int_type_t = best_int_type<Integral>::type;
-
-        template <typename T>
-        concept has_ostream_support_helper = requires(std::ostream os, const T& val)
-        {
-            os << val;
-        };
-
-        template <typename T>
-        struct formatter_selector_helper
-        {
-            using type = std::remove_const_t<T>;
-        };
-
-        template <std::integral T> requires(!char_like<T> && !std::is_same_v<T, bool>)
-        struct formatter_selector_helper<T>
-        {
-            using type = best_int_type_t<T>;
-        };
-        template <>
-        struct formatter_selector_helper<bool>
-        {
-            using type = bool;
-        };
-
-        template <char_like T>
-        struct formatter_selector_helper<T>
-        {
-            using type = utf::codepoint;
-        };
-
-        template <typename T> requires(!char_like<T>)
-        struct formatter_selector_helper<T*>
-        {
-            using type = const T*;
-        };
-        template <typename T> requires(!char_like<T>)
-        struct formatter_selector_helper<const T*>
-        {
-            using type = const T*;
-        };
-
-        template <std::floating_point T>
-        struct formatter_selector_helper<T>
-        {
-            using type = T;
-        };
-
-        template <string_like T>
-        struct formatter_selector_helper<T>
-        {
-            using type = utf::string_container;
-        };
     }
 
     template <typename T, typename CharT = char>
@@ -128,7 +76,7 @@ namespace papilio
             std::integral<T> &&
             !char_like<T>;
 
-        template <typename T>
+        template <typename T, typename CharT>
         concept use_handle =
             !std::is_same_v<T, utf::codepoint> &&
             !char_like<T> &&
@@ -146,6 +94,9 @@ namespace papilio
         using string_view_type = std::basic_string_view<char_type>;
         using string_container_type = utf::basic_string_container<char_type>;
 
+        using indexing_value_type = basic_indexing_value<char_type>;
+        using attribute_name_type = basic_attribute_name<char_type>;
+
     private:
         class handle_impl_base
         {
@@ -155,8 +106,8 @@ namespace papilio
 
             virtual ~handle_impl_base() = default;
 
-            virtual format_arg index(const indexing_value& idx) const = 0;
-            virtual format_arg attribute(const attribute_name& attr) const = 0;
+            virtual format_arg index(const indexing_value_type& idx) const = 0;
+            virtual format_arg attribute(const attribute_name_type& attr) const = 0;
 
             virtual void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const = 0;
 
@@ -172,15 +123,15 @@ namespace papilio
             handle_impl(const handle_impl& other) noexcept
                 : m_ptr(other.m_ptr) {}
 
-            format_arg index(const indexing_value& idx) const override
+            format_arg index(const indexing_value_type& idx) const override
             {
-                return idx.visit(
-                    [this](auto&& i) { return accessor_traits<T>::template index<format_arg>(*m_ptr, i); }
-                );
+                using accessor_t = accessor_traits<T, char_type>;
+                return accessor_t::template index<format_arg>(*m_ptr, idx);
             }
-            format_arg attribute(const attribute_name& attr) const override
+            format_arg attribute(const attribute_name_type& attr) const override
             {
-                return accessor_traits<T>::template attribute<format_arg>(*m_ptr, attr);
+                using accessor_t = accessor_traits<T, char_type>;
+                return accessor_t::template attribute<format_arg>(*m_ptr, attr);
             }
 
             void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const override
@@ -282,7 +233,7 @@ namespace papilio
             }
         };
 
-        using underlying_type = std::variant<
+        using variant_type = std::variant<
             std::monostate,
             bool,
             utf::codepoint,
@@ -302,36 +253,40 @@ namespace papilio
             : m_val() {}
         format_arg(const format_arg&) noexcept = default;
         format_arg(format_arg&&) noexcept = default;
+
         format_arg(bool val) noexcept
             : m_val(std::in_place_type<bool>, val) {}
         format_arg(utf::codepoint cp) noexcept
             : m_val(std::in_place_type<utf::codepoint>, cp) {}
         template <char_like Char>
         format_arg(Char ch) noexcept
-            : m_val(std::in_place_type<utf::codepoint>, char32_t(ch)) {}
+            : m_val(std::in_place_type<utf::codepoint>, static_cast<char32_t>(ch)) {}
         template <detail::integral_type Integral>
         format_arg(Integral val) noexcept
             : m_val(static_cast<detail::best_int_type_t<Integral>>(val)) {}
         template <std::floating_point Float>
         format_arg(Float val) noexcept
             : m_val(val) {}
+
         format_arg(string_container_type str) noexcept
             : m_val(std::in_place_type<string_container_type>, std::move(str)) {}
-        template <string_like String>
+        template <basic_string_like<char_type> String>
         format_arg(String&& str)
             : m_val(std::in_place_type<string_container_type>, std::forward<String>(str)) {}
-        template <string_like String>
+        template <basic_string_like<char_type> String>
         format_arg(independent_t, String&& str)
             : m_val(std::in_place_type<string_container_type>, independent, std::forward<String>(str)) {}
         template <typename T, typename... Args>
         format_arg(std::in_place_type_t<T>, Args&&... args)
             : m_val(std::in_place_type<T>, std::forward<Args>(args)...) {}
+
         template <typename T> requires(!char_like<T>)
         format_arg(const T* ptr) noexcept
             : m_val(std::in_place_type<const void*>, ptr) {}
         format_arg(std::nullptr_t) noexcept
             : m_val(std::in_place_type<const void*>, nullptr) {}
-        template <detail::use_handle T>
+
+        template <detail::use_handle<char_type> T>
         format_arg(const T& val) noexcept
             : m_val(std::in_place_type<handle>, val) {}
 
@@ -423,6 +378,11 @@ namespace papilio
             return holds<std::monostate>();
         }
 
+        explicit operator bool() const noexcept
+        {
+            return !empty();
+        }
+
         template <typename T>
         [[nodiscard]]
         friend const auto& get(const format_arg& val)
@@ -474,7 +434,7 @@ namespace papilio
         }
 
     private:
-        underlying_type m_val;
+        variant_type m_val;
     };
 
     namespace detail
@@ -714,29 +674,34 @@ namespace papilio
             push(std::forward<Args>(args)...);
         }
 
-        template <typename... Args>
-        void push(Args&&... args)
+        template <typename T>
+        void push(T&& val)
         {
-            auto helper = [&]<typename T> (T&& arg)
+            if constexpr(is_named_arg_v<T>)
             {
-                if constexpr(requires() { typename T::named_arg_tag; })
-                {
-                    m_named_args.emplace(std::make_pair(arg.name, std::forward<T>(arg).value));
-                }
-                else
-                {
-                    m_args.emplace_back(std::forward<T>(arg));
-                }
-            };
+                m_named_args.emplace(std::make_pair(val.name, std::forward<T>(val).value));
+            }
+            else
+            {
+                m_indexed_args.emplace_back(std::forward<T>(val));
+            }
+        }
 
-            (helper(std::forward<Args>(args)), ...);
+        template <typename T, typename... Args>
+        void push(T&& val, Args&&... args)
+        {
+            // TODO: prepare sufficient memory by calling reserve()
+
+            push(std::forward<T>(val));
+            if constexpr(sizeof...(Args))
+                push(std::forward<Args>(args)...);
         }
 
         const format_arg& get(size_type i) const override
         {
-            if(i >= m_args.size())
+            if(i >= m_indexed_args.size())
                 throw_index_out_of_range();
-            return m_args[i];
+            return m_indexed_args[i];
         }
         const format_arg& get(string_view_type key) const override
         {
@@ -756,7 +721,7 @@ namespace papilio
         [[nodiscard]]
         size_type indexed_size() const noexcept override
         {
-            return m_args.size();
+            return m_indexed_args.size();
         }
         [[nodiscard]]
         size_type named_size() const noexcept override
@@ -766,12 +731,12 @@ namespace papilio
 
         void clear() noexcept
         {
-            m_args.clear();
+            m_indexed_args.clear();
             m_named_args.clear();
         }
 
     private:
-        std::vector<format_arg> m_args;
+        std::vector<format_arg> m_indexed_args;
         std::map<string_type, format_arg, std::less<>> m_named_args;
     };
 
@@ -826,14 +791,11 @@ namespace papilio
         const detail::format_args_base* m_ptr;
     };
 
-    template <typename T>
-    concept format_args = std::is_base_of_v<detail::format_args_base, T>;
-
     template <typename... Args>
     auto make_format_args(Args&&... args)
     {
         static_assert(
-            (!format_args<Args> && ...),
+            std::conjunction_v<std::negation<std::is_base_of<detail::format_args_base, Args>>...>,
             "cannot use format_args as format argument"
         );
 
@@ -1207,6 +1169,7 @@ namespace papilio
         using string_view_type = std::basic_string_view<char_type>;
         using context_type = Context;
         using iterator = typename Context::iterator;
+        using format_arg_type = format_arg;
         using format_args_type = typename Context::format_args_type;
 
         format_context_traits() = delete;

@@ -12,17 +12,23 @@ namespace papilio::script
     {
     public:
         using char_type = char;
+        using variable_type = basic_variable<char_type>;
+        using string_ref_type = utf::basic_string_ref<char_type>;
+        using string_container_type = utf::basic_string_container<char_type>;
+        using indexing_value_type = basic_indexing_value<char_type>;
+        using format_arg_type = format_arg;
 
+        using parse_context = format_parse_context;
         using iterator = format_parse_context::iterator;
 
         interpreter() = default;
 
-        std::pair<format_arg, iterator> access(format_parse_context& ctx) const
+        std::pair<format_arg_type, iterator> access(parse_context& ctx) const
         {
             return access_impl(ctx, ctx.begin(), ctx.end());
         }
 
-        std::pair<format_arg, iterator> run(format_parse_context& ctx) const
+        std::pair<format_arg_type, iterator> run(parse_context& ctx) const
         {
             iterator start = ctx.begin();
             const iterator sentinel = ctx.end();
@@ -36,7 +42,7 @@ namespace papilio::script
             if(*start != U'\'')
                 throw_error("invalid script");
 
-            utf::string_container result_1;
+            string_container_type result_1;
             ++start;
             std::tie(result_1, start) = parse_string(start, sentinel);
             start = skip_ws(start, sentinel);
@@ -50,7 +56,7 @@ namespace papilio::script
                     throw_error("invalid script");
                 ++start;
 
-                utf::string_container result_2;
+                string_container_type result_2;
 
                 std::tie(result_2, start) = parse_string(start, sentinel);
 
@@ -61,11 +67,11 @@ namespace papilio::script
             if(cond_result)
                 return std::make_pair(std::move(result_1), skip_ws(start, sentinel));
             else
-                return std::make_pair(utf::string_container(), skip_ws(start, sentinel));
+                return std::make_pair(string_container_type(), skip_ws(start, sentinel));
         }
 
     private:
-        static std::pair<format_arg, iterator> access_impl(format_parse_context& ctx, iterator start, iterator stop)
+        static std::pair<format_arg_type, iterator> access_impl(parse_context& ctx, iterator start, iterator stop)
         {
             if(start == stop)
                 throw_error("invalid access");
@@ -161,7 +167,7 @@ namespace papilio::script
             throw_error("invalid operator");
         }
 
-        static bool execute_op(op_id op, const variable& lhs, const variable& rhs)
+        static bool execute_op(op_id op, const variable_type& lhs, const variable_type& rhs)
         {
             switch(op)
             {
@@ -186,18 +192,10 @@ namespace papilio::script
         // Skips white spaces
         static iterator skip_ws(iterator start, iterator stop) noexcept
         {
-            while(start != stop)
-            {
-                char32_t ch = *start;
-                if(!utf::is_whitespace(ch))
-                    break;
-                ++start;
-            }
-
-            return start;
+            return std::find_if_not(start, stop, utf::is_whitespace);
         }
 
-        static std::pair<variable, iterator> parse_variable(format_parse_context& ctx, iterator start, iterator stop)
+        static std::pair<variable_type, iterator> parse_variable(parse_context& ctx, iterator start, iterator stop)
         {
             if(start == stop)
                 throw_error("invalid value");
@@ -243,7 +241,8 @@ namespace papilio::script
                 }
                 else
                 {
-                    variable::int_type val = parse_integer<variable::int_type>(start, int_end).first;
+                    using int_t = variable_type::int_type;
+                    int_t val = parse_integer<int_t>(start, int_end).first;
 
                     return std::make_pair(val, int_end);
                 }
@@ -252,7 +251,7 @@ namespace papilio::script
             throw_error("invalid variable");
         }
 
-        static std::pair<bool, iterator> parse_condition(format_parse_context& ctx, iterator start, iterator stop)
+        static std::pair<bool, iterator> parse_condition(parse_context& ctx, iterator start, iterator stop)
         {
             start = skip_ws(start, stop);
             if(start == stop)
@@ -349,7 +348,7 @@ namespace papilio::script
             return std::make_pair(value, start);
         }
 
-        static std::pair<format_arg, iterator> parse_field_id(format_parse_context& ctx, iterator start, iterator stop)
+        static std::pair<format_arg_type, iterator> parse_field_id(parse_context& ctx, iterator start, iterator stop)
         {
             using namespace std::literals;
 
@@ -388,10 +387,10 @@ namespace papilio::script
                     [](utf::codepoint cp) { return is_id_char(cp, false); }
                 );
 
-                utf::string_ref name(str_start, str_end);
+                string_ref_type name(str_start, str_end);
 
                 return std::make_pair(
-                    ctx.get_args().get(std::string_view(name)),
+                    ctx.get_args().get(std::basic_string_view<char>(name)),
                     str_end
                 );
             }
@@ -405,9 +404,9 @@ namespace papilio::script
             throw_error("invalid field id");
         }
 
-        static std::pair<format_arg, iterator> parse_chained_access(format_arg& base_arg, iterator start, iterator stop)
+        static std::pair<format_arg_type, iterator> parse_chained_access(format_arg_type& base_arg, iterator start, iterator stop)
         {
-            format_arg current = base_arg;
+            format_arg_type current = base_arg;
 
             while(start != stop)
             {
@@ -426,7 +425,7 @@ namespace papilio::script
                         }
                     );
 
-                    utf::string_ref attr_name(str_start, str_end);
+                    string_ref_type attr_name(str_start, str_end);
                     if(attr_name.empty())
                         throw_error("missing attribute name after '.'");
 
@@ -526,7 +525,7 @@ namespace papilio::script
             }
         }
 
-        static std::pair<utf::string_container, iterator> parse_string(iterator start, iterator stop)
+        static std::pair<string_container_type, iterator> parse_string(iterator start, iterator stop)
         {
             iterator it = start;
             for(; it != stop; ++it)
@@ -536,7 +535,7 @@ namespace papilio::script
                 // Turn to another mode for parsing escape sequence
                 if(ch == U'\\')
                 {
-                    utf::string_container result(utf::string_ref(start, it));
+                    string_container_type result(string_ref_type(start, it));
 
                     ++it;
                     if(it == stop)
@@ -575,7 +574,7 @@ namespace papilio::script
             }
 
             return std::make_pair(
-                utf::string_container(utf::string_ref(start, it)),
+                string_container_type(string_ref_type(start, it)),
                 it + 1 // +1 to skip '\''
             );
         }

@@ -98,52 +98,46 @@ TEST(format_arg, access)
     }
 }
 
-namespace test_core
-{
-    static_assert(papilio::format_args<papilio::static_format_args<0, 0>>);
-    static_assert(papilio::format_args<papilio::static_format_args<1, 0>>);
-    static_assert(papilio::format_args<papilio::static_format_args<0, 1>>);
-    static_assert(papilio::format_args<papilio::static_format_args<1, 1>>);
-}
-
 TEST(format_args, mutable)
 {
     using namespace papilio;
 
-    static_assert(format_args<mutable_format_args>);
+    {
+        mutable_format_args args;
+        EXPECT_EQ(args.indexed_size(), 0);
+        EXPECT_EQ(args.named_size(), 0);
+    }
 
     {
-        mutable_format_args store(1, "three"_a = 3, 2);
+        mutable_format_args args(1, "three"_a = 3, 2);
 
-        EXPECT_EQ(store.indexed_size(), 2);
-        EXPECT_EQ(store.named_size(), 1);
+        EXPECT_EQ(args.indexed_size(), 2);
+        EXPECT_EQ(args.named_size(), 1);
 
-        EXPECT_EQ(get<int>(store[0]), 1);
-        EXPECT_EQ(get<int>(store[1]), 2);
-        EXPECT_EQ(get<int>(store["three"]), 3);
+        EXPECT_EQ(get<int>(args[0]), 1);
+        EXPECT_EQ(get<int>(args[1]), 2);
+        EXPECT_EQ(get<int>(args["three"]), 3);
 
-        store.clear();
+        args.clear();
 
-        EXPECT_EQ(store.indexed_size(), 0);
-        EXPECT_EQ(store.named_size(), 0);
+        EXPECT_EQ(args.indexed_size(), 0);
+        EXPECT_EQ(args.named_size(), 0);
 
-        store.push('a', 'b', "c"_a = 'c', "d"_a = 'd');
+        args.push('a', 'b', "c"_a = 'c', "d"_a = 'd');
 
-        EXPECT_EQ(store.indexed_size(), 2);
-        EXPECT_EQ(store.named_size(), 2);
+        EXPECT_EQ(args.indexed_size(), 2);
+        EXPECT_EQ(args.named_size(), 2);
 
-        EXPECT_EQ(get<utf::codepoint>(store[0]), U'a');
-        EXPECT_EQ(get<utf::codepoint>(store[1]), U'b');
-        EXPECT_EQ(get<utf::codepoint>(store["c"]), U'c');
-        EXPECT_EQ(get<utf::codepoint>(store["d"]), U'd');
+        EXPECT_EQ(get<utf::codepoint>(args[0]), U'a');
+        EXPECT_EQ(get<utf::codepoint>(args[1]), U'b');
+        EXPECT_EQ(get<utf::codepoint>(args["c"]), U'c');
+        EXPECT_EQ(get<utf::codepoint>(args["d"]), U'd');
     }
 }
 
 TEST(format_args, dynamic)
 {
     using namespace papilio;
-
-    static_assert(format_args<dynamic_format_args>);
 
     mutable_format_args underlying_fmt_args;
     dynamic_format_args dyn_fmt_args(underlying_fmt_args);
