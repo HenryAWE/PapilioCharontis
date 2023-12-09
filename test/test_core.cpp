@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/core.hpp>
 
-
 TEST(format_arg, constructor)
 {
     using namespace papilio;
@@ -31,7 +30,7 @@ TEST(format_arg, constructor)
         EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
         EXPECT_FALSE(get<utf::string_container>(fmt_arg).has_ownership());
     }
-    
+
     {
         using namespace std::literals;
 
@@ -209,18 +208,18 @@ TEST(format_context, dynamic_small)
 
 namespace test_core
 {
-    class big_insert_iterator : public std::back_insert_iterator<std::string>
-    {
-        using base = std::back_insert_iterator<std::string>;
+class big_insert_iterator : public std::back_insert_iterator<std::string>
+{
+    using base = std::back_insert_iterator<std::string>;
 
-    public:
-        big_insert_iterator(std::string& str) noexcept
-            : base(std::back_inserter(str)) {}
+public:
+    big_insert_iterator(std::string& str) noexcept
+        : base(std::back_inserter(str)) {}
 
-    private:
-        std::byte m_dummy[1024]{};
-    };
-}
+private:
+    std::byte m_dummy[1024]{};
+};
+} // namespace test_core
 
 TEST(format_context, dynamic_big)
 {

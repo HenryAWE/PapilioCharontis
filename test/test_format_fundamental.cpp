@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
 
-
 TEST(format_fundamental, int)
 {
     using namespace papilio;

@@ -2,7 +2,6 @@
 #include <papilio/container.hpp>
 #include <list>
 
-
 TEST(small_vector, emplace)
 {
     using papilio::small_vector;
@@ -37,10 +36,10 @@ TEST(small_vector, emplace)
     EXPECT_TRUE(sv.dynamic_allocated());
     EXPECT_EQ(sv.back(), 8);
 
-    sv.assign({ 0, 1, 2, 3 });
+    sv.assign({0, 1, 2, 3});
     EXPECT_EQ(sv.size(), 4);
     EXPECT_TRUE(sv.dynamic_allocated());
-    for(auto&& i : { 0, 1, 2, 3 })
+    for(auto&& i : {0, 1, 2, 3})
     {
         EXPECT_EQ(sv[i], i);
     }
@@ -53,7 +52,7 @@ TEST(small_vector, iterator)
 {
     using papilio::small_vector;
 
-    std::list<int> il{ 0, 1, 2, 3, 4, 5 };
+    std::list<int> il{0, 1, 2, 3, 4, 5};
     small_vector<int, 6> sv(il.begin(), il.end());
     EXPECT_FALSE(sv.dynamic_allocated());
 
@@ -75,7 +74,7 @@ TEST(small_vector, dynamic_allocated)
     };
     EXPECT_FALSE(sv.dynamic_allocated());
 
-    sv.assign({ "first", "second" });
+    sv.assign({"first", "second"});
     EXPECT_FALSE(sv.dynamic_allocated());
     sv.push_back("third");
     EXPECT_FALSE(sv.dynamic_allocated());
@@ -97,7 +96,7 @@ TEST(small_vector, constructor)
 {
     using papilio::small_vector;
 
-    small_vector<std::string, 2> sv_1{ "one", "two", "three" };
+    small_vector<std::string, 2> sv_1{"one", "two", "three"};
     EXPECT_TRUE(sv_1.dynamic_allocated());
     small_vector<std::string, 2> sv_2(std::move(sv_1));
     EXPECT_FALSE(sv_1.dynamic_allocated());
@@ -111,7 +110,7 @@ TEST(small_vector, constructor)
     EXPECT_EQ(sv_2.at(2), "three");
     ASSERT_THROW(sv_2.at(3), std::out_of_range);
 
-    small_vector<std::string, 2> sv_3{ "one" };
+    small_vector<std::string, 2> sv_3{"one"};
     EXPECT_FALSE(sv_3.dynamic_allocated());
     small_vector<std::string, 2> sv_4(std::move(sv_3));
     EXPECT_TRUE(sv_3.empty());
@@ -136,8 +135,8 @@ TEST(small_vector, swap)
 {
     using papilio::small_vector;
 
-    small_vector<std::string, 2> sv_1{ "A", "B", "C" };
-    small_vector<std::string, 2> sv_2{ "a", "b" };
+    small_vector<std::string, 2> sv_1{"A", "B", "C"};
+    small_vector<std::string, 2> sv_2{"a", "b"};
 
     EXPECT_TRUE(sv_1.dynamic_allocated());
     EXPECT_EQ(sv_1.size(), 3);
@@ -301,13 +300,13 @@ TEST(fixed_vector, zero_capacity)
 
 namespace test_container
 {
-    static_assert(papilio::is_transparent_v<std::less<>>);
-    static_assert(!papilio::is_transparent_v<std::less<std::string>>);
+static_assert(papilio::is_transparent_v<std::less<>>);
+static_assert(!papilio::is_transparent_v<std::less<std::string>>);
 
-    using ffm_t = papilio::fixed_flat_map<int, int, 8, std::less<>>;
-    static_assert(papilio::is_transparent_v<ffm_t::value_compare>);
-    static_assert(std::is_empty_v<ffm_t::value_compare>);
-}
+using ffm_t = papilio::fixed_flat_map<int, int, 8, std::less<>>;
+static_assert(papilio::is_transparent_v<ffm_t::value_compare>);
+static_assert(std::is_empty_v<ffm_t::value_compare>);
+} // namespace test_container
 
 TEST(fixed_flat_map, emplace)
 {
@@ -354,7 +353,7 @@ TEST(fixed_flat_map, emplace)
     EXPECT_THROW(fm.at(5), std::out_of_range);
     EXPECT_THROW(std::as_const(fm).at(5), std::out_of_range);
 
-    for(int i : { 1, 2, 3, 4 })
+    for(int i : {1, 2, 3, 4})
         EXPECT_TRUE(fm.contains(i));
     EXPECT_FALSE(fm.contains(0));
     EXPECT_FALSE(fm.contains(5));

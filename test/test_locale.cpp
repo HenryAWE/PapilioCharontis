@@ -2,31 +2,30 @@
 #include <sstream>
 #include <papilio/locale.hpp>
 
-
 namespace test_locale
 {
-    class bool_yes_no : public std::numpunct<char>
+class bool_yes_no : public std::numpunct<char>
+{
+protected:
+    string_type do_truename() const override
     {
-    protected:
-        string_type do_truename() const override
-        {
-            return "yes";
-        }
+        return "yes";
+    }
 
-        string_type do_falsename() const override
-        {
-            return "no";
-        }
-    };
-
-    std::string print_bool(bool value, const std::locale& loc)
+    string_type do_falsename() const override
     {
-        auto& f = std::use_facet<std::numpunct<char>>(loc);
-        return value ?
-            f.truename() :
-            f.falsename();
-    };
-}
+        return "no";
+    }
+};
+
+std::string print_bool(bool value, const std::locale& loc)
+{
+    auto& f = std::use_facet<std::numpunct<char>>(loc);
+    return value ?
+               f.truename() :
+               f.falsename();
+};
+} // namespace test_locale
 
 TEST(locale_ref, fallback)
 {

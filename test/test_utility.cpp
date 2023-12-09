@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/utility.hpp>
 
-
 static_assert(papilio::pointer_like<std::unique_ptr<int>>);
 static_assert(papilio::pointer_like<std::unique_ptr<int[]>>);
 static_assert(papilio::pointer_like<std::shared_ptr<int>>);
@@ -42,7 +41,7 @@ TEST(slice, slice)
     }
 
     {
-        constexpr slice s{ 1 };
+        constexpr slice s{1};
         constexpr slice normalized_s = s.normalize(182376);
         static_assert(normalized_s.begin() == 1);
         static_assert(normalized_s.end() == 182376);
@@ -56,20 +55,20 @@ TEST(slice, slice)
     }
 
     {
-        slice s{ 1 };
+        slice s{1};
         EXPECT_EQ(s.begin(), 1);
         EXPECT_EQ(s.end(), slice::npos);
     }
 
     {
-        slice s{ 1, 3 };
+        slice s{1, 3};
         EXPECT_EQ(s.begin(), 1);
         EXPECT_EQ(s.end(), 3);
         EXPECT_EQ(s.length(), 2);
     }
 
     {
-        slice s{ 1 };
+        slice s{1};
         slice normalized_s = s.normalize(182376);
         EXPECT_EQ(normalized_s.begin(), 1);
         EXPECT_EQ(normalized_s.end(), 182376);
@@ -77,8 +76,8 @@ TEST(slice, slice)
     }
 
     {
-        slice s{ -3, -1 };
-        EXPECT_EQ(s, (slice{ -3, -1 }));
+        slice s{-3, -1};
+        EXPECT_EQ(s, (slice{-3, -1}));
 
         slice normalized_s = s.normalize(16);
         EXPECT_EQ(normalized_s.begin(), 13);
@@ -150,15 +149,18 @@ TEST(independent_t, proxy)
 
 namespace test_memory
 {
-    class empty_1 {};
-    class empty_2 {};
-}
+class empty_1
+{};
+
+class empty_2
+{};
+} // namespace test_memory
 
 TEST(compressed_pair, normal)
 {
     using namespace papilio;
 
-    compressed_pair<int, int> p_1{ 0, 1 };
+    compressed_pair<int, int> p_1{0, 1};
     static_assert(sizeof(p_1) == sizeof(int) * 2);
 
     EXPECT_EQ(p_1.first(), 0);
@@ -272,9 +274,8 @@ TEST(basic_oiterstream, char)
     oiterstream os(std::back_inserter(buf));
 
     static_assert(std::is_same_v<
-        decltype(os)::iterator,
-        std::back_insert_iterator<std::string>
-    >);
+                  decltype(os)::iterator,
+                  std::back_insert_iterator<std::string>>);
 
     os << "hello";
     os << ' ';
@@ -292,9 +293,8 @@ TEST(basic_oiterstream, wchar_t)
     woiterstream os(std::back_inserter(buf));
 
     static_assert(std::is_same_v<
-        decltype(os)::iterator,
-        std::back_insert_iterator<std::wstring>
-    >);
+                  decltype(os)::iterator,
+                  std::back_insert_iterator<std::wstring>>);
 
     os << L"hello";
     os << L' ';

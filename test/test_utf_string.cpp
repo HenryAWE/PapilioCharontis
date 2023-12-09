@@ -6,77 +6,76 @@
 // "🍑一ÄA"
 #define PAPILIO_TEST_UTF_STRING_TEST_DATA(prefix, suffix) prefix##"\U0001f351\u4e00\u00c4A"##suffix
 
-
 namespace test_utf_string
 {
-    static_assert(papilio::string_like<papilio::utf::string_ref>);
-    static_assert(papilio::string_like<papilio::utf::string_container>);
+static_assert(papilio::string_like<papilio::utf::string_ref>);
+static_assert(papilio::string_like<papilio::utf::string_container>);
 
-    template <typename CharT>
-    void test_string_ref_index(papilio::utf::basic_string_ref<CharT> ref)
-    {
-        using namespace papilio;
+template <typename CharT>
+void test_string_ref_index(papilio::utf::basic_string_ref<CharT> ref)
+{
+    using namespace papilio;
 
-        EXPECT_EQ(ref[0], U'\U0001f351');
-        EXPECT_EQ(ref[1], U'\u4e00');
-        EXPECT_EQ(ref[2], U'\u00c4');
-        EXPECT_EQ(ref[3], U'A');
+    EXPECT_EQ(ref[0], U'\U0001f351');
+    EXPECT_EQ(ref[1], U'\u4e00');
+    EXPECT_EQ(ref[2], U'\u00c4');
+    EXPECT_EQ(ref[3], U'A');
 
-        EXPECT_EQ(ref.index(0), U'\U0001f351');
-        EXPECT_EQ(ref.index(1), U'\u4e00');
-        EXPECT_EQ(ref.index(2), U'\u00c4');
-        EXPECT_EQ(ref.index(3), U'A');
+    EXPECT_EQ(ref.index(0), U'\U0001f351');
+    EXPECT_EQ(ref.index(1), U'\u4e00');
+    EXPECT_EQ(ref.index(2), U'\u00c4');
+    EXPECT_EQ(ref.index(3), U'A');
 
-        EXPECT_EQ(ref.index(reverse_index, 3), U'\U0001f351');
-        EXPECT_EQ(ref.index(reverse_index, 2), U'\u4e00');
-        EXPECT_EQ(ref.index(reverse_index, 1), U'\u00c4');
-        EXPECT_EQ(ref.index(reverse_index, 0), U'A');
+    EXPECT_EQ(ref.index(reverse_index, 3), U'\U0001f351');
+    EXPECT_EQ(ref.index(reverse_index, 2), U'\u4e00');
+    EXPECT_EQ(ref.index(reverse_index, 1), U'\u00c4');
+    EXPECT_EQ(ref.index(reverse_index, 0), U'A');
 
-        EXPECT_EQ(ref.at(0), U'\U0001f351');
-        EXPECT_EQ(ref.at(1), U'\u4e00');
-        EXPECT_EQ(ref.at(2), U'\u00c4');
-        EXPECT_EQ(ref.at(3), U'A');
+    EXPECT_EQ(ref.at(0), U'\U0001f351');
+    EXPECT_EQ(ref.at(1), U'\u4e00');
+    EXPECT_EQ(ref.at(2), U'\u00c4');
+    EXPECT_EQ(ref.at(3), U'A');
 
-        EXPECT_EQ(ref.at(reverse_index, 3), U'\U0001f351');
-        EXPECT_EQ(ref.at(reverse_index, 2), U'\u4e00');
-        EXPECT_EQ(ref.at(reverse_index, 1), U'\u00c4');
-        EXPECT_EQ(ref.at(reverse_index, 0), U'A');
+    EXPECT_EQ(ref.at(reverse_index, 3), U'\U0001f351');
+    EXPECT_EQ(ref.at(reverse_index, 2), U'\u4e00');
+    EXPECT_EQ(ref.at(reverse_index, 1), U'\u00c4');
+    EXPECT_EQ(ref.at(reverse_index, 0), U'A');
 
-        EXPECT_EQ(ref.index_or(0, utf::codepoint()), U'\U0001f351');
-        EXPECT_EQ(ref.index_or(1, utf::codepoint()), U'\u4e00');
-        EXPECT_EQ(ref.index_or(2, utf::codepoint()), U'\u00c4');
-        EXPECT_EQ(ref.index_or(3, utf::codepoint()), U'A');
+    EXPECT_EQ(ref.index_or(0, utf::codepoint()), U'\U0001f351');
+    EXPECT_EQ(ref.index_or(1, utf::codepoint()), U'\u4e00');
+    EXPECT_EQ(ref.index_or(2, utf::codepoint()), U'\u00c4');
+    EXPECT_EQ(ref.index_or(3, utf::codepoint()), U'A');
 
-        EXPECT_THROW((void)ref.at(4), std::out_of_range);
-        EXPECT_THROW((void)ref.at(reverse_index, 4), std::out_of_range);
-        EXPECT_THROW((void)ref.at(-1), std::out_of_range);
-        EXPECT_THROW((void)ref.at(reverse_index, -1), std::out_of_range);
+    EXPECT_THROW((void)ref.at(4), std::out_of_range);
+    EXPECT_THROW((void)ref.at(reverse_index, 4), std::out_of_range);
+    EXPECT_THROW((void)ref.at(-1), std::out_of_range);
+    EXPECT_THROW((void)ref.at(reverse_index, -1), std::out_of_range);
 
-        EXPECT_EQ(ref.index_or(4, utf::codepoint(U'?')), U'?');
-        EXPECT_EQ(ref.index_or(reverse_index, 4, utf::codepoint(U'?')), U'?');
-        EXPECT_EQ(ref.index_or(-1, utf::codepoint(U'?')), U'?');
-        EXPECT_EQ(ref.index_or(reverse_index, -1, utf::codepoint(U'?')), U'?');
-    }
-
-    template <typename CharT>
-    void test_string_ref_interoperability(papilio::utf::basic_string_ref<CharT> ref)
-    {
-        // GoogleTest doesn't support char8_t
-        EXPECT_TRUE(ref.to_u8string() == PAPILIO_TEST_UTF_STRING_TEST_DATA(u8,));
-        EXPECT_EQ(ref.to_u16string(), PAPILIO_TEST_UTF_STRING_TEST_DATA(u,));
-        EXPECT_EQ(ref.to_u32string(), PAPILIO_TEST_UTF_STRING_TEST_DATA(U,));
-        EXPECT_EQ(ref.to_wstring(), PAPILIO_TEST_UTF_STRING_TEST_DATA(L,));
-
-        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(,));
-        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(,), ref);
-        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(u,));
-        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(u,), ref);
-        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(U,));
-        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(U,), ref);
-        EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(L,));
-        EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(L,), ref);
-    }
+    EXPECT_EQ(ref.index_or(4, utf::codepoint(U'?')), U'?');
+    EXPECT_EQ(ref.index_or(reverse_index, 4, utf::codepoint(U'?')), U'?');
+    EXPECT_EQ(ref.index_or(-1, utf::codepoint(U'?')), U'?');
+    EXPECT_EQ(ref.index_or(reverse_index, -1, utf::codepoint(U'?')), U'?');
 }
+
+template <typename CharT>
+void test_string_ref_interoperability(papilio::utf::basic_string_ref<CharT> ref)
+{
+    // GoogleTest doesn't support char8_t
+    EXPECT_TRUE(ref.to_u8string() == PAPILIO_TEST_UTF_STRING_TEST_DATA(u8, ));
+    EXPECT_EQ(ref.to_u16string(), PAPILIO_TEST_UTF_STRING_TEST_DATA(u, ));
+    EXPECT_EQ(ref.to_u32string(), PAPILIO_TEST_UTF_STRING_TEST_DATA(U, ));
+    EXPECT_EQ(ref.to_wstring(), PAPILIO_TEST_UTF_STRING_TEST_DATA(L, ));
+
+    EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(, ));
+    EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(, ), ref);
+    EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(u, ));
+    EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(u, ), ref);
+    EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(U, ));
+    EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(U, ), ref);
+    EXPECT_EQ(ref, PAPILIO_TEST_UTF_STRING_TEST_DATA(L, ));
+    EXPECT_EQ(PAPILIO_TEST_UTF_STRING_TEST_DATA(L, ), ref);
+}
+} // namespace test_utf_string
 
 TEST(basic_string_ref, u8string_ref)
 {
@@ -335,7 +334,6 @@ TEST(basic_string_container, wstring_container)
         EXPECT_EQ(sc[3], U't');
     }
 }
-
 
 TEST(basic_string_container, push_back)
 {

@@ -2,10 +2,10 @@
 #include <sstream>
 #include <papilio/print.hpp>
 #ifdef PAPILIO_PLATFORM_LINUX
-#   ifndef _GNU_SOURCE
-#       define _GNU_SOURCE
-#   endif
-#   include <sys/mman.h>
+#    ifndef _GNU_SOURCE
+#        define _GNU_SOURCE
+#    endif
+#    include <sys/mman.h>
 #endif
 
 #ifdef PAPILIO_PLATFORM_LINUX

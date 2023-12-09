@@ -1,9 +1,8 @@
 #include <gtest/gtest.h>
 #include <papilio/script/variable.hpp>
 
-
 TEST(variable, constructor)
-{ 
+{
     using namespace papilio;
     using namespace script;
 

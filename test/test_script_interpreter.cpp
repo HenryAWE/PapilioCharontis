@@ -1,27 +1,26 @@
 #include <gtest/gtest.h>
 #include <papilio/script.hpp>
 
-
 namespace test_script_interpreter
 {
-    template <typename... Args>
-    auto test_access(std::string_view fmt, Args&&... args)
-    {
-        using namespace papilio;
-        auto fmt_args = PAPILIO_NS make_format_args(std::forward<Args>(args)...);
+template <typename... Args>
+auto test_access(std::string_view fmt, Args&&... args)
+{
+    using namespace papilio;
+    auto fmt_args = PAPILIO_NS make_format_args(std::forward<Args>(args)...);
 
-        format_parse_context parse_ctx(fmt, fmt_args);
-        parse_ctx.advance_to(parse_ctx.begin() + 1); // skip '{'
+    format_parse_context parse_ctx(fmt, fmt_args);
+    parse_ctx.advance_to(parse_ctx.begin() + 1); // skip '{'
 
-        script::interpreter intp;
-        auto [result, it] = intp.access(parse_ctx);
+    script::interpreter intp;
+    auto [result, it] = intp.access(parse_ctx);
 
-        EXPECT_NE(it, parse_ctx.end());
-        EXPECT_TRUE(*it == U'}' || *it == U':');
+    EXPECT_NE(it, parse_ctx.end());
+    EXPECT_TRUE(*it == U'}' || *it == U':');
 
-        return std::move(result);
-    }
+    return std::move(result);
 }
+} // namespace test_script_interpreter
 
 TEST(interpreter, access)
 {
@@ -65,7 +64,10 @@ TEST(interpreter, access)
     }
 
     {
-        auto helper = [](std::string_view fmt) { return test_access(fmt, "name"_a = "Hu Tao"); };
+        auto helper = [](std::string_view fmt)
+        {
+            return test_access(fmt, "name"_a = "Hu Tao");
+        };
 
         EXPECT_EQ(helper("{name.length}").as_variable(), 6);
 
@@ -87,25 +89,25 @@ TEST(interpreter, access)
 
 namespace test_script_interpreter
 {
-    template <typename... Args>
-    auto run_script(std::string_view fmt, Args&&... args)
-    {
-        using namespace papilio;
+template <typename... Args>
+auto run_script(std::string_view fmt, Args&&... args)
+{
+    using namespace papilio;
 
-        auto fmt_args = PAPILIO_NS make_format_args(std::forward<Args>(args)...);
+    auto fmt_args = PAPILIO_NS make_format_args(std::forward<Args>(args)...);
 
-        format_parse_context parse_ctx(fmt, fmt_args);
-        parse_ctx.advance_to(parse_ctx.begin() + 2); // skip "{$"
+    format_parse_context parse_ctx(fmt, fmt_args);
+    parse_ctx.advance_to(parse_ctx.begin() + 2); // skip "{$"
 
-        script::interpreter intp;
+    script::interpreter intp;
 
-        auto [arg, it] = intp.run(parse_ctx);
-        EXPECT_NE(it, parse_ctx.end());
-        EXPECT_EQ(*it, U'}');
+    auto [arg, it] = intp.run(parse_ctx);
+    EXPECT_NE(it, parse_ctx.end());
+    EXPECT_EQ(*it, U'}');
 
-        return std::move(arg);
-    }
+    return std::move(arg);
 }
+} // namespace test_script_interpreter
 
 TEST(interpreter, run)
 {
@@ -129,7 +131,7 @@ TEST(interpreter, run)
 
         EXPECT_EQ(arg.as_variable(), "true");
     }
-    
+
     {
         auto arg = run_script("{$ {val}: 'true' : 'false'}", "val"_a = false);
 

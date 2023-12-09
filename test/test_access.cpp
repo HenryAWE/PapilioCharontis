@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/access.hpp>
 
-
 TEST(indexing_value, constructor)
 {
     using namespace papilio;

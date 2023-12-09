@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
 
-
 static_assert(!papilio::formattable<std::monostate>);
 
 TEST(format, plain_text)

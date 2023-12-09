@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/utf/stralgo.hpp>
 
-
 TEST(strlen, char8_t)
 {
     using namespace papilio;
@@ -25,7 +24,7 @@ TEST(strlen, char8_t)
 
     using enum strlen_behavior;
 
-    constexpr char8_t s[] = { 'a', 0x80, 'b', 'c', '\0' };
+    constexpr char8_t s[] = {'a', 0x80, 'b', 'c', '\0'};
 
     static_assert(utf::strlen<replace>(s) == 4);
     EXPECT_EQ(utf::strlen<ignore>(s), 3);

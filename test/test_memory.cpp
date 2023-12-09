@@ -14,17 +14,17 @@ static_assert(papilio::pointer_like<papilio::optional_unique_ptr<int[]>>);
 
 namespace test_memory
 {
-    class c_deleter
-    {
-    public:
-        using pointer = void*;
+class c_deleter
+{
+public:
+    using pointer = void*;
 
-        void operator()(pointer p) const noexcept
-        {
-            std::free(p);
-        }
-    };
-}
+    void operator()(pointer p) const noexcept
+    {
+        std::free(p);
+    }
+};
+} // namespace test_memory
 
 TEST(optional_unique_ptr, ownership)
 {
@@ -75,7 +75,7 @@ TEST(optional_unique_ptr, compatibility)
         std::memset(p.get(), 0, 4);
         ASSERT_TRUE(p.has_ownership());
 
-        unsigned char buf[4] = { 0, 0, 0, 0 };
+        unsigned char buf[4] = {0, 0, 0, 0};
         EXPECT_EQ(std::memcmp(p.get(), buf, 4), 0);
 
         auto observer_p = p;
@@ -110,7 +110,7 @@ TEST(optional_unique_ptr, compatibility)
     }
 
     {
-        optional_unique_ptr<int[]> opt_int_arr(new int[4] { 0, 1, 2, 3 });
+        optional_unique_ptr<int[]> opt_int_arr(new int[4]{0, 1, 2, 3});
         ASSERT_TRUE(opt_int_arr.has_ownership());
 
         for(std::size_t i = 0; i < 4; ++i)
@@ -127,7 +127,7 @@ TEST(optional_unique_ptr, compatibility)
     }
 
     {
-        int arr[4] = { 0, 1, 2, 3 };
+        int arr[4] = {0, 1, 2, 3};
         optional_unique_ptr<int[]> opt_int_arr(arr, false);
         ASSERT_FALSE(opt_int_arr.has_ownership());
 
