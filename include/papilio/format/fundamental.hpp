@@ -245,7 +245,7 @@ parse_end:
                 }
                 ++next_it;
 
-                auto var = arg.as_variable();
+                auto var = script::variable(arg.to_variant());
                 if(!var.holds_int())
                     throw invalid_format("invalid type");
                 ssize_t val = var.as<ssize_t>();

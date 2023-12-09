@@ -57,7 +57,7 @@ namespace detail
                     parse_ctx.advance_to(parse_it);
                     auto [result, next_it] = intp.run(parse_ctx);
 
-                    auto sc = result.as_variable().as<utf::string_container>();
+                    auto sc = script::variable(result.to_variant()).as<utf::string_container>();
 
                     for(utf::codepoint cp : sc)
                         context_t::append(fmt_ctx, cp);

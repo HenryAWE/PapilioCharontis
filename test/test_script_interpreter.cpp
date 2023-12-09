@@ -64,26 +64,26 @@ TEST(interpreter, access)
     }
 
     {
-        auto helper = [](std::string_view fmt)
+        auto helper = [](std::string_view fmt) -> variable
         {
-            return test_access(fmt, "name"_a = "Hu Tao");
+            return variable(test_access(fmt, "name"_a = "Hu Tao").to_variant());
         };
 
-        EXPECT_EQ(helper("{name.length}").as_variable(), 6);
+        EXPECT_EQ(helper("{name.length}"), 6);
 
-        EXPECT_EQ(helper("{name[0]}").as_variable(), "H");
+        EXPECT_EQ(helper("{name[0]}"), "H");
 
-        EXPECT_EQ(helper("{name[-1]}").as_variable(), "o");
+        EXPECT_EQ(helper("{name[-1]}"), "o");
 
-        EXPECT_EQ(helper("{name[3:]}").as_variable(), "Tao");
+        EXPECT_EQ(helper("{name[3:]}"), "Tao");
 
-        EXPECT_EQ(helper("{name[-3:]}").as_variable(), "Tao");
+        EXPECT_EQ(helper("{name[-3:]}"), "Tao");
 
-        EXPECT_EQ(helper("{name[2:3]}").as_variable(), " ");
+        EXPECT_EQ(helper("{name[2:3]}"), " ");
 
-        EXPECT_EQ(helper("{name[:]}").as_variable(), "Hu Tao");
+        EXPECT_EQ(helper("{name[:]}"), "Hu Tao");
 
-        EXPECT_EQ(helper("{name[:].length}").as_variable(), 6);
+        EXPECT_EQ(helper("{name[:].length}"), 6);
     }
 }
 
@@ -112,36 +112,37 @@ auto run_script(std::string_view fmt, Args&&... args)
 TEST(interpreter, run)
 {
     using namespace papilio;
+    using namespace script;
     using namespace test_script_interpreter;
 
     {
         auto arg = run_script("{$ {val}: 'true'}", "val"_a = true);
 
-        EXPECT_EQ(arg.as_variable(), "true");
+        EXPECT_EQ(variable(arg.to_variant()), "true");
     }
 
     {
         auto arg = run_script("{$ !{val}: 'false'}", "val"_a = false);
 
-        EXPECT_EQ(arg.as_variable(), "false");
+        EXPECT_EQ(variable(arg.to_variant()), "false");
     }
 
     {
         auto arg = run_script("{$ {val}: 'true' : 'false'}", "val"_a = true);
 
-        EXPECT_EQ(arg.as_variable(), "true");
+        EXPECT_EQ(variable(arg.to_variant()), "true");
     }
 
     {
         auto arg = run_script("{$ {val}: 'true' : 'false'}", "val"_a = false);
 
-        EXPECT_EQ(arg.as_variable(), "false");
+        EXPECT_EQ(variable(arg.to_variant()), "false");
     }
 
     {
         auto arg = run_script("{$ {val} == 0: 'zero'}", "val"_a = 0);
 
-        EXPECT_EQ(arg.as_variable(), "zero");
+        EXPECT_EQ(variable(arg.to_variant()), "zero");
     }
 }
 

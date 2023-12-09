@@ -326,6 +326,18 @@ public:
     }
 
     [[nodiscard]]
+    variant_type& to_variant() noexcept
+    {
+        return m_val;
+    }
+
+    [[nodiscard]]
+    const variant_type& to_variant() const noexcept
+    {
+        return m_val;
+    }
+
+    [[nodiscard]]
     format_arg index(const indexing_value& idx) const
     {
         return visit(
@@ -428,55 +440,12 @@ public:
     template <typename FormatContext>
     void format(format_parse_context& parse_ctx, FormatContext& out_ctx) const;
 
-    script::variable as_variable() const
-    {
-        using script::variable;
-
-        return visit(
-            []<typename T>(const T& v) -> variable
-            {
-                using target_type = std::remove_cvref_t<decltype(v)>;
-
-                if constexpr(std::is_same_v<target_type, utf::codepoint>)
-                {
-                    return variable(string_container_type(1, v));
-                }
-                if constexpr(std::integral<target_type>)
-                {
-                    return static_cast<variable::int_type>(v);
-                }
-                else if constexpr(std::floating_point<target_type>)
-                {
-                    return static_cast<variable::float_type>(v);
-                }
-                else if constexpr(std::is_same_v<target_type, string_container_type>)
-                {
-                    return variable(v);
-                }
-                else
-                {
-                    throw std::invalid_argument("invalid type");
-                }
-            }
-        );
-    }
-
 private:
     variant_type m_val;
 };
 
 namespace detail
 {
-    template <typename T>
-    consteval std::size_t count_if_index_arg() noexcept
-    {
-        using type = std::remove_cvref_t<T>;
-        if constexpr(!is_named_arg_v<type>)
-            return 1;
-        else
-            return 0;
-    }
-
     template <typename T>
     consteval std::size_t count_if_named_arg() noexcept
     {
@@ -488,39 +457,27 @@ namespace detail
     }
 
     template <typename... Ts>
-    consteval std::size_t get_indexed_arg_count() noexcept
-    {
-        if constexpr(sizeof...(Ts) == 0)
-            return 0;
-        else
-        {
-            using tuple_type = std::tuple<Ts...>;
-
-            auto helper = []<std::size_t... Is>(std::index_sequence<Is...>)
-            {
-                return (count_if_index_arg<std::tuple_element_t<Is, tuple_type>>() + ...);
-            };
-
-            return helper(std::make_index_sequence<sizeof...(Ts)>());
-        }
-    }
-
-    template <typename... Ts>
     consteval std::size_t get_named_arg_count() noexcept
     {
         if constexpr(sizeof...(Ts) == 0)
             return 0;
         else
         {
-            using tuple_type = std::tuple<Ts...>;
+            using tuple_t = std::tuple<Ts...>;
+            using std::tuple_element_t;
+            using std::size_t;
 
-            auto helper = []<std::size_t... Is>(std::index_sequence<Is...>)
+            return []<size_t... Is>(std::index_sequence<Is...>) -> size_t
             {
-                return (count_if_named_arg<std::tuple_element_t<Is, tuple_type>>() + ...);
-            };
-
-            return helper(std::make_index_sequence<sizeof...(Ts)>());
+                return (count_if_named_arg<tuple_element_t<Is, tuple_t>>() + ...);
+            }(std::make_index_sequence<sizeof...(Ts)>());
         }
+    }
+
+    template <typename... Ts>
+    consteval std::size_t get_indexed_arg_count() noexcept
+    {
+        return sizeof...(Ts) - get_named_arg_count<Ts...>();
     }
 
     class format_args_base
@@ -723,7 +680,10 @@ public:
     {
         if constexpr(is_named_arg_v<T>)
         {
-            m_named_args.emplace(std::make_pair(val.name, std::forward<T>(val).value));
+            m_named_args.emplace(std::make_pair(
+                PAPILIO_NS forward_like<T>(val.name),
+                PAPILIO_NS forward_like<T>(val.value)
+            ));
         }
         else
         {

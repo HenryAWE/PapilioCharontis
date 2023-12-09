@@ -56,6 +56,45 @@ public:
     using int_type = std::int64_t;
     using float_type = long double;
 
+private:
+    template <typename Variant>
+    static variant_type convert_variant(Variant&& var)
+    {
+        return std::visit(
+            []<typename T>(T&& v) -> variant_type
+            {
+                using type = std::remove_cvref_t<T>;
+
+                if constexpr(std::is_same_v<type, bool>)
+                {
+                    return variant_type(std::in_place_type<bool>, v);
+                }
+                else if constexpr(std::is_same_v<type, utf::codepoint>)
+                {
+                    return variant_type(std::in_place_type<string_container_type>, 1, v);
+                }
+                else if constexpr(std::integral<type>)
+                {
+                    return variant_type(std::in_place_type<int_type>, v);
+                }
+                else if constexpr(std::floating_point<type>)
+                {
+                    return variant_type(std::in_place_type<float_type>, v);
+                }
+                else if constexpr(basic_string_like<T, CharT>)
+                {
+                    return variant_type(std::in_place_type<string_container_type>, std::forward<T>(v));
+                }
+                else
+                {
+                    throw std::invalid_argument("invalid type");
+                }
+            },
+            var
+        );
+    }
+
+public:
     basic_variable() = delete;
     basic_variable(const basic_variable&) = default;
     basic_variable(basic_variable&&) noexcept = default;
@@ -85,6 +124,17 @@ public:
     basic_variable(independent_t, String&& str)
         : m_var(std::in_place_type<string_container_type>, independent, std::forward<String>(str))
     {}
+
+    template <typename... Ts>
+    basic_variable(std::variant<Ts...>&& var)
+        : m_var(convert_variant(std::move(var)))
+    {}
+
+    template <typename... Ts>
+    basic_variable(const std::variant<Ts...>& var)
+        : m_var(convert_variant(var))
+    {}
+
 
     basic_variable& operator=(const basic_variable&) = default;
 

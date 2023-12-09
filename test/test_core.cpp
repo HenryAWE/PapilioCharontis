@@ -80,7 +80,7 @@ TEST(format_arg, access)
     {
         PAPILIO_NS format_arg fmt_arg("test");
 
-        auto var = fmt_arg.as_variable();
+        auto var = script::variable(fmt_arg.to_variant());
         EXPECT_EQ(var.as<utf::string_container>(), "test");
     }
 

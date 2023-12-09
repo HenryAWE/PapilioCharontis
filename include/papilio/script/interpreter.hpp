@@ -206,7 +206,7 @@ private:
                 throw_error("invalid script");
 
             ++next_it;
-            return std::make_pair(arg.as_variable(), next_it);
+            return std::make_pair(variable_type(arg.to_variant()), next_it);
         }
         else if(first_ch == U'\'')
         {

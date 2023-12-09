@@ -11,6 +11,7 @@
 #include <string>
 #include <iterator>
 #include "macros.hpp"
+#include "detail/compat.hpp"
 
 namespace papilio
 {
