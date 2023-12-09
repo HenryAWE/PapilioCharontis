@@ -2,7 +2,7 @@
 
 #include "macros.hpp"
 #include "core.hpp"
-#include "script.hpp"
+#include "script/interpreter.hpp"
 #include "format/fundamental.hpp"
 
 namespace papilio

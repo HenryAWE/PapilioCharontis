@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <papilio/script.hpp>
+#include <papilio/script/interpreter.hpp>
 
 namespace test_script_interpreter
 {
