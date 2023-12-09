@@ -3,7 +3,6 @@
 #include "macros.hpp"
 #include "core.hpp"
 #include "script.hpp"
-#include "error.hpp"
 #include "format/fundamental.hpp"
 
 

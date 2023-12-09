@@ -8,7 +8,6 @@
 #include "utility.hpp"
 #include "container.hpp"
 #include "utf/utf.hpp"
-#include "error.hpp"
 #include "locale.hpp"
 #include "access.hpp"
 #include "script/variable.hpp"
@@ -48,6 +47,12 @@ namespace papilio
         positive,
         negative,
         space
+    };
+
+    class invalid_format : public std::invalid_argument
+    {
+    public:
+        using invalid_argument::invalid_argument;
     };
 
     namespace detail
