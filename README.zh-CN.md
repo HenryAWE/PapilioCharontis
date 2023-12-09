@@ -6,11 +6,16 @@
 ### 核心特性：脚本
 使用内嵌脚本控制输出。
 ```c++
+papilio::format("{0} warning{${0}>1:'s'}", 1); // 返回 "1 warning"
+papilio::format("{0} warning{${0}>1:'s'}", 2); // 返回 "2 warnings"
+```
+
+```c++
 std::string_view fmt =
-    "There "
-    "[if $0 != 1: 'are' else: 'is']"
-    " {} "
-    "apple[if $0 != 1: 's']";
+    "There"
+    " {${0} != 1: 'are' : 'is'} "
+    "{0}"
+    " apple{${0} != 1: 's'}";
 papilio::format(fmt, 1); // 返回 "There is 1 apple"
 papilio::format(fmt, 2); // 返回 "There are 2 apples"
 ```

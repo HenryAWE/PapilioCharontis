@@ -6,11 +6,16 @@ A flexible formatting library for C++.
 ### Main Feature: Scripting
 Using embedded script to control the output.
 ```c++
+papilio::format("{0} warning{${0}>1:'s'}", 1); // Returns "1 warning"
+papilio::format("{0} warning{${0}>1:'s'}", 2); // Returns "2 warnings"
+```
+
+```c++
 std::string_view fmt =
-    "There "
-    "[if $0 != 1: 'are' else: 'is']"
-    " {} "
-    "apple[if $0 != 1: 's']";
+    "There"
+    " {${0} != 1: 'are' : 'is'} "
+    "{0}"
+    " apple{${0} != 1: 's'}";
 papilio::format(fmt, 1); // Returns "There is 1 apple"
 papilio::format(fmt, 2); // Returns "There are 2 apples"
 ```
