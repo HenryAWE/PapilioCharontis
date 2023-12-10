@@ -146,11 +146,19 @@ TEST(basic_string_ref, u8string_ref)
         EXPECT_FALSE(ref.ends_with(U'D'));
 
         auto it = ref.find(u8"ABC");
+
+        static_assert(std::bidirectional_iterator<decltype(it)>);
+        static_assert(std::is_convertible_v<
+                      std::iterator_traits<decltype(it)>::iterator_category,
+                      std::bidirectional_iterator_tag>);
+
         EXPECT_EQ(it, ref.begin());
         it = ref.find(u8"BCD");
         EXPECT_EQ(it, ref.begin() + 1);
+        EXPECT_EQ(it, std::next(ref.begin(), 1));
         it = ref.find(u8"ABC", 1);
         EXPECT_EQ(it, ref.end() - 3);
+        EXPECT_EQ(it, std::prev(ref.end(), 3));
     }
 
     {
@@ -179,6 +187,9 @@ TEST(basic_string_ref, u16string_ref)
 
         auto it = ref.find(U'\u4e00');
         EXPECT_EQ(it, ref.begin() + 1);
+        EXPECT_EQ(it, std::next(ref.begin(), 1));
+        EXPECT_EQ(it, ref.end() - 3);
+        EXPECT_EQ(it, std::prev(ref.end(), 3));
     }
 }
 
@@ -198,6 +209,9 @@ TEST(basic_string_ref, u32string_ref)
 
         auto it = ref.find(U'\u4e00');
         EXPECT_EQ(it, ref.begin() + 1);
+        EXPECT_EQ(it, std::next(ref.begin(), 1));
+        EXPECT_EQ(it, ref.end() - 3);
+        EXPECT_EQ(it, std::prev(ref.end(), 3));
     }
 }
 
@@ -220,6 +234,9 @@ TEST(basic_string_ref, wstring_ref)
 
         auto it = ref.find(U'\u4e00');
         EXPECT_EQ(it, ref.begin() + 1);
+        EXPECT_EQ(it, std::next(ref.begin(), 1));
+        EXPECT_EQ(it, ref.end() - 3);
+        EXPECT_EQ(it, std::prev(ref.end(), 3));
     }
 }
 

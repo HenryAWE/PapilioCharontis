@@ -170,7 +170,7 @@ namespace detail
         {
             PAPILIO_ASSUME(m_offset != 0);
             --m_offset;
-            while(!is_low_surrogate(m_str[m_offset])) --m_offset;
+            while(is_low_surrogate(m_str[m_offset])) --m_offset;
         }
 
     public:
@@ -309,6 +309,8 @@ namespace detail
             using value_type = codepoint;
             using reference = codepoint;
             using string_view_type = std::basic_string_view<CharT>;
+
+            using iterator_category = std::bidirectional_iterator_tag;
 
             constexpr const_iterator() noexcept = default;
             constexpr const_iterator(const const_iterator&) noexcept = default;
