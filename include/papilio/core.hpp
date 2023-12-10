@@ -10,7 +10,6 @@
 #include "utf/utf.hpp"
 #include "locale.hpp"
 #include "access.hpp"
-#include "script/variable.hpp"
 
 #ifdef PAPILIO_COMPILER_MSVC
 #    pragma warning(push)
@@ -893,7 +892,7 @@ public:
     [[noreturn]]
     static void invalid_default_argument()
     {
-        throw std::runtime_error("no default argument after an explicit argument");
+        throw invalid_format("no default argument after an explicit argument");
     }
 
 private:

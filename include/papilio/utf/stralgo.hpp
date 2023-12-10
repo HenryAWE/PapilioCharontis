@@ -2,9 +2,8 @@
 
 #include <cstddef>
 #include <stdexcept>
-#include <papilio/macros.hpp>
-#include <papilio/detail/compat.hpp>
-#include <papilio/utility.hpp>
+#include "../macros.hpp"
+#include "../utility.hpp"
 
 namespace papilio::utf
 {
@@ -13,7 +12,7 @@ constexpr inline std::size_t npos = std::u8string::npos;
 class invalid_byte : public std::invalid_argument
 {
 public:
-    invalid_byte(std::uint8_t ch)
+    explicit invalid_byte(std::uint8_t ch)
         : invalid_argument("invalid byte"), m_byte(ch) {}
 
     [[nodiscard]]
@@ -26,13 +25,10 @@ private:
     std::uint8_t m_byte;
 };
 
-class invalid_leading_byte : public invalid_byte
-{};
-
 class invalid_surrogate : public std::invalid_argument
 {
 public:
-    invalid_surrogate(std::uint16_t ch)
+    explicit invalid_surrogate(std::uint16_t ch)
         : invalid_argument("invalid surrogate"), m_ch(ch) {}
 
     [[nodiscard]]
@@ -60,7 +56,7 @@ constexpr bool is_trailing_byte(std::uint8_t ch) noexcept
 [[nodiscard]]
 constexpr std::uint8_t byte_count(std::uint8_t leading_byte) noexcept
 {
-    PAPILIO_ASSUME(is_leading_byte(leading_byte));
+    PAPILIO_ASSERT(is_leading_byte(leading_byte));
     if((leading_byte & 0b1000'0000) == 0)
         return 1;
     else if((leading_byte & 0b1110'0000) == 0b1100'0000)
@@ -98,347 +94,299 @@ enum class substr_behavior
     empty_string = 1
 };
 
-namespace detail
+template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
+constexpr std::size_t strlen(
+    const CharT* str, std::size_t max_chars
+) noexcept(OnInvalid != strlen_behavior::exception)
 {
-    template <char8_like CharT, strlen_behavior OnInvalid>
-    constexpr std::size_t strlen_impl(const CharT* str, std::size_t max_chars) noexcept(OnInvalid != strlen_behavior::exception)
+    PAPILIO_ASSERT(str != nullptr);
+
+    std::size_t result = 0;
+    std::uint8_t bytes = 0;
+    std::size_t i = 0;
+    for(; str[i] != CharT(0) && i < max_chars;)
     {
-        PAPILIO_ASSUME(str != nullptr);
-
-        std::size_t result = 0;
-        std::uint8_t bytes = 0;
-        std::size_t i = 0;
-        for(; str[i] != CharT(0) && i < max_chars;)
-        {
-            if(bytes != 0)
-            {
-                --bytes;
-                ++i;
-                continue;
-            }
-
-            char8_t ch = str[i];
-
-            if(is_leading_byte(ch))
-            {
-                ++result;
-                bytes = byte_count(ch);
-            }
-            else [[unlikely]]
-            {
-                PAPILIO_ASSUME(is_trailing_byte(ch));
-                if constexpr(OnInvalid == strlen_behavior::replace)
-                {
-                    ++result;
-                    ++i;
-                }
-                else if constexpr(OnInvalid == strlen_behavior::ignore)
-                {
-                    ++i;
-                }
-                else if constexpr(OnInvalid == strlen_behavior::stop)
-                {
-                    return result;
-                }
-                else if constexpr(OnInvalid == strlen_behavior::exception)
-                {
-                    throw invalid_byte(ch);
-                }
-            }
-        }
-
         if(bytes != 0)
         {
-            if constexpr(OnInvalid == strlen_behavior::exception)
-            {
-                throw invalid_byte(str[i - 1]);
-            }
+            --bytes;
+            ++i;
+            continue;
         }
-        return result;
-    }
 
-    template <char8_like CharT, strlen_behavior OnInvalid>
-    constexpr std::size_t strlen_impl(
-        std::basic_string_view<CharT> str
-    ) noexcept(OnInvalid != strlen_behavior::exception)
-    {
-        std::size_t result = 0;
-        std::uint8_t bytes = 0;
-        std::size_t i = 0;
-        for(; i < str.size();)
+        char8_t ch = str[i];
+
+        if(is_leading_byte(ch))
         {
-            if(bytes != 0)
-            {
-                --bytes;
-                ++i;
-                continue;
-            }
-
-            char8_t ch = str[i];
-
-            if(is_leading_byte(ch))
+            ++result;
+            bytes = byte_count(ch);
+        }
+        else [[unlikely]]
+        {
+            PAPILIO_ASSERT(is_trailing_byte(ch));
+            if constexpr(OnInvalid == strlen_behavior::replace)
             {
                 ++result;
-                bytes = byte_count(ch);
+                ++i;
             }
-            else [[unlikely]]
+            else if constexpr(OnInvalid == strlen_behavior::ignore)
             {
-                PAPILIO_ASSUME(is_trailing_byte(ch));
-                if constexpr(OnInvalid == strlen_behavior::replace)
-                {
-                    ++result;
-                    ++i;
-                }
-                else if constexpr(OnInvalid == strlen_behavior::ignore)
-                {
-                    ++i;
-                }
-                else if constexpr(OnInvalid == strlen_behavior::stop)
-                {
-                    return result;
-                }
-                else if constexpr(OnInvalid == strlen_behavior::exception)
-                {
-                    throw invalid_byte(ch);
-                }
+                ++i;
+            }
+            else if constexpr(OnInvalid == strlen_behavior::stop)
+            {
+                return result;
+            }
+            else if constexpr(OnInvalid == strlen_behavior::exception)
+            {
+                throw invalid_byte(ch);
             }
         }
+    }
 
+    if(bytes != 0)
+    {
+        if constexpr(OnInvalid == strlen_behavior::exception)
+        {
+            throw invalid_byte(str[i - 1]);
+        }
+    }
+    return result;
+}
+
+template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
+constexpr std::size_t strlen(
+    std::basic_string_view<CharT> str
+) noexcept(OnInvalid != strlen_behavior::exception)
+{
+    std::size_t result = 0;
+    std::uint8_t bytes = 0;
+    std::size_t i = 0;
+    for(; i < str.size();)
+    {
         if(bytes != 0)
         {
-            if constexpr(OnInvalid == strlen_behavior::exception)
+            --bytes;
+            ++i;
+            continue;
+        }
+
+        char8_t ch = str[i];
+
+        if(is_leading_byte(ch))
+        {
+            ++result;
+            bytes = byte_count(ch);
+        }
+        else [[unlikely]]
+        {
+            PAPILIO_ASSERT(is_trailing_byte(ch));
+            if constexpr(OnInvalid == strlen_behavior::replace)
             {
-                throw invalid_byte(str[i - 1]);
+                ++result;
+                ++i;
+            }
+            else if constexpr(OnInvalid == strlen_behavior::ignore)
+            {
+                ++i;
+            }
+            else if constexpr(OnInvalid == strlen_behavior::stop)
+            {
+                return result;
+            }
+            else if constexpr(OnInvalid == strlen_behavior::exception)
+            {
+                throw invalid_byte(ch);
             }
         }
-        return result;
     }
 
-    template <char16_like CharT, strlen_behavior OnInvalid>
-    constexpr std::size_t strlen_impl(const CharT* str, std::size_t max_chars) noexcept(OnInvalid != strlen_behavior::exception)
+    if(bytes != 0)
     {
-        std::size_t result = 0;
-
-        // TODO: handling exceptions like invalid surrogate
-        for(std::size_t i = 0; i < max_chars && str[i] != CharT(0); ++i)
+        if constexpr(OnInvalid == strlen_behavior::exception)
         {
-            if(!is_low_surrogate(str[i])) [[likely]]
-                ++result;
-        }
-
-        return result;
-    }
-
-    template <char16_like CharT, strlen_behavior OnInvalid>
-    constexpr std::size_t strlen_impl(std::basic_string_view<CharT> str) noexcept(OnInvalid != strlen_behavior::exception)
-    {
-        std::size_t result = 0;
-
-        for(std::size_t i = 0; i < str.size(); ++i)
-        {
-            if(!is_low_surrogate(str[i])) [[likely]]
-                ++result;
-        }
-
-        return result;
-    }
-
-    template <char32_like CharT, strlen_behavior OnInvalid /* unused */>
-    constexpr std::size_t strlen_impl(const CharT* str, std::size_t max_chars) noexcept
-    {
-        for(std::size_t i = 0; i < max_chars; ++i)
-        {
-            if(str[i] == CharT(0))
-                return i;
+            throw invalid_byte(str[i - 1]);
         }
     }
+    return result;
+}
 
-    template <char32_like CharT, strlen_behavior OnInvalid /* unused */>
-    constexpr std::size_t strlen_impl(std::basic_string_view<CharT> str) noexcept
-    {
-        return str.size();
-    }
-} // namespace detail
-
-#define PAPILIO_UTF_STRLEN(char_t)                                     \
-    template <strlen_behavior OnInvalid = strlen_behavior::replace>    \
-    [[nodiscard]]                                                      \
-    constexpr std::size_t strlen(                                      \
-        const char_t* str, std::size_t max_chars = -1                  \
-    ) noexcept(OnInvalid != strlen_behavior::exception)                \
-    {                                                                  \
-        return detail::strlen_impl<char_t, OnInvalid>(str, max_chars); \
-    }                                                                  \
-    template <strlen_behavior OnInvalid = strlen_behavior::replace>    \
-    [[nodiscard]]                                                      \
-    constexpr std::size_t strlen(                                      \
-        std::basic_string_view<char_t> str                             \
-    ) noexcept(OnInvalid != strlen_behavior::exception)                \
-    {                                                                  \
-        return detail::strlen_impl<char_t, OnInvalid>(str);            \
-    }
-
-PAPILIO_UTF_STRLEN(char);
-PAPILIO_UTF_STRLEN(char8_t);
-PAPILIO_UTF_STRLEN(char16_t);
-PAPILIO_UTF_STRLEN(char32_t);
-PAPILIO_UTF_STRLEN(wchar_t);
-
-#undef PAPILIO_UTF_STRLEN
-
-namespace detail
+template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
+constexpr std::size_t strlen(
+    const CharT* str, std::size_t max_chars
+) noexcept(OnInvalid != strlen_behavior::exception)
 {
-    template <char8_like CharT>
-    constexpr std::size_t index_offset_impl(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
+    std::size_t result = 0;
+
+    // TODO: handling exceptions like invalid surrogate
+    for(std::size_t i = 0; i < max_chars && str[i] != CharT(0); ++i)
     {
-        std::uint8_t len = 0;
-        std::size_t ch_count = 0;
-        for(std::size_t i = 0; i < max_chars; ++i)
+        if(!is_low_surrogate(str[i])) [[likely]]
+            ++result;
+    }
+
+    return result;
+}
+
+template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
+constexpr std::size_t strlen(
+    std::basic_string_view<CharT> str
+) noexcept(OnInvalid != strlen_behavior::exception)
+{
+    std::size_t result = 0;
+
+    for(std::size_t i = 0; i < str.size(); ++i)
+    {
+        if(!is_low_surrogate(str[i])) [[likely]]
+            ++result;
+    }
+
+    return result;
+}
+
+template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
+constexpr std::size_t strlen(const CharT* str, std::size_t max_chars) noexcept
+{
+    for(std::size_t i = 0; i < max_chars; ++i)
+    {
+        if(str[i] == CharT(0))
+            return i;
+    }
+}
+
+template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
+constexpr std::size_t strlen(std::basic_string_view<CharT> str) noexcept
+{
+    return str.size();
+}
+
+template <strlen_behavior OnInvalid = strlen_behavior::replace, char_like CharT>
+constexpr std::size_t strlen(const CharT* str)
+{
+    return strlen<OnInvalid, CharT>(std::basic_string_view<CharT>(str));
+}
+
+template <char8_like CharT>
+constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
+{
+    std::uint8_t len = 0;
+    std::size_t ch_count = 0;
+    for(std::size_t i = 0; i < max_chars; ++i)
+    {
+        if(len != 0)
         {
-            if(len != 0)
-            {
-                --len;
-                continue;
-            }
-            else if(ch_count == idx)
-            {
-                return i;
-            }
-
-            std::uint8_t ch = str[i];
-            if(is_trailing_byte(ch))
-            {
-                return npos;
-            }
-
-            len = byte_count(ch) - 1;
-            ++ch_count;
+            --len;
+            continue;
+        }
+        else if(ch_count == idx)
+        {
+            return i;
         }
 
-        return npos;
-    }
-
-    template <char8_like CharT>
-    constexpr std::size_t index_offset_impl_r(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
-    {
-        std::size_t ch_count = 0;
-        for(std::size_t i = max_chars; i != 0; --i)
+        std::uint8_t ch = str[i];
+        if(is_trailing_byte(ch))
         {
-            std::size_t off = i - 1;
-            if(is_leading_byte(str[off]))
-            {
-                if(ch_count == idx)
-                    return off;
-                ++ch_count;
-            }
-        }
-
-        return npos;
-    }
-
-    template <char16_like CharT>
-    constexpr std::size_t index_offset_impl(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
-    {
-        std::uint8_t len = 0;
-        std::size_t ch_count = 0;
-        for(std::size_t i = 0; i < max_chars; ++i)
-        {
-            if(len == 2)
-            {
-                --len;
-                continue;
-            }
-            else if(ch_count == idx)
-            {
-                return i;
-            }
-
-            std::uint16_t ch = static_cast<std::uint16_t>(str[i]);
-            if(is_low_surrogate(ch))
-            {
-                return npos;
-            }
-
-            len = is_high_surrogate(ch) ? 2 : 1;
-            ++ch_count;
-        }
-
-        return npos;
-    }
-
-    template <char16_like CharT>
-    constexpr std::size_t index_offset_impl_r(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
-    {
-        std::uint8_t len = 0;
-        std::size_t ch_count = 0;
-        for(std::size_t i = max_chars; i != 0; --i)
-        {
-            std::size_t off = i - 1;
-            if(!is_low_surrogate(str[off]))
-            {
-                if(ch_count == idx)
-                    return off;
-                ++ch_count;
-            }
-        }
-
-        return npos;
-    }
-
-    template <char32_like CharT>
-    constexpr std::size_t index_offset_impl(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
-    {
-        return idx < max_chars ? idx : npos;
-    }
-
-    template <char32_like CharT>
-    constexpr std::size_t index_offset_impl_r(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
-    {
-        if(idx > max_chars - 1)
             return npos;
-        return max_chars - 1 - idx;
-    }
-} // namespace detail
+        }
 
-#define PAPILIO_UTF_INDEX_OFFSET(char_t)                                                                        \
-    [[nodiscard]]                                                                                               \
-    constexpr std::size_t index_offset(std::size_t idx, const char_t* str, std::size_t max_chars = -1) noexcept \
-    {                                                                                                           \
-        return detail::index_offset_impl<char_t>(idx, str, max_chars);                                          \
-    }                                                                                                           \
-    [[nodiscard]]                                                                                               \
-    constexpr std::size_t index_offset(std::size_t idx, std::basic_string_view<char_t> str) noexcept            \
-    {                                                                                                           \
-        return detail::index_offset_impl<char_t>(idx, str.data(), str.size());                                  \
+        len = byte_count(ch) - 1;
+        ++ch_count;
     }
 
-#define PAPILIO_UTF_INDEX_OFFSET_R(char_t)                                                                                  \
-    [[nodiscard]]                                                                                                           \
-    constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const char_t* str, std::size_t max_chars) noexcept \
-    {                                                                                                                       \
-        return detail::index_offset_impl_r<char_t>(idx, str, max_chars);                                                    \
-    }                                                                                                                       \
-    [[nodiscard]]                                                                                                           \
-    constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, std::basic_string_view<char_t> str) noexcept       \
-    {                                                                                                                       \
-        return detail::index_offset_impl_r<char_t>(idx, str.data(), str.size());                                            \
+    return npos;
+}
+
+template <char8_like CharT>
+constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
+{
+    std::size_t ch_count = 0;
+    for(std::size_t i = max_chars; i != 0; --i)
+    {
+        std::size_t off = i - 1;
+        if(is_leading_byte(str[off]))
+        {
+            if(ch_count == idx)
+                return off;
+            ++ch_count;
+        }
     }
 
-PAPILIO_UTF_INDEX_OFFSET(char);
-PAPILIO_UTF_INDEX_OFFSET_R(char);
-PAPILIO_UTF_INDEX_OFFSET(char8_t);
-PAPILIO_UTF_INDEX_OFFSET_R(char8_t);
+    return npos;
+}
 
-PAPILIO_UTF_INDEX_OFFSET(char16_t);
-PAPILIO_UTF_INDEX_OFFSET_R(char16_t);
-PAPILIO_UTF_INDEX_OFFSET(char32_t);
-PAPILIO_UTF_INDEX_OFFSET_R(char32_t);
+template <char16_like CharT>
+constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
+{
+    std::uint8_t len = 0;
+    std::size_t ch_count = 0;
+    for(std::size_t i = 0; i < max_chars; ++i)
+    {
+        if(len == 2)
+        {
+            --len;
+            continue;
+        }
+        else if(ch_count == idx)
+        {
+            return i;
+        }
 
-PAPILIO_UTF_INDEX_OFFSET(wchar_t);
-PAPILIO_UTF_INDEX_OFFSET_R(wchar_t);
+        std::uint16_t ch = static_cast<std::uint16_t>(str[i]);
+        if(is_low_surrogate(ch))
+        {
+            return npos;
+        }
 
-#undef PAPILIO_UTF_INDEX_OFFSET
-#undef PAPILIO_UTF_INDEX_OFFSET_R
+        len = is_high_surrogate(ch) ? 2 : 1;
+        ++ch_count;
+    }
+
+    return npos;
+}
+
+template <char16_like CharT>
+constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
+{
+    std::uint8_t len = 0;
+    std::size_t ch_count = 0;
+    for(std::size_t i = max_chars; i != 0; --i)
+    {
+        std::size_t off = i - 1;
+        if(!is_low_surrogate(str[off]))
+        {
+            if(ch_count == idx)
+                return off;
+            ++ch_count;
+        }
+    }
+
+    return npos;
+}
+
+template <char32_like CharT>
+constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
+{
+    return idx < max_chars ? idx : npos;
+}
+
+template <char32_like CharT>
+constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
+{
+    if(idx > max_chars - 1)
+        return npos;
+    return max_chars - 1 - idx;
+}
+
+template <typename CharT>
+constexpr std::size_t index_offset(std::size_t idx, std::basic_string_view<CharT> str) noexcept
+{
+    return index_offset(idx, str.data(), str.size());
+}
+
+template <typename CharT>
+constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, std::basic_string_view<CharT> str) noexcept
+{
+    return index_offset(reverse_index, idx, str.data(), str.size());
+}
 
 // vvv locale independent APIs vvv
 
