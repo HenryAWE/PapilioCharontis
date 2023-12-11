@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include <vector>
 #include <papilio/utf/string.hpp>
+#include <sstream>
 
 // Peach Emoji, CJK Unified Ideographs 4E00, Capital A with Diaeresis, A
 // "🍑一ÄA"
@@ -335,6 +335,26 @@ TEST(basic_string_container, string_container)
         EXPECT_EQ("test"_sc.size(), 4);
         EXPECT_EQ(u8"test"_sc.size(), 4);
     }
+
+    {
+        using namespace utf::literals;
+
+        string_ref ref = "test"_sr;
+        string_container sc(ref.begin(), ref.end());
+
+        EXPECT_EQ(sc, "test");
+        EXPECT_EQ(sc, ref);
+    }
+
+    {
+        using namespace utf::literals;
+
+        string_container sc = "test"_sc;
+        string_ref ref(sc.begin(), sc.end());
+
+        EXPECT_EQ(ref, "test");
+        EXPECT_EQ(ref, sc);
+    }
 }
 
 TEST(basic_string_container, wstring_container)
@@ -357,6 +377,10 @@ TEST(basic_string_container, push_back)
     using namespace papilio;
     using namespace utf;
 
+    // Fullwidth Exclamation Mark
+    // '！'
+    const codepoint fullwidth_exclamation = U'\uff01'_cp;
+
     {
         string_container sc = "hello";
         EXPECT_FALSE(sc.has_ownership());
@@ -371,11 +395,65 @@ TEST(basic_string_container, push_back)
 
     {
         string_container sc = "hello";
-        // '！'
-        auto fullwidth_exclamation = U'\uff01'_cp;
 
         sc.push_back(fullwidth_exclamation);
         EXPECT_EQ(sc, "hello\uff01");
+    }
+
+    {
+        wstring_container sc = L"hello";
+
+        sc.push_back(L'!');
+        ASSERT_TRUE(sc.has_ownership());
+        EXPECT_EQ(sc, L"hello!");
+    }
+
+    {
+        u32string_container sc = U"hello";
+
+        sc.push_back(U'!');
+        ASSERT_TRUE(sc.has_ownership());
+        EXPECT_EQ(sc, U"hello!");
+    }
+}
+
+TEST(basic_string_container, istream)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    {
+        std::stringstream ss("test");
+
+        string_container sc;
+        ss >> sc;
+        EXPECT_EQ(sc, "test");
+    }
+
+    {
+        std::wstringstream ss(L"test");
+
+        wstring_container sc;
+        ss >> sc;
+        EXPECT_EQ(sc, L"test");
+    }
+}
+
+TEST(basic_string_container, ostream)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    {
+        std::stringstream ss;
+        ss << "test"_sc;
+        EXPECT_EQ(ss.str(), "test");
+    }
+
+    {
+        std::wstringstream ss;
+        ss << L"test"_sc;
+        EXPECT_EQ(ss.str(), L"test");
     }
 }
 

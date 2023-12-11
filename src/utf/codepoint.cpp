@@ -19,7 +19,7 @@ auto decoder<wchar_t>::to_char32_t(std::wstring_view ch) -> std::pair<char32_t, 
     }
 }
 
-auto decoder<wchar_t>::to_codepoint(std::wstring_view ch) -> std::pair<codepoint, std::uint8_t>
+std::pair<codepoint, std::uint8_t> decoder<wchar_t>::to_codepoint(std::wstring_view ch)
 {
     auto [ch32, processed_size] = to_char32_t(ch);
     return std::make_pair(decoder<char32_t>::to_codepoint(ch32).first, processed_size);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <string>
 #include <algorithm>
 #include <variant>
@@ -16,11 +17,17 @@ class basic_string_container;
 
 namespace detail
 {
+    class const_str_iter_impl_base
+    {
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+    };
+
     template <typename CharT>
     class const_str_iter_impl;
 
     template <char8_like CharT>
-    class const_str_iter_impl<CharT>
+    class const_str_iter_impl<CharT> : public const_str_iter_impl_base
     {
     public:
         using char_type = CharT;
@@ -130,7 +137,7 @@ namespace detail
     };
 
     template <char16_like CharT>
-    class const_str_iter_impl<CharT>
+    class const_str_iter_impl<CharT> : public const_str_iter_impl_base
     {
     public:
         using char_type = CharT;
@@ -184,7 +191,10 @@ namespace detail
 
         // clang-format on
 
-        explicit constexpr operator bool() const noexcept { return !m_str.empty(); }
+        explicit constexpr operator bool() const noexcept
+        {
+            return !m_str.empty();
+        }
 
         [[nodiscard]]
         constexpr const CharT* to_address() const noexcept
@@ -214,7 +224,7 @@ namespace detail
     };
 
     template <char32_like CharT>
-    class const_str_iter_impl<CharT>
+    class const_str_iter_impl<CharT> : public const_str_iter_impl_base
     {
     public:
         using char_type = CharT;
@@ -228,11 +238,18 @@ namespace detail
         constexpr const_str_iter_impl(const const_str_iter_impl&) noexcept = default;
 
     protected:
-        constexpr const_str_iter_impl(string_view_type::const_iterator iter) noexcept : m_iter(iter) {}
+        constexpr const_str_iter_impl(string_view_type::const_iterator iter) noexcept
+            : m_iter(iter) {}
 
-        constexpr void next() noexcept { ++m_iter; }
+        constexpr void next() noexcept
+        {
+            ++m_iter;
+        }
 
-        constexpr void prev() noexcept { --m_iter; }
+        constexpr void prev() noexcept
+        {
+            --m_iter;
+        }
 
     public:
         // clang-format off
@@ -309,8 +326,6 @@ namespace detail
             using value_type = codepoint;
             using reference = codepoint;
             using string_view_type = std::basic_string_view<CharT>;
-
-            using iterator_category = std::bidirectional_iterator_tag;
 
             constexpr const_iterator() noexcept = default;
             constexpr const_iterator(const const_iterator&) noexcept = default;
@@ -617,7 +632,10 @@ namespace detail
             return find(ch) != as_derived().cend();
         }
 
-        constexpr bool starts_with(string_view_type str) const noexcept { return get_view().substr(0, str.size()) == str; }
+        constexpr bool starts_with(string_view_type str) const noexcept
+        {
+            return get_view().substr(0, str.size()) == str;
+        }
 
         [[nodiscard]]
         constexpr bool starts_with(const CharT* str) const noexcept
@@ -732,8 +750,17 @@ namespace detail
             return Derived(start, stop);
         }
 
+        friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const Derived& str)
+        {
+            os << static_cast<string_view_type>(str);
+            return os;
+        }
+
     protected:
-        constexpr string_view_type get_view() const noexcept { return string_view_type(as_derived()); }
+        constexpr string_view_type get_view() const noexcept
+        {
+            return string_view_type(as_derived());
+        }
 
         template <typename... Args>
         constexpr const_iterator make_c_iter(Args&&... args) const noexcept
@@ -780,9 +807,15 @@ namespace detail
         }
 
     private:
-        constexpr Derived& as_derived() noexcept { return static_cast<Derived&>(*this); }
+        constexpr Derived& as_derived() noexcept
+        {
+            return static_cast<Derived&>(*this);
+        }
 
-        constexpr const Derived& as_derived() const noexcept { return static_cast<const Derived&>(*this); }
+        constexpr const Derived& as_derived() const noexcept
+        {
+            return static_cast<const Derived&>(*this);
+        }
     };
 } // namespace detail
 
@@ -807,20 +840,28 @@ public:
     constexpr basic_string_ref(const basic_string_ref& other) noexcept = default;
     constexpr basic_string_ref(std::nullptr_t) = delete;
 
-    constexpr basic_string_ref(const CharT* str, size_type count) noexcept : m_str(string_view_type(str, count)) {}
+    constexpr basic_string_ref(const CharT* str, size_type count) noexcept
+        : m_str(string_view_type(str, count)) {}
 
-    constexpr basic_string_ref(const CharT* str) noexcept : m_str(string_view_type(str)) {}
+    constexpr basic_string_ref(const CharT* str) noexcept
+        : m_str(string_view_type(str)) {}
 
-    constexpr basic_string_ref(string_view_type str) noexcept : m_str(str) {}
+    constexpr basic_string_ref(string_view_type str) noexcept
+        : m_str(str) {}
 
-    constexpr basic_string_ref(const string_type& str) noexcept : m_str(str) {}
+    constexpr basic_string_ref(const string_type& str) noexcept
+        : m_str(str) {}
 
     template <std::contiguous_iterator Iterator, typename Sentinel>
     requires(std::is_same_v<std::iter_value_t<Iterator>, CharT> && !std::is_convertible_v<Sentinel, size_type>)
-    constexpr basic_string_ref(Iterator start, Sentinel stop) : m_str(string_view_type(start, stop))
+    constexpr basic_string_ref(Iterator start, Sentinel stop)
+        : m_str(string_view_type(start, stop))
     {}
 
-    constexpr basic_string_ref(const_iterator start, const_iterator stop) noexcept : m_str(string_view_type(start.to_address(), stop.to_address())) {}
+    template <std::derived_from<detail::const_str_iter_impl<CharT>> Iterator>
+    constexpr basic_string_ref(Iterator start, Iterator stop) noexcept
+        : m_str(string_view_type(start.to_address(), stop.to_address()))
+    {}
 
     constexpr basic_string_ref& operator=(const basic_string_ref&) noexcept = default;
     constexpr basic_string_ref& operator=(std::nullptr_t) noexcept = delete;
@@ -973,7 +1014,10 @@ public:
         return to_string_as<wchar_t>();
     }
 
-    constexpr operator string_view_type() const noexcept { return m_str; }
+    constexpr operator string_view_type() const noexcept
+    {
+        return m_str;
+    }
 
     template <char_like U>
     constexpr int compare(basic_string_ref<U> other) const noexcept
@@ -1002,11 +1046,20 @@ public:
 private:
     string_view_type m_str;
 
-    constexpr string_view_type get_view() const noexcept { return m_str; }
+    constexpr string_view_type get_view() const noexcept
+    {
+        return m_str;
+    }
 
-    constexpr void set_view(string_view_type new_str) noexcept { m_str = new_str; }
+    constexpr void set_view(string_view_type new_str) noexcept
+    {
+        m_str = new_str;
+    }
 
-    constexpr void set_view(const_iterator start, const_iterator stop) noexcept { set_view(string_view_type(start.to_address(), stop.to_address())); }
+    constexpr void set_view(const_iterator start, const_iterator stop) noexcept
+    {
+        set_view(string_view_type(start.to_address(), stop.to_address()));
+    }
 
     template <typename Other>
     constexpr int compare_impl(const Other& other) const noexcept
@@ -1196,31 +1249,47 @@ public:
     basic_string_container(const basic_string_container&) = default;
     basic_string_container(basic_string_container&&) noexcept = default;
 
-    basic_string_container(independent_t, const basic_string_container& str) : m_data(std::in_place_type<string_type>, string_view_type(str)) {}
+    basic_string_container(independent_t, const basic_string_container& str)
+        : m_data(std::in_place_type<string_type>, string_view_type(str)) {}
 
-    basic_string_container(string_type&& str) noexcept : m_data(std::in_place_type<string_type>, std::move(str)) {}
+    basic_string_container(string_type&& str) noexcept
+        : m_data(std::in_place_type<string_type>, std::move(str)) {}
 
-    basic_string_container(const string_type& str) noexcept : m_data(std::in_place_type<string_view_type>, str) {}
+    basic_string_container(const string_type& str) noexcept
+        : m_data(std::in_place_type<string_view_type>, str) {}
 
-    basic_string_container(independent_t, const string_type& str) : m_data(std::in_place_type<string_type>, str) {}
+    basic_string_container(independent_t, const string_type& str)
+        : m_data(std::in_place_type<string_type>, str) {}
 
-    basic_string_container(string_view_type str) noexcept : m_data(std::in_place_type<string_view_type>, str) {}
+    basic_string_container(string_view_type str) noexcept
+        : m_data(std::in_place_type<string_view_type>, str) {}
 
-    basic_string_container(const CharT* str) noexcept : m_data(std::in_place_type<string_view_type>, str) {}
+    basic_string_container(const CharT* str) noexcept
+        : m_data(std::in_place_type<string_view_type>, str) {}
 
-    constexpr basic_string_container(const CharT* str, size_type count) noexcept : m_data(std::in_place_type<string_view_type>, str, count) {}
+    constexpr basic_string_container(const CharT* str, size_type count) noexcept
+        : m_data(std::in_place_type<string_view_type>, str, count) {}
 
-    basic_string_container(independent_t, const CharT* str) noexcept : m_data(std::in_place_type<string_type>, str) {}
+    basic_string_container(independent_t, const CharT* str) noexcept
+        : m_data(std::in_place_type<string_type>, str) {}
 
-    constexpr basic_string_container(independent_t, const CharT* str, size_type count) noexcept : m_data(std::in_place_type<string_type>, str, count) {}
+    constexpr basic_string_container(independent_t, const CharT* str, size_type count) noexcept
+        : m_data(std::in_place_type<string_type>, str, count) {}
 
-    basic_string_container(const_iterator start, const_iterator stop) noexcept : m_data(std::in_place_type<string_view_type>, start.to_address(), stop.to_address()) {}
+    template <std::derived_from<detail::const_str_iter_impl<CharT>> Iterator>
+    basic_string_container(Iterator start, Iterator stop) noexcept
+        : m_data(std::in_place_type<string_view_type>, start.to_address(), stop.to_address())
+    {}
 
-    basic_string_container(size_type count, codepoint ch) { assign(count, ch); }
+    basic_string_container(size_type count, codepoint ch)
+    {
+        assign(count, ch);
+    }
 
     template <typename Iterator, typename Sentinel>
     requires std::is_same_v<std::iter_value_t<Iterator>, CharT>
-    basic_string_container(Iterator start, Sentinel stop) : m_data(std::in_place_type<string_type>, start, stop)
+    basic_string_container(Iterator start, Sentinel stop)
+        : m_data(std::in_place_type<string_type>, start, stop)
     {}
 
     basic_string_container& assign(size_type count, codepoint ch) noexcept
@@ -1255,13 +1324,43 @@ public:
         return *this;
     }
 
+    basic_string_container& assign(const string_type& str) noexcept
+    {
+        emplace_data<string_view_type>(str);
+        return *this;
+    }
+
+    basic_string_container& assign(independent_t, const string_type& str)
+    {
+        emplace_data<string_type>(str);
+        return *this;
+    }
+
+    basic_string_container& assign(string_type&& str) noexcept
+    {
+        emplace_data<string_type>(std::move(str));
+        return *this;
+    }
+
     constexpr basic_string_container& operator=(const basic_string_container&) = default;
     constexpr basic_string_container& operator=(basic_string_container&&) noexcept = default;
+
+    basic_string_container& operator=(string_view_type str)
+    {
+        return assign(str);
+    }
+
+    basic_string_container& operator=(independent_proxy<string_view_type> str)
+    {
+        return assign(independent, str);
+    }
 
     [[nodiscard]]
     constexpr bool empty() const noexcept
     {
-        return std::visit([](auto&& v) { return v.empty(); }, m_data);
+        return std::visit([](auto&& v)
+                          { return v.empty(); },
+                          m_data);
     }
 
     [[nodiscard]]
@@ -1273,7 +1372,9 @@ public:
     [[nodiscard]]
     constexpr const CharT* data() const noexcept
     {
-        return std::visit([](auto&& v) { return v.data(); }, m_data);
+        return std::visit([](auto&& v)
+                          { return v.data(); },
+                          m_data);
     }
 
     [[nodiscard]]
@@ -1294,7 +1395,9 @@ public:
     [[nodiscard]]
     constexpr size_type size() const noexcept
     {
-        return std::visit([](auto&& v) { return v.size(); }, m_data);
+        return std::visit([](auto&& v)
+                          { return v.size(); },
+                          m_data);
     }
 
     using base::find;
@@ -1327,9 +1430,15 @@ public:
         return find(str) != this->cend();
     }
 
-    bool has_ownership() const noexcept { return std::holds_alternative<string_type>(m_data); }
+    bool has_ownership() const noexcept
+    {
+        return std::holds_alternative<string_type>(m_data);
+    }
 
-    void obtain_ownership() { to_str(); }
+    void obtain_ownership()
+    {
+        to_str();
+    }
 
     string_type&& str() &&
     {
@@ -1351,14 +1460,15 @@ public:
 
     constexpr operator string_view_type() const noexcept
     {
-        return std::visit([](auto&& v) { return string_view_type(v); }, std::as_const(m_data));
+        return std::visit([](auto&& v)
+                          { return string_view_type(v); },
+                          std::as_const(m_data));
     }
 
-    constexpr operator string_ref_type() const noexcept { return static_cast<string_view_type>(*this); }
-
-    basic_string_container& operator=(string_view_type str) { return this->assign(str); }
-
-    basic_string_container& operator=(independent_proxy<string_view_type> str) { return this->assign(independent, str); }
+    constexpr operator string_ref_type() const noexcept
+    {
+        return static_cast<string_view_type>(*this);
+    }
 
     template <char_like U>
     constexpr int compare(const basic_string_container<U>& other) const noexcept
@@ -1390,9 +1500,15 @@ public:
         return this->compare_impl(basic_string_ref<U>(other));
     }
 
-    void push_back(CharT ch) { to_str().push_back(ch); }
+    void push_back(CharT ch)
+    {
+        to_str().push_back(ch);
+    }
 
-    void push_back(codepoint cp) { cp.append_to(to_str()); }
+    void push_back(codepoint cp)
+    {
+        cp.append_to(to_str());
+    }
 
     using base::begin;
     using base::end;
@@ -1424,7 +1540,10 @@ private:
         return m_data.template emplace<T>(std::forward<Args>(args)...);
     }
 
-    static constexpr string_ref_type create_ref(const_iterator start, const_iterator stop) noexcept { return string_view_type(start.to_address(), stop.to_address()); }
+    static constexpr string_ref_type create_ref(const_iterator start, const_iterator stop) noexcept
+    {
+        return string_view_type(start.to_address(), stop.to_address());
+    }
 
     template <typename U>
     constexpr int compare_impl(basic_string_ref<U> other) const noexcept
@@ -1548,6 +1667,9 @@ using u8string_container = basic_string_container<char8_t>;
 using u16string_container = basic_string_container<char16_t>;
 using u32string_container = basic_string_container<char32_t>;
 using wstring_container = basic_string_container<wchar_t>;
+
+std::istream& operator>>(std::istream& is, string_container& str);
+std::wistream& operator>>(std::wistream& is, wstring_container& str);
 
 inline namespace literals
 {

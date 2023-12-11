@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/utf/codepoint.hpp>
+#include <sstream>
 
 // codepoint should be POD
 static_assert(std::is_trivial_v<papilio::utf::codepoint>);
@@ -180,6 +181,45 @@ TEST(codepoint, estimate_width)
     }
 }
 
+TEST(codepoint, ostream)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    const codepoint a = U'a'_cp;
+
+    {
+        std::stringstream ss;
+        ss << a;
+        EXPECT_EQ(ss.str(), "a");
+    }
+
+    {
+        std::basic_stringstream<char8_t> ss;
+        ss << a;
+        // GoogleTest doesn't support char8_t
+        EXPECT_TRUE(ss.str() == u8"a");
+    }
+
+    {
+        std::basic_stringstream<char16_t> ss;
+        ss << a;
+        EXPECT_EQ(ss.str(), u"a");
+    }
+
+    {
+        std::basic_stringstream<char32_t> ss;
+        ss << a;
+        EXPECT_EQ(ss.str(), U"a");
+    }
+
+    {
+        std::wstringstream ss;
+        ss << a;
+        EXPECT_EQ(ss.str(), L"a");
+    }
+}
+
 TEST(codepoint, append_to)
 {
     using namespace papilio;
@@ -191,6 +231,10 @@ TEST(codepoint, append_to)
         std::string result;
         a.append_to(result);
         EXPECT_EQ(result, "a");
+
+        std::stringstream ss;
+        a.append_to(ss);
+        EXPECT_EQ(ss.str(), "a");
     }
 
     {

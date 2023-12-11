@@ -387,6 +387,13 @@ public:
         return out;
     }
 
+    template <typename CharT>
+    std::basic_ostream<CharT>& append_to(std::basic_ostream<CharT>& os) const
+    {
+        os << *this;
+        return os;
+    }
+
     // Locale independent APIs
 
     [[nodiscard]]
