@@ -19,25 +19,26 @@
 namespace papilio
 {
 // forward declarations
-class format_arg;
-
-class format_parse_context;
-
-template <typename OutputIt>
-class basic_format_context;
-
-class dynamic_format_context;
-
-template <typename T, typename CharT = char>
-class formatter;
-
 namespace detail
 {
     template <typename CharT>
     using fmt_iter_for = std::back_insert_iterator<std::basic_string<CharT>>;
 }
 
+template <typename Context>
+class basic_format_arg;
+
+template <typename FormatContext>
+class format_parse_context;
+
+template <typename OutputIt>
+class basic_format_context;
+
+template <typename T, typename CharT = char>
+class formatter;
+
 using format_context = basic_format_context<detail::fmt_iter_for<char>>;
+using format_arg = basic_format_arg<format_context>;
 
 enum class format_align : std::uint8_t
 {
@@ -85,16 +86,19 @@ namespace detail
         !basic_string_like<T, CharT>;
 } // namespace detail
 
-class format_arg
+template <typename Context>
+class basic_format_arg
 {
 public:
-    using char_type = char;
+    using char_type = typename Context::char_type;
     using string_type = std::basic_string<char_type>;
     using string_view_type = std::basic_string_view<char_type>;
     using string_container_type = utf::basic_string_container<char_type>;
 
     using indexing_value_type = basic_indexing_value<char_type>;
     using attribute_name_type = basic_attribute_name<char_type>;
+
+    using parse_context = format_parse_context<Context>;
 
 private:
     class handle_impl_base
@@ -105,10 +109,10 @@ private:
 
         virtual ~handle_impl_base() = default;
 
-        virtual format_arg index(const indexing_value_type& idx) const = 0;
-        virtual format_arg attribute(const attribute_name_type& attr) const = 0;
+        virtual basic_format_arg index(const indexing_value_type& idx) const = 0;
+        virtual basic_format_arg attribute(const attribute_name_type& attr) const = 0;
 
-        virtual void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const = 0;
+        virtual void format(parse_context& parse_ctx, Context& out_ctx) const = 0;
 
         virtual void copy(void* mem) const noexcept = 0;
     };
@@ -116,6 +120,7 @@ private:
     template <typename T>
     class handle_impl final : public handle_impl_base
     {
+        using base = handle_impl_base;
     public:
         handle_impl(const T& val) noexcept
             : m_ptr(std::addressof(val)) {}
@@ -123,19 +128,19 @@ private:
         handle_impl(const handle_impl& other) noexcept
             : m_ptr(other.m_ptr) {}
 
-        format_arg index(const indexing_value_type& idx) const override
+        basic_format_arg index(const indexing_value_type& idx) const override
         {
             using accessor_t = accessor_traits<T, char_type>;
-            return accessor_t::template index<format_arg>(*m_ptr, idx);
+            return accessor_t::template index<basic_format_arg>(*m_ptr, idx);
         }
 
-        format_arg attribute(const attribute_name_type& attr) const override
+        basic_format_arg attribute(const attribute_name_type& attr) const override
         {
             using accessor_t = accessor_traits<T, char_type>;
-            return accessor_t::template attribute<format_arg>(*m_ptr, attr);
+            return accessor_t::template attribute<basic_format_arg>(*m_ptr, attr);
         }
 
-        void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const override
+        void format(parse_context& parse_ctx, Context& out_ctx) const override
         {
             // TODO
         }
@@ -196,17 +201,17 @@ public:
             return *this;
         }
 
-        format_arg index(const indexing_value& idx) const
+        basic_format_arg index(const indexing_value& idx) const
         {
             return ptr()->index(idx);
         }
 
-        format_arg attribute(const attribute_name& attr) const
+        basic_format_arg attribute(const attribute_name& attr) const
         {
             return ptr()->attribute(attr);
         }
 
-        void format(format_parse_context& parse_ctx, dynamic_format_context& out_ctx) const
+        void format(parse_context& parse_ctx, Context& out_ctx) const
         {
             ptr()->format(parse_ctx, out_ctx);
         }
@@ -254,67 +259,67 @@ public:
         const void*,
         handle>;
 
-    format_arg() noexcept
+    basic_format_arg() noexcept
         : m_val() {}
 
-    format_arg(const format_arg&) noexcept = default;
-    format_arg(format_arg&&) noexcept = default;
+    basic_format_arg(const basic_format_arg&) noexcept = default;
+    basic_format_arg(basic_format_arg&&) noexcept = default;
 
-    format_arg(bool val) noexcept
+    basic_format_arg(bool val) noexcept
         : m_val(std::in_place_type<bool>, val) {}
 
-    format_arg(utf::codepoint cp) noexcept
+    basic_format_arg(utf::codepoint cp) noexcept
         : m_val(std::in_place_type<utf::codepoint>, cp) {}
 
     template <char_like Char>
-    format_arg(Char ch) noexcept
+    basic_format_arg(Char ch) noexcept
         : m_val(std::in_place_type<utf::codepoint>, static_cast<char32_t>(ch))
     {}
 
     template <detail::acceptable_integral Integral>
-    format_arg(Integral val) noexcept
+    basic_format_arg(Integral val) noexcept
         : m_val(std::in_place_type<detail::convert_int_t<Integral>>, val)
     {}
 
     template <std::floating_point Float>
-    format_arg(Float val) noexcept
+    basic_format_arg(Float val) noexcept
         : m_val(val)
     {}
 
-    format_arg(string_container_type str) noexcept
+    basic_format_arg(string_container_type str) noexcept
         : m_val(std::in_place_type<string_container_type>, std::move(str)) {}
 
     template <basic_string_like<char_type> String>
-    format_arg(String&& str)
+    basic_format_arg(String&& str)
         : m_val(std::in_place_type<string_container_type>, std::forward<String>(str))
     {}
 
     template <basic_string_like<char_type> String>
-    format_arg(independent_t, String&& str)
+    basic_format_arg(independent_t, String&& str)
         : m_val(std::in_place_type<string_container_type>, independent, std::forward<String>(str))
     {}
 
     template <typename T, typename... Args>
-    format_arg(std::in_place_type_t<T>, Args&&... args)
+    basic_format_arg(std::in_place_type_t<T>, Args&&... args)
         : m_val(std::in_place_type<T>, std::forward<Args>(args)...)
     {}
 
     template <typename T>
     requires(!char_like<T>)
-    format_arg(const T* ptr) noexcept
+    basic_format_arg(const T* ptr) noexcept
         : m_val(std::in_place_type<const void*>, ptr)
     {}
 
-    format_arg(std::nullptr_t) noexcept
+    basic_format_arg(std::nullptr_t) noexcept
         : m_val(std::in_place_type<const void*>, nullptr) {}
 
     template <detail::use_handle<char_type> T>
-    format_arg(const T& val) noexcept
+    basic_format_arg(const T& val) noexcept
         : m_val(std::in_place_type<handle>, val)
     {}
 
-    format_arg& operator=(const format_arg&) = default;
-    format_arg& operator=(format_arg&&) noexcept = default;
+    basic_format_arg& operator=(const basic_format_arg&) = default;
+    basic_format_arg& operator=(basic_format_arg&&) noexcept = default;
 
     template <typename Visitor>
     decltype(auto) visit(Visitor&& vis) const // GCC needs this function to be defined in the front of the class
@@ -341,10 +346,10 @@ public:
     }
 
     [[nodiscard]]
-    format_arg index(const indexing_value& idx) const
+    basic_format_arg index(const indexing_value_type& idx) const
     {
         return visit(
-            [&idx]<typename T>(const T& v) -> format_arg
+            [&idx]<typename T>(const T& v) -> basic_format_arg
             {
                 using target_type = std::remove_cvref_t<T>;
 
@@ -355,17 +360,17 @@ public:
                 else
                 {
                     using accessor_t = accessor_traits<target_type>;
-                    return accessor_t::template access<format_arg>(v, idx);
+                    return accessor_t::template access<basic_format_arg>(v, idx);
                 }
             }
         );
     }
 
     [[nodiscard]]
-    format_arg attribute(const attribute_name& attr) const
+    basic_format_arg attribute(const attribute_name_type& attr) const
     {
         return visit(
-            [&attr]<typename T>(const T& v) -> format_arg
+            [&attr]<typename T>(const T& v) -> basic_format_arg
             {
                 using target_type = std::remove_cvref_t<T>;
 
@@ -376,7 +381,7 @@ public:
                 else
                 {
                     using accessor_t = accessor_traits<target_type>;
-                    return accessor_t::template attribute<format_arg>(v, attr);
+                    return accessor_t::template attribute<basic_format_arg>(v, attr);
                 }
             }
         );
@@ -402,7 +407,7 @@ public:
 
     template <typename T>
     [[nodiscard]]
-    friend const auto& get(const format_arg& val)
+    friend const auto& get(const basic_format_arg& val)
     {
         if constexpr(char_like<T>)
             return std::get<utf::codepoint>(val.m_val);
@@ -414,9 +419,6 @@ public:
             return std::get<T>(val.m_val);
     }
 
-    using parse_context = format_parse_context;
-
-    template <typename Context>
     void format(parse_context& parse_ctx, Context& out_ctx) const;
 
 private:
@@ -458,14 +460,15 @@ namespace detail
         return sizeof...(Ts) - get_named_arg_count<Ts...>();
     }
 
+    template <typename Context, typename CharT>
     class format_args_base
     {
     public:
-        using char_type = char;
+        using char_type = CharT;
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
         using string_container_type = utf::basic_string_container<char>;
-        using format_arg_type = format_arg;
+        using format_arg_type = basic_format_arg<Context>;
         using indexing_value_type = basic_indexing_value<char>;
         using size_type = std::size_t;
 
@@ -557,16 +560,16 @@ namespace detail
     };
 } // namespace detail
 
-template <std::size_t IndexedArgumentCount, std::size_t NamedArgumentCount>
-class static_format_args final : public detail::format_args_base
+template <std::size_t IndexedArgumentCount, std::size_t NamedArgumentCount, typename Context = format_context, typename CharT = char>
+class static_format_args final : public detail::format_args_base<Context, CharT>
 {
-    using base = detail::format_args_base;
+    using base = detail::format_args_base<Context, CharT>;
 
 public:
-    using char_type = char;
+    using char_type = CharT;
     using size_type = std::size_t;
     using string_view_type = std::basic_string_view<char_type>;
-    using format_arg_type = format_arg;
+    using format_arg_type = basic_format_arg<Context>;
 
     template <typename... Args>
     static_format_args(Args&&... args)
@@ -577,7 +580,7 @@ public:
     const format_arg_type& get(size_type i) const override
     {
         if(i >= m_indexed_args.size())
-            throw_index_out_of_range();
+            this->throw_index_out_of_range();
         return m_indexed_args[i];
     }
 
@@ -585,7 +588,7 @@ public:
     {
         auto it = m_named_args.find(k);
         if(it == m_named_args.end())
-            throw_invalid_named_argument();
+            this->throw_invalid_named_argument();
         return it->second;
     }
 
@@ -656,20 +659,23 @@ private:
     }
 };
 
-class mutable_format_args final : public detail::format_args_base
+template <typename Context, typename CharT = typename Context::char_type>
+class basic_mutable_format_args final : public detail::format_args_base<Context, CharT>
 {
+    using base = detail::format_args_base<Context, CharT>;
 public:
-    using char_type = char;
+    using char_type = CharT;
     using string_type = std::basic_string<char_type>;
+    using string_view_type = std::basic_string_view<char_type>;
     using size_type = std::size_t;
-    using format_arg_type = format_arg;
+    using format_arg_type = basic_format_arg<Context>;
 
-    mutable_format_args() = default;
-    mutable_format_args(const mutable_format_args&) = delete;
-    mutable_format_args(mutable_format_args&&) = default;
+    basic_mutable_format_args() = default;
+    basic_mutable_format_args(const basic_mutable_format_args&) = delete;
+    basic_mutable_format_args(basic_mutable_format_args&&) = default;
 
     template <typename... Args>
-    mutable_format_args(Args&&... args)
+    basic_mutable_format_args(Args&&... args)
     {
         push(std::forward<Args>(args)...);
     }
@@ -710,7 +716,7 @@ public:
     const format_arg_type& get(size_type i) const override
     {
         if(i >= m_indexed_args.size())
-            throw_index_out_of_range();
+            this->throw_index_out_of_range();
         return m_indexed_args[i];
     }
 
@@ -718,18 +724,18 @@ public:
     {
         auto it = m_named_args.find(key);
         if(it == m_named_args.end())
-            throw_invalid_named_argument();
+            this->throw_invalid_named_argument();
         return it->second;
     }
 
-    using format_args_base::get;
+    using base::get;
 
     bool check(string_view_type key) const noexcept override
     {
         return m_named_args.contains(key);
     }
 
-    using format_args_base::check;
+    using base::check;
 
     [[nodiscard]]
     size_type indexed_size() const noexcept override
@@ -761,16 +767,19 @@ private:
     map_type m_named_args;
 };
 
+using mutable_format_args = basic_mutable_format_args<format_context, char>;
+
 // Type-erased format arguments.
-class dynamic_format_args final : public detail::format_args_base
+template <typename Context, typename CharT = char>
+class dynamic_format_args final : public detail::format_args_base<Context, CharT>
 {
-    using base = detail::format_args_base;
+    using base = detail::format_args_base<Context, CharT>;
 
 public:
-    using char_type = char;
+    using char_type = CharT;
     using string_view_type = std::basic_string_view<char_type>;
     using size_type = std::size_t;
-    using format_arg_type = format_arg;
+    using format_arg_type = basic_format_arg<Context>;
 
     dynamic_format_args() = delete;
     constexpr dynamic_format_args(const dynamic_format_args&) noexcept = default;
@@ -792,7 +801,7 @@ public:
         return m_ptr->get(k);
     }
 
-    using format_args_base::get;
+    using base::get;
 
     size_type indexed_size() const noexcept override
     {
@@ -809,7 +818,7 @@ public:
         return m_ptr->check(k);
     }
 
-    using format_args_base::check;
+    using base::check;
 
     // WARNING: This function does not perform any runtime checks!
     template <std::derived_from<base> T>
@@ -828,16 +837,139 @@ template <typename Context = format_context, typename... Args>
 auto make_format_args(Args&&... args)
 {
     static_assert(
-        std::conjunction_v<std::negation<std::is_base_of<detail::format_args_base, Args>>...>,
+        std::conjunction_v<std::negation<std::is_base_of<detail::format_args_base<Context, char>, Args>>...>,
         "cannot use format_args as format argument"
     );
 
     using result_type = static_format_args<
         detail::get_indexed_arg_count<Args...>(),
-        detail::get_named_arg_count<Args...>()>;
+        detail::get_named_arg_count<Args...>(),
+        Context,
+        char>;
     return result_type(std::forward<Args>(args)...);
 }
 
+template <typename OutputIt>
+class basic_format_context
+{
+public:
+    using char_type = char;
+    using iterator = OutputIt;
+    using format_args_type = dynamic_format_args<basic_format_context, char_type>;
+
+    basic_format_context(iterator it, format_args_type args)
+        : m_out(std::move(it)), m_args(args) {}
+
+    basic_format_context(const std::locale& loc, iterator it, format_args_type args)
+        : m_loc(loc), m_out(std::move(it)), m_args(args) {}
+
+    basic_format_context(locale_ref loc, iterator it, format_args_type args)
+        : m_loc(loc), m_out(std::move(it)), m_args(args) {}
+
+    [[nodiscard]]
+    iterator out()
+    {
+        return m_out;
+    }
+
+    void advance_to(iterator it)
+    {
+        m_out = std::move(it);
+    }
+
+    [[nodiscard]]
+    const format_args_type& get_args() const noexcept
+    {
+        return m_args;
+    }
+
+    [[nodiscard]]
+    std::locale getloc() const
+    {
+        return m_loc.get();
+    }
+
+    [[nodiscard]]
+    locale_ref getloc_ref() const noexcept
+    {
+        return m_loc;
+    }
+
+private:
+    iterator m_out;
+    format_args_type m_args;
+    locale_ref m_loc;
+};
+
+template <typename Context>
+class format_context_traits
+{
+public:
+    using char_type = typename Context::char_type;
+    using string_type = std::basic_string<char_type>;
+    using string_view_type = std::basic_string_view<char_type>;
+    using context_type = Context;
+    using iterator = typename Context::iterator;
+    using format_arg_type = format_arg;
+    using format_args_type = typename Context::format_args_type;
+
+    format_context_traits() = delete;
+
+    [[nodiscard]]
+    static iterator out(context_type& ctx)
+    {
+        return ctx.out();
+    }
+
+    static void advance_to(context_type& ctx, iterator it)
+    {
+        ctx.advance_to(std::move(it));
+    }
+
+    [[nodiscard]]
+    static const format_args_type& get_args(context_type& ctx) noexcept
+    {
+        return ctx.get_args();
+    }
+
+    template <typename InputIt>
+    static void append(context_type& ctx, InputIt begin, InputIt end)
+    {
+        advance_to(ctx, std::copy(begin, end, out(ctx)));
+    }
+
+    static void append(context_type& ctx, string_view_type str)
+    {
+        append(ctx, str.begin(), str.end());
+    }
+
+    template <char_like Char>
+    static void append(context_type& ctx, Char ch, std::size_t count = 1)
+    {
+        if constexpr(std::is_same_v<Char, char> || std::is_same_v<Char, char8_t>)
+        {
+            advance_to(ctx, std::fill_n(out(ctx), count, static_cast<char>(ch)));
+        }
+        else
+        {
+            utf::codepoint cp(static_cast<char32_t>(ch));
+            append(ctx, cp, count);
+        }
+    }
+
+    static void append(context_type& ctx, utf::codepoint cp, std::size_t count = 1)
+    {
+        for(std::size_t i = 0; i < count; ++i)
+            append(ctx, string_view_type(cp));
+    }
+};
+
+template <typename T, typename CharT = char>
+concept formattable = requires() {
+    PAPILIO_NS formatter<T, CharT>();
+} && std::semiregular<formatter<T, CharT>>;
+
+template <typename FormatContext>
 class format_parse_context
 {
 public:
@@ -847,7 +979,8 @@ public:
     using string_ref_type = utf::basic_string_ref<char_type>;
     using iterator = string_ref_type::const_iterator;
     using size_type = std::size_t;
-    using format_args_type = dynamic_format_args;
+    using format_context_type = FormatContext;
+    using format_args_type = dynamic_format_args<FormatContext, char_type>;
 
     format_parse_context() = delete;
     format_parse_context(const format_parse_context&) = delete;
@@ -930,361 +1063,6 @@ private:
     }
 };
 
-template <typename OutputIt>
-class basic_format_context
-{
-public:
-    using char_type = char;
-    using iterator = OutputIt;
-    using format_args_type = dynamic_format_args;
-
-    basic_format_context(iterator it, dynamic_format_args args)
-        : m_out(std::move(it)), m_args(args) {}
-
-    basic_format_context(const std::locale& loc, iterator it, dynamic_format_args args)
-        : m_loc(loc), m_out(std::move(it)), m_args(args) {}
-
-    basic_format_context(locale_ref loc, iterator it, dynamic_format_args args)
-        : m_loc(loc), m_out(std::move(it)), m_args(args) {}
-
-    [[nodiscard]]
-    iterator out()
-    {
-        return m_out;
-    }
-
-    void advance_to(iterator it)
-    {
-        m_out = std::move(it);
-    }
-
-    [[nodiscard]]
-    const dynamic_format_args& get_args() const noexcept
-    {
-        return m_args;
-    }
-
-    [[nodiscard]]
-    std::locale getloc() const
-    {
-        return m_loc.get();
-    }
-
-    [[nodiscard]]
-    locale_ref getloc_ref() const noexcept
-    {
-        return m_loc;
-    }
-
-private:
-    iterator m_out;
-    dynamic_format_args m_args;
-    locale_ref m_loc;
-};
-
-class dynamic_format_context
-{
-public:
-    using char_type = char;
-    using format_args_type = dynamic_format_args;
-    using value_type = char_type;
-
-    class iterator
-    {
-    public:
-        explicit iterator(dynamic_format_context& ctx)
-            : m_ctx(&ctx) {}
-
-        iterator& operator=(char_type val)
-        {
-            m_ctx->m_handle->write(val);
-            return *this;
-        }
-
-        iterator& operator*()
-        {
-            return *this;
-        }
-
-        iterator& operator++()
-        {
-            return *this;
-        }
-
-        iterator& operator++(int)
-        {
-            return *this;
-        }
-
-    private:
-        dynamic_format_context* m_ctx;
-    };
-
-private:
-    class handle_impl_base
-    {
-    public:
-        virtual ~handle_impl_base() = default;
-
-        virtual void write(char_type ch) = 0;
-
-        virtual const dynamic_format_args& get_args() const noexcept = 0;
-
-        virtual locale_ref getloc_ref() const noexcept = 0;
-
-        virtual std::size_t size_bytes() const noexcept = 0;
-        // Copy handle data to uninitialized memory
-        virtual void copy(handle_impl_base* mem) const = 0;
-    };
-
-    template <typename OutputIt>
-    class handle_impl final : public handle_impl_base
-    {
-    public:
-        handle_impl(OutputIt it, dynamic_format_args args, locale_ref loc) noexcept
-            : m_out(std::move(it)), m_args(args), m_loc(loc) {}
-
-        void write(char_type ch) override
-        {
-            *m_out = ch;
-            ++m_out;
-        }
-
-        const dynamic_format_args& get_args() const noexcept override
-        {
-            return m_args;
-        }
-
-        locale_ref getloc_ref() const noexcept override
-        {
-            return m_loc;
-        }
-
-        std::size_t size_bytes() const noexcept override
-        {
-            return sizeof(*this);
-        }
-
-        void copy(handle_impl_base* mem) const override
-        {
-            new(mem) handle_impl(m_out, m_args, m_loc);
-        }
-
-    private:
-        OutputIt m_out;
-        dynamic_format_args m_args;
-        locale_ref m_loc;
-    };
-
-    class handle
-    {
-    public:
-        handle() = delete;
-
-        handle(const handle& other)
-        {
-            other.copy(*this);
-        }
-
-        template <typename OutputIt>
-        handle(basic_format_context<OutputIt>& ctx)
-        {
-            construct<OutputIt>(ctx);
-        }
-
-        ~handle()
-        {
-            destroy();
-            if(m_use_ptr)
-                deallocate();
-        }
-
-        handle_impl_base* operator->() const
-        {
-            return get();
-        }
-
-    private:
-        static constexpr std::size_t storage_size = 48;
-
-        union handle_data_t
-        {
-            handle_impl_base* ptr;
-            mutable static_storage<storage_size> storage;
-        };
-
-        handle_data_t m_data;
-        bool m_use_ptr = false;
-
-        handle_impl_base* get() const noexcept
-        {
-            if(m_use_ptr)
-                return m_data.ptr;
-            else
-                return reinterpret_cast<handle_impl_base*>(m_data.storage.data());
-        }
-
-        void allocate(std::size_t mem_size)
-        {
-            m_use_ptr = true;
-            m_data.ptr = reinterpret_cast<handle_impl_base*>(new std::byte[mem_size]);
-        }
-
-        void deallocate() noexcept
-        {
-            PAPILIO_ASSERT(m_use_ptr);
-            delete[] reinterpret_cast<std::byte*>(m_data.ptr);
-        }
-
-        template <typename OutputIt>
-        void construct(basic_format_context<OutputIt>& ctx)
-        {
-            if constexpr(sizeof(ctx) > storage_size)
-            {
-                allocate(sizeof(handle_impl<OutputIt>));
-                m_data.ptr = new handle_impl<OutputIt>(
-                    ctx.out(), ctx.get_args(), ctx.getloc_ref()
-                );
-            }
-            else
-            {
-                new(m_data.storage.data()) handle_impl<OutputIt>(
-                    ctx.out(), ctx.get_args(), ctx.getloc_ref()
-                );
-            }
-        }
-
-        // Copy this handle to another uninitialized handle
-        void copy(handle& dst) const
-        {
-            PAPILIO_ASSERT(!dst.m_use_ptr);
-
-            handle_impl_base* ptr = get();
-            if(std::size_t size = ptr->size_bytes(); size > storage_size)
-                dst.allocate(size);
-            ptr->copy(dst.get());
-        }
-
-        void destroy() noexcept
-        {
-            get()->~handle_impl_base();
-        }
-    };
-
-public:
-    dynamic_format_context() = delete;
-    dynamic_format_context(const dynamic_format_context&) = default;
-
-    template <typename OutputIt>
-    dynamic_format_context(basic_format_context<OutputIt>& ctx)
-        : m_handle(ctx)
-    {}
-
-    [[nodiscard]]
-    iterator out()
-    {
-        return iterator(*this);
-    }
-
-    void advance_to(iterator)
-    {
-        // no effect
-    }
-
-    [[nodiscard]]
-    const dynamic_format_args& get_args() const noexcept
-    {
-        return m_handle->get_args();
-    }
-
-    void push_back(char_type ch)
-    {
-        m_handle->write(ch);
-    }
-
-    [[nodiscard]]
-    std::locale getloc() const
-    {
-        return getloc_ref();
-    }
-
-    [[nodiscard]]
-    locale_ref getloc_ref() const noexcept
-    {
-        return m_handle->getloc_ref();
-    }
-
-private:
-    handle m_handle;
-};
-
-template <typename Context>
-class format_context_traits
-{
-public:
-    using char_type = typename Context::char_type;
-    using string_type = std::basic_string<char_type>;
-    using string_view_type = std::basic_string_view<char_type>;
-    using context_type = Context;
-    using iterator = typename Context::iterator;
-    using format_arg_type = format_arg;
-    using format_args_type = typename Context::format_args_type;
-
-    format_context_traits() = delete;
-
-    [[nodiscard]]
-    static iterator out(context_type& ctx)
-    {
-        return ctx.out();
-    }
-
-    static void advance_to(context_type& ctx, iterator it)
-    {
-        ctx.advance_to(std::move(it));
-    }
-
-    [[nodiscard]]
-    static const format_args_type& get_args(context_type& ctx) noexcept
-    {
-        return ctx.get_args();
-    }
-
-    template <typename InputIt>
-    static void append(context_type& ctx, InputIt begin, InputIt end)
-    {
-        advance_to(ctx, std::copy(begin, end, out(ctx)));
-    }
-
-    static void append(context_type& ctx, string_view_type str)
-    {
-        append(ctx, str.begin(), str.end());
-    }
-
-    template <char_like Char>
-    static void append(context_type& ctx, Char ch, std::size_t count = 1)
-    {
-        if constexpr(std::is_same_v<Char, char> || std::is_same_v<Char, char8_t>)
-        {
-            advance_to(ctx, std::fill_n(out(ctx), count, static_cast<char>(ch)));
-        }
-        else
-        {
-            utf::codepoint cp(static_cast<char32_t>(ch));
-            append(ctx, cp, count);
-        }
-    }
-
-    static void append(context_type& ctx, utf::codepoint cp, std::size_t count = 1)
-    {
-        for(std::size_t i = 0; i < count; ++i)
-            append(ctx, string_view_type(cp));
-    }
-};
-
-template <typename T, typename CharT = char>
-concept formattable = requires() {
-    PAPILIO_NS formatter<T, CharT>();
-} && std::semiregular<formatter<T, CharT>>;
 } // namespace papilio
 
 #ifdef PAPILIO_COMPILER_MSVC

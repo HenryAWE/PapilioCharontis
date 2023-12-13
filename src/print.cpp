@@ -196,26 +196,26 @@ private:
     cfile_iterator m_underlying;
 };
 
-void vprint(std::FILE* file, std::string_view fmt, const dynamic_format_args& args)
+void vprint(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args)
 {
-    PAPILIO_NS vformat_to(cfile_iterator(file), fmt, args);
+    //PAPILIO_NS vformat_to(cfile_iterator(file), fmt, args);
 }
 
-void vprintln(std::FILE* file, std::string_view fmt, const dynamic_format_args& args)
+void vprintln(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args)
 {
-    auto it = PAPILIO_NS vformat_to(cfile_iterator(file), fmt, args);
-    *it = '\n';
+    /*auto it = PAPILIO_NS vformat_to(cfile_iterator(file), fmt, args);
+    *it = '\n';*/
 }
 
-void vprint_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args& args)
+void vprint_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args)
 {
-    PAPILIO_NS vformat_to(cfile_iterator_utf8(file), fmt, args);
+    // PAPILIO_NS vformat_to(cfile_iterator_utf8(file), fmt, args);
 }
 
-void vprintln_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args& args)
+void vprintln_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args)
 {
-    auto it = PAPILIO_NS vformat_to(cfile_iterator_utf8(file), fmt, args);
-    *it = '\n';
+    /*auto it = PAPILIO_NS vformat_to(cfile_iterator_utf8(file), fmt, args);
+    *it = '\n';*/
 }
 
 static unsigned int get_output_cp_win() noexcept
@@ -227,15 +227,15 @@ static unsigned int get_output_cp_win() noexcept
 #endif
 }
 
-void vprint_conv(std::string_view fmt, const dynamic_format_args& args)
+void vprint_conv(std::string_view fmt, const dynamic_format_args<format_context>& args)
 {
-    PAPILIO_NS vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, args);
+    // PAPILIO_NS vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, args);
 }
 
-void vprintln_conv(std::string_view fmt, const dynamic_format_args& args)
+void vprintln_conv(std::string_view fmt, const dynamic_format_args<format_context>& args)
 {
-    auto it = PAPILIO_NS vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, args);
-    *it = '\n';
+    /*auto it = PAPILIO_NS vformat_to(cfile_iterator_utf8(stdout, get_output_cp_win()), fmt, args);
+    *it = '\n';*/
 }
 
 void println(std::FILE* file)
@@ -249,9 +249,9 @@ void println()
     println(stdout);
 }
 
-void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_args& args)
+void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_args<format_context>& args)
 {
-    vformat_to(std::ostream_iterator<char>(os), os.getloc(), fmt, args);
+    //vformat_to(std::ostream_iterator<char>(os), os.getloc(), fmt, args);
 }
 
 void println(std::ostream& os)

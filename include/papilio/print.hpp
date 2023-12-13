@@ -7,12 +7,12 @@
 
 namespace papilio
 {
-void vprint(std::FILE* file, std::string_view fmt, const dynamic_format_args& args);
-void vprintln(std::FILE* file, std::string_view fmt, const dynamic_format_args& args);
-void vprint_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args& args);
-void vprintln_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args& args);
-void vprint_conv(std::string_view fmt, const dynamic_format_args& args);
-void vprintln_conv(std::string_view fmt, const dynamic_format_args& args);
+void vprint(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args);
+void vprintln(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args);
+void vprint_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args);
+void vprintln_conv(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args);
+void vprint_conv(std::string_view fmt, const dynamic_format_args<format_context>& args);
+void vprintln_conv(std::string_view fmt, const dynamic_format_args<format_context>& args);
 
 template <typename... Args>
 void print(std::FILE* file, std::string_view fmt, Args&&... args)
@@ -41,7 +41,7 @@ void println(std::string_view fmt, Args&&... args)
 void println(std::FILE* file);
 void println();
 
-void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_args& args);
+void vprint(std::ostream& os, std::string_view fmt, const dynamic_format_args<format_context>& args);
 
 template <typename... Args>
 void print(std::ostream& os, std::string_view fmt, Args&&... args)

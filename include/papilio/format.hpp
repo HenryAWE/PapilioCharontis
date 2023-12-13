@@ -9,14 +9,16 @@ namespace papilio
 {
 namespace detail
 {
-    template <typename OutputIt>
-    OutputIt vformat_to_impl(OutputIt out, locale_ref loc, std::string_view fmt, const dynamic_format_args& args)
+    template <typename OutputIt, typename Context>
+    OutputIt vformat_to_impl(OutputIt out, locale_ref loc, std::string_view fmt, const dynamic_format_args<Context>& args)
     {
-        format_parse_context parse_ctx(fmt, args);
-        basic_format_context<OutputIt> fmt_ctx(out, args);
+        static_assert(std::is_same_v<OutputIt, typename Context::iterator>);
 
-        script::interpreter intp;
-        intp.format(parse_ctx, fmt_ctx, loc, args);
+        format_parse_context parse_ctx(fmt, args);
+        Context fmt_ctx(out, args);
+
+        script::interpreter<Context> intp;
+        intp.format(parse_ctx, fmt_ctx, loc);
 
         return fmt_ctx.out();
     }
@@ -30,9 +32,11 @@ struct format_to_n_result
 };
 
 template <typename OutputIt>
-OutputIt vformat_to(OutputIt out, std::string_view fmt, const dynamic_format_args& args)
+OutputIt vformat_to(OutputIt out,
+    std::string_view fmt,
+    const dynamic_format_args<basic_format_context<OutputIt>>& args)
 {
-    return detail::vformat_to_impl<OutputIt>(
+    return detail::vformat_to_impl<OutputIt, basic_format_context<OutputIt>>(
         std::move(out),
         nullptr,
         fmt,
@@ -41,9 +45,12 @@ OutputIt vformat_to(OutputIt out, std::string_view fmt, const dynamic_format_arg
 }
 
 template <typename OutputIt>
-OutputIt vformat_to(OutputIt out, const std::locale& loc, std::string_view fmt, const dynamic_format_args& args)
+OutputIt vformat_to(
+    OutputIt out,
+    const std::locale& loc, std::string_view fmt,
+    const dynamic_format_args<basic_format_context<OutputIt>>& args)
 {
-    return detail::vformat_to_impl<OutputIt>(
+    return detail::vformat_to_impl<OutputIt, basic_format_context<OutputIt>>(
         std::move(out),
         loc,
         fmt,
@@ -97,85 +104,118 @@ namespace detail
         {
             return *this;
         }
+
+        format_to_n_result<OutputIt> get_result() const
+        {
+            return format_to_n_result<OutputIt>{
+                .out = out,
+                .size = counter
+            };
+        }
+    };
+
+    struct formatted_size_counter
+    {
+        using iterator_category = std::output_iterator_tag;
+        using value_type = char;
+        using difference_type = std::ptrdiff_t;
+
+        std::size_t value = 0;
+
+        formatted_size_counter() noexcept = default;
+        formatted_size_counter(const formatted_size_counter&) noexcept = default;
+
+        formatted_size_counter& operator=(const formatted_size_counter&) noexcept = default;
+
+        formatted_size_counter& operator=(char) noexcept
+        {
+            return *this;
+        }
+
+        formatted_size_counter& operator*() noexcept
+        {
+            return *this;
+        }
+
+        formatted_size_counter& operator++() noexcept
+        {
+            ++value;
+            return *this;
+        }
+
+        formatted_size_counter operator++(int) noexcept
+        {
+            formatted_size_counter tmp(*this);
+            ++(*this);
+            return tmp;
+        }
     };
 } // namespace detail
 
-template <typename OutputIt>
-format_to_n_result<OutputIt> vformat_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, std::string_view fmt, const dynamic_format_args& store)
-{
-    auto result = PAPILIO_NS vformat_to(
-        detail::format_to_n_wrapper<OutputIt>(out, n),
-        fmt,
-        store
-    );
-    return {result.out, result.counter};
-}
+std::string vformat(std::string_view fmt, const dynamic_format_args<format_context>& args);
 
-template <typename OutputIt>
-format_to_n_result<OutputIt> vformat_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, const std::locale& loc, std::string_view fmt, const dynamic_format_args& store)
-{
-    auto result = PAPILIO_NS vformat_to(
-        detail::format_to_n_wrapper<OutputIt>(out, n),
-        loc,
-        fmt,
-        store
-    );
-    return {result.out, result.counter};
-}
-
-std::size_t vformatted_size(std::string_view fmt, const dynamic_format_args& store);
-std::size_t vformatted_size(const std::locale& loc, std::string_view fmt, const dynamic_format_args& store);
-std::string vformat(std::string_view fmt, const dynamic_format_args& store);
-std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_args& store);
+std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_args<format_context>& args);
 
 template <typename OutputIt, typename... Args>
 OutputIt format_to(OutputIt out, std::string_view fmt, Args&&... args)
 {
-    // use namespace prefix to avoid collision with std::format caused by ADL
-    return vformat_to(out, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    using context_type = basic_format_context<OutputIt>;
+    return vformat_to(out, fmt, PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...));
 }
 
 template <typename OutputIt, typename... Args>
 OutputIt format_to(OutputIt out, std::locale& loc, std::string_view fmt, Args&&... args)
 {
-    // use namespace prefix to avoid collision with std::format caused by ADL
-    return vformat_to(out, loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    using context_type = basic_format_context<OutputIt>;
+    return vformat_to(out, loc, fmt, PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...));
 }
 
 template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, std::string_view fmt, Args&&... args)
 {
-    return vformat_to_n(out, n, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    using wrapper = detail::format_to_n_wrapper<OutputIt>;
+    using context_type = basic_format_context<wrapper>;
+
+    return vformat_to<wrapper>(wrapper(out, n), fmt, PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)).get_result();
 }
 
 template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, std::iter_difference_t<OutputIt> n, const std::locale& loc, std::string_view fmt, Args&&... args)
 {
-    return vformat_to_n(out, n, loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    using wrapper = detail::format_to_n_wrapper<OutputIt>;
+    using context_type = basic_format_context<wrapper>;
+
+    return vformat_to<wrapper>(wrapper(out, n), loc, fmt, PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)).get_result();
 }
 
 template <typename... Args>
 std::size_t formatted_size(std::string_view fmt, Args&&... args)
 {
-    return vformatted_size(fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    using iter_t = detail::formatted_size_counter;
+    using context_type = basic_format_context<iter_t>;
+
+    return vformat_to<iter_t>(iter_t(), fmt, PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)).value;
 }
 
 template <typename... Args>
 std::size_t formatted_size(const std::locale& loc, std::string_view fmt, Args&&... args)
 {
-    return vformatted_size(loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    using iter_t = detail::formatted_size_counter;
+    using context_type = basic_format_context<iter_t>;
+
+    return vformat_to<iter_t>(iter_t(), loc, fmt, PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)).value;
 }
 
 template <typename... Args>
 std::string format(std::string_view fmt, Args&&... args)
 {
-    return vformat(fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    return PAPILIO_NS vformat(fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
 }
 
 template <typename... Args>
 std::string format(const std::locale& loc, std::string_view fmt, Args&&... args)
 {
     // use namespace prefix to avoid collision with std::format caused by ADL
-    return vformat(loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
+    return PAPILIO_NS vformat(loc, fmt, PAPILIO_NS make_format_args(std::forward<Args>(args)...));
 }
 } // namespace papilio

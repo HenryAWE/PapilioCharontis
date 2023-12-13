@@ -45,13 +45,16 @@ namespace detail
         }
     }
 
-    template <typename CharT, bool EnablePrecision = false>
+    template <typename ParseContext, bool EnablePrecision = false>
     class std_fmt_parser
     {
     public:
-        using iterator = format_parse_context::iterator;
+        using char_type = typename ParseContext::char_type;
+        using iterator = typename ParseContext::iterator;
 
-        iterator parse(format_parse_context& ctx, std::u32string_view types)
+        using interpreter_type = script::interpreter<typename ParseContext::format_context_type>;
+
+        iterator parse(ParseContext& ctx, std::u32string_view types)
         {
             iterator start = ctx.begin();
             const iterator stop = ctx.end();
@@ -218,7 +221,7 @@ parse_end:
 
         // parse width or precision
         template <bool IsPrecision>
-        static std::pair<std::size_t, iterator> parse_value(format_parse_context& ctx)
+        static std::pair<std::size_t, iterator> parse_value(ParseContext& ctx)
         {
             iterator start = ctx.begin();
             const iterator stop = ctx.end();
@@ -235,7 +238,7 @@ parse_end:
             {
                 ++start;
 
-                script::interpreter intp;
+                interpreter_type intp;
                 ctx.advance_to(start);
                 auto [arg, next_it] = intp.access(ctx);
 
@@ -371,11 +374,12 @@ class formatter<T, CharT>
 
 
 public:
-    format_parse_context::iterator parse(format_parse_context& ctx)
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx) -> typename ParseContext::iterator
     {
         using namespace std::literals;
 
-        detail::std_fmt_parser<CharT, false> parser;
+        detail::std_fmt_parser<ParseContext, false> parser;
         ctx.advance_to(parser.parse(ctx, U"XxBbodc"sv));
 
         m_fill_ch = parser.fill_or(U' ');

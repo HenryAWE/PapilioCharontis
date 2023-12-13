@@ -416,18 +416,19 @@ inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 
 // ^^^ variable ^^^ / vvv interpreter vvv
 
+template <typename FormatContext>
 class interpreter
 {
 public:
-    using char_type = char;
+    using char_type = typename FormatContext::char_type;
     using variable_type = basic_variable<char_type>;
     using string_ref_type = utf::basic_string_ref<char_type>;
     using string_container_type = utf::basic_string_container<char_type>;
     using indexing_value_type = basic_indexing_value<char_type>;
-    using format_arg_type = format_arg;
+    using format_arg_type = basic_format_arg<FormatContext>;
 
-    using parse_context = format_parse_context;
-    using iterator = format_parse_context::iterator;
+    using parse_context = format_parse_context<FormatContext>;
+    using iterator = typename parse_context::iterator;
 
     interpreter() = default;
 
@@ -485,15 +486,13 @@ public:
             return std::make_pair(string_container_type(), skip_ws(start, sentinel));
     }
 
-    template <typename Context>
     void format(
         parse_context& parse_ctx,
-        Context& fmt_ctx,
-        locale_ref loc,
-        const dynamic_format_args& args
+        FormatContext& fmt_ctx,
+        locale_ref loc
     )
     {
-        using context_t = format_context_traits<Context>;
+        using context_t = format_context_traits<FormatContext>;
 
         auto parse_it = parse_ctx.begin();
 
@@ -534,7 +533,7 @@ public:
                     parse_ctx.advance_to(parse_it);
                     auto [result, next_it] = run(parse_ctx);
 
-                    auto sc = variable_type(result.to_variant()).as<utf::string_container>();
+                    auto sc = variable_type(result.to_variant()).template as<utf::string_container>();
 
                     for(utf::codepoint cp : sc)
                         context_t::append(fmt_ctx, cp);
@@ -785,7 +784,7 @@ private:
                 throw_error("invalid condition");
 
             ++next_it;
-            return std::make_pair(!var.as<bool>(), next_it);
+            return std::make_pair(!var.template as<bool>(), next_it);
         }
         else if(first_ch == U'{')
         {
@@ -799,7 +798,7 @@ private:
             if(ch == U':')
             {
                 ++next_it;
-                return std::make_pair(var.as<bool>(), next_it);
+                return std::make_pair(var.template as<bool>(), next_it);
             }
             else if(is_op_ch(ch))
             {

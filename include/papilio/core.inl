@@ -3,15 +3,14 @@
 namespace papilio
 {
 template <typename Context>
-void format_arg::format(parse_context& parse_ctx, Context& out_ctx) const
+void basic_format_arg<Context>::format(parse_context& parse_ctx, Context& out_ctx) const
 {
     visit(
         [&]<typename T>(const T& v)
         {
             if constexpr(std::is_same_v<T, handle>)
             {
-                dynamic_format_context dyn_ctx(out_ctx);
-                v.format(parse_ctx, dyn_ctx);
+                v.format(parse_ctx, out_ctx);
             }
             else if constexpr(formattable<T>)
             {
