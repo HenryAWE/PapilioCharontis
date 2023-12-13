@@ -2,8 +2,8 @@
 
 namespace papilio
 {
-template <typename FormatContext>
-void format_arg::format(format_parse_context& parse_ctx, FormatContext& out_ctx) const
+template <typename Context>
+void format_arg::format(parse_context& parse_ctx, Context& out_ctx) const
 {
     visit(
         [&]<typename T>(const T& v)
@@ -19,7 +19,7 @@ void format_arg::format(format_parse_context& parse_ctx, FormatContext& out_ctx)
                 formatter_t fmt;
                 parse_ctx.advance_to(fmt.parse(parse_ctx));
 
-                using context_t = format_context_traits<FormatContext>;
+                using context_t = format_context_traits<Context>;
                 context_t::advance_to(out_ctx, fmt.format(v, out_ctx));
             }
         }

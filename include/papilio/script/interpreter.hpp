@@ -56,38 +56,45 @@ public:
     using float_type = long double;
 
 private:
+    template <typename T>
+    static variant_type convert_arg(T&& arg)
+    {
+        using namespace std;
+        using arg_type = remove_cvref_t<T>;
+
+        if constexpr(is_same_v<arg_type, bool>)
+        {
+            return variant_type(in_place_type<bool>, arg);
+        }
+        else if constexpr(is_same_v<arg_type, utf::codepoint>)
+        {
+            return variant_type(in_place_type<string_container_type>, 1, arg);
+        }
+        else if constexpr(integral<arg_type>)
+        {
+            return variant_type(in_place_type<int_type>, arg);
+        }
+        else if constexpr(floating_point<arg_type>)
+        {
+            return variant_type(in_place_type<float_type>, arg);
+        }
+        else if constexpr(basic_string_like<arg_type, CharT>)
+        {
+            return variant_type(in_place_type<string_container_type>, forward<T>(arg));
+        }
+        else
+        {
+            throw_invalid_conversion();
+        }
+    }
+
     template <typename Variant>
     static variant_type convert_variant(Variant&& var)
     {
         return std::visit(
-            []<typename T>(T&& v) -> variant_type
+            []<typename T>(T&& v)
             {
-                using type = std::remove_cvref_t<T>;
-
-                if constexpr(std::is_same_v<type, bool>)
-                {
-                    return variant_type(std::in_place_type<bool>, v);
-                }
-                else if constexpr(std::is_same_v<type, utf::codepoint>)
-                {
-                    return variant_type(std::in_place_type<string_container_type>, 1, v);
-                }
-                else if constexpr(std::integral<type>)
-                {
-                    return variant_type(std::in_place_type<int_type>, v);
-                }
-                else if constexpr(std::floating_point<type>)
-                {
-                    return variant_type(std::in_place_type<float_type>, v);
-                }
-                else if constexpr(basic_string_like<T, CharT>)
-                {
-                    return variant_type(std::in_place_type<string_container_type>, std::forward<T>(v));
-                }
-                else
-                {
-                    throw std::invalid_argument("invalid type");
-                }
+                return convert_arg(std::forward<T>(v));
             },
             var
         );
@@ -98,7 +105,7 @@ public:
     basic_variable(const basic_variable&) = default;
     basic_variable(basic_variable&&) noexcept = default;
 
-    basic_variable(bool v)
+    basic_variable(bool v) noexcept
         : m_var(v) {}
 
     template <std::integral T>
@@ -114,12 +121,12 @@ public:
     basic_variable(string_container_type str)
         : m_var(std::move(str)) {}
 
-    template <string_like String>
+    template <basic_string_like<CharT> String>
     basic_variable(String&& str)
         : m_var(std::in_place_type<string_container_type>, std::forward<String>(str))
     {}
 
-    template <string_like String>
+    template <basic_string_like<CharT> String>
     basic_variable(independent_t, String&& str)
         : m_var(std::in_place_type<string_container_type>, independent, std::forward<String>(str))
     {}
@@ -135,51 +142,7 @@ public:
     {}
 
     basic_variable& operator=(const basic_variable&) = default;
-
-    basic_variable& operator=(bool v)
-    {
-        emplace<bool>(v);
-        return *this;
-    }
-
-    template <std::integral T>
-    basic_variable& operator=(T i)
-    {
-        emplace<int_type>(i);
-        return *this;
-    }
-
-    template <std::floating_point T>
-    basic_variable& operator=(T f)
-    {
-        emplace<float_type>(f);
-        return *this;
-    }
-
-    basic_variable& operator=(string_type str)
-    {
-        emplace<string_container_type>(std::move(str));
-        return *this;
-    }
-
-    basic_variable& operator=(string_container_type str)
-    {
-        emplace<string_container_type>(std::move(str));
-        return *this;
-    }
-
-    template <string_like String>
-    basic_variable& operator=(String&& str)
-    {
-        emplace<utf::string_container>(std::forward<String>(str));
-        return *this;
-    }
-
-    template <typename T, typename... Args>
-    auto& emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-    {
-        return m_var.template emplace<T>(std::forward<Args>(args)...);
-    }
+    basic_variable& operator=(basic_variable&&) noexcept = default;
 
     template <typename T>
     [[nodiscard]]
@@ -212,6 +175,13 @@ public:
         return holds<string_container_type>();
     }
 
+    [[nodiscard]]
+    bool has_ownership() const noexcept
+    {
+        const auto* ptr = get_if<string_container_type>();
+        return ptr ? ptr->has_ownership() : true;
+    }
+
     template <typename T>
     [[nodiscard]]
     const T& get() const
@@ -241,13 +211,19 @@ public:
     }
 
     [[nodiscard]]
-    variant_type& to_variant() noexcept
+    variant_type& to_variant() & noexcept
     {
         return m_var;
     }
 
     [[nodiscard]]
-    const variant_type& to_variant() const noexcept
+    variant_type&& to_variant() && noexcept
+    {
+        return m_var;
+    }
+
+    [[nodiscard]]
+    const variant_type& to_variant() const& noexcept
     {
         return m_var;
     }
@@ -473,10 +449,13 @@ public:
             throw_error("invalid script");
         if(*start != U'\'')
             throw_error("invalid script");
+        ++start;
 
         string_container_type result_1;
-        ++start;
-        std::tie(result_1, start) = parse_string(start, sentinel);
+        if(cond_result)
+            std::tie(result_1, start) = parse_string(start, sentinel);
+        else
+            start = skip_string(start, sentinel);
         start = skip_ws(start, sentinel);
 
         if(start != sentinel && *start == U':')
@@ -488,18 +467,109 @@ public:
                 throw_error("invalid script");
             ++start;
 
-            string_container_type result_2;
-
-            std::tie(result_2, start) = parse_string(start, sentinel);
-
             if(!cond_result)
+            {
+                string_container_type result_2;
+                std::tie(result_2, start) = parse_string(start, sentinel);
                 return std::make_pair(std::move(result_2), skip_ws(start, sentinel));
+            }
+            else
+            {
+                start = skip_string(start, sentinel);
+            }
         }
 
         if(cond_result)
             return std::make_pair(std::move(result_1), skip_ws(start, sentinel));
         else
             return std::make_pair(string_container_type(), skip_ws(start, sentinel));
+    }
+
+    template <typename Context>
+    void format(
+        parse_context& parse_ctx,
+        Context& fmt_ctx,
+        locale_ref loc,
+        const dynamic_format_args& args
+    )
+    {
+        using context_t = format_context_traits<Context>;
+
+        auto parse_it = parse_ctx.begin();
+
+        while(parse_it != parse_ctx.end())
+        {
+            char32_t ch = *parse_it;
+
+            if(ch == U'}')
+            {
+                ++parse_it;
+                if(parse_it == parse_ctx.end())
+                    throw_error("invalid format");
+
+                ch = *parse_it;
+                if(ch != U'}')
+                    throw_error("invalid format");
+
+                context_t::append(fmt_ctx, U'}');
+                ++parse_it;
+            }
+            else if(ch == U'{')
+            {
+                ++parse_it;
+                if(parse_it == parse_ctx.end())
+                    throw_error("invalid format");
+
+                ch = *parse_it;
+                if(ch == U'{')
+                {
+                    context_t::append(fmt_ctx, '{');
+
+                    ++parse_it;
+                }
+                else if(ch == U'$')
+                {
+                    ++parse_it;
+
+                    parse_ctx.advance_to(parse_it);
+                    auto [result, next_it] = run(parse_ctx);
+
+                    auto sc = variable_type(result.to_variant()).as<utf::string_container>();
+
+                    for(utf::codepoint cp : sc)
+                        context_t::append(fmt_ctx, cp);
+
+                    parse_it = next_it;
+                    if(parse_it == parse_ctx.end() || *parse_it != U'}')
+                        throw_error("invalid format");
+                    ++parse_it;
+                }
+                else
+                {
+                    parse_ctx.advance_to(parse_it);
+                    auto [arg, next_it] = access(parse_ctx);
+
+                    if(next_it == parse_ctx.end())
+                        throw_error("invalid format");
+                    if(*next_it == U':')
+                        ++next_it;
+                    parse_ctx.advance_to(next_it);
+
+                    arg.format(parse_ctx, fmt_ctx);
+
+                    parse_it = parse_ctx.begin();
+                    if(parse_it == parse_ctx.end() || *parse_it != U'}')
+                        throw_error("invalid format");
+                    ++parse_it;
+                }
+            }
+            else
+            {
+                // normal character
+                context_t::append(fmt_ctx, ch);
+                ++parse_it;
+            }
+        }
     }
 
 private:
@@ -526,6 +596,19 @@ private:
                (U'a' <= ch && ch <= U'z') ||
                ch == U'_' ||
                ch >= 128;
+    }
+
+    static iterator find_id_end(iterator start, iterator stop, bool first = true) noexcept
+    {
+        while(start != stop)
+        {
+            if(!is_id_char(*start, first))
+                break;
+            first = false;
+            ++start;
+        }
+
+        return start;
     }
 
     enum class op_id
@@ -639,7 +722,10 @@ private:
                 throw_error("invalid script");
 
             ++next_it;
-            return std::make_pair(variable_type(arg.to_variant()), next_it);
+            return std::make_pair(
+                variable_type(std::move(arg).to_variant()),
+                next_it
+            );
         }
         else if(first_ch == U'\'')
         {
@@ -776,7 +862,9 @@ private:
         return std::make_pair(value, start);
     }
 
-    static std::pair<format_arg_type, iterator> parse_field_id(parse_context& ctx, iterator start, iterator stop)
+    static std::pair<format_arg_type, iterator> parse_field_id(
+        parse_context& ctx, iterator start, iterator stop
+    )
     {
         using namespace std::literals;
 
@@ -810,10 +898,7 @@ private:
         {
             iterator str_start = start;
             ++start;
-            iterator str_end = std::find_if_not(
-                start, stop, [](utf::codepoint cp)
-                { return is_id_char(cp, false); }
-            );
+            iterator str_end = find_id_end(start, stop, false);
 
             string_ref_type name(str_start, str_end);
 
@@ -832,7 +917,9 @@ private:
         throw_error("invalid field id");
     }
 
-    static std::pair<format_arg_type, iterator> parse_chained_access(format_arg_type& base_arg, iterator start, iterator stop)
+    static std::pair<format_arg_type, iterator> parse_chained_access(
+        format_arg_type& base_arg, iterator start, iterator stop
+    )
     {
         format_arg_type current = base_arg;
 
@@ -846,15 +933,7 @@ private:
 
                 // clang-format off
 
-                iterator str_end = std::find_if_not(
-                    start, stop,
-                    [first = true](utf::codepoint cp) mutable
-                    {
-                        bool result = is_id_char(cp, first);
-                        first = false;
-                        return result;
-                    }
-                );
+                iterator str_end = find_id_end(start, stop);
 
                 // clang-format on
 
@@ -958,6 +1037,28 @@ private:
         }
     }
 
+    static iterator skip_string(iterator start, iterator stop) noexcept
+    {
+        bool esc = false;
+        while(start != stop)
+        {
+            char32_t ch = *start;
+            ++start;
+
+            if(esc)
+            {
+                esc = false;
+                continue;
+            }
+            if(ch == U'\'')
+                break;
+            if(ch == '\\')
+                esc = true;
+        }
+
+        return start;
+    }
+
     static std::pair<string_container_type, iterator> parse_string(iterator start, iterator stop)
     {
         iterator it = start;
@@ -968,7 +1069,7 @@ private:
             // Turn to another mode for parsing escape sequence
             if(ch == U'\\')
             {
-                string_container_type result(string_ref_type(start, it));
+                string_container_type result(start, it);
 
                 ++it;
                 if(it == stop)
@@ -978,23 +1079,23 @@ private:
 
                 for(; it != stop; ++it)
                 {
-                    utf::codepoint cp = *it;
-                    if(cp == U'\\')
+                    ch = *it;
+                    if(ch == U'\\')
                     {
                         ++it;
                         if(it == stop)
                             throw_error("invalid string");
 
-                        result.push_back(utf::codepoint(get_esc_ch(cp)));
+                        result.push_back(utf::codepoint(get_esc_ch(*it)));
                     }
-                    else if(cp == U'\'')
+                    else if(ch == U'\'')
                     {
                         ++it; // skip '\''
                         break;
                     }
                     else
                     {
-                        result.push_back(cp);
+                        result.push_back(ch);
                     }
                 }
 
@@ -1007,7 +1108,7 @@ private:
         }
 
         return std::make_pair(
-            string_container_type(string_ref_type(start, it)),
+            string_container_type(start, it),
             it + 1 // +1 to skip '\''
         );
     }
@@ -1015,7 +1116,7 @@ private:
     [[noreturn]]
     static void throw_error(const char* msg = "script error")
     {
-        throw std::runtime_error(msg); // TODO: Better exception
+        throw invalid_format(msg); // TODO: Better exception
     }
 };
 } // namespace papilio::script

@@ -16,41 +16,82 @@ TEST(variable, constructor)
     {
         variable var = true;
         EXPECT_TRUE(var.holds_bool());
+        EXPECT_TRUE(var.has_ownership());
     }
 
     {
         variable var = 10;
         EXPECT_TRUE(var.holds_int());
+        EXPECT_TRUE(var.has_ownership());
     }
 
     {
         variable var = 10u;
         EXPECT_TRUE(var.holds_int());
+        EXPECT_TRUE(var.has_ownership());
     }
 
     {
         variable var = 10.0f;
         EXPECT_TRUE(var.holds_float());
+        EXPECT_TRUE(var.has_ownership());
     }
 
     {
         variable var = 10.0;
         EXPECT_TRUE(var.holds_float());
+        EXPECT_TRUE(var.has_ownership());
     }
-
+    
     {
-        variable var = "test";
-        EXPECT_TRUE(var.holds_string());
+        variable var = 10.0L;
+        EXPECT_TRUE(var.holds_float());
+        EXPECT_TRUE(var.has_ownership());
     }
 
     {
         variable var = "test"s;
         EXPECT_TRUE(var.holds_string());
+        EXPECT_TRUE(var.has_ownership());
+    }
+    
+    {
+        utf::string_container sc = "test"_sc;
+        sc.obtain_ownership();
+        variable var = std::move(sc);
+        EXPECT_TRUE(var.holds_string());
+        EXPECT_TRUE(var.has_ownership());
+    }
+    
+    {
+        variable var = "test"_sc;
+        EXPECT_TRUE(var.holds_string());
+        EXPECT_FALSE(var.has_ownership());
+    }
+    
+    {
+        utf::string_container sc = "test"_sc;
+        variable var = sc;
+        EXPECT_TRUE(var.holds_string());
+        EXPECT_FALSE(var.has_ownership());
+    }
+
+    {
+        variable var = "test"_sr;
+        EXPECT_TRUE(var.holds_string());
+        EXPECT_FALSE(var.has_ownership());
+    }
+
+    {
+        variable var = "test";
+        EXPECT_TRUE(var.holds_string());
+        EXPECT_FALSE(var.has_ownership());
     }
 
     {
         variable var = "test"sv;
         EXPECT_TRUE(var.holds_string());
+        EXPECT_FALSE(var.has_ownership());
     }
 }
 
@@ -184,6 +225,18 @@ TEST(variable, access)
         EXPECT_THROW((void)var.as<variable::int_type>(), invalid_conversion);
         EXPECT_THROW((void)var.as<variable::float_type>(), invalid_conversion);
         EXPECT_EQ(var.as<std::string_view>(), "test"sv);
+    }
+}
+
+TEST(variable, wchar_t)
+{
+    using namespace papilio;
+    using namespace script;
+
+    {
+        wvariable var = L"test";
+        EXPECT_TRUE(var.holds_string());
+        EXPECT_EQ(var, L"test");
     }
 }
 
@@ -323,6 +376,18 @@ TEST(interpreter, run)
         auto arg = run_script("{$ {val}: 'true' : 'false'}", "val"_a = false);
 
         EXPECT_EQ(variable(arg.to_variant()), "false");
+    }
+
+    {
+        auto arg = run_script(R"({$ {val}: 'val=\'1\'' : 'val=\'0\''})", "val"_a = true);
+
+        EXPECT_EQ(variable(arg.to_variant()), "val='1'");
+    }
+
+    {
+        auto arg = run_script(R"({$ {val}: 'val=\'1\'' : 'val=\'0\''})", "val"_a = false);
+
+        EXPECT_EQ(variable(arg.to_variant()), "val='0'");
     }
 
     {

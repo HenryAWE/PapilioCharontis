@@ -12,6 +12,31 @@ TEST(format, plain_text)
     EXPECT_EQ(PAPILIO_NS format("{{plain text}}"), "{plain text}");
 }
 
+TEST(format, formatted_size)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS formatted_size(""), 0);
+    EXPECT_EQ(PAPILIO_NS formatted_size("hello"), 5);
+    EXPECT_EQ(PAPILIO_NS formatted_size("{{hello}}"), 7);
+}
+
+TEST(format, format_to_n)
+{
+    using namespace papilio;
+
+    {
+        std::string str;
+        str.resize(5);
+        auto result = format_to_n(str.begin(), str.size(), "hello world");
+
+        EXPECT_EQ(result.out, str.begin() + str.size());
+        EXPECT_EQ(result.size, str.size());
+        EXPECT_EQ(result.size, 5);
+        EXPECT_EQ(str, "hello");
+    }
+}
+
 TEST(format, exception)
 {
     using namespace papilio;

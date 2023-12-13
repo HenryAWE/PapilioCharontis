@@ -28,8 +28,16 @@ class basic_format_context;
 
 class dynamic_format_context;
 
-using format_context = basic_format_context<
-    std::back_insert_iterator<std::string>>;
+template <typename T, typename CharT = char>
+class formatter;
+
+namespace detail
+{
+    template <typename CharT>
+    using fmt_iter_for = std::back_insert_iterator<std::basic_string<CharT>>;
+}
+
+using format_context = basic_format_context<detail::fmt_iter_for<char>>;
 
 enum class format_align : std::uint8_t
 {
@@ -54,37 +62,27 @@ public:
 
 namespace detail
 {
-    template <std::integral Integral>
-    struct best_int_type
-    {
-        using type = std::conditional_t<
-            std::is_unsigned_v<Integral>,
-            std::conditional_t<(sizeof(Integral) <= sizeof(unsigned int)), unsigned int, unsigned long long int>,
-            std::conditional_t<(sizeof(Integral) <= sizeof(int)), int, long long int>>;
-    };
-
-    template <std::integral Integral>
-    using best_int_type_t = best_int_type<Integral>::type;
-} // namespace detail
-
-template <typename T, typename CharT = char>
-class formatter;
-
-namespace detail
-{
     template <typename T>
-    concept integral_type =
+    concept acceptable_integral =
+        !std::is_same_v<T, bool> &&
         std::integral<T> &&
-        !char_like<T>;
+        !char_like<T> &&
+        sizeof(T) <= sizeof(unsigned long long int);
+
+    template <acceptable_integral Integral>
+    using convert_int_t = std::conditional_t<
+        std::is_unsigned_v<Integral>,
+        std::conditional_t<sizeof(Integral) <= sizeof(unsigned int), unsigned int, unsigned long long int>,
+        std::conditional_t<sizeof(Integral) <= sizeof(int), int, long long int>>;
 
     template <typename T, typename CharT>
     concept use_handle =
+        !std::is_same_v<T, bool> &&
         !std::is_same_v<T, utf::codepoint> &&
         !char_like<T> &&
-        !integral_type<T> &&
+        !acceptable_integral<T> &&
         !std::floating_point<T> &&
-        !std::is_same_v<T, utf::string_container> &&
-        !string_like<T>;
+        !basic_string_like<T, CharT>;
 } // namespace detail
 
 class format_arg
@@ -273,9 +271,9 @@ public:
         : m_val(std::in_place_type<utf::codepoint>, static_cast<char32_t>(ch))
     {}
 
-    template <detail::integral_type Integral>
+    template <detail::acceptable_integral Integral>
     format_arg(Integral val) noexcept
-        : m_val(static_cast<detail::best_int_type_t<Integral>>(val))
+        : m_val(std::in_place_type<detail::convert_int_t<Integral>>, val)
     {}
 
     template <std::floating_point Float>
@@ -325,13 +323,19 @@ public:
     }
 
     [[nodiscard]]
-    variant_type& to_variant() noexcept
+    variant_type& to_variant() & noexcept
     {
         return m_val;
     }
 
     [[nodiscard]]
-    const variant_type& to_variant() const noexcept
+    variant_type&& to_variant() && noexcept
+    {
+        return std::move(m_val);
+    }
+
+    [[nodiscard]]
+    const variant_type& to_variant() const& noexcept
     {
         return m_val;
     }
@@ -378,32 +382,6 @@ public:
         );
     }
 
-    [[nodiscard]]
-    format_arg access(const chained_access& acc) const
-    {
-        format_arg result = *this;
-
-        for(const auto& i : acc)
-        {
-            result = std::visit(
-                [&result]<typename T>(const T& v) -> format_arg
-                {
-                    if constexpr(std::is_same_v<T, indexing_value>)
-                    {
-                        return result.index(v);
-                    }
-                    else if constexpr(std::is_same_v<T, attribute_name>)
-                    {
-                        return result.attribute(v);
-                    }
-                },
-                i
-            );
-        }
-
-        return result;
-    }
-
     template <typename T>
     [[nodiscard]]
     bool holds() const noexcept
@@ -429,15 +407,17 @@ public:
         if constexpr(char_like<T>)
             return std::get<utf::codepoint>(val.m_val);
         else if constexpr(std::integral<T>)
-            return std::get<detail::best_int_type_t<T>>(val.m_val);
+            return std::get<detail::convert_int_t<T>>(val.m_val);
         else if constexpr(basic_string_like<T, char_type>)
             return std::get<string_container_type>(val.m_val);
         else
             return std::get<T>(val.m_val);
     }
 
-    template <typename FormatContext>
-    void format(format_parse_context& parse_ctx, FormatContext& out_ctx) const;
+    using parse_context = format_parse_context;
+
+    template <typename Context>
+    void format(parse_context& parse_ctx, Context& out_ctx) const;
 
 private:
     variant_type m_val;
@@ -448,8 +428,7 @@ namespace detail
     template <typename T>
     consteval std::size_t count_if_named_arg() noexcept
     {
-        using type = std::remove_cvref_t<T>;
-        if constexpr(is_named_arg_v<type>)
+        if constexpr(is_named_arg_v<std::remove_cvref_t<T>>)
             return 1;
         else
             return 0;
@@ -463,8 +442,8 @@ namespace detail
         else
         {
             using tuple_t = std::tuple<Ts...>;
-            using std::tuple_element_t;
             using std::size_t;
+            using std::tuple_element_t;
 
             return []<size_t... Is>(std::index_sequence<Is...>) -> size_t
             {
@@ -486,19 +465,20 @@ namespace detail
         using string_type = std::basic_string<char_type>;
         using string_view_type = std::basic_string_view<char_type>;
         using string_container_type = utf::basic_string_container<char>;
+        using format_arg_type = format_arg;
         using indexing_value_type = basic_indexing_value<char>;
         using size_type = std::size_t;
 
         [[nodiscard]]
-        virtual const format_arg& get(size_type i) const = 0;
+        virtual const format_arg_type& get(size_type i) const = 0;
         [[nodiscard]]
-        virtual const format_arg& get(string_view_type key) const = 0;
+        virtual const format_arg_type& get(string_view_type key) const = 0;
 
         [[nodiscard]]
-        virtual const format_arg& get(const indexing_value_type& idx) const
+        virtual const format_arg_type& get(const indexing_value_type& idx) const
         {
             return idx.visit(
-                [&]<typename T>(const T& v) -> const format_arg&
+                [&]<typename T>(const T& v) -> const format_arg_type&
                 {
                     if constexpr(std::is_same_v<T, indexing_value_type::index_type>)
                     {
@@ -555,7 +535,7 @@ namespace detail
         // clang-format off
 
         [[nodiscard]]
-        const format_arg& operator[](const indexing_value& idx) const
+        const format_arg_type& operator[](const indexing_value& idx) const
         {
             return get(idx);
         }
@@ -583,20 +563,25 @@ class static_format_args final : public detail::format_args_base
     using base = detail::format_args_base;
 
 public:
+    using char_type = char;
+    using size_type = std::size_t;
+    using string_view_type = std::basic_string_view<char_type>;
+    using format_arg_type = format_arg;
+
     template <typename... Args>
     static_format_args(Args&&... args)
     {
         construct(std::forward<Args>(args)...);
     }
 
-    const format_arg& get(size_type i) const override
+    const format_arg_type& get(size_type i) const override
     {
         if(i >= m_indexed_args.size())
             throw_index_out_of_range();
         return m_indexed_args[i];
     }
 
-    const format_arg& get(string_view_type k) const override
+    const format_arg_type& get(string_view_type k) const override
     {
         auto it = m_named_args.find(k);
         if(it == m_named_args.end())
@@ -626,6 +611,15 @@ public:
     }
 
 private:
+    using vector_type = fixed_vector<
+        format_arg_type,
+        IndexedArgumentCount>;
+    using map_type = fixed_flat_map<
+        string_view_type,
+        format_arg_type,
+        NamedArgumentCount,
+        std::less<>>;
+
     template <typename... Args>
     void construct(Args&&... args) noexcept
     {
@@ -641,22 +635,23 @@ private:
         (push(std::forward<Args>(args)), ...);
     }
 
-    fixed_vector<format_arg, IndexedArgumentCount> m_indexed_args;
-    fixed_flat_map<std::string_view, format_arg, NamedArgumentCount> m_named_args;
+    vector_type m_indexed_args;
+    map_type m_named_args;
 
     template <typename T>
     requires(!is_named_arg_v<T>)
-    void push(T&& val) noexcept(std::is_nothrow_constructible_v<format_arg, T>)
+    void push(T&& val) noexcept(std::is_nothrow_constructible_v<format_arg_type, T>)
     {
         m_indexed_args.emplace_back(std::forward<T>(val));
     }
 
     template <typename T>
-    void push(named_arg<T> na) noexcept(std::is_nothrow_constructible_v<format_arg, T>)
+    requires(is_named_arg_v<T> && std::is_same_v<char_type, typename T::char_type>)
+    void push(T&& na) noexcept(std::is_nothrow_constructible_v<format_arg_type, typename T::value_type>)
     {
         m_named_args.insert_or_assign(
             na.name,
-            na.value
+            PAPILIO_NS forward_like<T>(na.value)
         );
     }
 };
@@ -664,6 +659,11 @@ private:
 class mutable_format_args final : public detail::format_args_base
 {
 public:
+    using char_type = char;
+    using string_type = std::basic_string<char_type>;
+    using size_type = std::size_t;
+    using format_arg_type = format_arg;
+
     mutable_format_args() = default;
     mutable_format_args(const mutable_format_args&) = delete;
     mutable_format_args(mutable_format_args&&) = default;
@@ -677,8 +677,13 @@ public:
     template <typename T>
     void push(T&& val)
     {
-        if constexpr(is_named_arg_v<T>)
+        if constexpr(is_named_arg_v<std::remove_cvref_t<T>>)
         {
+            static_assert(
+                std::is_same_v<char_type, typename T::char_type>,
+                "Invalid char type"
+            );
+
             m_named_args.emplace(std::make_pair(
                 PAPILIO_NS forward_like<T>(val.name),
                 PAPILIO_NS forward_like<T>(val.value)
@@ -693,21 +698,23 @@ public:
     template <typename T, typename... Args>
     void push(T&& val, Args&&... args)
     {
-        // TODO: prepare sufficient memory by calling reserve()
+        m_indexed_args.reserve(
+            m_indexed_args.size() + detail::get_indexed_arg_count<T, Args...>()
+        );
 
         push(std::forward<T>(val));
         if constexpr(sizeof...(Args))
             push(std::forward<Args>(args)...);
     }
 
-    const format_arg& get(size_type i) const override
+    const format_arg_type& get(size_type i) const override
     {
         if(i >= m_indexed_args.size())
             throw_index_out_of_range();
         return m_indexed_args[i];
     }
 
-    const format_arg& get(string_view_type key) const override
+    const format_arg_type& get(string_view_type key) const override
     {
         auto it = m_named_args.find(key);
         if(it == m_named_args.end())
@@ -743,8 +750,15 @@ public:
     }
 
 private:
-    std::vector<format_arg> m_indexed_args;
-    std::map<string_type, format_arg, std::less<>> m_named_args;
+    using vector_type = std::vector<
+        format_arg_type>;
+    using map_type = std::map<
+        string_type,
+        format_arg_type,
+        std::less<>>;
+
+    vector_type m_indexed_args;
+    map_type m_named_args;
 };
 
 // Type-erased format arguments.
@@ -753,21 +767,27 @@ class dynamic_format_args final : public detail::format_args_base
     using base = detail::format_args_base;
 
 public:
+    using char_type = char;
+    using string_view_type = std::basic_string_view<char_type>;
+    using size_type = std::size_t;
+    using format_arg_type = format_arg;
+
     dynamic_format_args() = delete;
     constexpr dynamic_format_args(const dynamic_format_args&) noexcept = default;
 
-    constexpr dynamic_format_args(const detail::format_args_base& args) noexcept
+    template <std::derived_from<base> T>
+    constexpr dynamic_format_args(const T& args) noexcept
         : m_ptr(&args)
     {
         PAPILIO_ASSERT(m_ptr != this); // avoid circular reference
     }
 
-    const format_arg& get(size_type i) const override
+    const format_arg_type& get(size_type i) const override
     {
         return m_ptr->get(i);
     }
 
-    const format_arg& get(string_view_type k) const override
+    const format_arg_type& get(string_view_type k) const override
     {
         return m_ptr->get(k);
     }
@@ -801,10 +821,10 @@ public:
     }
 
 private:
-    const detail::format_args_base* m_ptr;
+    const base* m_ptr;
 };
 
-template <typename... Args>
+template <typename Context = format_context, typename... Args>
 auto make_format_args(Args&&... args)
 {
     static_assert(
@@ -826,17 +846,19 @@ public:
     using string_view_type = std::basic_string_view<char_type>;
     using string_ref_type = utf::basic_string_ref<char_type>;
     using iterator = string_ref_type::const_iterator;
+    using size_type = std::size_t;
+    using format_args_type = dynamic_format_args;
 
     format_parse_context() = delete;
     format_parse_context(const format_parse_context&) = delete;
 
-    format_parse_context(string_ref_type str, dynamic_format_args args) noexcept
+    format_parse_context(string_ref_type str, format_args_type args) noexcept
         : m_ref(str), m_args(args)
     {
         m_it = m_ref.begin();
     }
 
-    const dynamic_format_args& get_args() const noexcept
+    const format_args_type& get_args() const noexcept
     {
         return m_args;
     }
@@ -861,14 +883,14 @@ public:
         return m_ref.end();
     }
 
-    std::size_t current_arg_id() const
+    size_type current_arg_id() const
     {
         if(m_manual_indexing)
             invalid_default_argument();
         return m_default_arg_idx;
     }
 
-    std::size_t next_arg_id()
+    size_type next_arg_id()
     {
         if(m_manual_indexing)
             invalid_default_argument();
@@ -877,7 +899,7 @@ public:
         return m_default_arg_idx;
     }
 
-    std::size_t check_arg_id(std::size_t i) const
+    size_type check_arg_id(size_type i) const
     {
         enable_manual_indexing();
         return get_args().check(i);
@@ -898,8 +920,8 @@ public:
 private:
     string_ref_type m_ref;
     iterator m_it;
-    dynamic_format_args m_args;
-    std::size_t m_default_arg_idx = 0;
+    format_args_type m_args;
+    size_type m_default_arg_idx = 0;
     mutable bool m_manual_indexing = false;
 
     void enable_manual_indexing() const noexcept

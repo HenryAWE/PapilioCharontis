@@ -15,87 +15,10 @@ namespace detail
         format_parse_context parse_ctx(fmt, args);
         basic_format_context<OutputIt> fmt_ctx(out, args);
 
-        using context_t = format_context_traits<basic_format_context<OutputIt>>;
+        script::interpreter intp;
+        intp.format(parse_ctx, fmt_ctx, loc, args);
 
-        auto parse_it = parse_ctx.begin();
-
-        while(parse_it != parse_ctx.end())
-        {
-            utf::codepoint ch = *parse_it;
-
-            if(ch == U'}')
-            {
-                ++parse_it;
-                if(parse_it == parse_ctx.end())
-                    throw invalid_format("invalid format");
-
-                ch = *parse_it;
-                if(ch != U'}')
-                    throw invalid_format("invalid format");
-
-                context_t::append(fmt_ctx, U'}');
-                ++parse_it;
-            }
-            else if(ch == U'{')
-            {
-                ++parse_it;
-                if(parse_it == parse_ctx.end())
-                    throw invalid_format("invalid format");
-
-                ch = *parse_it;
-                if(ch == U'{')
-                {
-                    context_t::append(fmt_ctx, '{');
-
-                    ++parse_it;
-                }
-                else if(ch == U'$')
-                {
-                    ++parse_it;
-
-                    script::interpreter intp;
-                    parse_ctx.advance_to(parse_it);
-                    auto [result, next_it] = intp.run(parse_ctx);
-
-                    auto sc = script::variable(result.to_variant()).as<utf::string_container>();
-
-                    for(utf::codepoint cp : sc)
-                        context_t::append(fmt_ctx, cp);
-
-                    parse_it = next_it;
-                    if(parse_it == parse_ctx.end() || *parse_it != U'}')
-                        throw invalid_format("invalid format");
-                    ++parse_it;
-                }
-                else
-                {
-                    parse_ctx.advance_to(parse_it);
-                    script::interpreter intp;
-                    auto [arg, next_it] = intp.access(parse_ctx);
-
-                    if(next_it == parse_ctx.end())
-                        throw invalid_format("invalid format");
-                    if(*next_it == U':')
-                        ++next_it;
-                    parse_ctx.advance_to(next_it);
-
-                    arg.format(parse_ctx, fmt_ctx);
-
-                    parse_it = parse_ctx.begin();
-                    if(parse_it == parse_ctx.end() || *parse_it != U'}')
-                        throw invalid_format("invalid format");
-                    ++parse_it;
-                }
-            }
-            else
-            {
-                // normal character
-                context_t::append(fmt_ctx, ch);
-                ++parse_it;
-            }
-        }
-
-        return context_t::out(fmt_ctx);
+        return fmt_ctx.out();
     }
 } // namespace detail
 

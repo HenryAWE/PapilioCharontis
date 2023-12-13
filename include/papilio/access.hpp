@@ -274,7 +274,7 @@ namespace detail
     {
     protected:
         [[noreturn]]
-        static void integral_index_unavailable()
+        static void integer_index_unavailable()
         {
             throw std::runtime_error("index unavailable");
         }
@@ -310,7 +310,7 @@ public:
     using index_type = indexing_value_type::index_type;
 
     [[nodiscard]]
-    static constexpr bool has_integral_index() noexcept
+    static constexpr bool has_integer_index() noexcept
     {
         return requires(T object, index_type i) {
             accessor_type::index(object, i);
@@ -336,9 +336,9 @@ public:
     template <typename R, typename U>
     static R index(U&& object, index_type i)
     {
-        if constexpr(!has_integral_index())
+        if constexpr(!has_integer_index())
         {
-            integral_index_unavailable();
+            integer_index_unavailable();
         }
         else
         {
@@ -402,54 +402,6 @@ public:
         }
     }
 };
-
-// access members of format argument
-template <typename CharT>
-class basic_chained_access
-{
-public:
-    using char_type = CharT;
-    using indexing_value_type = basic_indexing_value<CharT>;
-    using attribute_name_type = basic_attribute_name<CharT>;
-    using variant_type = std::variant<
-        indexing_value_type,
-        attribute_name_type>;
-    using container_type = small_vector<variant_type, 2>;
-
-    using const_iterator = container_type::const_iterator;
-    using iterator = const_iterator;
-
-    basic_chained_access() noexcept
-        : m_members() {}
-
-    basic_chained_access(const basic_chained_access&) = delete;
-    basic_chained_access(basic_chained_access&&) noexcept = default;
-
-    basic_chained_access(container_type members)
-        : m_members(std::move(members)) {}
-
-    [[nodiscard]]
-    bool empty() const noexcept
-    {
-        return m_members.empty();
-    }
-
-    iterator begin() const noexcept
-    {
-        return m_members.begin();
-    }
-
-    iterator end() const noexcept
-    {
-        return m_members.end();
-    }
-
-private:
-    container_type m_members;
-};
-
-using chained_access = basic_chained_access<char>;
-using wchained_access = basic_chained_access<wchar_t>;
 } // namespace papilio
 
 #include "access/string.hpp"
