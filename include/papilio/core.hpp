@@ -31,13 +31,14 @@ class basic_format_arg;
 template <typename FormatContext>
 class format_parse_context;
 
-template <typename OutputIt>
+template <typename OutputIt, typename CharT = char>
 class basic_format_context;
 
 template <typename T, typename CharT = char>
 class formatter;
 
-using format_context = basic_format_context<detail::fmt_iter_for<char>>;
+using format_context = basic_format_context<detail::fmt_iter_for<char>, char>;
+using wformat_context = basic_format_context<detail::fmt_iter_for<wchar_t>, wchar_t>;
 using format_arg = basic_format_arg<format_context>;
 
 enum class format_align : std::uint8_t
@@ -201,12 +202,12 @@ public:
             return *this;
         }
 
-        basic_format_arg index(const indexing_value& idx) const
+        basic_format_arg index(const indexing_value_type& idx) const
         {
             return ptr()->index(idx);
         }
 
-        basic_format_arg attribute(const attribute_name& attr) const
+        basic_format_arg attribute(const attribute_name_type& attr) const
         {
             return ptr()->attribute(attr);
         }
@@ -359,7 +360,7 @@ public:
                 }
                 else
                 {
-                    using accessor_t = accessor_traits<target_type>;
+                    using accessor_t = accessor_traits<target_type, char_type>;
                     return accessor_t::template access<basic_format_arg>(v, idx);
                 }
             }
@@ -380,7 +381,7 @@ public:
                 }
                 else
                 {
-                    using accessor_t = accessor_traits<target_type>;
+                    using accessor_t = accessor_traits<target_type, char_type>;
                     return accessor_t::template attribute<basic_format_arg>(v, attr);
                 }
             }
@@ -465,11 +466,11 @@ namespace detail
     {
     public:
         using char_type = CharT;
-        using string_type = std::basic_string<char_type>;
-        using string_view_type = std::basic_string_view<char_type>;
-        using string_container_type = utf::basic_string_container<char>;
+        using string_type = std::basic_string<CharT>;
+        using string_view_type = std::basic_string_view<CharT>;
+        using string_container_type = utf::basic_string_container<CharT>;
         using format_arg_type = basic_format_arg<Context>;
-        using indexing_value_type = basic_indexing_value<char>;
+        using indexing_value_type = basic_indexing_value<CharT>;
         using size_type = std::size_t;
 
         [[nodiscard]]
@@ -483,7 +484,7 @@ namespace detail
             return idx.visit(
                 [&]<typename T>(const T& v) -> const format_arg_type&
                 {
-                    if constexpr(std::is_same_v<T, indexing_value_type::index_type>)
+                    if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
                     {
                         if(v < 0)
                             throw_index_out_of_range();
@@ -538,7 +539,7 @@ namespace detail
         // clang-format off
 
         [[nodiscard]]
-        const format_arg_type& operator[](const indexing_value& idx) const
+        const format_arg_type& operator[](const indexing_value_type& idx) const
         {
             return get(idx);
         }
@@ -560,7 +561,11 @@ namespace detail
     };
 } // namespace detail
 
-template <std::size_t IndexedArgumentCount, std::size_t NamedArgumentCount, typename Context = format_context, typename CharT = char>
+template <
+    std::size_t IndexedArgumentCount,
+    std::size_t NamedArgumentCount,
+    typename Context = format_context,
+    typename CharT = typename Context::char_type>
 class static_format_args final : public detail::format_args_base<Context, CharT>
 {
     using base = detail::format_args_base<Context, CharT>;
@@ -770,7 +775,7 @@ private:
 using mutable_format_args = basic_mutable_format_args<format_context, char>;
 
 // Type-erased format arguments.
-template <typename Context, typename CharT = char>
+template <typename Context, typename CharT = typename Context::char_type>
 class dynamic_format_args final : public detail::format_args_base<Context, CharT>
 {
     using base = detail::format_args_base<Context, CharT>;
@@ -849,11 +854,27 @@ auto make_format_args(Args&&... args)
     return result_type(std::forward<Args>(args)...);
 }
 
-template <typename OutputIt>
+template <typename Context = wformat_context, typename... Args>
+auto make_wformat_args(Args&&... args)
+{
+    static_assert(
+        std::conjunction_v<std::negation<std::is_base_of<detail::format_args_base<Context, wchar_t>, Args>>...>,
+        "cannot use format_args as format argument"
+    );
+
+    using result_type = static_format_args<
+        detail::get_indexed_arg_count<Args...>(),
+        detail::get_named_arg_count<Args...>(),
+        Context,
+        wchar_t>;
+    return result_type(std::forward<Args>(args)...);
+}
+
+template <typename OutputIt, typename CharT>
 class basic_format_context
 {
 public:
-    using char_type = char;
+    using char_type = CharT;
     using iterator = OutputIt;
     using format_args_type = dynamic_format_args<basic_format_context, char_type>;
 
@@ -946,7 +967,7 @@ public:
     template <char_like Char>
     static void append(context_type& ctx, Char ch, std::size_t count = 1)
     {
-        if constexpr(std::is_same_v<Char, char> || std::is_same_v<Char, char8_t>)
+        if constexpr(std::is_same_v<Char, char_type>)
         {
             advance_to(ctx, std::fill_n(out(ctx), count, static_cast<char>(ch)));
         }
@@ -960,7 +981,9 @@ public:
     static void append(context_type& ctx, utf::codepoint cp, std::size_t count = 1)
     {
         for(std::size_t i = 0; i < count; ++i)
-            append(ctx, string_view_type(cp));
+        {
+            advance_to(ctx, cp.append_to_as<char_type>(out(ctx)));
+        }
     }
 };
 
@@ -973,7 +996,7 @@ template <typename FormatContext>
 class format_parse_context
 {
 public:
-    using char_type = char;
+    using char_type = typename FormatContext::char_type;
     using string_type = std::basic_string<char_type>;
     using string_view_type = std::basic_string_view<char_type>;
     using string_ref_type = utf::basic_string_ref<char_type>;

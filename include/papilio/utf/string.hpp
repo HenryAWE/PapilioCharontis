@@ -1295,7 +1295,16 @@ public:
     basic_string_container& assign(size_type count, codepoint ch) noexcept
     {
         string_type& str = this->to_str();
-        for(size_type i = 0; i < count; ++i) str.append(ch.data(), ch.size_bytes());
+        if constexpr(char8_like<CharT>)
+        {
+            for(size_type i = 0; i < count; ++i)
+                str.append(std::bit_cast<const CharT*>(ch.data()), ch.size_bytes());
+        }
+        else
+        {
+            for(size_type i = 0; i < count; ++i)
+                ch.append_to(str);
+        }
 
         return *this;
     }

@@ -422,6 +422,7 @@ class interpreter
 public:
     using char_type = typename FormatContext::char_type;
     using variable_type = basic_variable<char_type>;
+    using string_view_type = std::basic_string_view<char_type>;
     using string_ref_type = utf::basic_string_ref<char_type>;
     using string_container_type = utf::basic_string_container<char_type>;
     using indexing_value_type = basic_indexing_value<char_type>;
@@ -533,7 +534,7 @@ public:
                     parse_ctx.advance_to(parse_it);
                     auto [result, next_it] = run(parse_ctx);
 
-                    auto sc = variable_type(result.to_variant()).template as<utf::string_container>();
+                    auto sc = variable_type(result.to_variant()).template as<string_container_type>();
 
                     for(utf::codepoint cp : sc)
                         context_t::append(fmt_ctx, cp);
@@ -746,9 +747,23 @@ private:
                 iterator float_end = std::find_if_not(int_end, stop, utf::is_digit);
 
                 long double val = 0.0;
-                auto result = std::from_chars(
-                    start.to_address(), float_end.to_address(), val
-                );
+                if constexpr(char8_like<char_type>)
+                {
+                    auto result = std::from_chars(
+                        std::bit_cast<const char_type*>(start.to_address()),
+                        std::bit_cast<const char_type*>(float_end.to_address()),
+                        val
+                    );
+                }
+                else
+                {
+                    std::string tmp = string_ref_type(start, float_end).to_string();
+                    auto result = std::from_chars(
+                        std::to_address(tmp.begin()),
+                        std::to_address(tmp.end()),
+                        val
+                    );
+                }
 
                 return std::make_pair(val, float_end);
             }
@@ -902,7 +917,7 @@ private:
             string_ref_type name(str_start, str_end);
 
             return std::make_pair(
-                ctx.get_args().get(std::basic_string_view<char>(name)),
+                ctx.get_args().get(string_view_type(name)),
                 str_end
             );
         }
@@ -965,7 +980,7 @@ private:
         return std::make_pair(current, start);
     }
 
-    static std::pair<indexing_value, iterator> parse_indexing_value(iterator start, iterator stop)
+    static std::pair<indexing_value_type, iterator> parse_indexing_value(iterator start, iterator stop)
     {
         if(start == stop)
             throw_error("invalid index");

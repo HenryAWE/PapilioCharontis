@@ -180,12 +180,13 @@ TEST(format_args, dynamic)
     }
 }
 
-TEST(format_context, basic)
+TEST(format_context, char)
 {
     using namespace papilio;
 
     using context_type = basic_format_context<
-        std::back_insert_iterator<std::string>>;
+        std::back_insert_iterator<std::string>,
+        char>;
     using args_type = basic_mutable_format_args<context_type>;
 
     std::string result;
@@ -195,7 +196,7 @@ TEST(format_context, basic)
     );
 
     using context_traits = format_context_traits<decltype(ctx)>;
-    EXPECT_EQ(&context_traits::get_args(ctx).cast_to<mutable_format_args>(), &args);
+    EXPECT_EQ(&context_traits::get_args(ctx).cast_to<args_type>(), &args);
 
     context_traits::append(ctx, "1234");
     EXPECT_EQ(result, "1234");
@@ -207,6 +208,36 @@ TEST(format_context, basic)
     result.clear();
     context_traits::append(ctx, U'\u00c4', 2);
     EXPECT_EQ(result, "\u00c4\u00c4");
+}
+
+TEST(format_context, wchar_t)
+{
+    using namespace papilio;
+
+    using context_type = basic_format_context<
+        std::back_insert_iterator<std::wstring>,
+        wchar_t>;
+    using args_type = basic_mutable_format_args<context_type>;
+
+    std::wstring result;
+    args_type args;
+    context_type ctx(
+        std::back_inserter(result), args
+    );
+
+    using context_traits = format_context_traits<decltype(ctx)>;
+    EXPECT_EQ(&context_traits::get_args(ctx).cast_to<args_type>(), &args);
+
+    context_traits::append(ctx, L"1234");
+    EXPECT_EQ(result, L"1234");
+
+    result.clear();
+    context_traits::append(ctx, '1', 4);
+    EXPECT_EQ(result, L"1111");
+
+    result.clear();
+    context_traits::append(ctx, U'\u00c4', 2);
+    EXPECT_EQ(result, L"\u00c4\u00c4");
 }
 
 int main(int argc, char* argv[])

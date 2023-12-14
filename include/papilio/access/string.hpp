@@ -9,6 +9,8 @@ namespace papilio
 template <typename CharT>
 struct accessor<utf::basic_string_container<CharT>>
 {
+    using char_type = CharT;
+    using string_view_type = std::basic_string_view<CharT>;
     using string_container_type = utf::basic_string_container<CharT>;
     using attribute_name_type = basic_attribute_name<CharT>;
 
@@ -23,7 +25,7 @@ struct accessor<utf::basic_string_container<CharT>>
         }
     }
 
-    static utf::string_container index(const string_container_type& str, slice s)
+    static string_container_type index(const string_container_type& str, slice s)
     {
         return str.template substr<utf::substr_behavior::empty_string>(s);
     }
@@ -32,9 +34,12 @@ struct accessor<utf::basic_string_container<CharT>>
     {
         using namespace std::literals;
 
-        if(attr == "length"sv)
+        constexpr CharT attr_length[] = {'l', 'e', 'n', 'g', 't', 'h'};
+        constexpr CharT attr_size[] = {'s', 'i', 'z', 'e'};
+
+        if(attr == string_view_type(attr_length, std::size(attr_length)))
             return str.length();
-        else if(attr == "size"sv)
+        else if(attr == string_view_type(attr_size, std::size(attr_size)))
             return str.size();
         else
             throw_invalid_attribute(attr);
