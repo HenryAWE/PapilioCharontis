@@ -405,12 +405,12 @@ public:
 
         const CharT digits[16] = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            uppercase ? 'A' : 'a',
-            uppercase ? 'B' : 'b',
-            uppercase ? 'C' : 'c',
-            uppercase ? 'D' : 'd',
-            uppercase ? 'E' : 'e',
-            uppercase ? 'F' : 'f'
+            static_cast<CharT>(uppercase ? 'A' : 'a'),
+            static_cast<CharT>(uppercase ? 'B' : 'b'),
+            static_cast<CharT>(uppercase ? 'C' : 'c'),
+            static_cast<CharT>(uppercase ? 'D' : 'd'),
+            static_cast<CharT>(uppercase ? 'E' : 'e'),
+            static_cast<CharT>(uppercase ? 'F' : 'f')
         };
 
         // clang-format on

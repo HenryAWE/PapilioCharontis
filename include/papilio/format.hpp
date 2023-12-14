@@ -142,6 +142,7 @@ namespace detail
         }
 
         template <typename T>
+        requires(!std::is_same_v<std::remove_cvref_t<T>, format_to_n_wrapper>)
         format_to_n_wrapper& operator=(T&& val)
         {
             if(counter == max_count)
