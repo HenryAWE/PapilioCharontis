@@ -319,6 +319,11 @@ namespace detail
     template <typename T1, typename T2, int Id>
     class compressed_pair_impl;
 
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(push)
+#    pragma warning(disable : 26495)
+#endif
+
     // normal pair
     template <typename T1, typename T2>
     class compressed_pair_impl<T1, T2, 0>
@@ -363,12 +368,18 @@ namespace detail
             return m_second;
         }
 
-        constexpr void swap(compressed_pair_impl& other) noexcept(std::is_nothrow_swappable_v<T1> && std::is_nothrow_swappable_v<T2>)
+        // clang-format off
+
+        constexpr void swap(
+            compressed_pair_impl& other
+        ) noexcept(std::is_nothrow_swappable_v<T1> && std::is_nothrow_swappable_v<T2>)
         {
             using std::swap;
             swap(m_first, other.first());
             swap(m_second, other.second());
         }
+
+        // clang-format on
 
     private:
         first_type m_first;
@@ -532,6 +543,10 @@ namespace detail
             // empty
         }
     };
+
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(pop)
+#endif
 } // namespace detail
 
 template <typename T1, typename T2>

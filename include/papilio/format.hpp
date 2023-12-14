@@ -133,7 +133,7 @@ namespace detail
         format_to_n_wrapper(const format_to_n_wrapper&) = default;
         format_to_n_wrapper(format_to_n_wrapper&&) = default;
 
-        format_to_n_wrapper(OutputIt it, difference_type n)
+        format_to_n_wrapper(OutputIt it, difference_type n) noexcept(std::is_nothrow_move_constructible_v<OutputIt>)
             : out(std::move(it)), max_count(n) {}
 
         format_to_n_wrapper& operator*() noexcept
@@ -161,12 +161,12 @@ namespace detail
             return *this;
         }
 
-        format_to_n_wrapper operator++(int)
+        format_to_n_wrapper operator++(int) noexcept
         {
             return *this;
         }
 
-        format_to_n_result<OutputIt> get_result() const
+        format_to_n_result<OutputIt> get_result() const noexcept(std::is_nothrow_copy_constructible_v<OutputIt>)
         {
             return format_to_n_result<OutputIt>{
                 .out = out,
