@@ -7,21 +7,31 @@ TEST(format_arg, constructor)
     using namespace papilio;
 
     {
-        PAPILIO_NS format_arg arg('a');
-        EXPECT_TRUE(arg.holds<utf::codepoint>());
-        EXPECT_EQ(get<utf::codepoint>(arg), U'a');
+        format_arg fmt_arg;
+        EXPECT_TRUE(fmt_arg.empty());
+        EXPECT_FALSE(fmt_arg);
+        EXPECT_FALSE(fmt_arg.is_formattable());
     }
 
     {
-        PAPILIO_NS format_arg arg(1);
-        EXPECT_TRUE(arg.holds<int>());
-        EXPECT_EQ(get<int>(arg), 1);
+        PAPILIO_NS format_arg fmt_arg('a');
+        EXPECT_TRUE(fmt_arg.holds<utf::codepoint>());
+        EXPECT_EQ(get<utf::codepoint>(fmt_arg), U'a');
+        EXPECT_TRUE(fmt_arg.has_ownership());
     }
 
     {
-        PAPILIO_NS format_arg arg(1.0);
-        EXPECT_TRUE(arg.holds<double>());
-        EXPECT_DOUBLE_EQ(get<double>(arg), 1.0);
+        PAPILIO_NS format_arg fmt_arg(1);
+        EXPECT_TRUE(fmt_arg.holds<int>());
+        EXPECT_EQ(get<int>(fmt_arg), 1);
+        EXPECT_TRUE(fmt_arg.has_ownership());
+    }
+
+    {
+        PAPILIO_NS format_arg fmt_arg(1.0);
+        EXPECT_TRUE(fmt_arg.holds<double>());
+        EXPECT_DOUBLE_EQ(get<double>(fmt_arg), 1.0);
+        EXPECT_TRUE(fmt_arg.has_ownership());
     }
 
     {
@@ -30,6 +40,7 @@ TEST(format_arg, constructor)
         PAPILIO_NS format_arg fmt_arg("test");
         EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
         EXPECT_FALSE(get<utf::string_container>(fmt_arg).has_ownership());
+        EXPECT_FALSE(fmt_arg.has_ownership());
     }
 
     {
@@ -38,6 +49,7 @@ TEST(format_arg, constructor)
         PAPILIO_NS format_arg fmt_arg("test"s);
         EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
         EXPECT_TRUE(get<utf::string_container>(fmt_arg).has_ownership());
+        EXPECT_TRUE(fmt_arg.has_ownership());
     }
 
     {
@@ -47,6 +59,41 @@ TEST(format_arg, constructor)
         format_arg fmt_arg(s);
         EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
         EXPECT_FALSE(get<utf::string_container>(fmt_arg).has_ownership());
+        EXPECT_FALSE(fmt_arg.has_ownership());
+    }
+
+    {
+        std::map<int, int> m;
+
+        static_assert(!detail::use_soo_handle<decltype(m)>);
+
+        format_arg fmt_arg(m);
+        EXPECT_FALSE(fmt_arg.has_ownership());
+    }
+
+    {
+        format_arg fmt_arg;
+
+        {
+            std::map<int, int> m = {
+                {0, 0}
+            };
+            fmt_arg = format_arg(independent, std::move(m));
+        }
+
+        EXPECT_TRUE(fmt_arg.has_ownership());
+    }
+
+    {
+        struct int_wrapper
+        {
+            int v;
+        };
+
+        static_assert(detail::use_soo_handle<int_wrapper>);
+
+        format_arg fmt_arg(int_wrapper{});
+        EXPECT_TRUE(fmt_arg.has_ownership());
     }
 }
 

@@ -85,6 +85,11 @@ namespace detail
         !acceptable_integral<T> &&
         !std::floating_point<T> &&
         !basic_string_like<T, CharT>;
+
+    template <typename T>
+    concept use_soo_handle =
+        std::is_nothrow_copy_constructible_v<std::remove_cvref_t<T>> &&
+        std::is_nothrow_move_constructible_v<std::remove_cvref_t<T>>;
 } // namespace detail
 
 template <typename Context>
@@ -102,6 +107,12 @@ public:
     using parse_context = format_parse_context<Context>;
 
 private:
+    [[noreturn]]
+    static void throw_unformattable()
+    {
+        throw invalid_format("unformattable");
+    }
+
     class handle_impl_base
     {
     public:
@@ -116,56 +127,130 @@ private:
         virtual void format(parse_context& parse_ctx, Context& out_ctx) const = 0;
 
         virtual void copy(void* mem) const noexcept = 0;
+
+        virtual void move(void* mem) noexcept = 0;
+
+        virtual bool has_ownership() const noexcept = 0;
+
+        virtual bool is_formattable() const noexcept = 0;
     };
 
     template <typename T>
     class handle_impl final : public handle_impl_base
     {
-        using base = handle_impl_base;
     public:
+        using value_type = std::remove_cvref_t<T>;
+
         handle_impl(const T& val) noexcept
-            : m_ptr(std::addressof(val)) {}
+            : m_ptr(std::addressof(val), false) {}
+
+        template <typename Arg>
+        handle_impl(independent_t, Arg&& val)
+            : m_ptr(make_optional_unique<const value_type>(std::forward<Arg>(val)))
+        {}
 
         handle_impl(const handle_impl& other) noexcept
             : m_ptr(other.m_ptr) {}
 
+        handle_impl(handle_impl&& other) noexcept
+            : m_ptr(std::move(other.m_ptr)) {}
+
         basic_format_arg index(const indexing_value_type& idx) const override
         {
-            using accessor_t = accessor_traits<T, char_type>;
-            return accessor_t::template index<basic_format_arg>(*m_ptr, idx);
+            PAPILIO_ASSERT(m_ptr);
+
+            using accessor_t = accessor_traits<value_type, char_type>;
+            return accessor_t::template access<basic_format_arg>(*m_ptr, idx);
         }
 
         basic_format_arg attribute(const attribute_name_type& attr) const override
         {
-            using accessor_t = accessor_traits<T, char_type>;
+            PAPILIO_ASSERT(m_ptr);
+
+            using accessor_t = accessor_traits<value_type, char_type>;
             return accessor_t::template attribute<basic_format_arg>(*m_ptr, attr);
         }
 
-        void format(parse_context& parse_ctx, Context& out_ctx) const override
-        {
-            // TODO
-        }
+        void format(parse_context& parse_ctx, Context& out_ctx) const override;
 
         void copy(void* mem) const noexcept override
         {
             new(mem) handle_impl(*this);
         }
 
+        void move(void* mem) noexcept override
+        {
+            new(mem) handle_impl(std::move(*this));
+        }
+
+        bool has_ownership() const noexcept override
+        {
+            return m_ptr.has_ownership();
+        }
+
+        bool is_formattable() const noexcept override;
+
     private:
-        const T* m_ptr;
+        optional_unique_ptr<const value_type> m_ptr;
     };
 
-    // Used to calculate storage space
-    // Use workaround for GCC to solve "full specialization in non-namespace scope"
-    // See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85282
-    template <std::same_as<void> T>
-    class handle_impl<T> final : public handle_impl_base
+    template <typename T>
+    class handle_impl_soo final : public handle_impl_base
     {
     public:
-        handle_impl() = delete;
+        using value_type = std::remove_cvref_t<T>;
+
+        template <typename Arg>
+        requires std::is_constructible_v<T, Arg>
+        handle_impl_soo(Arg&& val) noexcept
+            : m_val(std::forward<Arg>(val))
+        {}
+
+        template <typename Arg>
+        requires std::is_constructible_v<T, Arg>
+        handle_impl_soo(independent_t, Arg&& val) noexcept
+            : m_val(std::forward<Arg>(val))
+        {}
+
+        handle_impl_soo(const handle_impl_soo& other) noexcept
+            : m_val(other.m_val) {}
+
+        handle_impl_soo(handle_impl_soo&& other) noexcept
+            : m_val(std::move(other.m_val)) {}
+
+        basic_format_arg index(const indexing_value_type& idx) const override
+        {
+            using accessor_t = accessor_traits<value_type, char_type>;
+            return accessor_t::template access<basic_format_arg>(m_val, idx);
+        }
+
+        basic_format_arg attribute(const attribute_name_type& attr) const override
+        {
+            using accessor_t = accessor_traits<value_type, char_type>;
+            return accessor_t::template attribute<basic_format_arg>(m_val, attr);
+        }
+
+        void format(parse_context& parse_ctx, Context& out_ctx) const override;
+
+        void copy(void* mem) const noexcept override
+        {
+            new(mem) handle_impl_soo(*this);
+        }
+
+        void move(void* mem) noexcept override
+        {
+            new(mem) handle_impl_soo(std::move(*this));
+        }
+
+        bool has_ownership() const noexcept override
+        {
+            return true;
+        }
+
+        bool is_formattable() const noexcept override;
 
     private:
-        const void* m_ptr;
+        value_type m_val;
     };
 
 public:
@@ -180,11 +265,24 @@ public:
             other.copy(*this);
         }
 
+        handle(handle&& other) noexcept
+            : handle()
+        {
+            other.move(*this);
+        }
+
         template <typename T>
-        handle(const T& val) noexcept
+        handle(T&& val) noexcept
             : handle()
         {
             construct<T>(val);
+        }
+
+        template <typename T>
+        handle(independent_t, T&& val)
+            : handle()
+        {
+            construct<T>(independent, std::forward<T>(val));
         }
 
         ~handle()
@@ -217,8 +315,21 @@ public:
             ptr()->format(parse_ctx, out_ctx);
         }
 
+        [[nodiscard]]
+        bool has_ownership() const noexcept
+        {
+            return ptr()->has_ownership();
+        }
+
+        [[nodiscard]]
+        bool is_formattable() const noexcept
+        {
+            return ptr()->is_formattable();
+        }
+
     private:
-        mutable static_storage<sizeof(handle_impl<void>)> m_storage;
+        static constexpr std::size_t storage_size = 32;
+        mutable static_storage<storage_size> m_storage;
 
         handle_impl_base* ptr() const noexcept
         {
@@ -226,17 +337,42 @@ public:
         }
 
         template <typename T>
-        void construct(const T& val) noexcept
+        void construct(T&& val) noexcept
         {
-            static_assert(sizeof(handle_impl<T>) <= m_storage.size());
+            using type = std::remove_cvref_t<T>;
+            using impl_t = std::conditional_t<
+                detail::use_soo_handle<type> && sizeof(handle_impl_soo<type>) <= storage_size,
+                handle_impl_soo<type>,
+                handle_impl<type>>;
 
-            new(ptr()) handle_impl<T>(val);
+            static_assert(sizeof(impl_t) <= m_storage.size());
+
+            new(ptr()) impl_t(std::forward<T>(val));
+        }
+
+        template <typename T>
+        void construct(independent_t, T&& val) noexcept
+        {
+            using type = std::remove_cvref_t<T>;
+            using impl_t = std::conditional_t<
+                detail::use_soo_handle<type> && sizeof(handle_impl_soo<type>) <= storage_size,
+                handle_impl_soo<type>,
+                handle_impl<type>>;
+
+            static_assert(sizeof(impl_t) <= m_storage.size());
+
+            new(ptr()) impl_t(independent, std::forward<T>(val));
         }
 
         // Copy this handle to another uninitialized handle
         void copy(handle& other) const noexcept
         {
             ptr()->copy(other.ptr());
+        }
+
+        void move(handle& other) noexcept
+        {
+            ptr()->move(other.ptr());
         }
 
         void destroy() noexcept
@@ -319,6 +455,11 @@ public:
         : m_val(std::in_place_type<handle>, val)
     {}
 
+    template <detail::use_handle<char_type> T>
+    basic_format_arg(independent_t, T&& val) noexcept
+        : m_val(std::in_place_type<handle>, independent, std::forward<T>(val))
+    {}
+
     basic_format_arg& operator=(const basic_format_arg&) = default;
     basic_format_arg& operator=(basic_format_arg&&) noexcept = default;
 
@@ -394,6 +535,25 @@ public:
     {
         return std::holds_alternative<T>(m_val);
     }
+
+    bool has_ownership() const noexcept
+    {
+        return visit(
+            []<typename T>(const T& v) -> bool
+            {
+                if constexpr(requires() { v.has_ownership(); })
+                {
+                    return v.has_ownership();
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        );
+    }
+
+    bool is_formattable() const noexcept;
 
     [[nodiscard]]
     bool empty() const noexcept
@@ -668,6 +828,7 @@ template <typename Context, typename CharT = typename Context::char_type>
 class basic_mutable_format_args final : public detail::format_args_base<Context, CharT>
 {
     using base = detail::format_args_base<Context, CharT>;
+
 public:
     using char_type = CharT;
     using string_type = std::basic_string<char_type>;

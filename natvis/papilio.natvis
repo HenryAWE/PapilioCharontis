@@ -246,4 +246,18 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
             <Item Name="[value]" Condition="index() == 3" Optional="true">m_var._Tail._Tail._Tail._Head</Item>
         </Expand>
     </Type>
+
+    <Type Name="papilio::basic_format_arg&lt;*&gt;::handle">
+        <DisplayString>{(handle_impl_base*)m_storage.m_data}</DisplayString>
+        <Expand>
+            <Item Name="[value]">(handle_impl_base*)m_storage.m_data</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="papilio::basic_format_arg&lt;*&gt;">
+        <DisplayString>{m_val}</DisplayString>
+        <Expand>
+            <Item Name="[value]">m_val</Item>
+        </Expand>
+    </Type>
 </AutoVisualizer>
