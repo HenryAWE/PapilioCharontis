@@ -248,7 +248,7 @@ auto test_access(std::string_view fmt, Args&&... args)
     using namespace papilio;
     auto fmt_args = PAPILIO_NS make_format_args(std::forward<Args>(args)...);
 
-    format_parse_context<format_context> parse_ctx(fmt, fmt_args);
+    format_parse_context parse_ctx(fmt, fmt_args);
     parse_ctx.advance_to(parse_ctx.begin() + 1); // skip '{'
 
     script::interpreter<format_context> intp;
@@ -335,7 +335,7 @@ auto run_script(std::string_view fmt, Args&&... args)
 
     auto fmt_args = PAPILIO_NS make_format_args(std::forward<Args>(args)...);
 
-    format_parse_context<format_context> parse_ctx(fmt, fmt_args);
+    format_parse_context parse_ctx(fmt, fmt_args);
     parse_ctx.advance_to(parse_ctx.begin() + 2); // skip "{$"
 
     script::interpreter<format_context> intp;
@@ -406,9 +406,9 @@ TEST(interpreter, format)
         interpreter<format_context> intp;
 
         std::string buf;
-        basic_mutable_format_args<format_context> args;
+        mutable_format_args args;
         format_context fmt_ctx(std::back_inserter(buf), args);
-        format_parse_context<format_context> parse_ctx("test", args);
+        format_parse_context parse_ctx("test", args);
 
         intp.format(parse_ctx, fmt_ctx, nullptr);
 

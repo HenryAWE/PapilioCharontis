@@ -95,6 +95,7 @@ enum class substr_behavior
 };
 
 template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
+[[nodiscard]]
 constexpr std::size_t strlen(
     const CharT* str, std::size_t max_chars
 ) noexcept(OnInvalid != strlen_behavior::exception)
@@ -154,6 +155,7 @@ constexpr std::size_t strlen(
 }
 
 template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
+[[nodiscard]]
 constexpr std::size_t strlen(
     std::basic_string_view<CharT> str
 ) noexcept(OnInvalid != strlen_behavior::exception)
@@ -211,6 +213,7 @@ constexpr std::size_t strlen(
 }
 
 template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
+[[nodiscard]]
 constexpr std::size_t strlen(
     const CharT* str, std::size_t max_chars
 ) noexcept(OnInvalid != strlen_behavior::exception)
@@ -228,6 +231,7 @@ constexpr std::size_t strlen(
 }
 
 template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
+[[nodiscard]]
 constexpr std::size_t strlen(
     std::basic_string_view<CharT> str
 ) noexcept(OnInvalid != strlen_behavior::exception)
@@ -244,6 +248,7 @@ constexpr std::size_t strlen(
 }
 
 template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
+[[nodiscard]]
 constexpr std::size_t strlen(const CharT* str, std::size_t max_chars) noexcept
 {
     for(std::size_t i = 0; i < max_chars; ++i)
@@ -254,18 +259,21 @@ constexpr std::size_t strlen(const CharT* str, std::size_t max_chars) noexcept
 }
 
 template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
+[[nodiscard]]
 constexpr std::size_t strlen(std::basic_string_view<CharT> str) noexcept
 {
     return str.size();
 }
 
 template <strlen_behavior OnInvalid = strlen_behavior::replace, char_like CharT>
+[[nodiscard]]
 constexpr std::size_t strlen(const CharT* str)
 {
     return strlen<OnInvalid, CharT>(std::basic_string_view<CharT>(str));
 }
 
 template <char8_like CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
     std::uint8_t len = 0;
@@ -296,6 +304,7 @@ constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_
 }
 
 template <char8_like CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
     std::size_t ch_count = 0;
@@ -314,6 +323,7 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
 }
 
 template <char16_like CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
     std::uint8_t len = 0;
@@ -344,6 +354,7 @@ constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_
 }
 
 template <char16_like CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
     std::uint8_t len = 0;
@@ -363,12 +374,14 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
 }
 
 template <char32_like CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
     return idx < max_chars ? idx : npos;
 }
 
 template <char32_like CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
     if(idx > max_chars - 1)
@@ -377,12 +390,14 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
 }
 
 template <typename CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, std::basic_string_view<CharT> str) noexcept
 {
     return index_offset(idx, str.data(), str.size());
 }
 
 template <typename CharT>
+[[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, std::basic_string_view<CharT> str) noexcept
 {
     return index_offset(reverse_index, idx, str.data(), str.size());

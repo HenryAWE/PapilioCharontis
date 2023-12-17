@@ -72,16 +72,24 @@ TEST(format_arg, constructor)
     }
 
     {
+        using map_type = std::map<int, int>;
+
         format_arg fmt_arg;
 
         {
-            std::map<int, int> m = {
+            map_type m = {
                 {0, 0}
             };
             fmt_arg = format_arg(independent, std::move(m));
         }
 
         EXPECT_TRUE(fmt_arg.has_ownership());
+
+        const auto& h = get<format_arg::handle>(fmt_arg);
+        const auto& m = handle_cast<map_type>(h);
+
+        EXPECT_EQ(m.size(), 1);
+        EXPECT_EQ(m.at(0), 0);
     }
 
     {
@@ -285,6 +293,49 @@ TEST(format_context, wchar_t)
     result.clear();
     context_traits::append(ctx, U'\u00c4', 2);
     EXPECT_EQ(result, L"\u00c4\u00c4");
+}
+
+TEST(format_parse_context, char)
+{
+    using namespace papilio;
+
+    {
+        mutable_format_args args;
+        args.push(0, 1, 2);
+        args.push("value"_a = 0);
+
+        utf::string_ref sr = "{}";
+
+        format_parse_context ctx(sr, args);
+
+        EXPECT_EQ(ctx.begin(), sr.begin());
+        EXPECT_EQ(ctx.end(), sr.end());
+        EXPECT_EQ(*ctx.begin(), U'{');
+
+        ctx.advance_to(std::next(ctx.begin()));
+        EXPECT_EQ(ctx.begin(), std::next(sr.begin()));
+        EXPECT_EQ(*ctx.begin(), U'}');
+
+        ctx.check_arg_id(0);
+        ctx.check_arg_id(1);
+        ctx.check_arg_id(2);
+
+        ctx.check_arg_id("value");
+        EXPECT_THROW(ctx.check_arg_id("error"), invalid_format);
+    }
+
+    {
+        mutable_format_args args;
+        args.push(0, 1, 2);
+        args.push("value"_a = 0);
+
+        format_parse_context ctx("{0} {}", args);
+
+        EXPECT_EQ(ctx.current_arg_id(), 0);
+        EXPECT_EQ(ctx.next_arg_id(), 1);
+        ctx.check_arg_id(0);
+        EXPECT_THROW((void)ctx.current_arg_id(), invalid_format);
+    }
 }
 
 int main(int argc, char* argv[])

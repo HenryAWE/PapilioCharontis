@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
 #include <variant>
+#include <typeinfo>
 #include <vector>
 #include <map>
 #include "macros.hpp"
 #include "utility.hpp"
 #include "container.hpp"
-#include "utf/utf.hpp"
+#include "utf.hpp"
 #include "locale.hpp"
 #include "access.hpp"
 
@@ -29,7 +29,7 @@ template <typename Context>
 class basic_format_arg;
 
 template <typename FormatContext>
-class format_parse_context;
+class basic_format_parse_context;
 
 template <typename OutputIt, typename CharT = char>
 class basic_format_context;
@@ -40,6 +40,7 @@ class formatter;
 using format_context = basic_format_context<detail::fmt_iter_for<char>, char>;
 using wformat_context = basic_format_context<detail::fmt_iter_for<wchar_t>, wchar_t>;
 using format_arg = basic_format_arg<format_context>;
+using wformat_arg = basic_format_arg<wformat_context>;
 
 enum class format_align : std::uint8_t
 {
@@ -61,6 +62,9 @@ class invalid_format : public std::invalid_argument
 public:
     using invalid_argument::invalid_argument;
 };
+
+class bad_handle_cast : public std::bad_cast
+{};
 
 namespace detail
 {
@@ -104,7 +108,7 @@ public:
     using indexing_value_type = basic_indexing_value<char_type>;
     using attribute_name_type = basic_attribute_name<char_type>;
 
-    using parse_context = format_parse_context<Context>;
+    using parse_context = basic_format_parse_context<Context>;
 
 private:
     [[noreturn]]
@@ -133,26 +137,53 @@ private:
         virtual bool has_ownership() const noexcept = 0;
 
         virtual bool is_formattable() const noexcept = 0;
+
+        virtual const std::type_info& type() const noexcept = 0;
+
+        virtual const void* ptr() const noexcept = 0;
+
+        template <typename T>
+        std::add_const_t<T>* cast_to() const noexcept
+        {
+            if(typeid(T) == type())
+                return static_cast<std::add_const_t<T>*>(ptr());
+            else
+                return nullptr;
+        }
     };
 
     template <typename T>
-    class handle_impl final : public handle_impl_base
+    class handle_impl : public handle_impl_base
     {
     public:
         using value_type = std::remove_cvref_t<T>;
 
-        handle_impl(const T& val) noexcept
+        bool is_formattable() const noexcept final;
+
+        const std::type_info& type() const noexcept final
+        {
+            return typeid(value_type);
+        }
+    };
+
+    template <typename T>
+    class handle_impl_ptr final : public handle_impl<T>
+    {
+    public:
+        using value_type = std::remove_cvref_t<T>;
+
+        handle_impl_ptr(const T& val) noexcept
             : m_ptr(std::addressof(val), false) {}
 
         template <typename Arg>
-        handle_impl(independent_t, Arg&& val)
+        handle_impl_ptr(independent_t, Arg&& val)
             : m_ptr(make_optional_unique<const value_type>(std::forward<Arg>(val)))
         {}
 
-        handle_impl(const handle_impl& other) noexcept
+        handle_impl_ptr(const handle_impl_ptr& other) noexcept
             : m_ptr(other.m_ptr) {}
 
-        handle_impl(handle_impl&& other) noexcept
+        handle_impl_ptr(handle_impl_ptr&& other) noexcept
             : m_ptr(std::move(other.m_ptr)) {}
 
         basic_format_arg index(const indexing_value_type& idx) const override
@@ -175,12 +206,12 @@ private:
 
         void copy(void* mem) const noexcept override
         {
-            new(mem) handle_impl(*this);
+            new(mem) handle_impl_ptr(*this);
         }
 
         void move(void* mem) noexcept override
         {
-            new(mem) handle_impl(std::move(*this));
+            new(mem) handle_impl_ptr(std::move(*this));
         }
 
         bool has_ownership() const noexcept override
@@ -188,14 +219,17 @@ private:
             return m_ptr.has_ownership();
         }
 
-        bool is_formattable() const noexcept override;
+        const void* ptr() const noexcept override
+        {
+            return m_ptr.get();
+        }
 
     private:
         optional_unique_ptr<const value_type> m_ptr;
     };
 
     template <typename T>
-    class handle_impl_soo final : public handle_impl_base
+    class handle_impl_soo final : public handle_impl<T>
     {
     public:
         using value_type = std::remove_cvref_t<T>;
@@ -247,7 +281,10 @@ private:
             return true;
         }
 
-        bool is_formattable() const noexcept override;
+        const void* ptr() const noexcept override
+        {
+            return std::addressof(m_val);
+        }
 
     private:
         value_type m_val;
@@ -272,10 +309,10 @@ public:
         }
 
         template <typename T>
-        handle(T&& val) noexcept
+        explicit handle(T&& val) noexcept
             : handle()
         {
-            construct<T>(val);
+            construct<T>(std::forward<T>(val));
         }
 
         template <typename T>
@@ -300,11 +337,23 @@ public:
             return *this;
         }
 
+        handle& operator=(handle&& rhs) noexcept
+        {
+            if(this == &rhs)
+                return *this;
+            destroy();
+            rhs.move(*this);
+
+            return *this;
+        }
+
+        [[nodiscard]]
         basic_format_arg index(const indexing_value_type& idx) const
         {
             return ptr()->index(idx);
         }
 
+        [[nodiscard]]
         basic_format_arg attribute(const attribute_name_type& attr) const
         {
             return ptr()->attribute(attr);
@@ -327,6 +376,31 @@ public:
             return ptr()->is_formattable();
         }
 
+        [[nodiscard]]
+        std::type_info type()
+        {
+            return ptr()->type();
+        }
+
+        template <typename T>
+        [[nodiscard]]
+        friend std::add_const_t<T>* handle_cast(const handle* h) noexcept
+        {
+            static_assert(!std::is_void_v<T>, "Invalid type");
+
+            return h->ptr()->template cast_to<std::remove_cvref_t<T>>();
+        }
+
+        template <typename T>
+        [[nodiscard]]
+        friend std::add_const_t<T>& handle_cast(const handle& h)
+        {
+            std::add_const_t<T>* ptr = handle_cast<T>(&h);
+            if(!ptr)
+                throw bad_handle_cast();
+            return *ptr;
+        }
+
     private:
         static constexpr std::size_t storage_size = 32;
         mutable static_storage<storage_size> m_storage;
@@ -336,6 +410,15 @@ public:
             return reinterpret_cast<handle_impl_base*>(m_storage.data());
         }
 
+        template <typename Impl, typename... Args>
+        void construct_impl(Args&&... args)
+        {
+            static_assert(detail::use_handle<typename Impl::value_type, char_type>);
+            static_assert(sizeof(Impl) <= m_storage.size());
+
+            new(ptr()) Impl(std::forward<Args>(args)...);
+        }
+
         template <typename T>
         void construct(T&& val) noexcept
         {
@@ -343,25 +426,21 @@ public:
             using impl_t = std::conditional_t<
                 detail::use_soo_handle<type> && sizeof(handle_impl_soo<type>) <= storage_size,
                 handle_impl_soo<type>,
-                handle_impl<type>>;
+                handle_impl_ptr<type>>;
 
-            static_assert(sizeof(impl_t) <= m_storage.size());
-
-            new(ptr()) impl_t(std::forward<T>(val));
+            construct_impl<impl_t>(std::forward<T>(val));
         }
 
         template <typename T>
-        void construct(independent_t, T&& val) noexcept
+        void construct(independent_t, T&& val)
         {
             using type = std::remove_cvref_t<T>;
             using impl_t = std::conditional_t<
                 detail::use_soo_handle<type> && sizeof(handle_impl_soo<type>) <= storage_size,
                 handle_impl_soo<type>,
-                handle_impl<type>>;
+                handle_impl_ptr<type>>;
 
-            static_assert(sizeof(impl_t) <= m_storage.size());
-
-            new(ptr()) impl_t(independent, std::forward<T>(val));
+            construct_impl<impl_t>(independent, std::forward<T>(val));
         }
 
         // Copy this handle to another uninitialized handle
@@ -536,6 +615,7 @@ public:
         return std::holds_alternative<T>(m_val);
     }
 
+    [[nodiscard]]
     bool has_ownership() const noexcept
     {
         return visit(
@@ -553,6 +633,7 @@ public:
         );
     }
 
+    [[nodiscard]]
     bool is_formattable() const noexcept;
 
     [[nodiscard]]
@@ -721,6 +802,14 @@ namespace detail
     };
 } // namespace detail
 
+template <typename T, typename Context = format_context>
+struct is_format_args :
+    std::bool_constant<std::is_base_of_v<detail::format_args_base<Context, typename Context::char_type>, T>>
+{};
+
+template <typename T, typename Context = format_context>
+constexpr inline bool is_format_args_v = is_format_args<T, Context>::value;
+
 template <
     std::size_t IndexedArgumentCount,
     std::size_t NamedArgumentCount,
@@ -742,6 +831,7 @@ public:
         construct(std::forward<Args>(args)...);
     }
 
+    [[nodiscard]]
     const format_arg_type& get(size_type i) const override
     {
         if(i >= m_indexed_args.size())
@@ -749,6 +839,7 @@ public:
         return m_indexed_args[i];
     }
 
+    [[nodiscard]]
     const format_arg_type& get(string_view_type k) const override
     {
         auto it = m_named_args.find(k);
@@ -759,6 +850,7 @@ public:
 
     using base::get;
 
+    [[nodiscard]]
     bool check(string_view_type key) const noexcept
     {
         return m_named_args.contains(key);
@@ -766,12 +858,14 @@ public:
 
     using base::check;
 
+    [[nodiscard]]
     size_type indexed_size() const noexcept override
     {
         PAPILIO_ASSERT(m_indexed_args.size() == IndexedArgumentCount);
         return IndexedArgumentCount;
     }
 
+    [[nodiscard]]
     size_type named_size() const noexcept override
     {
         PAPILIO_ASSERT(m_named_args.size() == NamedArgumentCount);
@@ -1003,7 +1097,7 @@ template <typename Context = format_context, typename... Args>
 auto make_format_args(Args&&... args)
 {
     static_assert(
-        std::conjunction_v<std::negation<std::is_base_of<detail::format_args_base<Context, char>, Args>>...>,
+        std::conjunction_v<std::negation<is_format_args<Args, Context>>...>,
         "cannot use format_args as format argument"
     );
 
@@ -1019,7 +1113,7 @@ template <typename Context = wformat_context, typename... Args>
 auto make_wformat_args(Args&&... args)
 {
     static_assert(
-        std::conjunction_v<std::negation<std::is_base_of<detail::format_args_base<Context, wchar_t>, Args>>...>,
+        std::conjunction_v<std::negation<is_format_args<Args, Context>>...>,
         "cannot use format_args as format argument"
     );
 
@@ -1154,27 +1248,29 @@ concept formattable = requires() {
 } && std::semiregular<formatter<T, CharT>>;
 
 template <typename FormatContext>
-class format_parse_context
+class basic_format_parse_context
 {
 public:
     using char_type = typename FormatContext::char_type;
     using string_type = std::basic_string<char_type>;
     using string_view_type = std::basic_string_view<char_type>;
     using string_ref_type = utf::basic_string_ref<char_type>;
-    using iterator = string_ref_type::const_iterator;
+    using const_iterator = string_ref_type::const_iterator;
+    using iterator = const_iterator;
     using size_type = std::size_t;
     using format_context_type = FormatContext;
     using format_args_type = dynamic_format_args<FormatContext, char_type>;
 
-    format_parse_context() = delete;
-    format_parse_context(const format_parse_context&) = delete;
+    basic_format_parse_context() = delete;
+    basic_format_parse_context(const basic_format_parse_context&) = delete;
 
-    format_parse_context(string_ref_type str, format_args_type args) noexcept
+    basic_format_parse_context(string_ref_type str, format_args_type args) noexcept
         : m_ref(str), m_args(args)
     {
         m_it = m_ref.begin();
     }
 
+    [[nodiscard]]
     const format_args_type& get_args() const noexcept
     {
         return m_args;
@@ -1200,6 +1296,7 @@ public:
         return m_ref.end();
     }
 
+    [[nodiscard]]
     size_type current_arg_id() const
     {
         if(m_manual_indexing)
@@ -1216,10 +1313,17 @@ public:
         return m_default_arg_idx;
     }
 
-    size_type check_arg_id(size_type i) const
+    void check_arg_id(size_type i) const
     {
         enable_manual_indexing();
-        return get_args().check(i);
+        if(!get_args().check(i))
+            throw invalid_format("invalid arg id");
+    }
+
+    void check_arg_id(string_view_type name) const
+    {
+        if(!get_args().check(name))
+            throw invalid_format("invalid arg id");
     }
 
     [[nodiscard]]
@@ -1247,6 +1351,8 @@ private:
     }
 };
 
+using format_parse_context = basic_format_parse_context<format_context>;
+using wformat_parse_context = basic_format_parse_context<wformat_context>;
 } // namespace papilio
 
 #ifdef PAPILIO_COMPILER_MSVC

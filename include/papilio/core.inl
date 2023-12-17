@@ -4,7 +4,14 @@ namespace papilio
 {
 template <typename Context>
 template <typename T>
-void basic_format_arg<Context>::handle_impl<T>::format(parse_context& parse_ctx, Context& out_ctx) const
+inline bool basic_format_arg<Context>::handle_impl<T>::is_formattable() const noexcept
+{
+    return formattable<value_type, char_type>;
+}
+
+template <typename Context>
+template <typename T>
+void basic_format_arg<Context>::handle_impl_ptr<T>::format(parse_context& parse_ctx, Context& out_ctx) const
 {
     if constexpr(formattable<value_type, char_type>)
     {
@@ -19,13 +26,6 @@ void basic_format_arg<Context>::handle_impl<T>::format(parse_context& parse_ctx,
     {
         throw_unformattable();
     }
-}
-
-template <typename Context>
-template <typename T>
-inline bool basic_format_arg<Context>::handle_impl<T>::is_formattable() const noexcept
-{
-    return formattable<value_type, char_type>;
 }
 
 template <typename Context>
@@ -45,13 +45,6 @@ void basic_format_arg<Context>::handle_impl_soo<T>::format(parse_context& parse_
     {
         throw_unformattable();
     }
-}
-
-template <typename Context>
-template <typename T>
-inline bool basic_format_arg<Context>::handle_impl_soo<T>::is_formattable() const noexcept
-{
-    return formattable<value_type, char_type>;
 }
 
 template <typename Context>

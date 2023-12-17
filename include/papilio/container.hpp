@@ -71,34 +71,42 @@ public:
         this->throw_out_of_range();
     }
 
-    reference operator[](size_type i) noexcept
+    [[nodiscard]]
+    reference
+        operator[](size_type i) noexcept
     {
         return data()[i];
     }
 
-    const_reference operator[](size_type i) const noexcept
+    [[nodiscard]]
+    const_reference
+        operator[](size_type i) const noexcept
     {
         return data()[i];
     }
 
+    [[nodiscard]]
     reference front() noexcept
     {
         PAPILIO_ASSERT(!empty());
         return *begin();
     }
 
+    [[nodiscard]]
     const_reference front() const noexcept
     {
         PAPILIO_ASSERT(!empty());
         return *begin();
     }
 
+    [[nodiscard]]
     reference back() noexcept
     {
         PAPILIO_ASSERT(!empty());
         return *(end() - 1);
     }
 
+    [[nodiscard]]
     const_reference back() const noexcept
     {
         PAPILIO_ASSERT(!empty());
@@ -454,7 +462,7 @@ public:
         {
             // both are dynamic allocated
             swap_ptrs(other);
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap())
                 swap(getal(), other.getal());
         }
         else if(!dynamic_allocated() && other.dynamic_allocated())
@@ -503,7 +511,7 @@ public:
             // set correct size values
             m_p_end = m_p_begin + tmp_size_2;
             other.m_p_end = other.m_p_begin + tmp_size_1;
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap())
                 swap(getal(), other.getal());
         }
     }
@@ -555,6 +563,9 @@ private:
 
     void set_ptrs(pointer p_begin, pointer p_end, pointer p_capacity) noexcept
     {
+        PAPILIO_ASSERT(m_p_begin <= m_p_end);
+        PAPILIO_ASSERT(m_p_end <= m_p_capacity);
+
         m_p_begin = p_begin;
         m_p_end = p_end;
         m_p_capacity = p_capacity;
@@ -810,31 +821,37 @@ public:
         return data()[pos];
     }
 
+    [[nodiscard]]
     reference operator[](size_type pos) noexcept
     {
         return data()[pos];
     }
 
+    [[nodiscard]]
     const_reference operator[](size_type pos) const noexcept
     {
         return data()[pos];
     }
 
+    [[nodiscard]]
     reference front() noexcept
     {
         return *begin();
     }
 
+    [[nodiscard]]
     const_reference front() const noexcept
     {
         return *begin();
     }
 
+    [[nodiscard]]
     reference back() noexcept
     {
         return *(end() - 1);
     }
 
+    [[nodiscard]]
     const_reference back() const noexcept
     {
         return *(end() - 1);
@@ -884,21 +901,25 @@ public:
 
     // capacity
 
+    [[nodiscard]]
     bool empty() const noexcept
     {
         return m_size == 0;
     }
 
+    [[nodiscard]]
     size_type size() const noexcept
     {
         return m_size;
     }
 
+    [[nodiscard]]
     static constexpr size_type max_size() noexcept
     {
         return Capacity;
     }
 
+    [[nodiscard]]
     size_type capacity() const noexcept
     {
         return max_size();
@@ -1009,33 +1030,32 @@ namespace detail
     };
 
     template <typename Compare, bool IsTransparent>
-    class value_compare_impl_base;
+    class value_compare_base;
 
     template <typename Compare>
-    class value_compare_impl_base<Compare, false> : protected Compare
+    class value_compare_base<Compare, false> : protected Compare
     {
-    public:
-        value_compare_impl_base() = default;
-        value_compare_impl_base(const value_compare_impl_base&) = default;
-        value_compare_impl_base(value_compare_impl_base&&) = default;
-
     protected:
-        value_compare_impl_base(Compare comp)
+        value_compare_base() = default;
+        value_compare_base(const value_compare_base&) = default;
+        value_compare_base(value_compare_base&&) = default;
+
+        value_compare_base(Compare comp)
             : Compare(comp) {}
     };
 
     template <typename Compare>
-    class value_compare_impl_base<Compare, true> : protected Compare
+    class value_compare_base<Compare, true> : protected Compare
     {
     public:
         using is_transparent = void;
 
-        value_compare_impl_base() = default;
-        value_compare_impl_base(const value_compare_impl_base&) = default;
-        value_compare_impl_base(value_compare_impl_base&&) = default;
-
     protected:
-        value_compare_impl_base(Compare comp)
+        value_compare_base() = default;
+        value_compare_base(const value_compare_base&) = default;
+        value_compare_base(value_compare_base&&) = default;
+
+        value_compare_base(Compare comp)
             : Compare(comp) {}
     };
 
@@ -1073,9 +1093,9 @@ public:
     using const_iterator = underlying_type::const_iterator;
 
     class value_compare :
-        public detail::value_compare_impl_base<key_compare, is_transparent_v<Compare>>
+        public detail::value_compare_base<key_compare, is_transparent_v<Compare>>
     {
-        using base = detail::value_compare_impl_base<key_compare, is_transparent_v<Compare>>;
+        using base = detail::value_compare_base<key_compare, is_transparent_v<Compare>>;
 
     public:
         value_compare() = default;
@@ -1098,12 +1118,11 @@ public:
             return as_key_comp();
         }
 
-    protected:
+    private:
         friend class fixed_flat_map;
 
         using base::base;
 
-    private:
         const key_compare& as_key_comp() const noexcept
         {
             return *this;
@@ -1161,16 +1180,19 @@ public:
 
     // capacity
 
+    [[nodiscard]]
     bool empty() const noexcept
     {
         return get_storage().empty();
     }
 
+    [[nodiscard]]
     size_type size() const noexcept
     {
         return get_storage().size();
     }
 
+    [[nodiscard]]
     static size_type max_size() noexcept
     {
         return underlying_type::max_size();
@@ -1221,28 +1243,33 @@ public:
 
     // lookup
 
+    [[nodiscard]]
     iterator find(const Key& k)
     {
         auto it = lower_bound(k);
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
     }
 
+    [[nodiscard]]
     const_iterator find(const Key& k) const
     {
         auto it = lower_bound(k);
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
     }
 
+    [[nodiscard]]
     bool contains(const Key& k) const
     {
         return find(k) != end();
     }
 
+    [[nodiscard]]
     iterator lower_bound(const Key& k)
     {
         return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());
     }
 
+    [[nodiscard]]
     const_iterator lower_bound(const Key& k) const
     {
         return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());

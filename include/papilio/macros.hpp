@@ -3,7 +3,6 @@
 #include <cassert>
 #include <version>
 
-
 #define PAPILIO_NS ::papilio::
 
 #ifdef _MSC_VER

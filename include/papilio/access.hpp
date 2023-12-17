@@ -132,50 +132,47 @@ public:
         : m_name(std::forward<Args>(args)...)
     {}
 
-    [[nodiscard]]
+    // clang-format off
+
     bool operator==(const basic_attribute_name& rhs) const noexcept = default;
 
     [[nodiscard]]
-    friend bool
-        operator==(const basic_attribute_name& lhs, const string_type& rhs) noexcept
+    friend bool operator==(const basic_attribute_name& lhs, const string_type& rhs) noexcept
     {
         return lhs.m_name == rhs;
     }
 
     [[nodiscard]]
-    friend bool
-        operator==(const string_type& lhs, const basic_attribute_name& rhs) noexcept
+    friend bool operator==(const string_type& lhs, const basic_attribute_name& rhs) noexcept
     {
         return lhs == rhs.m_name;
     }
 
     [[nodiscard]]
-    friend bool
-        operator==(const basic_attribute_name& lhs, string_view_type rhs) noexcept
+    friend bool operator==(const basic_attribute_name& lhs, string_view_type rhs) noexcept
     {
         return lhs.m_name == rhs;
     }
 
     [[nodiscard]]
-    friend bool
-        operator==(string_view_type lhs, const basic_attribute_name& rhs) noexcept
+    friend bool operator==(string_view_type lhs, const basic_attribute_name& rhs) noexcept
     {
         return lhs == rhs.m_name;
     }
 
     [[nodiscard]]
-    friend bool
-        operator==(const basic_attribute_name& lhs, const char* rhs) noexcept
+    friend bool operator==(const basic_attribute_name& lhs, const char* rhs) noexcept
     {
         return lhs.m_name == rhs;
     }
 
     [[nodiscard]]
-    friend bool
-        operator==(const char* lhs, const basic_attribute_name& rhs) noexcept
+    friend bool operator==(const char* lhs, const basic_attribute_name& rhs) noexcept
     {
         return lhs == rhs.m_name;
     }
+
+    // clang-format on
 
     [[nodiscard]]
     const string_container_type& name() const noexcept
@@ -183,40 +180,13 @@ public:
         return m_name;
     }
 
-    [[nodiscard]]
     operator string_view_type() const noexcept
     {
         return static_cast<string_view_type>(m_name);
     }
 
-    [[nodiscard]]
-    static constexpr bool validate(utf::basic_string_ref<CharT> name) noexcept
-    {
-        bool first = true;
-        for(char32_t c : name)
-        {
-            if(!is_identifier_ch(c, first))
-                return false;
-
-            if(first)
-                first = false;
-        }
-
-        return true;
-    }
-
 private:
     string_container_type m_name;
-
-    // helper
-    static constexpr bool is_identifier_ch(char32_t ch, bool first = false) noexcept
-    {
-        bool digit = U'0' <= ch && ch <= '9';
-        if(first && digit)
-            return false;
-
-        return digit || ('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z') || ch == '_' || ch >= 128;
-    };
 };
 
 using attribute_name = basic_attribute_name<char>;
@@ -261,12 +231,9 @@ void throw_invalid_attribute(const basic_attribute_name<CharT>& attr)
     throw basic_invalid_attribute<CharT>(attr);
 }
 
-// clang-format off
-
 template <typename T>
-struct accessor {};
-
-// clang-format on
+struct accessor
+{};
 
 namespace detail
 {

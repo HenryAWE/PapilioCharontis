@@ -11,7 +11,6 @@ TEST(format, plain_text)
     EXPECT_EQ(PAPILIO_NS format("{{plain text}}"), "{plain text}");
 }
 
-
 namespace test_format
 {
 struct unformattable_type
@@ -36,7 +35,7 @@ struct large_custom_type
 
     large_custom_type(const large_custom_type&) = default;
 
-    private:
+private:
     char dummy[1024]{};
 };
 } // namespace test_format
@@ -152,8 +151,8 @@ TEST(format, exception)
 {
     using namespace papilio;
 
-    EXPECT_THROW(PAPILIO_NS format("{"), papilio::invalid_format);
-    EXPECT_THROW(PAPILIO_NS format("}"), papilio::invalid_format);
+    EXPECT_THROW((void)PAPILIO_NS format("{"), papilio::invalid_format);
+    EXPECT_THROW((void)PAPILIO_NS format("}"), papilio::invalid_format);
 }
 
 TEST(format, script)

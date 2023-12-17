@@ -56,22 +56,6 @@ TEST(attribute_name, compare)
     EXPECT_EQ(attr, "name"sv);
 }
 
-TEST(attribute_name, validate)
-{
-    using papilio::attribute_name;
-
-    EXPECT_TRUE(attribute_name::validate("name"));
-    EXPECT_TRUE(attribute_name::validate("_name"));
-    EXPECT_TRUE(attribute_name::validate("NAME"));
-    EXPECT_TRUE(attribute_name::validate("NAME_123"));
-
-    EXPECT_FALSE(attribute_name::validate("123name"));
-    EXPECT_FALSE(attribute_name::validate("NAME name"));
-    EXPECT_FALSE(attribute_name::validate("$name"));
-    EXPECT_FALSE(attribute_name::validate("!name"));
-    EXPECT_FALSE(attribute_name::validate("name[0]"));
-}
-
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

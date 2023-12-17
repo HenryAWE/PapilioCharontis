@@ -428,7 +428,7 @@ public:
     using indexing_value_type = basic_indexing_value<char_type>;
     using format_arg_type = basic_format_arg<FormatContext>;
 
-    using parse_context = format_parse_context<FormatContext>;
+    using parse_context = basic_format_parse_context<FormatContext>;
     using iterator = typename parse_context::iterator;
 
     interpreter() = default;
