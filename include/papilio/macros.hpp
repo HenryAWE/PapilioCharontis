@@ -9,7 +9,7 @@
 #    define PAPILIO_COMPILER_MSVC 1
 #endif
 #ifdef __GNUC__
-#    define PAPILIO_COMPILER_GCC 1
+#    define PAPILIO_COMPILER_GCC __GNUC__
 #endif
 
 #ifdef PAPILIO_COMPILER_MSVC
@@ -25,14 +25,18 @@
 #    define PAPILIO_PLATFORM_LINUX 1
 #endif
 
+#define PAPILIO_ASSERT(expr) assert(expr)
+
 #if __has_cpp_attribute(assume)
 #    define PAPILIO_ASSUME(expr) [[assume(expr)]]
 #elif defined PAPILIO_COMPILER_MSVC
 #    define PAPILIO_ASSUME(expr) __assume(expr)
 #elif defined PAPILIO_COMPILER_GCC
-#    define PAPILIO_ASSUME(expr) // __attribute__((assume(expr)))
+#    if PAPILIO_COMPILER_GCC >= 13
+#        define PAPILIO_ASSUME(expr) __attribute__((assume(expr)))
+#    else
+#        define PAPILIO_ASSUME(expr) PAPILIO_ASSERT(expr)
+#    endif
 #else
 #    define PAPILIO_ASSUME(expr)
 #endif
-
-#define PAPILIO_ASSERT(expr) assert(expr)

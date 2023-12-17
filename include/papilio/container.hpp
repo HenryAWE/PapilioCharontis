@@ -462,7 +462,7 @@ public:
         {
             // both are dynamic allocated
             swap_ptrs(other);
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap())
+            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
                 swap(getal(), other.getal());
         }
         else if(!dynamic_allocated() && other.dynamic_allocated())
@@ -476,7 +476,7 @@ public:
         else
         {
             // both are using static storage
-            PAPILIO_ASSUME(!dynamic_allocated() && !other.dynamic_allocated());
+            PAPILIO_ASSERT(!dynamic_allocated() && !other.dynamic_allocated());
 
             size_type tmp_size_1 = this->size();
             size_type tmp_size_2 = other.size();
@@ -511,7 +511,7 @@ public:
             // set correct size values
             m_p_end = m_p_begin + tmp_size_2;
             other.m_p_end = other.m_p_begin + tmp_size_1;
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap())
+            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
                 swap(getal(), other.getal());
         }
     }
@@ -577,7 +577,7 @@ private:
     template <typename... Args>
     void emplace_back_raw(Args&&... args)
     {
-        PAPILIO_ASSUME(m_p_end < m_p_capacity);
+        PAPILIO_ASSERT(m_p_end < m_p_capacity);
         if(!dynamic_allocated()) [[likely]]
         {
             std::construct_at(

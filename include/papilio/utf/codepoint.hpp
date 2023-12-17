@@ -207,7 +207,7 @@ public:
             clear();
             return *this;
         }
-        PAPILIO_ASSUME(len <= 4);
+        PAPILIO_ASSERT(len <= 4);
         for(std::uint8_t i = 0; i < len; ++i)
             m_data[i] = ptr[i];
 
@@ -221,7 +221,7 @@ public:
             clear();
             return *this;
         }
-        PAPILIO_ASSUME(len <= 4);
+        PAPILIO_ASSERT(len <= 4);
         for(std::uint8_t i = 0; i < len; ++i)
             m_data[i] = static_cast<char8_t>(ptr[i]);
 
