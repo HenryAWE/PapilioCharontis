@@ -377,6 +377,7 @@ template <char32_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
+    (void)str;
     return idx < max_chars ? idx : npos;
 }
 
@@ -384,6 +385,7 @@ template <char32_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
+    (void)str;
     if(idx > max_chars - 1)
         return npos;
     return max_chars - 1 - idx;

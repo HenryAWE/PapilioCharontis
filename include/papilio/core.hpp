@@ -81,13 +81,20 @@ namespace detail
         std::conditional_t<sizeof(Integral) <= sizeof(unsigned int), unsigned int, unsigned long long int>,
         std::conditional_t<sizeof(Integral) <= sizeof(int), int, long long int>>;
 
+    // Acceptable floating point
+    template <typename T>
+    concept acceptable_fp =
+        std::is_same_v<std::remove_cv_t<T>, float> ||
+        std::is_same_v<std::remove_cv_t<T>, double> ||
+        std::is_same_v<std::remove_cv_t<T>, long double>;
+
     template <typename T, typename CharT>
     concept use_handle =
-        !std::is_same_v<T, bool> &&
-        !std::is_same_v<T, utf::codepoint> &&
+        !std::is_same_v<std::remove_cv_t<T>, bool> &&
+        !std::is_same_v<std::remove_cv_t<T>, utf::codepoint> &&
         !char_like<T> &&
         !acceptable_integral<T> &&
-        !std::floating_point<T> &&
+        !acceptable_fp<T> &&
         !basic_string_like<T, CharT>;
 
     template <typename T>
@@ -497,7 +504,7 @@ public:
         : m_val(std::in_place_type<detail::convert_int_t<Integral>>, val)
     {}
 
-    template <std::floating_point Float>
+    template <detail::acceptable_fp Float>
     basic_format_arg(Float val) noexcept
         : m_val(val)
     {}
@@ -651,14 +658,25 @@ public:
     [[nodiscard]]
     friend const auto& get(const basic_format_arg& val)
     {
-        if constexpr(char_like<T>)
+        if constexpr(char_like<T> || std::is_same_v<std::remove_cvref_t<T>, utf::codepoint>)
             return std::get<utf::codepoint>(val.m_val);
         else if constexpr(std::integral<T>)
             return std::get<detail::convert_int_t<T>>(val.m_val);
+        else if constexpr(detail::acceptable_fp<T>)
+            return std::get<T>(val.m_val);
         else if constexpr(basic_string_like<T, char_type>)
             return std::get<string_container_type>(val.m_val);
+        else if constexpr(std::is_pointer_v<T>)
+            return std::get<const void*>(val.m_val);
+        else if constexpr(detail::use_handle<T, char_type>)
+        {
+            const handle& h = std::get<handle>(val.m_val);
+            return handle_cast<T>(h);
+        }
         else
-            return std::get<T>(val.m_val);
+        {
+            static_assert(!sizeof(T), "Invalid type");
+        }
     }
 
     void format(parse_context& parse_ctx, Context& out_ctx) const;
@@ -1134,13 +1152,13 @@ public:
     using format_args_type = dynamic_format_args<basic_format_context, char_type>;
 
     basic_format_context(iterator it, format_args_type args)
-        : m_out(std::move(it)), m_args(args) {}
+        : m_out(std::move(it)), m_args(args), m_loc(nullptr) {}
 
     basic_format_context(const std::locale& loc, iterator it, format_args_type args)
-        : m_loc(loc), m_out(std::move(it)), m_args(args) {}
+        : m_out(std::move(it)), m_args(args), m_loc(loc) {}
 
     basic_format_context(locale_ref loc, iterator it, format_args_type args)
-        : m_loc(loc), m_out(std::move(it)), m_args(args) {}
+        : m_out(std::move(it)), m_args(args), m_loc(loc) {}
 
     [[nodiscard]]
     iterator out()

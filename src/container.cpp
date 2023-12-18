@@ -1,5 +1,4 @@
 #include <papilio/container.hpp>
-#include <cassert>
 #include <stdexcept>
 
 namespace papilio

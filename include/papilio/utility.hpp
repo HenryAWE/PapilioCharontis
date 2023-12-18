@@ -17,29 +17,25 @@ namespace papilio
 {
 template <typename T>
 concept char_like =
-    std::is_same_v<T, char> ||
-    std::is_same_v<T, wchar_t> ||
-    std::is_same_v<T, char16_t> ||
-    std::is_same_v<T, char32_t> ||
-    std::is_same_v<T, char8_t>;
+    std::is_same_v<std::remove_cv_t<T>, char> ||
+    std::is_same_v<std::remove_cv_t<T>, wchar_t> ||
+    std::is_same_v<std::remove_cv_t<T>, char16_t> ||
+    std::is_same_v<std::remove_cv_t<T>, char32_t> ||
+    std::is_same_v<std::remove_cv_t<T>, char8_t>;
 
 template <typename CharT>
-concept char8_like = std::is_same_v<CharT, char> || std::is_same_v<CharT, char8_t>;
+concept char8_like = char_like<CharT> && sizeof(CharT) == 1;
 template <typename CharT>
-concept char16_like =
-    std::is_same_v<CharT, char16_t> ||
-    (sizeof(wchar_t) == 2 && std::is_same_v<CharT, wchar_t>);
+concept char16_like = char_like<CharT> && sizeof(CharT) == 2;
 template <typename CharT>
-concept char32_like =
-    std::is_same_v<CharT, char32_t> ||
-    (sizeof(wchar_t) == 4 && std::is_same_v<CharT, wchar_t>);
+concept char32_like = char_like<CharT> && sizeof(CharT) == 4;
 
 template <typename T, typename CharT>
 concept basic_string_like =
     std::is_same_v<std::decay_t<T>, CharT*> ||
     std::is_same_v<std::decay_t<T>, const CharT*> ||
-    std::is_same_v<T, std::basic_string<CharT>> ||
-    std::is_same_v<T, std::basic_string_view<CharT>> ||
+    std::is_same_v<std::remove_cv_t<T>, std::basic_string<CharT>> ||
+    std::is_same_v<std::remove_cv_t<T>, std::basic_string_view<CharT>> ||
     std::is_convertible_v<T, std::basic_string_view<CharT>>;
 
 template <typename T>
@@ -56,7 +52,8 @@ concept wstring_like = basic_string_like<T, wchar_t>;
 template <typename T>
 concept pointer_like =
     (
-        requires(T ptr) { *ptr; ptr.operator->(); } || requires(T ptr, std::size_t i) { ptr[i]; }
+        requires(T ptr) { *ptr; ptr.operator->(); } ||
+        requires(T ptr, std::size_t i) { ptr[i]; }
     ) &&
     requires(T ptr) { static_cast<bool>(ptr); };
 

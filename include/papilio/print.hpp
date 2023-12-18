@@ -80,7 +80,7 @@ namespace detail
 #else
 
     protected:
-        cfile_iterator_conv_base(unsigned int win_cp) noexcept {}
+        cfile_iterator_conv_base([[maybe_unused]] unsigned int win_cp) noexcept {}
 
         unsigned int get_cp() const noexcept = delete;
 #endif
@@ -97,7 +97,7 @@ namespace detail
         cfile_iterator_conv(const cfile_iterator_conv&) noexcept = default;
 
         cfile_iterator_conv(std::FILE* file, int win_cp = 0) noexcept
-            : m_underlying(file), cfile_iterator_conv_base(win_cp) {}
+            : cfile_iterator_conv_base(win_cp), m_underlying(file) {}
 
         cfile_iterator_conv& operator=(const cfile_iterator_conv&) noexcept = default;
 

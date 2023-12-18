@@ -132,7 +132,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(std::
             throw invalid_surrogate(ch[1]);
 
         char32_t result =
-            (ch[0] - 0xD800 << 10) +
+            ((ch[0] - 0xD800) << 10) +
             (ch[1] - 0xDC00) +
             0x10000;
         return std::make_pair(result, 2);

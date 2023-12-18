@@ -489,8 +489,7 @@ public:
 
     void format(
         parse_context& parse_ctx,
-        FormatContext& fmt_ctx,
-        locale_ref loc
+        FormatContext& fmt_ctx
     )
     {
         using context_t = format_context_traits<FormatContext>;

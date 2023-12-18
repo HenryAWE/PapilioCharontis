@@ -85,8 +85,9 @@ TEST(format_arg, constructor)
 
         EXPECT_TRUE(fmt_arg.has_ownership());
 
-        const auto& h = get<format_arg::handle>(fmt_arg);
-        const auto& m = handle_cast<map_type>(h);
+        const auto& m = get<map_type>(fmt_arg);
+
+        EXPECT_THROW(((void)get<std::map<int, float>>(fmt_arg)), bad_handle_cast);
 
         EXPECT_EQ(m.size(), 1);
         EXPECT_EQ(m.at(0), 0);

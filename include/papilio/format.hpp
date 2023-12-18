@@ -50,10 +50,10 @@ namespace detail
         static_assert(std::is_same_v<OutputIt, typename Context::iterator>);
 
         basic_format_parse_context<Context> parse_ctx(fmt, args);
-        Context fmt_ctx(out, args);
+        Context fmt_ctx(loc, out, args);
 
         script::interpreter<Context> intp;
-        intp.format(parse_ctx, fmt_ctx, loc);
+        intp.format(parse_ctx, fmt_ctx);
 
         return fmt_ctx.out();
     }

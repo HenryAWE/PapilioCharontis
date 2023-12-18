@@ -410,7 +410,7 @@ TEST(interpreter, format)
         format_context fmt_ctx(std::back_inserter(buf), args);
         format_parse_context parse_ctx("test", args);
 
-        intp.format(parse_ctx, fmt_ctx, nullptr);
+        intp.format(parse_ctx, fmt_ctx);
 
         EXPECT_EQ(buf, "test");
     }
