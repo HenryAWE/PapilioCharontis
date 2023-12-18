@@ -49,7 +49,7 @@ constexpr std::pair<codepoint, std::uint8_t> decoder<char32_t>::to_codepoint(cha
         PAPILIO_UNREACHABLE();
     }
 
-    return std::make_pair(codepoint(bytes, len), 1);
+    return std::make_pair(codepoint(bytes, len), std::uint8_t(1));
 }
 
 constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(codepoint cp) noexcept
@@ -59,7 +59,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(co
     // ASCII (single byte)
     if(bytes[0] <= 0b0111'1111)
     {
-        return std::make_pair(static_cast<char32_t>(cp.data()[0]), 1);
+        return std::make_pair(static_cast<char32_t>(cp.data()[0]), std::uint8_t(1));
     }
     // 2 bytes
     else if(0b1100'0000 <= bytes[0] && bytes[0] <= 0b1101'1111)
@@ -69,7 +69,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(co
         result <<= 6;
         result |= bytes[1] & 0b0011'1111;
 
-        return std::make_pair(result, 2);
+        return std::make_pair(result, std::uint8_t(2));
     }
     // 3 bytes
     else if(0b1110'0000 <= bytes[0] && bytes[0] <= 0b1110'1111)
@@ -81,7 +81,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(co
         result <<= 6;
         result |= bytes[2] & 0b0011'1111;
 
-        return std::make_pair(result, 3);
+        return std::make_pair(result, std::uint8_t(3));
     }
     // 4 bytes
     else if(0b1111'0000 <= bytes[0] && bytes[0] <= 0b1111'0111)
@@ -95,10 +95,10 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(co
         result <<= 6;
         result |= bytes[3] & 0b0011'1111;
 
-        return std::make_pair(result, 3);
+        return std::make_pair(result, std::uint8_t(3));
     }
 
-    return std::make_pair(U'\0', 0);
+    return std::make_pair(U'\0', std::uint8_t(0));
 }
 
 constexpr std::uint8_t decoder<char8_t>::size_bytes(char8_t ch) noexcept
@@ -109,7 +109,7 @@ constexpr std::uint8_t decoder<char8_t>::size_bytes(char8_t ch) noexcept
 constexpr std::pair<codepoint, std::uint8_t> decoder<char8_t>::to_codepoint(std::u8string_view ch)
 {
     if(ch.empty()) [[unlikely]]
-        return std::make_pair(codepoint(), 0);
+        return std::make_pair(codepoint(), std::uint8_t(0));
     std::uint8_t len = size_bytes(ch[0]);
     return std::make_pair(codepoint(ch.data(), len), len);
 }
@@ -117,12 +117,12 @@ constexpr std::pair<codepoint, std::uint8_t> decoder<char8_t>::to_codepoint(std:
 constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(std::u16string_view ch)
 {
     if(ch.empty()) [[unlikely]]
-        return std::make_pair(U'\0', 0);
+        return std::make_pair(U'\0', std::uint8_t(0));
 
     if(!is_high_surrogate(ch[0])) [[likely]]
     {
         char32_t result = ch[0];
-        return std::make_pair(result, 1);
+        return std::make_pair(result, std::uint8_t(1));
     }
     else
     {
@@ -135,7 +135,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(std::
             ((ch[0] - 0xD800) << 10) +
             (ch[1] - 0xDC00) +
             0x10000;
-        return std::make_pair(result, 2);
+        return std::make_pair(result, std::uint8_t(2));
     }
 }
 
@@ -163,7 +163,7 @@ constexpr auto decoder<char16_t>::from_codepoint(codepoint cp) -> from_codepoint
 
     char32_t ch32;
     std::tie(ch32, result.processed_size) = decoder<char32_t>::from_codepoint(cp);
-    if(ch32 <= 0xD7FF || (0xE000 <= ch32 && ch32 <= 0xFFFF))
+    if(ch32 <= 0xD7FF || (0xE000 <= ch32 && ch32 <= 0xFFFF)) [[likely]]
     {
         result.chars[0] = static_cast<char16_t>(ch32);
         result.size = 1;
@@ -171,11 +171,11 @@ constexpr auto decoder<char16_t>::from_codepoint(codepoint cp) -> from_codepoint
     else if(0x10000 <= ch32 && ch32 <= 0x10FFFF)
     {
         std::uint32_t tmp = ch32 - 0x10000;
-        result.chars[0] = 0xD800 + (tmp >> 10);
+        result.chars[0] = static_cast<char16_t>(0xD800 + (tmp >> 10));
         result.chars[1] = 0xDC00 + (tmp & 0x3FF);
         result.size = 2;
     }
-    else
+    else [[unlikely]]
     {
         throw std::invalid_argument("invalid codepoint"); // TODO: Better exception
     }

@@ -357,7 +357,6 @@ template <char16_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
-    std::uint8_t len = 0;
     std::size_t ch_count = 0;
     for(std::size_t i = max_chars; i != 0; --i)
     {

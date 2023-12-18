@@ -1108,7 +1108,7 @@ private:
                     }
                     else
                     {
-                        result.push_back(ch);
+                        result.push_back(utf::codepoint(ch));
                     }
                 }
 

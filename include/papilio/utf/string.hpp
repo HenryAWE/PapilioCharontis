@@ -453,20 +453,21 @@ namespace detail
 
             if constexpr(!char32_like<CharT>) // char8_like and char16_like
             {
-                if(str.empty()) return make_c_iter(str, 0, 0);
+                if(str.empty())
+                    return make_c_iter(str, size_type(0), std::uint8_t(0));
             }
 
             if constexpr(char8_like<CharT>)
             {
                 std::uint8_t ch = str[0];
                 std::uint8_t ch_size = is_leading_byte(ch) ? byte_count(ch) : 1;
-                return make_c_iter(str, 0, ch_size);
+                return make_c_iter(str, size_type(0), ch_size);
             }
             else if constexpr(char16_like<CharT>)
             {
                 std::uint16_t ch = str[0];
                 std::uint8_t ch_size = is_high_surrogate(ch) ? 2 : 1;
-                return make_c_iter(str, 0, ch_size);
+                return make_c_iter(str, size_type(0), ch_size);
             }
             else // char32_like
             {
@@ -480,7 +481,7 @@ namespace detail
 
             if constexpr(!char32_like<CharT>) // char8_like and char16_like
             {
-                return make_c_iter(str, str.size(), 0);
+                return make_c_iter(str, str.size(), std::uint8_t(0));
             }
             else
             {

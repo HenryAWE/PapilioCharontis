@@ -96,7 +96,7 @@ public:
 
     constexpr void normalize(std::in_place_t, size_type len) noexcept
     {
-        PAPILIO_ASSERT(len <= std::numeric_limits<index_type>::max());
+        PAPILIO_ASSERT(len <= static_cast<size_type>(std::numeric_limits<index_type>::max()));
 
         if(first < 0)
             first = len + first;

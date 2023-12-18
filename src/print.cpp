@@ -66,7 +66,7 @@ namespace detail
                 wbuf,
                 wconv_result,
                 mbbuf,
-                std::size(mbbuf),
+                static_cast<int>(std::size(mbbuf)),
                 nullptr,
                 nullptr
             );
@@ -97,7 +97,7 @@ namespace detail
         return 0;
 #endif
     }
-}
+} // namespace detail
 
 void println(std::FILE* file)
 {

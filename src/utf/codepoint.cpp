@@ -6,11 +6,11 @@ namespace papilio::utf
 auto decoder<wchar_t>::to_char32_t(std::wstring_view ch) -> std::pair<char32_t, std::uint8_t>
 {
     if(ch.empty()) [[unlikely]]
-        return std::make_pair(U'\0', 0);
+        return std::make_pair(U'\0', std::uint8_t(0));
 
     if constexpr(sizeof(wchar_t) == sizeof(char32_t))
     {
-        return std::make_pair(ch[0], 1);
+        return std::make_pair(ch[0], std::uint8_t(1));
     }
     else
     {

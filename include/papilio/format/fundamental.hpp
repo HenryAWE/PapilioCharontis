@@ -9,7 +9,7 @@ namespace detail
 {
     inline bool is_align_ch(char32_t ch) noexcept
     {
-        return ch == '<' || ch == '>' || ch == '^';
+        return ch == U'<' || ch == U'>' || ch == U'^';
     }
 
     inline format_align get_align(char32_t ch) noexcept
@@ -28,7 +28,7 @@ namespace detail
 
     inline bool is_sign_ch(char32_t ch) noexcept
     {
-        return ch == U'+' || ch == ' ' || ch == '-';
+        return ch == U'+' || ch == U' ' || ch == U'-';
     }
 
     inline format_sign get_sign(char32_t ch) noexcept
@@ -229,9 +229,12 @@ parse_end:
 
             char32_t first_ch = *start;
 
-            if(!IsPrecision && first_ch == U'0')
+            if(!IsPrecision)
             {
-                throw invalid_format("invalid format");
+                if(first_ch == U'0')
+                {
+                    throw invalid_format("invalid format");
+                }
             }
 
             if(first_ch == U'{')
@@ -387,7 +390,7 @@ public:
         m_sign = parser.sign();
         m_fill_zero = parser.fill_zero();
         m_alt_form = parser.alternate_form();
-        m_type = parser.type_or('d');
+        m_type = static_cast<char>(parser.type_or('d'));
         m_width = parser.width();
 
         return ctx.begin();

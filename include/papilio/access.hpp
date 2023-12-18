@@ -203,7 +203,7 @@ protected:
 };
 
 template <typename CharT>
-class basic_invalid_attribute : invalid_attribute_base
+class basic_invalid_attribute : public invalid_attribute_base
 {
 public:
     using char_type = CharT;
