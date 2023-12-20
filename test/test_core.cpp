@@ -35,6 +35,35 @@ TEST(format_arg, constructor)
     }
 
     {
+        format_arg fmt_arg(nullptr);
+        EXPECT_TRUE(fmt_arg.holds<const void*>());
+        EXPECT_EQ(get<const void*>(fmt_arg), nullptr);
+        EXPECT_TRUE(fmt_arg.has_ownership());
+    }
+
+    {
+        void* mem = std::malloc(4);
+
+        format_arg fmt_arg(mem);
+        EXPECT_TRUE(fmt_arg.holds<const void*>());
+        EXPECT_EQ(get<const void*>(fmt_arg), mem);
+        EXPECT_TRUE(fmt_arg.has_ownership());
+
+        std::free(mem);
+    }
+
+    {
+        void* mem = std::malloc(4);
+
+        format_arg fmt_arg(const_cast<const void*>(mem));
+        EXPECT_TRUE(fmt_arg.holds<const void*>());
+        EXPECT_EQ(get<const void*>(fmt_arg), mem);
+        EXPECT_TRUE(fmt_arg.has_ownership());
+
+        std::free(mem);
+    }
+
+    {
         using namespace std::literals;
 
         PAPILIO_NS format_arg fmt_arg("test");

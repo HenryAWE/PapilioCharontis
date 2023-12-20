@@ -57,6 +57,26 @@ concept pointer_like =
     ) &&
     requires(T ptr) { static_cast<bool>(ptr); };
 
+namespace detail
+{
+    template <typename Tuple, std::size_t... Is>
+    consteval bool check_tuple_like(std::index_sequence<Is...>)
+    {
+        return (requires(Tuple tp) {
+            typename std::tuple_element_t<Is, Tuple>;
+            std::get<Is>(tp);
+        } && ...);
+    }
+
+    template <typename T>
+    concept tuple_like_helper =
+        requires() { typename std::tuple_size<T>; } &&
+        check_tuple_like<T>(std::make_index_sequence<std::tuple_size<T>::value>());
+} // namespace detail
+
+template <typename T>
+concept tuple_like = detail::tuple_like_helper<std::remove_cvref_t<T>>;
+
 // ^^^ concepts ^^^ / vvv tags vvv
 
 // clang-format off

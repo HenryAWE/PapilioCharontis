@@ -529,6 +529,12 @@ public:
 
     template <typename T>
     requires(!char_like<T>)
+    basic_format_arg(T* ptr) noexcept
+        : m_val(std::in_place_type<const void*>, ptr)
+    {}
+
+    template <typename T>
+    requires(!char_like<T>)
     basic_format_arg(const T* ptr) noexcept
         : m_val(std::in_place_type<const void*>, ptr)
     {}

@@ -1,6 +1,13 @@
 #include <gtest/gtest.h>
 #include <papilio/utility.hpp>
 
+static_assert(papilio::tuple_like<std::tuple<>>);
+static_assert(papilio::tuple_like<std::tuple<int>>);
+static_assert(papilio::tuple_like<std::tuple<int, int, int>>);
+static_assert(papilio::tuple_like<std::pair<int, int>>);
+static_assert(papilio::tuple_like<std::array<int, 4>>);
+static_assert(!papilio::tuple_like<int[4]>);
+
 static_assert(papilio::pointer_like<std::unique_ptr<int>>);
 static_assert(papilio::pointer_like<std::unique_ptr<int[]>>);
 static_assert(papilio::pointer_like<std::shared_ptr<int>>);
