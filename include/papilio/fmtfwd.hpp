@@ -2,6 +2,7 @@
 
 // Forward declarations
 
+#include <string>
 #include <iterator>
 
 namespace papilio
