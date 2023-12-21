@@ -38,6 +38,20 @@ TEST(indexing_value, constructor)
         EXPECT_EQ(idx.as_string(), "hello");
         EXPECT_TRUE(idx.as_string().has_ownership());
     }
+
+    {
+        windexing_value idx(L"hello");
+        ASSERT_TRUE(idx.holds_string());
+        EXPECT_EQ(idx.as_string(), L"hello");
+        EXPECT_FALSE(idx.as_string().has_ownership());
+    }
+
+    {
+        windexing_value idx(independent, L"hello");
+        ASSERT_TRUE(idx.holds_string());
+        EXPECT_EQ(idx.as_string(), L"hello");
+        EXPECT_TRUE(idx.as_string().has_ownership());
+    }
 }
 
 TEST(attribute_name, compare)
@@ -54,6 +68,9 @@ TEST(attribute_name, compare)
     EXPECT_EQ(attr, "name"s);
     EXPECT_EQ("name"sv, attr);
     EXPECT_EQ(attr, "name"sv);
+
+    EXPECT_NE(attr, "{name}");
+    EXPECT_NE("{name}", attr);
 }
 
 int main(int argc, char* argv[])

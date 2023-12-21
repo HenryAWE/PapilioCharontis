@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include "macros.hpp"
+#include "fmtfwd.hpp"
 #include "utility.hpp"
 #include "container.hpp"
 #include "utf.hpp"
@@ -18,30 +19,6 @@
 
 namespace papilio
 {
-// forward declarations
-namespace detail
-{
-    template <typename CharT>
-    using fmt_iter_for = std::back_insert_iterator<std::basic_string<CharT>>;
-}
-
-template <typename Context>
-class basic_format_arg;
-
-template <typename FormatContext>
-class basic_format_parse_context;
-
-template <typename OutputIt, typename CharT = char>
-class basic_format_context;
-
-template <typename T, typename CharT = char>
-class formatter;
-
-using format_context = basic_format_context<detail::fmt_iter_for<char>, char>;
-using wformat_context = basic_format_context<detail::fmt_iter_for<wchar_t>, wchar_t>;
-using format_arg = basic_format_arg<format_context>;
-using wformat_arg = basic_format_arg<wformat_context>;
-
 enum class format_align : std::uint8_t
 {
     default_align = 0,
@@ -164,6 +141,7 @@ private:
     {
     public:
         using value_type = std::remove_cvref_t<T>;
+        using accessor_t = accessor_traits<T, Context>;
 
         bool is_formattable() const noexcept final;
 
@@ -178,6 +156,7 @@ private:
     {
     public:
         using value_type = std::remove_cvref_t<T>;
+        using accessor_t = handle_impl<T>::accessor_t;
 
         handle_impl_ptr(const T& val) noexcept
             : m_ptr(std::addressof(val), false) {}
@@ -197,16 +176,14 @@ private:
         {
             PAPILIO_ASSERT(m_ptr);
 
-            using accessor_t = accessor_traits<value_type, char_type>;
-            return accessor_t::template access<basic_format_arg>(*m_ptr, idx);
+            return accessor_t::access(*m_ptr, idx);
         }
 
         basic_format_arg attribute(const attribute_name_type& attr) const override
         {
             PAPILIO_ASSERT(m_ptr);
 
-            using accessor_t = accessor_traits<value_type, char_type>;
-            return accessor_t::template attribute<basic_format_arg>(*m_ptr, attr);
+            return accessor_t::access(*m_ptr, attr);
         }
 
         void format(parse_context& parse_ctx, Context& out_ctx) const override;
@@ -240,6 +217,7 @@ private:
     {
     public:
         using value_type = std::remove_cvref_t<T>;
+        using accessor_t = handle_impl<T>::accessor_t;
 
         template <typename Arg>
         requires std::is_constructible_v<T, Arg>
@@ -261,14 +239,12 @@ private:
 
         basic_format_arg index(const indexing_value_type& idx) const override
         {
-            using accessor_t = accessor_traits<value_type, char_type>;
-            return accessor_t::template access<basic_format_arg>(m_val, idx);
+            return accessor_t::access(m_val, idx);
         }
 
         basic_format_arg attribute(const attribute_name_type& attr) const override
         {
-            using accessor_t = accessor_traits<value_type, char_type>;
-            return accessor_t::template attribute<basic_format_arg>(m_val, attr);
+            return accessor_t::access(m_val, attr);
         }
 
         void format(parse_context& parse_ctx, Context& out_ctx) const override;
@@ -467,6 +443,14 @@ public:
         }
     };
 
+private:
+    template <typename T>
+    static consteval bool is_handle()
+    {
+        return std::is_same_v<std::remove_cvref_t<T>, handle>;
+    }
+
+public:
     using variant_type = std::variant<
         std::monostate,
         bool,
@@ -585,16 +569,14 @@ public:
         return visit(
             [&idx]<typename T>(const T& v) -> basic_format_arg
             {
-                using target_type = std::remove_cvref_t<T>;
-
-                if constexpr(std::is_same_v<target_type, handle>)
+                if constexpr(is_handle<T>())
                 {
                     return v.index(idx);
                 }
                 else
                 {
-                    using accessor_t = accessor_traits<target_type, char_type>;
-                    return accessor_t::template access<basic_format_arg>(v, idx);
+                    using accessor_t = accessor_traits<T, Context>;
+                    return accessor_t::access(v, idx);
                 }
             }
         );
@@ -606,16 +588,14 @@ public:
         return visit(
             [&attr]<typename T>(const T& v) -> basic_format_arg
             {
-                using target_type = std::remove_cvref_t<T>;
-
-                if constexpr(std::is_same_v<target_type, handle>)
+                if constexpr(is_handle<T>())
                 {
                     return v.attribute(attr);
                 }
                 else
                 {
-                    using accessor_t = accessor_traits<target_type, char_type>;
-                    return accessor_t::template attribute<basic_format_arg>(v, attr);
+                    using accessor_t = accessor_traits<T, Context>;
+                    return accessor_t::access(v, attr);
                 }
             }
         );
@@ -705,19 +685,13 @@ namespace detail
     template <typename... Ts>
     consteval std::size_t get_named_arg_count() noexcept
     {
-        if constexpr(sizeof...(Ts) == 0)
-            return 0;
-        else
-        {
-            using tuple_t = std::tuple<Ts...>;
-            using std::size_t;
-            using std::tuple_element_t;
+        using tuple_t = std::tuple<Ts...>;
+        using std::tuple_element_t;
 
-            return []<size_t... Is>(std::index_sequence<Is...>) -> size_t
-            {
-                return (count_if_named_arg<tuple_element_t<Is, tuple_t>>() + ...);
-            }(std::make_index_sequence<sizeof...(Ts)>());
-        }
+        return []<std::size_t... Is>(std::index_sequence<Is...>) -> std::size_t
+        {
+            return (0 + ... + count_if_named_arg<tuple_element_t<Is, tuple_t>>());
+        }(std::make_index_sequence<sizeof...(Ts)>());
     }
 
     template <typename... Ts>

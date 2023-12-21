@@ -1,6 +1,7 @@
 #pragma once
 
 #include <variant>
+#include "fmtfwd.hpp"
 #include "utility.hpp"
 #include "utf/codepoint.hpp"
 #include "utf/string.hpp"
@@ -35,12 +36,12 @@ public:
     basic_indexing_value(string_container_type key)
         : m_val(std::move(key)) {}
 
-    template <string_like String>
+    template <basic_string_like<CharT> String>
     basic_indexing_value(String&& key)
         : m_val(std::in_place_type<string_container_type>, std::forward<String>(key))
     {}
 
-    template <string_like String>
+    template <basic_string_like<CharT> String>
     basic_indexing_value(independent_t, String&& key)
         : m_val(std::in_place_type<string_container_type>, independent, std::forward<String>(key))
     {}
@@ -231,7 +232,7 @@ void throw_invalid_attribute(const basic_attribute_name<CharT>& attr)
     throw basic_invalid_attribute<CharT>(attr);
 }
 
-template <typename T>
+template <typename T, typename Context = format_context>
 struct accessor
 {};
 
@@ -260,21 +261,23 @@ namespace detail
     };
 } // namespace detail
 
-template <typename T, typename CharT = char>
+template <typename T, typename Context = format_context>
 class accessor_traits : public detail::accessor_traits_base
 {
 public:
-    using char_type = CharT;
-    using target_type = T;
-    using accessor_type = accessor<target_type>;
+    using char_type = typename Context::char_type;
+    using target_type = std::remove_cvref_t<T>;
+    using accessor_type = accessor<target_type, Context>;
 
-    using indexing_value_type = basic_indexing_value<CharT>;
+    using indexing_value_type = basic_indexing_value<char_type>;
 
-    using string_view_type = std::basic_string_view<CharT>;
+    using string_view_type = std::basic_string_view<char_type>;
 
-    using attribute_name_type = basic_attribute_name<CharT>;
+    using attribute_name_type = basic_attribute_name<char_type>;
 
-    using index_type = indexing_value_type::index_type;
+    using index_type = typename indexing_value_type::index_type;
+
+    using format_arg_type = basic_format_arg<Context>;
 
     [[nodiscard]]
     static constexpr bool has_integer_index() noexcept
@@ -300,8 +303,9 @@ public:
         };
     }
 
-    template <typename R, typename U>
-    static R index(U&& object, index_type i)
+    template <typename U>
+    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    static format_arg_type index(U&& object, index_type i)
     {
         if constexpr(!has_integer_index())
         {
@@ -309,21 +313,13 @@ public:
         }
         else
         {
-            return static_cast<R>(accessor_type::index(std::forward<U>(object), i));
+            return format_arg_type(accessor_type::index(std::forward<U>(object), i));
         }
     }
 
-    template <typename R, typename U>
-    static R access(U&& object, const indexing_value_type& idx)
-    {
-        return idx.visit(
-            [&](const auto& i) -> R
-            { return index<R>(std::forward<U>(object), i); }
-        );
-    }
-
-    template <typename R, typename U>
-    static R index(U&& object, slice s)
+    template <typename U>
+    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    static format_arg_type index(U&& object, slice s)
     {
         if constexpr(!has_slice_index())
         {
@@ -331,12 +327,13 @@ public:
         }
         else
         {
-            return static_cast<R>(accessor_type::index(std::forward<U>(object), s));
+            return format_arg_type(accessor_type::index(std::forward<U>(object), s));
         }
     }
 
-    template <typename R, typename U>
-    static R index(U&& object, string_view_type str)
+    template <typename U>
+    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    static format_arg_type index(U&& object, string_view_type str)
     {
         if constexpr(!has_string_index())
         {
@@ -344,7 +341,7 @@ public:
         }
         else
         {
-            return static_cast<R>(accessor_type::index(std::forward<U>(object), str));
+            return format_arg_type(accessor_type::index(std::forward<U>(object), str));
         }
     }
 
@@ -356,17 +353,35 @@ public:
         };
     }
 
-    template <typename R, typename U>
-    static R attribute(U&& object, const attribute_name_type& attr)
+    template <typename U>
+    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    static format_arg_type attribute(U&& object, const attribute_name_type& attr)
     {
         if constexpr(has_attribute())
         {
-            return static_cast<R>(accessor_type::attribute(std::forward<U>(object), attr));
+            return format_arg_type(accessor_type::attribute(std::forward<U>(object), attr));
         }
         else
         {
             throw_invalid_attribute(attr);
         }
+    }
+
+    template <typename U>
+    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    static format_arg_type access(U&& object, const indexing_value_type& idx)
+    {
+        return idx.visit(
+            [&](const auto& i) -> format_arg_type
+            { return index(std::forward<U>(object), i); }
+        );
+    }
+
+    template <typename U>
+    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    static format_arg_type access(U&& object, const attribute_name_type& attr)
+    {
+        return attribute(std::forward<U>(object), attr);
     }
 };
 } // namespace papilio

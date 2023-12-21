@@ -6,13 +6,14 @@
 
 namespace papilio
 {
-template <typename CharT>
-struct accessor<utf::basic_string_container<CharT>>
+template <typename Context>
+struct accessor<utf::basic_string_container<typename Context::char_type>, Context>
 {
-    using char_type = CharT;
-    using string_view_type = std::basic_string_view<CharT>;
-    using string_container_type = utf::basic_string_container<CharT>;
-    using attribute_name_type = basic_attribute_name<CharT>;
+    using char_type = typename Context::char_type;
+    using format_arg_type = basic_format_arg<Context>;
+    using string_view_type = std::basic_string_view<char_type>;
+    using string_container_type = utf::basic_string_container<char_type>;
+    using attribute_name_type = basic_attribute_name<char_type>;
 
     [[nodiscard]]
     static utf::codepoint index(const string_container_type& str, indexing_value::index_type i)
@@ -33,12 +34,12 @@ struct accessor<utf::basic_string_container<CharT>>
     }
 
     [[nodiscard]]
-    static std::size_t attribute(const string_container_type& str, const attribute_name_type& attr)
+    static format_arg_type attribute(const string_container_type& str, const attribute_name_type& attr)
     {
         using namespace std::literals;
 
-        constexpr CharT attr_length[] = {'l', 'e', 'n', 'g', 't', 'h'};
-        constexpr CharT attr_size[] = {'s', 'i', 'z', 'e'};
+        constexpr char_type attr_length[] = {'l', 'e', 'n', 'g', 't', 'h'};
+        constexpr char_type attr_size[] = {'s', 'i', 'z', 'e'};
 
         if(attr == string_view_type(attr_length, std::size(attr_length)))
             return str.length();
