@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <iosfwd>
 #include <utility>
 #include <cstddef>
 #include <limits>
@@ -10,6 +9,7 @@
 #include <concepts>
 #include <string>
 #include <iterator>
+#include <iostream>
 #include "macros.hpp"
 #include "detail/compat.hpp"
 
@@ -649,7 +649,7 @@ protected:
     {
         if constexpr(std::output_iterator<Iterator, CharT>)
         {
-            *m_iter = c;
+            *m_iter = static_cast<CharT>(c);
             ++m_iter;
             return c;
         }
