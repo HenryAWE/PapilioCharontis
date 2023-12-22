@@ -6,16 +6,16 @@ template <typename Context>
 template <typename T>
 inline bool basic_format_arg<Context>::handle_impl<T>::is_formattable() const noexcept
 {
-    return formattable<value_type, char_type>;
+    return formattable_with<value_type, Context>;
 }
 
 template <typename Context>
 template <typename T>
 void basic_format_arg<Context>::handle_impl_ptr<T>::format(parse_context& parse_ctx, Context& out_ctx) const
 {
-    if constexpr(formattable<value_type, char_type>)
+    if constexpr(formattable_with<value_type, Context>)
     {
-        using formatter_t = PAPILIO_NS formatter<value_type, char_type>;
+        using formatter_t = Context::template formatter_type<value_type>;
         formatter_t fmt;
         parse_ctx.advance_to(fmt.parse(parse_ctx));
 
@@ -32,9 +32,9 @@ template <typename Context>
 template <typename T>
 void basic_format_arg<Context>::handle_impl_soo<T>::format(parse_context& parse_ctx, Context& out_ctx) const
 {
-    if constexpr(formattable<value_type, char_type>)
+    if constexpr(formattable_with<value_type, Context>)
     {
-        using formatter_t = PAPILIO_NS formatter<value_type, char_type>;
+        using formatter_t = Context::template formatter_type<value_type>;
         formatter_t fmt;
         parse_ctx.advance_to(fmt.parse(parse_ctx));
 
@@ -75,9 +75,9 @@ void basic_format_arg<Context>::format(parse_context& parse_ctx, Context& out_ct
             {
                 v.format(parse_ctx, out_ctx);
             }
-            else if constexpr(formattable<T>)
+            else if constexpr(formattable_with<T, Context>)
             {
-                using formatter_t = PAPILIO_NS formatter<T, char_type>;
+                using formatter_t =  Context::template formatter_type<T>;
                 formatter_t fmt;
                 parse_ctx.advance_to(fmt.parse(parse_ctx));
 

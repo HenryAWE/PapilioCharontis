@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
 #include <vector>
+#include <iostream>
 
 TEST(format, plain_text)
 {
@@ -53,7 +54,7 @@ public:
     }
 
     template <typename FormatContext>
-    auto format(const test_format::custom_type& v, FormatContext& ctx)
+    auto format(const test_format::custom_type& v, FormatContext& ctx) const
     {
         return format_to(ctx.out(), "custom_type.val={}", v.val);
     }
@@ -70,7 +71,7 @@ public:
     }
 
     template <typename FormatContext>
-    auto format(const test_format::large_custom_type& v, FormatContext& ctx)
+    auto format(const test_format::large_custom_type& v, FormatContext& ctx) const
     {
         return format_to(ctx.out(), "large_custom_type.val={}", v.val);
     }
@@ -203,6 +204,36 @@ TEST(format, composite)
     }
 }
 
+namespace test_format
+{
+class stream_only
+{
+public:
+    friend std::ostream& operator<<(std::ostream& os, const stream_only&)
+    {
+        os << "stream only";
+        return os;
+    }
+
+    friend std::wostream& operator<<(std::wostream& os, const stream_only&)
+    {
+        os << L"stream only";
+        return os;
+    }
+};
+} // namespace test_format
+
+TEST(format, ostream_compat)
+{
+    using namespace papilio;
+
+    {
+        test_format::stream_only val;
+
+        EXPECT_EQ(PAPILIO_NS format("{}", val), "stream only");
+    }
+}
+
 TEST(format, wchar_t)
 {
     using namespace papilio;
@@ -236,6 +267,12 @@ TEST(format, wchar_t)
     EXPECT_EQ(PAPILIO_NS formatted_size(L""), 0);
     EXPECT_EQ(PAPILIO_NS formatted_size(L"hello"), 5);
     EXPECT_EQ(PAPILIO_NS formatted_size(L"{{hello}}"), 7);
+
+    {
+        test_format::stream_only val;
+
+        EXPECT_EQ(PAPILIO_NS format(L"{}", val), L"stream only");
+    }
 
     {
         std::wstring_view fmt = L"{0} warning{${0}>1:'s'}";

@@ -43,6 +43,18 @@ public:
 class bad_handle_cast : public std::bad_cast
 {};
 
+template <typename T, typename CharT>
+class formatter
+{
+public:
+    formatter() = delete;
+    formatter(const formatter&) = delete;
+    formatter(formatter&&) = delete;
+
+    formatter& operator=(const formatter&) = delete;
+    formatter& operator=(formatter&&) = delete;
+};
+
 namespace detail
 {
     template <typename T>
@@ -818,6 +830,8 @@ class static_format_args final : public detail::format_args_base<Context, CharT>
     using base = detail::format_args_base<Context, CharT>;
 
 public:
+    static_assert(std::is_same_v<typename Context::char_type, CharT>);
+
     using char_type = CharT;
     using size_type = std::size_t;
     using string_view_type = std::basic_string_view<char_type>;
@@ -922,6 +936,8 @@ class basic_mutable_format_args final : public detail::format_args_base<Context,
     using base = detail::format_args_base<Context, CharT>;
 
 public:
+    static_assert(std::is_same_v<typename Context::char_type, CharT>);
+
     using char_type = CharT;
     using string_type = std::basic_string<char_type>;
     using string_view_type = std::basic_string_view<char_type>;
@@ -935,7 +951,7 @@ public:
     template <typename... Args>
     basic_mutable_format_args(Args&&... args)
     {
-        push(std::forward<Args>(args)...);
+        push_tuple(std::forward<Args>(args)...);
     }
 
     template <typename T>
@@ -959,16 +975,14 @@ public:
         }
     }
 
-    template <typename T, typename... Args>
-    void push(T&& val, Args&&... args)
+    template <typename... Args>
+    void push_tuple(Args&&... args)
     {
         m_indexed_args.reserve(
-            m_indexed_args.size() + detail::get_indexed_arg_count<T, Args...>()
+            m_indexed_args.size() + detail::get_indexed_arg_count<Args...>()
         );
 
-        push(std::forward<T>(val));
-        if constexpr(sizeof...(Args))
-            push(std::forward<Args>(args)...);
+        (push(std::forward<Args>(args)), ...);
     }
 
     const format_arg_type& get(size_type i) const override
@@ -1024,8 +1038,6 @@ private:
     vector_type m_indexed_args;
     map_type m_named_args;
 };
-
-using mutable_format_args = basic_mutable_format_args<format_context, char>;
 
 // Type-erased format arguments.
 template <typename Context, typename CharT = typename Context::char_type>
@@ -1123,6 +1135,71 @@ auto make_wformat_args(Args&&... args)
     return result_type(std::forward<Args>(args)...);
 }
 
+namespace detail
+{
+    // clang-format off
+
+    template <typename T, typename CharT>
+    concept streamable =
+        requires(std::basic_ostream<CharT>& os, T&& val)
+        {
+            { os << val } -> std::convertible_to<std::basic_ostream<CharT>&>;
+        };
+
+    // clang-format on
+
+    template <typename T, typename CharT>
+    requires streamable<T, CharT>
+    class streamable_formatter
+    {
+    public:
+        template <typename ParseContext>
+        auto parse(ParseContext& ctx)
+        {
+            auto it = ctx.begin();
+            if(*it == U'L')
+            {
+                m_use_locale = true;
+                ++it;
+            }
+
+            return it;
+        }
+
+        template <typename Context>
+        auto format(const T& val, Context& ctx) const
+        {
+            basic_oiterstream<CharT, typename Context::iterator> os(ctx.out());
+
+            if(m_use_locale)
+                os.imbue(ctx.getloc());
+
+            os << val;
+
+            return os.get();
+        }
+
+    private:
+        bool m_use_locale = false;
+    };
+
+    template <typename T, typename CharT>
+    struct select_formatter
+    {
+        using type = formatter<T, CharT>;
+    };
+
+    template <typename T, typename CharT>
+    requires(!std::semiregular<formatter<T, CharT>> && streamable<T, CharT>)
+    struct select_formatter<T, CharT>
+    {
+        using type = streamable_formatter<T, CharT>;
+    };
+
+    template <typename T, typename CharT>
+    using select_formatter_t = typename select_formatter<T, CharT>::type;
+} // namespace detail
+
 template <typename OutputIt, typename CharT>
 class basic_format_context
 {
@@ -1130,6 +1207,9 @@ public:
     using char_type = CharT;
     using iterator = OutputIt;
     using format_args_type = dynamic_format_args<basic_format_context, char_type>;
+
+    template <typename T>
+    using formatter_type = detail::select_formatter_t<T, char_type>;
 
     basic_format_context(iterator it, format_args_type args)
         : m_out(std::move(it)), m_args(args), m_loc(nullptr) {}
@@ -1240,11 +1320,6 @@ public:
     }
 };
 
-template <typename T, typename CharT = char>
-concept formattable = requires() {
-    PAPILIO_NS formatter<T, CharT>();
-} && std::semiregular<formatter<T, CharT>>;
-
 template <typename FormatContext>
 class basic_format_parse_context
 {
@@ -1351,6 +1426,36 @@ private:
 
 using format_parse_context = basic_format_parse_context<format_context>;
 using wformat_parse_context = basic_format_parse_context<wformat_context>;
+
+using mutable_format_args = basic_mutable_format_args<format_context>;
+using wmutable_format_args = basic_mutable_format_args<wformat_context>;
+
+namespace detail
+{
+    // clang-format off
+
+    template <typename T, typename Context, typename Formatter = Context::template formatter_type<std::remove_const_t<T>>>
+    concept formattable_with_impl =
+        std::semiregular<Formatter> &&
+        requires(Formatter& f, const Formatter& cf, T&& val, Context fmt_ctx, basic_format_parse_context<Context> parse_ctx)
+        {
+            { f.parse(parse_ctx) } -> std::same_as<typename decltype(parse_ctx)::iterator>;
+            { cf.format(val, fmt_ctx) } -> std::same_as<typename Context::iterator>;
+        };
+
+    // clang-format on
+} // namespace detail
+
+template <typename T, typename Context>
+concept formattable_with = detail::formattable_with_impl<
+    std::remove_const_t<T>,
+    Context>;
+
+template <typename T, typename CharT = char>
+concept formattable = formattable_with<
+    std::remove_const_t<T>,
+    basic_format_context<detail::fmt_iter_for<CharT>, CharT>>;
+
 } // namespace papilio
 
 #ifdef PAPILIO_COMPILER_MSVC

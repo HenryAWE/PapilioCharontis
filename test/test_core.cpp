@@ -208,7 +208,7 @@ TEST(format_args, mutable)
         EXPECT_EQ(args.indexed_size(), 0);
         EXPECT_EQ(args.named_size(), 0);
 
-        args.push('a', 'b', "c"_a = 'c', "d"_a = 'd');
+        args.push_tuple('a', 'b', "c"_a = 'c', "d"_a = 'd');
 
         EXPECT_EQ(args.indexed_size(), 2);
         EXPECT_EQ(args.named_size(), 2);
@@ -331,7 +331,7 @@ TEST(format_parse_context, char)
 
     {
         mutable_format_args args;
-        args.push(0, 1, 2);
+        args.push_tuple(0, 1, 2);
         args.push("value"_a = 0);
 
         utf::string_ref sr = "{}";
@@ -356,7 +356,7 @@ TEST(format_parse_context, char)
 
     {
         mutable_format_args args;
-        args.push(0, 1, 2);
+        args.push_tuple(0, 1, 2);
         args.push("value"_a = 0);
 
         format_parse_context ctx("{0} {}", args);
