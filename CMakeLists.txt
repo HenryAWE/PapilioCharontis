@@ -17,7 +17,7 @@ project(
     LANGUAGES C CXX
 )
 
-set(glob_expr "src/*.cpp")
+set(glob_expr "src/*.cpp" "include/*.hpp")
 if(${papilio_build_module})
     list(APPEND glob_expr "src/*.cppm")
 endif()
