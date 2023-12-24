@@ -5,14 +5,165 @@
 
 namespace papilio
 {
-namespace detail
+struct std_formatter_data
 {
-    inline bool is_align_ch(char32_t ch) noexcept
+    using size_type = std::size_t;
+
+    size_type width = 0;
+    size_type precision = 0;
+    utf::codepoint fill = utf::codepoint();
+    char32_t type = U'\0';
+    format_align align = format_align::default_align;
+    format_sign sign = format_sign::default_sign;
+    bool fill_zero = false;
+    bool alternate_form = false;
+
+    [[nodiscard]]
+    constexpr bool contains_type(std::u32string_view types) const noexcept
+    {
+        if(type == U'\0')
+            return true;
+        return types.find(type) != types.npos;
+    }
+
+    constexpr void check_type(std::u32string_view types) const
+    {
+        if(!contains_type(types))
+        {
+            throw invalid_format("invalid format type");
+        }
+    }
+
+    [[nodiscard]]
+    constexpr char32_t type_or(char32_t val) const noexcept
+    {
+        return type == U'\0' ? val : type;
+    }
+
+    [[nodiscard]]
+    constexpr utf::codepoint fill_or(utf::codepoint val) const noexcept
+    {
+        return fill ? fill : val;
+    }
+};
+
+template <typename ParseContext, bool EnablePrecision = false>
+class std_formatter_parser
+{
+public:
+    using char_type = typename ParseContext::char_type;
+    using iterator = typename ParseContext::iterator;
+
+    using result_type = std_formatter_data;
+    using interpreter_type = script::interpreter<typename ParseContext::format_context_type>;
+
+    std::pair<result_type, iterator> parse(ParseContext& ctx, std::u32string_view types)
+    {
+        std_formatter_data result;
+
+        iterator start = ctx.begin();
+        const iterator stop = ctx.end();
+
+        if(start == stop)
+            goto parse_end;
+        if(*start == U'}')
+            goto parse_end;
+
+        if(iterator next = start + 1; next != stop)
+        {
+            if(char32_t ch = *next; is_align_ch(ch))
+            {
+                result.fill = *start;
+                result.align = get_align(ch);
+                ++next;
+                start = next;
+            }
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(char32_t ch = *start; is_align_ch(ch))
+        {
+            result.align = get_align(ch);
+            ++start;
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(char32_t ch = *start; is_sign_ch(ch))
+        {
+            result.sign = get_sign(ch);
+            ++start;
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(*start == U'#')
+        {
+            result.alternate_form = true;
+            ++start;
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(*start == U'0')
+        {
+            result.fill_zero = true;
+            ++start;
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(char32_t ch = *start; utf::is_digit(ch))
+        {
+            if(ch == U'0')
+                throw invalid_format("invalid format");
+
+            ctx.advance_to(start);
+            std::tie(result.width, start) = parse_value<false>(ctx);
+        }
+        else if(ch == U'{')
+        {
+            ctx.advance_to(start);
+            std::tie(result.width, start) = parse_value<false>(ctx);
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(*start == U'.')
+        {
+            ++start;
+            if(start == stop)
+                throw invalid_format("invalid precision");
+
+            ctx.advance_to(start);
+            std::tie(result.precision, start) = parse_value<true>(ctx);
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(char32_t ch = *start; types.find(ch) != types.npos)
+        {
+            result.type = ch;
+            ++start;
+        }
+        else
+        {
+            throw invalid_format("invalid format");
+        }
+
+parse_end:
+        ctx.advance_to(start);
+        return std::make_pair(std::move(result), std::move(start));
+    }
+
+private:
+    static bool is_align_ch(char32_t ch) noexcept
     {
         return ch == U'<' || ch == U'>' || ch == U'^';
     }
 
-    inline format_align get_align(char32_t ch) noexcept
+    static format_align get_align(char32_t ch) noexcept
     {
         PAPILIO_ASSERT(is_align_ch(ch));
 
@@ -26,12 +177,12 @@ namespace detail
         }
     }
 
-    inline bool is_sign_ch(char32_t ch) noexcept
+    static bool is_sign_ch(char32_t ch) noexcept
     {
         return ch == U'+' || ch == U' ' || ch == U'-';
     }
 
-    inline format_sign get_sign(char32_t ch) noexcept
+    static format_sign get_sign(char32_t ch) noexcept
     {
         PAPILIO_ASSERT(is_sign_ch(ch));
 
@@ -45,426 +196,434 @@ namespace detail
         }
     }
 
-    template <typename ParseContext, bool EnablePrecision = false>
-    class std_fmt_parser
+    static bool is_spec_ch(char32_t ch, std::u32string_view types) noexcept
     {
-    public:
-        using char_type = typename ParseContext::char_type;
-        using iterator = typename ParseContext::iterator;
+        return is_sign_ch(ch) ||
+               is_align_ch(ch) ||
+               utf::is_digit(ch) ||
+               ch == U'{' ||
+               ch == U'.' ||
+               ch == U'#' ||
+               ch == U'L' ||
+               types.find(ch) != types.npos;
+    }
 
-        using interpreter_type = script::interpreter<typename ParseContext::format_context_type>;
+    static bool check_stop(iterator start, iterator stop) noexcept
+    {
+        return start == stop || *start == U'}';
+    }
 
-        iterator parse(ParseContext& ctx, std::u32string_view types)
+    // parse width or precision
+    template <bool IsPrecision>
+    static std::pair<std::size_t, iterator> parse_value(ParseContext& ctx)
+    {
+        iterator start = ctx.begin();
+        const iterator stop = ctx.end();
+        PAPILIO_ASSERT(start != stop);
+
+        char32_t first_ch = *start;
+
+        if(!IsPrecision)
         {
-            iterator start = ctx.begin();
-            const iterator stop = ctx.end();
-            if(start == stop)
-                return start;
-            if(*start == U'}')
-                return start;
-
-            if(iterator next = start + 1; next != stop)
-            {
-                if(char32_t ch = *next; is_align_ch(ch))
-                {
-                    m_fill_ch = *start;
-                    m_align = get_align(ch);
-                    ++next;
-                    start = next;
-                }
-            }
-
-            if(check_stop(start, stop))
-                goto parse_end;
-            if(char32_t ch = *start; is_align_ch(ch))
-            {
-                m_align = get_align(ch);
-                ++start;
-            }
-
-            if(check_stop(start, stop))
-                goto parse_end;
-            if(char32_t ch = *start; is_sign_ch(ch))
-            {
-                m_sign = get_sign(ch);
-                ++start;
-            }
-
-            if(check_stop(start, stop))
-                goto parse_end;
-            if(*start == U'#')
-            {
-                m_alt_form = true;
-                ++start;
-            }
-
-            if(check_stop(start, stop))
-                goto parse_end;
-            if(*start == U'0')
-            {
-                m_fill_zero = true;
-                ++start;
-            }
-
-            if(check_stop(start, stop))
-                goto parse_end;
-            if(char32_t ch = *start; utf::is_digit(ch))
-            {
-                if(ch == U'0')
-                    throw invalid_format("invalid format");
-
-                ctx.advance_to(start);
-                std::tie(m_width, start) = parse_value<false>(ctx);
-            }
-
-            if(check_stop(start, stop))
-                goto parse_end;
-            if(*start == U'.')
-            {
-                ++start;
-                if(start == stop)
-                    throw invalid_format("invalid precision");
-
-                ctx.advance_to(start);
-                std::tie(m_precision, start) = parse_value<true>(ctx);
-            }
-
-            if(check_stop(start, stop))
-                goto parse_end;
-            if(char32_t ch = *start; types.find(ch) != types.npos)
-            {
-                m_type = ch;
-            }
-            else
+            if(first_ch == U'0')
             {
                 throw invalid_format("invalid format");
             }
+        }
 
-parse_end:
+        if(first_ch == U'{')
+        {
+            ++start;
+
+            interpreter_type intp;
             ctx.advance_to(start);
-            return start;
+            auto [arg, next_it] = intp.access(ctx);
+
+            if(next_it == stop || *next_it != U'}')
+            {
+                throw invalid_format("invalid format");
+            }
+            ++next_it;
+
+            auto var = script::variable(arg.to_variant());
+            if(!var.holds_int())
+                throw invalid_format("invalid type");
+            ssize_t val = var.as<ssize_t>();
+            if constexpr(IsPrecision)
+            {
+                if(val < 0)
+                    throw invalid_format("invalid format");
+            }
+            else
+            {
+                if(val <= 0)
+                    throw invalid_format("invalid format");
+            }
+
+            return std::make_pair(val, next_it);
+        }
+        else if(utf::is_digit(first_ch))
+        {
+            ++start;
+            std::size_t val = first_ch - U'0';
+
+            while(start != stop)
+            {
+                char32_t ch = *start;
+                if(!utf::is_digit(ch))
+                    break;
+                val *= 10;
+                val += ch - U'0';
+
+                ++start;
+            }
+
+            PAPILIO_ASSERT(IsPrecision || val != 0);
+
+            return std::make_pair(val, start);
         }
 
-        [[nodiscard]]
-        std::size_t width() const noexcept
+        throw invalid_format("invalid format");
+    }
+};
+
+namespace detail
+{
+    class std_formatter_base
+    {
+    protected:
+        std_formatter_data m_data;
+
+        std::pair<std::size_t, std::size_t> calc_fill(std::size_t used) const noexcept
         {
-            return m_width;
+            std::size_t n = m_data.width > used ? m_data.width - used : 0;
+
+            switch(m_data.align)
+            {
+            default:
+            case format_align::default_align:
+            case format_align::right:
+                return std::make_pair(n, 0);
+
+            case format_align::left:
+                return std::make_pair(0, n);
+
+            case format_align::middle:
+                return std::make_pair(n / 2, n / 2 + n % 2);
+            }
         }
 
-        [[nodiscard]]
-        std::size_t precision() const noexcept
+        template <typename FormatContext>
+        void fill(FormatContext& ctx, std::size_t count) const
         {
-            return m_precision;
+            using context_t = format_context_traits<FormatContext>;
+
+            PAPILIO_ASSERT(m_data.fill != U'\0');
+            context_t::append(ctx, utf::codepoint(m_data.fill), count);
+        }
+    };
+
+    template <std::integral T, typename CharT>
+    class int_formatter : public std_formatter_base
+    {
+    public:
+        constexpr void set_data(const std_formatter_data& data) noexcept
+        {
+            PAPILIO_ASSERT(data.contains_type(U"BbXxod"));
+
+            m_data = data;
+            m_data.fill = data.fill_or(U' ');
+            m_data.type = data.type_or(U'd');
+            if(m_data.align != format_align::default_align)
+                m_data.fill_zero = false;
         }
 
-        [[nodiscard]]
-        format_align align() const noexcept
+        template <typename FormatContext>
+        auto format(T val, FormatContext& ctx) const -> typename FormatContext::iterator
         {
-            return m_align;
-        }
+            CharT buf[sizeof(T) * 8];
+            std::size_t buf_size = 0;
 
-        [[nodiscard]]
-        format_sign sign() const noexcept
-        {
-            return m_sign;
-        }
+            auto [base, uppercase] = apply_type_ch(m_data.type);
 
-        [[nodiscard]]
-        bool alternate_form() const noexcept
-        {
-            return m_alt_form;
-        }
+            // clang-format off
 
-        [[nodiscard]]
-        bool fill_zero() const noexcept
-        {
-            return m_fill_zero;
-        }
+            const CharT digits[16] = {
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                static_cast<CharT>(uppercase ? 'A' : 'a'),
+                static_cast<CharT>(uppercase ? 'B' : 'b'),
+                static_cast<CharT>(uppercase ? 'C' : 'c'),
+                static_cast<CharT>(uppercase ? 'D' : 'd'),
+                static_cast<CharT>(uppercase ? 'E' : 'e'),
+                static_cast<CharT>(uppercase ? 'F' : 'f')
+            };
 
-        [[nodiscard]]
-        char32_t type_or(char32_t val) const noexcept
-        {
-            return m_type == U'\0' ? val : m_type;
-        }
+            // clang-format on
 
-        [[nodiscard]]
-        utf::codepoint fill_or(utf::codepoint val) const noexcept
-        {
-            return m_fill_ch ? m_fill_ch : val;
+            const bool neg = val < 0;
+            if constexpr(std::is_signed_v<T>)
+            {
+                if(neg)
+                    val = -val;
+            }
+
+            do
+            {
+                const T digit = val % base;
+                buf[buf_size++] = digits[digit];
+                val /= base;
+            } while(val);
+
+            using context_t = format_context_traits<FormatContext>;
+
+            std::size_t used = buf_size;
+            if(m_data.alternate_form)
+                used += alt_prefix_size(base);
+            switch(m_data.sign)
+            {
+            case format_sign::negative:
+            case format_sign::default_sign:
+                if(neg)
+                    ++used;
+                break;
+
+            case format_sign::positive:
+            case format_sign::space:
+                ++used;
+                break;
+
+            default:
+                PAPILIO_UNREACHABLE();
+            }
+
+            auto [left, right] = m_data.fill_zero ?
+                                     std::make_pair<std::size_t, std::size_t>(0, 0) :
+                                     calc_fill(used);
+
+            fill(ctx, left);
+
+            switch(m_data.sign)
+            {
+            case format_sign::negative:
+            case format_sign::default_sign:
+                if(neg)
+                    context_t::append(ctx, static_cast<CharT>('-'));
+                break;
+
+            case format_sign::positive:
+                context_t::append(ctx, static_cast<CharT>(neg ? '-' : '+'));
+                break;
+
+            case format_sign::space:
+                context_t::append(ctx, static_cast<CharT>(neg ? '-' : ' '));
+                break;
+
+            default:
+                PAPILIO_UNREACHABLE();
+            }
+
+            if(m_data.alternate_form && base != 10)
+            {
+                context_t::append(ctx, '0');
+                switch(base)
+                {
+                case 16:
+                    context_t::append(ctx, uppercase ? 'X' : 'x');
+                    break;
+
+                case 2:
+                    context_t::append(ctx, uppercase ? 'B' : 'b');
+                }
+            }
+
+            if(m_data.fill_zero)
+            {
+                if(used < m_data.width)
+                {
+                    context_t::append(ctx, static_cast<CharT>('0'), m_data.width - used);
+                }
+            }
+
+            for(std::size_t i = buf_size; i > 0; --i)
+                context_t::append(ctx, buf[i - 1]);
+
+            fill(ctx, right);
+
+            return context_t::out(ctx);
         }
 
     private:
-        std::size_t m_width = 0;
-        std::size_t m_precision = 6;
-        utf::codepoint m_fill_ch = utf::codepoint();
-        format_align m_align = format_align::default_align;
-        format_sign m_sign = format_sign::default_sign;
-        bool m_alt_form = false;
-        bool m_fill_zero = false;
-        char32_t m_type = U'\0';
-
-        static bool is_spec_ch(char32_t ch, std::u32string_view types) noexcept
+        static std::pair<int, bool> apply_type_ch(char32_t ch) noexcept
         {
-            return is_sign_ch(ch) ||
-                   is_align_ch(ch) ||
-                   utf::is_digit(ch) ||
-                   ch == U'{' ||
-                   ch == U'.' ||
-                   ch == U'#' ||
-                   ch == U'L';
+            int base = 10;
+            bool uppercase = false;
+
+            switch(ch)
+            {
+            case U'X':
+                uppercase = true;
+                [[fallthrough]];
+            case U'x':
+                base = 16;
+                break;
+
+            case U'B':
+                uppercase = true;
+                [[fallthrough]];
+            case U'b':
+                base = 2;
+                break;
+
+            case U'O':
+                uppercase = true;
+                [[fallthrough]];
+            case U'o':
+                base = 8;
+                break;
+
+            case U'D':
+                uppercase = true;
+                [[fallthrough]];
+            case U'd':
+                // base is already 10
+                break;
+
+            default:
+                PAPILIO_UNREACHABLE();
+            }
+
+            return std::make_pair(base, uppercase);
         }
 
-        static bool check_stop(iterator start, iterator stop) noexcept
+        static std::size_t alt_prefix_size(int base) noexcept
         {
-            return start == stop || *start == U'}';
+            switch(base)
+            {
+            default:
+                PAPILIO_ASSERT(base != 10);
+                return 0;
+
+            case 2:
+            case 16:
+                return 2;
+
+            case 8:
+                return 1;
+            }
+        }
+    };
+
+    class codepoint_formatter : public std_formatter_base
+    {
+    public:
+        void set_data(const std_formatter_data& data)
+        {
+            PAPILIO_ASSERT(data.contains_type(U"c"));
+
+            m_data = data;
+            m_data.type = data.type_or(U'c');
+            m_data.fill = data.fill_or(U' ');
         }
 
-        // parse width or precision
-        template <bool IsPrecision>
-        static std::pair<std::size_t, iterator> parse_value(ParseContext& ctx)
+        template <typename FormatContext>
+        auto format(utf::codepoint cp, FormatContext& ctx)
         {
-            iterator start = ctx.begin();
-            const iterator stop = ctx.end();
-            PAPILIO_ASSERT(start != stop);
+            using context_t = format_context_traits<FormatContext>;
 
-            char32_t first_ch = *start;
+            auto [left, right] = calc_fill(cp.estimate_width());
 
-            if(!IsPrecision)
-            {
-                if(first_ch == U'0')
-                {
-                    throw invalid_format("invalid format");
-                }
-            }
+            fill(ctx, left);
+            context_t::append(ctx, cp);
+            fill(ctx, right);
 
-            if(first_ch == U'{')
-            {
-                ++start;
-
-                interpreter_type intp;
-                ctx.advance_to(start);
-                auto [arg, next_it] = intp.access(ctx);
-
-                if(next_it == stop || *next_it != U'}')
-                {
-                    throw invalid_format("invalid format");
-                }
-                ++next_it;
-
-                auto var = script::variable(arg.to_variant());
-                if(!var.holds_int())
-                    throw invalid_format("invalid type");
-                ssize_t val = var.as<ssize_t>();
-                if constexpr(IsPrecision)
-                {
-                    if(val < 0)
-                        throw invalid_format("invalid format");
-                }
-                else
-                {
-                    if(val <= 0)
-                        throw invalid_format("invalid format");
-                }
-
-                return std::make_pair(val, next_it);
-            }
-            else if(utf::is_digit(first_ch))
-            {
-                ++start;
-                std::size_t val = first_ch - U'0';
-
-                while(start != stop)
-                {
-                    char32_t ch = *start;
-                    if(!utf::is_digit(ch))
-                        break;
-                    val *= 10;
-                    val += ch - U'0';
-
-                    ++start;
-                }
-
-                PAPILIO_ASSERT(IsPrecision || val != 0);
-
-                return std::make_pair(val, start);
-            }
-
-            throw invalid_format("invalid format");
+            return context_t::out(ctx);
         }
     };
 } // namespace detail
 
 template <std::integral T, typename CharT>
-requires(!std::is_same_v<T, bool>)
+requires(!std::is_same_v<T, bool> && !char_like<T>)
 class formatter<T, CharT>
 {
-    static std::pair<int, bool> apply_type_ch(char32_t ch) noexcept
-    {
-        int base = 10;
-        bool uppercase = false;
-
-        switch(ch)
-        {
-        case U'X':
-            uppercase = true;
-            [[fallthrough]];
-        case U'x':
-            base = 16;
-            break;
-
-        case U'B':
-            uppercase = true;
-            [[fallthrough]];
-        case U'b':
-            base = 2;
-            break;
-
-        case U'O':
-            uppercase = true;
-            [[fallthrough]];
-        case U'o':
-            base = 8;
-            break;
-
-        case U'D':
-            uppercase = true;
-            [[fallthrough]];
-        case U'd':
-            // base is already 10
-            break;
-
-        default:
-            PAPILIO_UNREACHABLE();
-        }
-
-        return std::make_pair(base, uppercase);
-    }
-
-    std::pair<std::size_t, std::size_t> calc_fill(std::size_t used) const noexcept
-    {
-        std::size_t n = m_width > used ? m_width - used : 0;
-
-        switch(m_align)
-        {
-        default:
-        case format_align::default_align:
-        case format_align::right:
-            return std::make_pair(n, 0);
-
-        case format_align::left:
-            return std::make_pair(0, n);
-
-        case format_align::middle:
-            return std::make_pair(n / 2, n / 2 + n % 2);
-        }
-    }
-
-    static std::size_t alt_prefix_size(int base) noexcept
-    {
-        switch(base)
-        {
-        default:
-            return 0;
-
-        case 2:
-        case 16:
-            return 2;
-
-        case 8:
-            return 1;
-        }
-    }
-
-
 public:
     template <typename ParseContext>
     auto parse(ParseContext& ctx) -> typename ParseContext::iterator
     {
         using namespace std::literals;
 
-        detail::std_fmt_parser<ParseContext, false> parser;
-        ctx.advance_to(parser.parse(ctx, U"XxBbodc"sv));
+        using parser_t = std_formatter_parser<ParseContext, false>;
 
-        m_fill_ch = parser.fill_or(U' ');
-        m_align = parser.align();
-        m_sign = parser.sign();
-        m_fill_zero = parser.fill_zero();
-        m_alt_form = parser.alternate_form();
-        m_type = static_cast<char>(parser.type_or('d'));
-        m_width = parser.width();
+        parser_t parser;
 
-        return ctx.begin();
+        typename ParseContext::iterator it;
+        std::tie(m_data, it) = parser.parse(ctx, U"XxBbodc"sv);
+
+        ctx.advance_to(it);
+        return it;
     }
 
     template <typename FormatContext>
-    FormatContext::iterator format(T val, FormatContext& ctx) const
+    auto format(T val, FormatContext& ctx) const -> typename FormatContext::iterator
     {
-        CharT buf[sizeof(T) * 8];
-        std::size_t buf_size = 0;
-
-        auto [base, uppercase] = apply_type_ch(m_type);
-
-        // clang-format off
-
-        const CharT digits[16] = {
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            static_cast<CharT>(uppercase ? 'A' : 'a'),
-            static_cast<CharT>(uppercase ? 'B' : 'b'),
-            static_cast<CharT>(uppercase ? 'C' : 'c'),
-            static_cast<CharT>(uppercase ? 'D' : 'd'),
-            static_cast<CharT>(uppercase ? 'E' : 'e'),
-            static_cast<CharT>(uppercase ? 'F' : 'f')
-        };
-
-        // clang-format on
-
-        do
+        if(m_data.type == U'c')
         {
-            const T digit = val % base;
-            buf[buf_size++] = digits[digit];
-            val /= base;
-        } while(val);
+            if(std::cmp_greater(val, std::numeric_limits<std::uint32_t>::max()))
+                throw invalid_format("integer value out of range");
 
-        using context_t = format_context_traits<FormatContext>;
-
-        std::size_t used = buf_size;
-        if(m_alt_form)
-            used += alt_prefix_size(base);
-
-        auto [left, right] = calc_fill(used);
-
-        context_t::append(ctx, utf::codepoint(m_fill_ch), left);
-
-        if(m_alt_form && base != 10)
-        {
-            context_t::append(ctx, '0');
-            switch(base)
-            {
-            case 16:
-                context_t::append(ctx, uppercase ? 'X' : 'x');
-                break;
-
-            case 2:
-                context_t::append(ctx, uppercase ? 'B' : 'b');
-            }
+            detail::codepoint_formatter fmt;
+            fmt.set_data(m_data);
+            return fmt.format(static_cast<char32_t>(val), ctx);
         }
-
-        for(std::size_t i = buf_size; i > 0; --i)
-            context_t::append(ctx, buf[i - 1]);
-
-        context_t::append(ctx, utf::codepoint(m_fill_ch), right);
-
-        return context_t::out(ctx);
+        else
+        {
+            detail::int_formatter<T, CharT> fmt;
+            fmt.set_data(m_data);
+            return fmt.format(val, ctx);
+        }
     }
 
 private:
-    std::size_t m_width = 0;
-    format_align m_align = format_align::default_align;
-    format_sign m_sign = format_sign::default_sign;
-    bool m_alt_form = false;
-    bool m_fill_zero = false;
-    bool m_use_loc = false;
-    char m_type = 'd';
-    char32_t m_fill_ch = U' ';
+    std_formatter_data m_data;
+};
+
+template <typename CharT>
+class formatter<utf::codepoint, CharT>
+{
+public:
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx) -> typename ParseContext::iterator
+    {
+        using namespace std::literals;
+
+        using parser_t = std_formatter_parser<ParseContext, false>;
+
+        parser_t parser;
+
+        typename ParseContext::iterator it;
+        std::tie(m_data, it) = parser.parse(ctx, U"XxBbodc"sv);
+
+        ctx.advance_to(it);
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(utf::codepoint cp, FormatContext& ctx) const -> typename FormatContext::iterator
+    {
+        if(!m_data.contains_type(U"c"))
+        {
+            detail::int_formatter<std::uint32_t, CharT> fmt;
+            fmt.set_data(m_data);
+            return fmt.format(static_cast<char32_t>(cp), ctx);
+        }
+        else
+        {
+            detail::codepoint_formatter fmt;
+            fmt.set_data(m_data);
+            return fmt.format(cp, ctx);
+        }
+    }
+
+private:
+    std_formatter_data m_data;
 };
 } // namespace papilio

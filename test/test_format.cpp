@@ -3,6 +3,69 @@
 #include <vector>
 #include <iostream>
 
+namespace test_format
+{
+template <std::integral T>
+void test_int_formatter()
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{}", T(0)), "0");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", T(0)), L"0");
+
+    EXPECT_EQ(PAPILIO_NS format("{:6}", T(42)), "    42");
+    EXPECT_EQ(PAPILIO_NS format(L"{:6}", T(42)), L"    42");
+
+    EXPECT_EQ(PAPILIO_NS format("{0:},{0:+},{0:-},{0: }", T(1)), "1,+1,1, 1");
+    EXPECT_EQ(PAPILIO_NS format(L"{0:},{0:+},{0:-},{0: }", T(1)), L"1,+1,1, 1");
+    if constexpr(std::is_signed_v<T>)
+    {
+        EXPECT_EQ(PAPILIO_NS format("{0:},{0:+},{0:-},{0: }", T(-1)), "-1,-1,-1,-1");
+        EXPECT_EQ(PAPILIO_NS format(L"{0:},{0:+},{0:-},{0: }", T(-1)), L"-1,-1,-1,-1");
+    }
+
+    EXPECT_EQ(PAPILIO_NS format("{:+06d}", T(42)), "+00042");
+    EXPECT_EQ(PAPILIO_NS format(L"{:+06d}", T(42)), L"+00042");
+    EXPECT_EQ(PAPILIO_NS format("{:#06x}", T(0xa)), "0x000a");
+    EXPECT_EQ(PAPILIO_NS format(L"{:#06x}", T(0xa)), L"0x000a");
+    if constexpr(std::is_signed_v<T>)
+    {
+        EXPECT_EQ(PAPILIO_NS format("{:<06}", T(-42)), "-42   ");
+        EXPECT_EQ(PAPILIO_NS format(L"{:<06}", T(-42)), L"-42   ");
+    }
+
+    EXPECT_EQ(PAPILIO_NS format("{:{}d}", T(42), 4), "  42");
+    EXPECT_EQ(PAPILIO_NS format(L"{:{}d}", T(42), 4), L"  42");
+
+    EXPECT_EQ(PAPILIO_NS format("{:d>6}", T(42)), "dddd42");
+    EXPECT_EQ(PAPILIO_NS format(L"{:d>6}", T(42)), L"dddd42");
+
+    EXPECT_EQ(PAPILIO_NS format("{:^5c}", T(97)), "  a  ");
+    EXPECT_EQ(PAPILIO_NS format(L"{:^5c}", T(97)), L"  a  ");
+}
+} // namespace test_format
+
+TEST(formatter, int)
+{
+    using test_format::test_int_formatter;
+
+    test_int_formatter<int>();
+    test_int_formatter<unsigned int>();
+    test_int_formatter<long long int>();
+    test_int_formatter<unsigned long long int>();
+}
+
+TEST(formatter, codepoint)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{}", 'a'), "a");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", 'a'), L"a");
+
+    EXPECT_EQ(PAPILIO_NS format("{:d}", 'a'), "97");
+    EXPECT_EQ(PAPILIO_NS format(L"{:d}", 'a'), L"97");
+}
+
 TEST(format, plain_text)
 {
     using namespace papilio;
