@@ -25,4 +25,12 @@ std::wstring vformat(std::wstring_view fmt, const dynamic_format_args<wformat_co
 
     return result;
 }
+
+std::wstring vformat(const std::locale& loc, std::wstring_view fmt, const dynamic_format_args<wformat_context>& args)
+{
+    std::wstring result;
+    PAPILIO_NS vformat_to(std::back_inserter(result), loc, fmt, args);
+
+    return result;
+}
 }

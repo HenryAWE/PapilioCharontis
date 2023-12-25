@@ -3,6 +3,8 @@
 #include <concepts>
 #include <utility>
 #include <limits>
+#include <charconv>
+#include <cmath>
 #include "../core.hpp"
 
 namespace papilio
@@ -19,6 +21,7 @@ struct std_formatter_data
     format_sign sign = format_sign::default_sign;
     bool fill_zero = false;
     bool alternate_form = false;
+    bool use_locale = false;
 
     [[nodiscard]]
     constexpr bool contains_type(std::u32string_view types) const noexcept
@@ -140,6 +143,14 @@ public:
 
             ctx.advance_to(start);
             std::tie(result.precision, start) = parse_value<true>(ctx);
+        }
+
+        if(check_stop(start, stop))
+            goto parse_end;
+        if(*start == U'L')
+        {
+            result.use_locale = true;
+            ++start;
         }
 
         if(check_stop(start, stop))
@@ -515,6 +526,198 @@ namespace detail
         }
     };
 
+    template <std::floating_point T, typename CharT>
+    class float_formatter : public std_formatter_base
+    {
+    public:
+        void set_data(const std_formatter_data& data)
+        {
+            PAPILIO_ASSERT(data.contains_type(U"fFgGeEaA"));
+
+            m_data = data;
+            m_data.fill = data.fill_or(U' ');
+            if(m_data.align == format_align::default_align)
+                m_data.align = format_align::right;
+        }
+
+        template <typename FormatContext>
+        auto format(T val, FormatContext& ctx) const
+        {
+            using context_t = format_context_traits<FormatContext>;
+
+            CharT buf[buf_size];
+
+            std::size_t fp_size = 0;
+
+            bool neg = std::signbit(val);
+            val = std::abs(val);
+
+            if(std::isinf(val)) [[unlikely]]
+            {
+                buf[0] = static_cast<CharT>('i');
+                buf[1] = static_cast<CharT>('n');
+                buf[2] = static_cast<CharT>('f');
+                fp_size = 3;
+            }
+            else if(std::isnan(val)) [[unlikely]]
+            {
+                buf[0] = static_cast<CharT>('n');
+                buf[1] = static_cast<CharT>('a');
+                buf[2] = static_cast<CharT>('n');
+                fp_size = 3;
+            }
+            else [[likely]]
+            {
+                fp_size = conv<CharT>(buf, val);
+            }
+
+            std::size_t used = fp_size;
+
+            switch(m_data.sign)
+            {
+            case format_sign::default_sign:
+            case format_sign::negative:
+                if(neg)
+                    ++used;
+                break;
+
+            case format_sign::positive:
+            case format_sign::space:
+                ++used;
+                break;
+
+            default:
+                PAPILIO_UNREACHABLE();
+            }
+
+            auto [left, right] = calc_fill(used);
+
+            fill(ctx, left);
+
+            switch(m_data.sign)
+            {
+            case format_sign::default_sign:
+            case format_sign::negative:
+                if(neg)
+                    context_t::append(ctx, static_cast<CharT>('-'));
+                break;
+
+            case format_sign::positive:
+                context_t::append(ctx, static_cast<CharT>(neg ? '-' : '+'));
+                break;
+
+            case format_sign::space:
+                context_t::append(ctx, static_cast<CharT>(neg ? '-' : ' '));
+                break;
+            }
+
+            context_t::append(ctx, buf, buf + fp_size);
+
+            fill(ctx, right);
+
+            return context_t::out(ctx);
+        }
+
+    private:
+        static constexpr std::size_t buf_size = 32;
+
+        std::pair<std::chars_format, bool> get_chars_fmt() const
+        {
+            std::chars_format ch_fmt;
+            bool uppercase = false;
+
+            switch(m_data.type)
+            {
+            case U'G':
+                uppercase = true;
+                [[fallthrough]];
+            case U'\0':
+            case U'g':
+                ch_fmt = std::chars_format::general;
+                break;
+
+            case 'F':
+            case 'f':
+                ch_fmt = std::chars_format::fixed;
+                break;
+
+            case 'A':
+                uppercase = true;
+                [[fallthrough]];
+            case 'a':
+                ch_fmt = std::chars_format::hex;
+                break;
+
+            case 'E':
+                uppercase = true;
+                [[fallthrough]];
+            case 'e':
+                ch_fmt = std::chars_format::scientific;
+                break;
+            }
+
+            return std::make_pair(ch_fmt, uppercase);
+        }
+
+        template <char8_like U>
+        std::size_t conv(std::span<U, buf_size> buf, T val) const
+        {
+            using namespace std::literals;
+
+            std::to_chars_result result;
+            auto [ch_fmt, uppercase] = get_chars_fmt();
+
+            std::size_t precision = m_data.precision;
+            if(precision == 0 &&
+               U"fFeEgG"sv.find(m_data.type) != std::u32string::npos)
+            {
+                precision = 6;
+            }
+
+            char* start = std::bit_cast<char*>(std::to_address(buf.begin()));
+            char* stop = std::bit_cast<char*>(std::to_address(buf.end()));
+
+            if(precision == 0)
+                result = std::to_chars(start, stop, val, ch_fmt);
+            else
+                result = std::to_chars(start, stop, val, ch_fmt, precision);
+
+            if(result.ec == std::errc::value_too_large) [[unlikely]]
+            {
+                throw invalid_format("value too large");
+            }
+            else if(result.ec != std::errc())
+            {
+                PAPILIO_UNREACHABLE();
+            }
+
+            std::size_t size = result.ptr - buf.data();
+
+            if(uppercase)
+            {
+                for(std::size_t i = 0; i < size; ++i)
+                {
+                    if('a' <= buf[i] && buf[i] <= 'z')
+                        buf[i] -= 'a' - 'A'; // to upper
+                }
+            }
+
+            return size;
+        }
+
+        template <typename U>
+        requires(!char8_like<U>)
+        std::size_t conv(std::span<U, buf_size> buf, T val) const
+        {
+            char narrow_buf[buf_size];
+            std::size_t size = conv<char>(narrow_buf, val);
+            PAPILIO_ASSERT(size <= buf.size());
+
+            std::copy_n(narrow_buf, size, buf.begin());
+            return size;
+        }
+    };
+
     class codepoint_formatter : public std_formatter_base
     {
     public:
@@ -562,7 +765,7 @@ namespace detail
         template <typename FormatContext>
         auto format(string_container_type str, FormatContext& ctx)
         {
-            PAPILIO_ASSERT(!str.has_ownership());
+            // PAPILIO_ASSERT(!str.has_ownership());
 
             using context_t = format_context_traits<FormatContext>;
 
@@ -644,6 +847,38 @@ private:
     std_formatter_data m_data;
 };
 
+template <std::floating_point T, typename CharT>
+class formatter<T, CharT>
+{
+public:
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx) -> typename ParseContext::iterator
+    {
+        using namespace std::literals;
+
+        using parser_t = std_formatter_parser<ParseContext, false>;
+
+        parser_t parser;
+
+        typename ParseContext::iterator it;
+        std::tie(m_data, it) = parser.parse(ctx, U"fFgGeEaA"sv);
+
+        ctx.advance_to(it);
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(T val, FormatContext& ctx) const -> typename FormatContext::iterator
+    {
+        detail::float_formatter<T, CharT> fmt;
+        fmt.set_data(m_data);
+        return fmt.format(val, ctx);
+    }
+
+private:
+    std_formatter_data m_data;
+};
+
 template <typename CharT>
 class formatter<utf::codepoint, CharT>
 {
@@ -683,6 +918,66 @@ public:
 
 private:
     std_formatter_data m_data;
+};
+
+template <typename CharT>
+class formatter<bool, CharT>
+{
+public:
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx) -> typename ParseContext::iterator
+    {
+        using namespace std::literals;
+
+        using parser_t = std_formatter_parser<ParseContext, false>;
+
+        parser_t parser;
+
+        typename ParseContext::iterator it;
+        std::tie(m_data, it) = parser.parse(ctx, U"sXxBbod"sv);
+
+        ctx.advance_to(it);
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(bool val, FormatContext& ctx) const -> typename FormatContext::iterator
+    {
+        if(!m_data.contains_type(U"s"))
+        {
+            detail::int_formatter<std::uint8_t, CharT> fmt;
+            fmt.set_data(m_data);
+            return fmt.format(static_cast<std::uint8_t>(val), ctx);
+        }
+        else
+        {
+            detail::string_formatter<CharT> fmt;
+            fmt.set_data(m_data);
+            const auto str = get_str(val, ctx.getloc_ref());
+            return fmt.format(str, ctx);
+        }
+    }
+
+private:
+    std_formatter_data m_data;
+
+    utf::basic_string_container<CharT> get_str(bool val, locale_ref loc) const
+    {
+        if(!m_data.use_locale) [[likely]]
+        {
+            static constexpr CharT true_str[] = {'t', 'r', 'u', 'e'};
+            std::basic_string_view<CharT> true_sv(true_str, 4);
+            static constexpr CharT false_str[] = {'f', 'a', 'l', 's', 'e'};
+            std::basic_string_view<CharT> false_sv(false_str, 5);
+
+            return val ? true_sv : false_sv;
+        }
+        else
+        {
+            const auto& facet = std::use_facet<std::numpunct<CharT>>(loc);
+            return val ? facet.truename() : facet.falsename();
+        }
+    }
 };
 
 template <typename CharT>

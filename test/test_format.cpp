@@ -43,6 +43,32 @@ void test_int_formatter()
     EXPECT_EQ(PAPILIO_NS format("{:^5c}", T(97)), "  a  ");
     EXPECT_EQ(PAPILIO_NS format(L"{:^5c}", T(97)), L"  a  ");
 }
+
+template <std::floating_point T>
+void test_float_formatter()
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{}", T(3.14L)), "3.14");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", T(3.14L)), L"3.14");
+
+    {
+        const T inf = std::numeric_limits<T>::infinity();
+
+        EXPECT_EQ(PAPILIO_NS format("{0:},{0:+},{0:-},{0: }", inf), "inf,+inf,inf, inf");
+        EXPECT_EQ(PAPILIO_NS format(L"{0:},{0:+},{0:-},{0: }", inf), L"inf,+inf,inf, inf");
+
+        EXPECT_EQ(PAPILIO_NS format("{0:},{0:+},{0:-},{0: }", -inf), "-inf,-inf,-inf,-inf");
+        EXPECT_EQ(PAPILIO_NS format(L"{0:},{0:+},{0:-},{0: }", -inf), L"-inf,-inf,-inf,-inf");
+    }
+
+    {
+        const T nan = std::numeric_limits<T>::quiet_NaN();
+
+        EXPECT_EQ(PAPILIO_NS format("{}", nan), "nan");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", nan), L"nan");
+    }
+}
 } // namespace test_format
 
 TEST(formatter, int)
@@ -53,6 +79,28 @@ TEST(formatter, int)
     test_int_formatter<unsigned int>();
     test_int_formatter<long long int>();
     test_int_formatter<unsigned long long int>();
+}
+
+TEST(formatter, float)
+{
+    using test_format::test_float_formatter;
+
+    test_float_formatter<float>();
+    test_float_formatter<double>();
+    test_float_formatter<long double>();
+
+    using namespace papilio;
+
+    const float pi = 3.14f;
+
+    EXPECT_EQ(PAPILIO_NS format("{:10f}", pi), "  3.140000");
+    EXPECT_EQ(PAPILIO_NS format(L"{:10f}", pi), L"  3.140000");
+
+    EXPECT_EQ(PAPILIO_NS format("{:.5f}", pi), "3.14000");
+    EXPECT_EQ(PAPILIO_NS format(L"{:.5f}", pi), L"3.14000");
+
+    EXPECT_EQ(PAPILIO_NS format("{:10.5f}", pi), "   3.14000");
+    EXPECT_EQ(PAPILIO_NS format(L"{:10.5f}", pi), L"   3.14000");
 }
 
 TEST(formatter, codepoint)
@@ -81,6 +129,64 @@ TEST(formatter, string)
 
     EXPECT_EQ(PAPILIO_NS format("{:^8.5}", "hello!"), " hello  ");
     EXPECT_EQ(PAPILIO_NS format(L"{:^8.5}", L"hello!"), L" hello  ");
+}
+
+namespace test_format
+{
+template <typename CharT>
+class yes_no_numpunct : public std::numpunct<CharT>
+{
+    using base = std::numpunct<CharT>;
+
+public:
+    using string_type = base::string_type;
+
+protected:
+    string_type do_truename() const override
+    {
+        const CharT yes_str[] = {'y', 'e', 's'};
+        return string_type(yes_str, std::size(yes_str));
+    }
+
+    string_type do_falsename() const override
+    {
+        const CharT no_str[] = {'n', 'o'};
+        return string_type(no_str, std::size(no_str));
+    }
+};
+
+template <typename CharT = char>
+std::locale attach_yes_no(const std::locale& loc = std::locale::classic())
+{
+    return std::locale(loc, new yes_no_numpunct<CharT>());
+}
+} // namespace test_format
+
+TEST(formatter, bool)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{}", true), "true");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", true), L"true");
+    EXPECT_EQ(PAPILIO_NS format("{}", false), "false");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", false), L"false");
+
+    EXPECT_EQ(PAPILIO_NS format("{:d}", true), "1");
+    EXPECT_EQ(PAPILIO_NS format(L"{:d}", true), L"1");
+    EXPECT_EQ(PAPILIO_NS format("{:#x}", true), "0x1");
+    EXPECT_EQ(PAPILIO_NS format(L"{:#x}", true), L"0x1");
+
+    {
+        auto loc = test_format::attach_yes_no<char>();
+        EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", true), "yes");
+        EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", false), "no");
+    }
+
+    {
+        auto loc = test_format::attach_yes_no<wchar_t>();
+        EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", true), L"yes");
+        EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", false), L"no");
+    }
 }
 
 TEST(format, plain_text)
@@ -196,11 +302,23 @@ TEST(format, format_to)
 {
     using namespace papilio;
 
-    std::vector<char> result;
-    auto it = format_to(std::back_inserter(result), "vec");
-    *it = '\0';
-    EXPECT_EQ(result.size(), 4);
-    EXPECT_STREQ(result.data(), "vec");
+    {
+        std::vector<char> result;
+        auto it = format_to(std::back_inserter(result), "vec");
+        *it = '\0';
+        EXPECT_EQ(result.size(), 4);
+        EXPECT_STREQ(result.data(), "vec");
+    }
+
+    {
+        auto loc = test_format::attach_yes_no();
+
+        std::vector<char> result;
+        auto it = format_to(std::back_inserter(result), loc, "{:L}", true);
+        *it = '\0';
+        EXPECT_EQ(result.size(), 4);
+        EXPECT_STREQ(result.data(), "yes");
+    }
 }
 
 TEST(format, formatted_size)
@@ -210,6 +328,11 @@ TEST(format, formatted_size)
     EXPECT_EQ(PAPILIO_NS formatted_size(""), 0);
     EXPECT_EQ(PAPILIO_NS formatted_size("hello"), 5);
     EXPECT_EQ(PAPILIO_NS formatted_size("{{hello}}"), 7);
+
+    {
+        auto loc = test_format::attach_yes_no();
+        EXPECT_EQ(PAPILIO_NS formatted_size(loc, "{:L}", true), 3);
+    }
 }
 
 TEST(format, format_to_n)
@@ -225,6 +348,19 @@ TEST(format, format_to_n)
         EXPECT_EQ(result.size, str.size());
         EXPECT_EQ(result.size, 5);
         EXPECT_EQ(str, "hello");
+    }
+
+    {
+        auto loc = test_format::attach_yes_no();
+
+        std::string str;
+        str.resize(4);
+        auto result = format_to_n(str.begin(), str.size(), loc, "{:L}!!", true);
+
+        EXPECT_EQ(result.out, str.begin() + str.size());
+        EXPECT_EQ(result.size, str.size());
+        EXPECT_EQ(result.size, 4);
+        EXPECT_EQ(str, "yes!");
     }
 }
 
@@ -334,6 +470,16 @@ TEST(format, wchar_t)
     }
 
     {
+        auto loc = test_format::attach_yes_no<wchar_t>();
+
+        std::vector<wchar_t> result;
+        auto it = format_to(std::back_inserter(result), loc, L"{:L}", true);
+        *it = L'\0';
+        EXPECT_EQ(result.size(), 4);
+        EXPECT_STREQ(result.data(), L"yes");
+    }
+
+    {
         std::wstring str;
         str.resize(5);
         auto result = format_to_n(str.begin(), str.size(), L"hello world");
@@ -342,6 +488,19 @@ TEST(format, wchar_t)
         EXPECT_EQ(result.size, str.size());
         EXPECT_EQ(result.size, 5);
         EXPECT_EQ(str, L"hello");
+    }
+
+    {
+        auto loc = test_format::attach_yes_no<wchar_t>();
+
+        std::wstring str;
+        str.resize(4);
+        auto result = format_to_n(str.begin(), str.size(), loc, L"{:L}!!", true);
+
+        EXPECT_EQ(result.out, str.begin() + str.size());
+        EXPECT_EQ(result.size, str.size());
+        EXPECT_EQ(result.size, 4);
+        EXPECT_EQ(str, L"yes!");
     }
 
     EXPECT_EQ(PAPILIO_NS formatted_size(L""), 0);
