@@ -1,6 +1,8 @@
 #pragma once
 
 #include <concepts>
+#include <utility>
+#include <limits>
 #include "../core.hpp"
 
 namespace papilio
@@ -539,6 +541,62 @@ namespace detail
             return context_t::out(ctx);
         }
     };
+
+    template <typename CharT>
+    class string_formatter : public std_formatter_base
+    {
+    public:
+        using string_container_type = utf::basic_string_container<CharT>;
+
+        void set_data(const std_formatter_data& data)
+        {
+            PAPILIO_ASSERT(data.contains_type(U"s"));
+
+            m_data = data;
+            m_data.type = data.type_or(U's');
+            m_data.fill = data.fill_or(U' ');
+            if(m_data.align == format_align::default_align)
+                m_data.align = format_align::left;
+        }
+
+        template <typename FormatContext>
+        auto format(string_container_type str, FormatContext& ctx)
+        {
+            PAPILIO_ASSERT(!str.has_ownership());
+
+            using context_t = format_context_traits<FormatContext>;
+
+            std::size_t used = 0;
+
+
+            if(m_data.precision != 0)
+            {
+                for(auto it = str.begin(); it != str.end(); ++it)
+                {
+                    std::size_t w = (*it).estimate_width();
+                    if(used + w > m_data.precision)
+                    {
+                        str.assign(str.begin(), it);
+                        break;
+                    }
+                    used += w;
+                }
+            }
+            else
+            {
+                for(utf::codepoint cp : str)
+                    used += cp.estimate_width();
+            }
+
+            auto [left, right] = calc_fill(used);
+
+            fill(ctx, left);
+            context_t::append(ctx, str);
+            fill(ctx, right);
+
+            return context_t::out(ctx);
+        }
+    };
 } // namespace detail
 
 template <std::integral T, typename CharT>
@@ -621,6 +679,40 @@ public:
             fmt.set_data(m_data);
             return fmt.format(cp, ctx);
         }
+    }
+
+private:
+    std_formatter_data m_data;
+};
+
+template <typename CharT>
+class formatter<utf::basic_string_container<CharT>, CharT>
+{
+public:
+    using string_container_type = utf::basic_string_container<CharT>;
+
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx) -> typename ParseContext::iterator
+    {
+        using namespace std::literals;
+
+        using parser_t = std_formatter_parser<ParseContext, true>;
+
+        parser_t parser;
+
+        typename ParseContext::iterator it;
+        std::tie(m_data, it) = parser.parse(ctx, U"s"sv);
+
+        ctx.advance_to(it);
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(const string_container_type& str, FormatContext& ctx) const -> typename FormatContext::iterator
+    {
+        detail::string_formatter<CharT> fmt;
+        fmt.set_data(m_data);
+        return fmt.format(str, ctx);
     }
 
 private:

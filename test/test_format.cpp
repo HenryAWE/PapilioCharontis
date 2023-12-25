@@ -60,10 +60,27 @@ TEST(formatter, codepoint)
     using namespace papilio;
 
     EXPECT_EQ(PAPILIO_NS format("{}", 'a'), "a");
-    EXPECT_EQ(PAPILIO_NS format(L"{}", 'a'), L"a");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", L'a'), L"a");
 
     EXPECT_EQ(PAPILIO_NS format("{:d}", 'a'), "97");
-    EXPECT_EQ(PAPILIO_NS format(L"{:d}", 'a'), L"97");
+    EXPECT_EQ(PAPILIO_NS format(L"{:d}", L'a'), L"97");
+}
+
+TEST(formatter, string)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{}", "hello"), "hello");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", L"hello"), L"hello");
+
+    EXPECT_EQ(PAPILIO_NS format("{:s}", "hello"), "hello");
+    EXPECT_EQ(PAPILIO_NS format(L"{:s}", L"hello"), L"hello");
+
+    EXPECT_EQ(PAPILIO_NS format("{:.5}", "hello!"), "hello");
+    EXPECT_EQ(PAPILIO_NS format(L"{:.5}", L"hello!"), L"hello");
+
+    EXPECT_EQ(PAPILIO_NS format("{:^8.5}", "hello!"), " hello  ");
+    EXPECT_EQ(PAPILIO_NS format(L"{:^8.5}", L"hello!"), L" hello  ");
 }
 
 TEST(format, plain_text)

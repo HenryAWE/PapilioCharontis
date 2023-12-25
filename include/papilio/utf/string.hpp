@@ -1352,6 +1352,13 @@ public:
         return *this;
     }
 
+    template <std::derived_from<detail::const_str_iter_impl<CharT>> Iterator>
+    basic_string_container& assign(Iterator start, Iterator stop) noexcept
+    {
+        emplace_data<string_view_type>(start.to_address(), stop.to_address());
+        return *this;
+    }
+
     constexpr basic_string_container& operator=(const basic_string_container&) = default;
     constexpr basic_string_container& operator=(basic_string_container&&) noexcept = default;
 
