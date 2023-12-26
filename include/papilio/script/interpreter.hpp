@@ -416,8 +416,14 @@ inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 
 // ^^^ variable ^^^ / vvv interpreter vvv
 
+class interpreter_base
+{
+public:
+    static constexpr char32_t script_start = U'$';
+};
+
 template <typename FormatContext>
-class interpreter
+class interpreter : public interpreter_base
 {
 public:
     using char_type = typename FormatContext::char_type;
@@ -526,7 +532,7 @@ public:
 
                     ++parse_it;
                 }
-                else if(ch == U'$')
+                else if(ch == script_start)
                 {
                     ++parse_it;
 

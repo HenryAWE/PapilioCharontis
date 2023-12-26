@@ -754,13 +754,16 @@ namespace detail
             );
         }
 
+        [[nodiscard]]
         bool check(size_type i) const noexcept
         {
             return i < indexed_size();
         }
 
+        [[nodiscard]]
         virtual bool check(string_view_type key) const noexcept = 0;
 
+        [[nodiscard]]
         bool check(const indexing_value_type& idx) const noexcept
         {
             return idx.visit(
@@ -1300,9 +1303,12 @@ public:
     template <char_like Char>
     static void append(context_type& ctx, Char ch, std::size_t count = 1)
     {
-        if constexpr(std::is_same_v<Char, char_type>)
+        if constexpr(sizeof(Char) <= sizeof(char_type))
         {
-            advance_to(ctx, std::fill_n(out(ctx), count, static_cast<char>(ch)));
+            advance_to(
+                ctx,
+                std::fill_n(out(ctx), count, static_cast<char_type>(ch))
+            );
         }
         else
         {
@@ -1382,7 +1388,6 @@ public:
         if(m_manual_indexing)
             invalid_default_argument();
         ++m_default_arg_idx;
-        get_args().check(m_default_arg_idx);
         return m_default_arg_idx;
     }
 
