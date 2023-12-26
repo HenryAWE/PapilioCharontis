@@ -1013,4 +1013,56 @@ public:
 private:
     std_formatter_data m_data;
 };
+
+template <typename CharT>
+class formatter<const void*, CharT>
+{
+public:
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx) -> typename ParseContext::iterator
+    {
+        using namespace std::literals;
+
+        using parser_t = std_formatter_parser<ParseContext, true>;
+
+        parser_t parser;
+
+        typename ParseContext::iterator it;
+        std::tie(m_data, it) = parser.parse(ctx, U"pP"sv);
+
+        if(m_data.use_locale)
+            throw invalid_format("invalid format");
+
+        switch(m_data.type)
+        {
+        case U'\0':
+        case U'p':
+            m_data.type = 'x';
+            break;
+
+        case U'P':
+            m_data.type = 'X';
+            break;
+
+        default:
+            PAPILIO_UNREACHABLE();
+        }
+
+        m_data.alternate_form = true;
+
+        ctx.advance_to(it);
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(const void* p, FormatContext& ctx) const -> typename FormatContext::iterator
+    {
+        detail::int_formatter<std::uintptr_t, CharT> fmt;
+        fmt.set_data(m_data);
+        return fmt.format(reinterpret_cast<std::uintptr_t>(p), ctx);
+    }
+
+private:
+    std_formatter_data m_data{.type = U'x', .alternate_form = true};
+};
 } // namespace papilio

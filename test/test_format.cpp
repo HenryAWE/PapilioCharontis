@@ -189,6 +189,31 @@ TEST(formatter, bool)
     }
 }
 
+TEST(formatter, pointer)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{}", nullptr), "0x0");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", nullptr), L"0x0");
+    EXPECT_EQ(PAPILIO_NS format("{:p}", nullptr), "0x0");
+    EXPECT_EQ(PAPILIO_NS format(L"{:p}", nullptr), L"0x0");
+    EXPECT_EQ(PAPILIO_NS format("{:P}", nullptr), "0X0");
+    EXPECT_EQ(PAPILIO_NS format(L"{:P}", nullptr), L"0X0");
+
+    void* ptr = reinterpret_cast<void*>(0x7fff);
+    const void* cptr = ptr;
+
+    EXPECT_EQ(PAPILIO_NS format("{:p}", ptr), "0x7fff");
+    EXPECT_EQ(PAPILIO_NS format("{:p}", cptr), "0x7fff");
+    EXPECT_EQ(PAPILIO_NS format(L"{:p}", ptr), L"0x7fff");
+    EXPECT_EQ(PAPILIO_NS format(L"{:p}", cptr), L"0x7fff");
+
+    EXPECT_EQ(PAPILIO_NS format("{:P}", ptr), "0X7FFF");
+    EXPECT_EQ(PAPILIO_NS format("{:P}", cptr), "0X7FFF");
+    EXPECT_EQ(PAPILIO_NS format(L"{:P}", ptr), L"0X7FFF");
+    EXPECT_EQ(PAPILIO_NS format(L"{:P}", cptr), L"0X7FFF");
+}
+
 TEST(format, plain_text)
 {
     using namespace papilio;
