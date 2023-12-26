@@ -384,7 +384,7 @@ namespace detail
             {
                 const T digit = val % base;
                 buf[buf_size++] = digits[digit];
-                val /= base;
+                val /= static_cast<T>(base);
             } while(val);
 
             using context_t = format_context_traits<FormatContext>;
@@ -667,7 +667,7 @@ namespace detail
             std::to_chars_result result;
             auto [ch_fmt, uppercase] = get_chars_fmt();
 
-            std::size_t precision = m_data.precision;
+            int precision = static_cast<int>(m_data.precision);
             if(precision == 0 &&
                U"fFeEgG"sv.find(m_data.type) != std::u32string::npos)
             {
@@ -765,7 +765,7 @@ namespace detail
         template <typename FormatContext>
         auto format(string_container_type str, FormatContext& ctx)
         {
-            // PAPILIO_ASSERT(!str.has_ownership());
+            PAPILIO_ASSERT(!str.has_ownership());
 
             using context_t = format_context_traits<FormatContext>;
 

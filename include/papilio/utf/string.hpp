@@ -1247,11 +1247,14 @@ public:
 
     basic_string_container() noexcept = default;
     basic_string_container(std::nullptr_t) = delete;
-    basic_string_container(const basic_string_container&) = default;
-    basic_string_container(basic_string_container&&) noexcept = default;
+
+    basic_string_container(const basic_string_container& other) noexcept
+        : m_data(std::in_place_type<string_view_type>, other.get_view()) {}
 
     basic_string_container(independent_t, const basic_string_container& str)
         : m_data(std::in_place_type<string_type>, string_view_type(str)) {}
+
+    basic_string_container(basic_string_container&&) noexcept = default;
 
     basic_string_container(string_type&& str) noexcept
         : m_data(std::in_place_type<string_type>, std::move(str)) {}
