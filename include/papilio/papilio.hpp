@@ -9,9 +9,9 @@
 
 namespace papilio
 {
-PAPILIO_EXPORT inline constexpr int version_major = 0;
-PAPILIO_EXPORT inline constexpr int version_minor = 1;
-PAPILIO_EXPORT inline constexpr int version_patch = 0;
+PAPILIO_EXPORT inline constexpr int version_major = PAPILIO_VERSION_MAJOR;
+PAPILIO_EXPORT inline constexpr int version_minor = PAPILIO_VERSION_MINOR;
+PAPILIO_EXPORT inline constexpr int version_patch = PAPILIO_VERSION_PATCH;
 
 PAPILIO_EXPORT
 [[nodiscard]]

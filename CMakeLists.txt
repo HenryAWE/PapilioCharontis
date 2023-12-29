@@ -11,9 +11,18 @@ option(papilio_build_unit_test "build unit tests" OFF)
 option(papilio_build_example "build examples" OFF)
 option(papilio_build_module "build module (experimental)" OFF)
 
+file(STRINGS "include/papilio/macros.hpp" papilio_version_major_line REGEX "^#define PAPILIO_VERSION_MAJOR [0-9]+$")
+file(STRINGS "include/papilio/macros.hpp" papilio_version_minor_line REGEX "^#define PAPILIO_VERSION_MINOR [0-9]+$")
+file(STRINGS "include/papilio/macros.hpp" papilio_version_patch_line REGEX "^#define PAPILIO_VERSION_PATCH [0-9]+$")
+string(REGEX REPLACE "^#define PAPILIO_VERSION_MAJOR ([0-9]+)$" "\\1" papilio_version_major "${papilio_version_major_line}")
+string(REGEX REPLACE "^#define PAPILIO_VERSION_MINOR ([0-9]+)$" "\\1" papilio_version_minor "${papilio_version_minor_line}")
+string(REGEX REPLACE "^#define PAPILIO_VERSION_PATCH ([0-9]+)$" "\\1" papilio_version_patch "${papilio_version_patch_line}")
+
+message("Papilio Charontis v${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}")
+
 project(
     "Papilio Charontis"
-    VERSION 0.1.0
+    VERSION ${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}
     LANGUAGES C CXX
 )
 
@@ -23,6 +32,8 @@ file(GLOB_RECURSE papilio_src ${glob_expr})
 if(${papilio_build_module})
     file(GLOB_RECURSE papilio_modules "modules/*.ixx")
     list(APPEND papilio_src ${papilio_modules})
+else()
+    set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 endif()
 
 add_library(papilio ${papilio_src})

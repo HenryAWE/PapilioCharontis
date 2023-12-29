@@ -4,10 +4,19 @@
 #include <version>
 #include <type_traits> // std::is_same_v
 
+// clang-format off
+// CMakeLists.txt will use following macros to determine library version.
+
+#define PAPILIO_VERSION_MAJOR 0
+#define PAPILIO_VERSION_MINOR 1
+#define PAPILIO_VERSION_PATCH 0
+
+// clang-format on
+
 #define PAPILIO_NS ::papilio::
 
 #ifdef _MSC_VER
-#    define PAPILIO_COMPILER_MSVC 1
+#    define PAPILIO_COMPILER_MSVC _MSC_VER
 #endif
 #ifdef __GNUC__
 #    define PAPILIO_COMPILER_GCC __GNUC__
