@@ -46,5 +46,3 @@ constexpr auto&& forward_like(U&& x) noexcept
     }
 }
 } // namespace papilio
-
-#define PAPILIO_UNREACHABLE() (::papilio::detail::unreachable())

@@ -36,14 +36,9 @@ struct accessor<utf::basic_string_container<typename Context::char_type>, Contex
     [[nodiscard]]
     static format_arg_type attribute(const string_container_type& str, const attribute_name_type& attr)
     {
-        using namespace std::literals;
-
-        constexpr char_type attr_length[] = {'l', 'e', 'n', 'g', 't', 'h'};
-        constexpr char_type attr_size[] = {'s', 'i', 'z', 'e'};
-
-        if(attr == string_view_type(attr_length, std::size(attr_length)))
+        if(attr == PAPILIO_TSTRING_VIEW(char_type, "length"))
             return str.length();
-        else if(attr == string_view_type(attr_size, std::size(attr_size)))
+        else if(attr == PAPILIO_TSTRING_VIEW(char_type, "size"))
             return str.size();
         else
             throw_invalid_attribute(attr);

@@ -1,6 +1,14 @@
 #include <gtest/gtest.h>
 #include <papilio/utf/stralgo.hpp>
 
+#define PAPILIO_TEST_TMP "temp"
+
+static_assert(PAPILIO_STRINGIZE(hello world) == std::string_view("hello world"));
+static_assert(PAPILIO_STRINGIZE(PAPILIO_TEST_TMP) == std::string_view("PAPILIO_TEST_TMP"));
+static_assert(PAPILIO_STRINGIZE_EX(PAPILIO_TEST_TMP) == std::string_view("\"temp\""));
+static_assert(std::size(PAPILIO_TSTRING(wchar_t, "hello")) == 6);
+static_assert(PAPILIO_TSTRING_VIEW(wchar_t, "hello") == L"hello");
+
 TEST(strlen, char8_t)
 {
     using namespace papilio;

@@ -4,6 +4,7 @@ Language: Cpp
 Standard: c++20
 
 AttributeMacros: ['PAPILIO_NS']
+WhitespaceSensitiveMacros: ['PAPILIO_STRINGIZE', 'PAPILIO_STRINGIZE_EX']
 
 ColumnLimit: 0
 LineEnding: DeriveLF
