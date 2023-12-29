@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/access.hpp>
+#include <papilio/format.hpp>
 
 TEST(indexing_value, constructor)
 {
@@ -71,6 +72,40 @@ TEST(attribute_name, compare)
 
     EXPECT_NE(attr, "{name}");
     EXPECT_NE("{name}", attr);
+}
+
+TEST(accessor, string)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{.size}", "hello"), "5");
+    EXPECT_EQ(PAPILIO_NS format("{.length}", "hello"), "5");
+}
+
+TEST(accessor, tuple)
+{
+    using namespace papilio;
+
+    {
+        std::tuple<> empty;
+
+        EXPECT_EQ(PAPILIO_NS format("{.size}", empty), "0");
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", empty), L"0");
+    }
+
+    {
+        std::pair<std::string, int> val("scene", 182376);
+
+        EXPECT_EQ(PAPILIO_NS format("{.size}", val), "2");
+        EXPECT_EQ(PAPILIO_NS format("{0.first} {0.second}", val), "scene 182376");
+    }
+
+    {
+        std::pair<std::wstring, int> val(L"scene", 182376);
+
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", val), L"2");
+        EXPECT_EQ(PAPILIO_NS format(L"{0.first} {0.second}", val), L"scene 182376");
+    }
 }
 
 int main(int argc, char* argv[])

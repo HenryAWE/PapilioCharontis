@@ -16,7 +16,7 @@ struct accessor<utf::basic_string_container<typename Context::char_type>, Contex
     using attribute_name_type = basic_attribute_name<char_type>;
 
     [[nodiscard]]
-    static utf::codepoint index(const string_container_type& str, indexing_value::index_type i)
+    static utf::codepoint index(const string_container_type& str, ssize_t i)
     {
         if(i >= 0)
             return str.index_or(i, utf::codepoint());
