@@ -6,7 +6,7 @@
 
 namespace papilio
 {
-template <typename Tuple, typename Context>
+PAPILIO_EXPORT template <typename Tuple, typename Context>
 requires(tuple_like<Tuple>)
 struct accessor<Tuple, Context>
 {

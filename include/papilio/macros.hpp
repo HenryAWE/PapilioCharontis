@@ -21,6 +21,12 @@
 #    define PAPILIO_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #endif
 
+#ifdef PAPILIO_BUILD_MODULES
+#    define PAPILIO_EXPORT export
+#else
+#    define PAPILIO_EXPORT
+#endif
+
 #if defined(_WIN32) || defined(_WIN64)
 #    define PAPILIO_PLATFORM_WINDOWS 1
 #elif defined(__linux__) || defined(__gnu_linux__)

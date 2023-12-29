@@ -1,12 +1,13 @@
 #pragma once
 
 #include <locale>
+#include "macros.hpp"
 
 namespace papilio
 {
 // Reference to a locale object
 // The member function "get()" will return the C locale if the reference is empty.
-class locale_ref
+PAPILIO_EXPORT class locale_ref
 {
 public:
     locale_ref() noexcept = default;

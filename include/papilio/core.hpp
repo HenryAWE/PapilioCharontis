@@ -19,14 +19,14 @@
 
 namespace papilio
 {
-enum class format_align : std::uint8_t
+PAPILIO_EXPORT enum class format_align : std::uint8_t
 {
     default_align = 0,
     left,
     middle,
     right
 };
-enum class format_sign
+PAPILIO_EXPORT enum class format_sign
 {
     default_sign = 0,
     positive,
@@ -34,16 +34,16 @@ enum class format_sign
     space
 };
 
-class invalid_format : public std::invalid_argument
+PAPILIO_EXPORT class invalid_format : public std::invalid_argument
 {
 public:
     using invalid_argument::invalid_argument;
 };
 
-class bad_handle_cast : public std::bad_cast
+PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
 {};
 
-template <typename T, typename CharT>
+PAPILIO_EXPORT template <typename T, typename CharT>
 class formatter
 {
 public:
@@ -92,7 +92,7 @@ namespace detail
         std::is_nothrow_move_constructible_v<std::remove_cvref_t<T>>;
 } // namespace detail
 
-template <typename Context>
+PAPILIO_EXPORT template <typename Context>
 class basic_format_arg
 {
 public:
@@ -815,15 +815,15 @@ namespace detail
     };
 } // namespace detail
 
-template <typename T, typename Context = format_context>
+PAPILIO_EXPORT template <typename T, typename Context = format_context>
 struct is_format_args :
     std::bool_constant<std::is_base_of_v<detail::format_args_base<Context, typename Context::char_type>, T>>
 {};
 
-template <typename T, typename Context = format_context>
+PAPILIO_EXPORT template <typename T, typename Context = format_context>
 constexpr inline bool is_format_args_v = is_format_args<T, Context>::value;
 
-template <
+PAPILIO_EXPORT template <
     std::size_t IndexedArgumentCount,
     std::size_t NamedArgumentCount,
     typename Context = format_context,
@@ -933,7 +933,7 @@ private:
     }
 };
 
-template <typename Context, typename CharT = typename Context::char_type>
+PAPILIO_EXPORT template <typename Context, typename CharT = typename Context::char_type>
 class basic_mutable_format_args final : public detail::format_args_base<Context, CharT>
 {
     using base = detail::format_args_base<Context, CharT>;
@@ -1043,7 +1043,7 @@ private:
 };
 
 // Type-erased format arguments.
-template <typename Context, typename CharT = typename Context::char_type>
+PAPILIO_EXPORT template <typename Context, typename CharT = typename Context::char_type>
 class dynamic_format_args final : public detail::format_args_base<Context, CharT>
 {
     using base = detail::format_args_base<Context, CharT>;
@@ -1106,7 +1106,7 @@ private:
     const base* m_ptr;
 };
 
-template <typename Context = format_context, typename... Args>
+PAPILIO_EXPORT template <typename Context = format_context, typename... Args>
 auto make_format_args(Args&&... args)
 {
     static_assert(
@@ -1122,7 +1122,7 @@ auto make_format_args(Args&&... args)
     return result_type(std::forward<Args>(args)...);
 }
 
-template <typename Context = wformat_context, typename... Args>
+PAPILIO_EXPORT template <typename Context = wformat_context, typename... Args>
 auto make_wformat_args(Args&&... args)
 {
     static_assert(
@@ -1203,7 +1203,7 @@ namespace detail
     using select_formatter_t = typename select_formatter<T, CharT>::type;
 } // namespace detail
 
-template <typename OutputIt, typename CharT>
+PAPILIO_EXPORT template <typename OutputIt, typename CharT>
 class basic_format_context
 {
 public:
@@ -1258,7 +1258,7 @@ private:
     locale_ref m_loc;
 };
 
-template <typename Context>
+PAPILIO_EXPORT template <typename Context>
 class format_context_traits
 {
 public:
@@ -1326,7 +1326,7 @@ public:
     }
 };
 
-template <typename FormatContext>
+PAPILIO_EXPORT template <typename FormatContext>
 class basic_format_parse_context
 {
 public:
@@ -1429,11 +1429,11 @@ private:
     }
 };
 
-using format_parse_context = basic_format_parse_context<format_context>;
-using wformat_parse_context = basic_format_parse_context<wformat_context>;
+PAPILIO_EXPORT using format_parse_context = basic_format_parse_context<format_context>;
+PAPILIO_EXPORT using wformat_parse_context = basic_format_parse_context<wformat_context>;
 
-using mutable_format_args = basic_mutable_format_args<format_context>;
-using wmutable_format_args = basic_mutable_format_args<wformat_context>;
+PAPILIO_EXPORT using mutable_format_args = basic_mutable_format_args<format_context>;
+PAPILIO_EXPORT using wmutable_format_args = basic_mutable_format_args<wformat_context>;
 
 namespace detail
 {
@@ -1451,12 +1451,12 @@ namespace detail
     // clang-format on
 } // namespace detail
 
-template <typename T, typename Context>
+PAPILIO_EXPORT template <typename T, typename Context>
 concept formattable_with = detail::formattable_with_impl<
     std::remove_const_t<T>,
     Context>;
 
-template <typename T, typename CharT = char>
+PAPILIO_EXPORT template <typename T, typename CharT = char>
 concept formattable = formattable_with<
     std::remove_const_t<T>,
     basic_format_context<detail::fmt_iter_for<CharT>, CharT>>;

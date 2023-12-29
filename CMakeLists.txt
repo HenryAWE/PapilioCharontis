@@ -18,10 +18,13 @@ project(
 )
 
 set(glob_expr "src/*.cpp" "include/*.hpp")
-if(${papilio_build_module})
-    list(APPEND glob_expr "src/*.cppm")
-endif()
 file(GLOB_RECURSE papilio_src ${glob_expr})
+
+if(${papilio_build_module})
+    file(GLOB_RECURSE papilio_modules "modules/*.ixx")
+    list(APPEND papilio_src ${papilio_modules})
+endif()
+
 add_library(papilio ${papilio_src})
 target_sources(papilio PUBLIC "natvis/papilio.natvis")
 target_include_directories(papilio PUBLIC include)

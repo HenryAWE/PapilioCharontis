@@ -6,7 +6,7 @@
 
 namespace papilio
 {
-template <typename Context>
+PAPILIO_EXPORT template <typename Context>
 struct accessor<utf::basic_string_container<typename Context::char_type>, Context>
 {
     using char_type = typename Context::char_type;

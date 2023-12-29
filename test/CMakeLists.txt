@@ -33,3 +33,7 @@ define_papilio_test(test_utf_stralgo)
 define_papilio_test(test_utf_codepoint)
 
 define_papilio_test(test_utf_string)
+
+if(${papilio_build_module})
+    define_papilio_test(test_modules)
+endif()

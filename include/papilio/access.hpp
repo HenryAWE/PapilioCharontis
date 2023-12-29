@@ -9,7 +9,7 @@
 
 namespace papilio
 {
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class basic_indexing_value
 {
 public:
@@ -102,10 +102,10 @@ private:
     variant_type m_val;
 };
 
-using indexing_value = basic_indexing_value<char>;
-using windexing_value = basic_indexing_value<wchar_t>;
+PAPILIO_EXPORT using indexing_value = basic_indexing_value<char>;
+PAPILIO_EXPORT using windexing_value = basic_indexing_value<wchar_t>;
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class basic_attribute_name
 {
 public:
@@ -190,10 +190,10 @@ private:
     string_container_type m_name;
 };
 
-using attribute_name = basic_attribute_name<char>;
-using wattribute_name = basic_attribute_name<wchar_t>;
+PAPILIO_EXPORT using attribute_name = basic_attribute_name<char>;
+PAPILIO_EXPORT using wattribute_name = basic_attribute_name<wchar_t>;
 
-class invalid_attribute_base : public std::invalid_argument
+PAPILIO_EXPORT class invalid_attribute_base : public std::invalid_argument
 {
 public:
     invalid_attribute_base(const invalid_attribute_base&) = default;
@@ -203,7 +203,7 @@ protected:
         : invalid_argument("invalid attribute") {}
 };
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class basic_invalid_attribute : public invalid_attribute_base
 {
 public:
@@ -225,14 +225,14 @@ private:
 
 using invalid_attribute = basic_invalid_attribute<char>;
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 [[noreturn]]
 void throw_invalid_attribute(const basic_attribute_name<CharT>& attr)
 {
     throw basic_invalid_attribute<CharT>(attr);
 }
 
-template <typename T, typename Context = format_context>
+PAPILIO_EXPORT template <typename T, typename Context = format_context>
 struct accessor
 {};
 
@@ -261,7 +261,7 @@ namespace detail
     };
 } // namespace detail
 
-template <typename T, typename Context = format_context>
+PAPILIO_EXPORT template <typename T, typename Context = format_context>
 class accessor_traits : public detail::accessor_traits_base
 {
 public:

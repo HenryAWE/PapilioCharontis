@@ -7,7 +7,7 @@
 
 namespace papilio
 {
-template <typename CharT, typename... Args>
+PAPILIO_EXPORT template <typename CharT, typename... Args>
 class basic_format_string
 {
 public:
@@ -32,9 +32,9 @@ private:
     string_view_type m_fmt;
 };
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 using format_string = basic_format_string<char, std::type_identity_t<Args>...>;
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 using wformat_string = basic_format_string<wchar_t, std::type_identity_t<Args>...>;
 
 namespace detail
@@ -59,14 +59,14 @@ namespace detail
     }
 } // namespace detail
 
-template <typename OutputIt>
+PAPILIO_EXPORT template <typename OutputIt>
 struct format_to_n_result
 {
     OutputIt out;
     std::iter_difference_t<OutputIt> size;
 };
 
-template <typename OutputIt>
+PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::string_view fmt,
@@ -82,7 +82,7 @@ OutputIt vformat_to(
     );
 }
 
-template <typename OutputIt>
+PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
@@ -99,7 +99,7 @@ OutputIt vformat_to(
     );
 }
 
-template <typename OutputIt>
+PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::wstring_view fmt,
@@ -115,7 +115,7 @@ OutputIt vformat_to(
     );
 }
 
-template <typename OutputIt>
+PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
@@ -243,30 +243,34 @@ namespace detail
     };
 } // namespace detail
 
+PAPILIO_EXPORT
 [[nodiscard]]
 std::string vformat(std::string_view fmt, const dynamic_format_args<format_context>& args);
 
+PAPILIO_EXPORT
 [[nodiscard]]
 std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_args<format_context>& args);
 
+PAPILIO_EXPORT
 [[nodiscard]]
 std::wstring vformat(std::wstring_view fmt, const dynamic_format_args<wformat_context>& args);
 
+PAPILIO_EXPORT
 [[nodiscard]]
 std::wstring vformat(const std::locale& loc, std::wstring_view fmt, const dynamic_format_args<wformat_context>& args);
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 OutputIt format_to(OutputIt out, format_string<Args...> fmt, Args&&... args)
 {
     using context_type = basic_format_context<OutputIt, char>;
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
         out,
         fmt.get(),
         PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     );
 }
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     std::locale& loc,
@@ -275,7 +279,7 @@ OutputIt format_to(
 )
 {
     using context_type = basic_format_context<OutputIt, char>;
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
         out,
         loc,
         fmt.get(),
@@ -283,7 +287,7 @@ OutputIt format_to(
     );
 }
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     wformat_string<Args...> fmt,
@@ -291,14 +295,14 @@ OutputIt format_to(
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
         out,
         fmt.get(),
         PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
     );
 }
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     std::locale& loc,
@@ -307,7 +311,7 @@ OutputIt format_to(
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
         out,
         loc,
         fmt.get(),
@@ -315,7 +319,7 @@ OutputIt format_to(
     );
 }
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -326,7 +330,7 @@ format_to_n_result<OutputIt> format_to_n(
     using wrapper = detail::format_to_n_wrapper<OutputIt>;
     using context_type = basic_format_context<wrapper, char>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                wrapper(out, n),
                fmt.get(),
                PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
@@ -334,7 +338,7 @@ format_to_n_result<OutputIt> format_to_n(
         .get_result();
 }
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -346,7 +350,7 @@ format_to_n_result<OutputIt> format_to_n(
     using wrapper = detail::format_to_n_wrapper<OutputIt>;
     using context_type = basic_format_context<wrapper, char>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                wrapper(out, n),
                loc,
                fmt.get(),
@@ -355,7 +359,7 @@ format_to_n_result<OutputIt> format_to_n(
         .get_result();
 }
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -366,7 +370,7 @@ format_to_n_result<OutputIt> format_to_n(
     using wrapper = detail::format_to_n_wrapper<OutputIt>;
     using context_type = basic_format_context<wrapper, wchar_t>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                wrapper(out, n),
                fmt.get(),
                PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
@@ -374,7 +378,7 @@ format_to_n_result<OutputIt> format_to_n(
         .get_result();
 }
 
-template <typename OutputIt, typename... Args>
+PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -386,7 +390,7 @@ format_to_n_result<OutputIt> format_to_n(
     using wrapper = detail::format_to_n_wrapper<OutputIt>;
     using context_type = basic_format_context<wrapper, wchar_t>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                wrapper(out, n),
                loc,
                fmt.get(),
@@ -395,7 +399,7 @@ format_to_n_result<OutputIt> format_to_n(
         .get_result();
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     format_string<Args...> fmt,
@@ -405,7 +409,7 @@ std::size_t formatted_size(
     using iter_t = detail::formatted_size_counter<char>;
     using context_type = basic_format_context<iter_t, char>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                iter_t(),
                fmt.get(),
                PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
@@ -413,7 +417,7 @@ std::size_t formatted_size(
         .get_result();
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     const std::locale& loc,
@@ -424,7 +428,7 @@ std::size_t formatted_size(
     using iter_t = detail::formatted_size_counter<char>;
     using context_type = basic_format_context<iter_t, char>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                iter_t(),
                loc,
                fmt.get(),
@@ -433,7 +437,7 @@ std::size_t formatted_size(
         .get_result();
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     wformat_string<Args...> fmt,
@@ -443,7 +447,7 @@ std::size_t formatted_size(
     using iter_t = detail::formatted_size_counter<wchar_t>;
     using context_type = basic_format_context<iter_t, wchar_t>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                iter_t(),
                fmt.get(),
                PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
@@ -451,7 +455,7 @@ std::size_t formatted_size(
         .get_result();
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     const std::locale& loc,
@@ -462,7 +466,7 @@ std::size_t formatted_size(
     using iter_t = detail::formatted_size_counter<wchar_t>;
     using context_type = basic_format_context<iter_t, wchar_t>;
 
-    return vformat_to(
+    return PAPILIO_NS vformat_to(
                iter_t(),
                loc,
                fmt.get(),
@@ -471,7 +475,7 @@ std::size_t formatted_size(
         .get_result();
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::string format(format_string<Args...> fmt, Args&&... args)
 {
@@ -480,7 +484,7 @@ std::string format(format_string<Args...> fmt, Args&&... args)
     );
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::string format(const std::locale& loc, format_string<Args...> fmt, Args&&... args)
 {
@@ -489,7 +493,7 @@ std::string format(const std::locale& loc, format_string<Args...> fmt, Args&&...
     );
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::wstring format(wformat_string<Args...> fmt, Args&&... args)
 {
@@ -498,7 +502,7 @@ std::wstring format(wformat_string<Args...> fmt, Args&&... args)
     );
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
 std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&... args)
 {

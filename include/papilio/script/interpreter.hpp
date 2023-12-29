@@ -7,10 +7,10 @@
 
 namespace papilio::script
 {
-class bad_variable_access : public std::bad_variant_access
+PAPILIO_EXPORT class bad_variable_access : public std::bad_variant_access
 {};
 
-class invalid_conversion : public std::invalid_argument
+PAPILIO_EXPORT class invalid_conversion : public std::invalid_argument
 {
 public:
     using invalid_argument::invalid_argument;
@@ -42,7 +42,7 @@ namespace detail
         utf::basic_string_container<CharT>>;
 } // namespace detail
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class basic_variable : public detail::variable_base
 {
 public:
@@ -390,39 +390,39 @@ private:
     }
 };
 
-using variable = basic_variable<char>;
-using wvariable = basic_variable<wchar_t>;
+PAPILIO_EXPORT using variable = basic_variable<char>;
+PAPILIO_EXPORT using wvariable = basic_variable<wchar_t>;
 
-template <typename T, typename CharT>
+PAPILIO_EXPORT template <typename T, typename CharT>
 concept basic_variable_storable =
     std::is_same_v<T, bool> ||
     std::is_same_v<T, variable::int_type> ||
     std::is_same_v<T, variable::float_type> ||
     std::is_same_v<T, utf::basic_string_container<CharT>>;
 
-template <typename T, typename CharT>
+PAPILIO_EXPORT template <typename T, typename CharT>
 struct is_basic_variable_storable :
     public std::bool_constant<basic_variable_storable<T, CharT>>
 {};
 
-template <typename T, typename CharT>
+PAPILIO_EXPORT template <typename T, typename CharT>
 inline constexpr bool is_basic_variable_storable_v =
     is_basic_variable_storable<T, CharT>::value;
 
-template <typename T>
+PAPILIO_EXPORT template <typename T>
 using is_variable_storable = is_basic_variable_storable<T, char>;
-template <typename T>
+PAPILIO_EXPORT template <typename T>
 inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 
 // ^^^ variable ^^^ / vvv interpreter vvv
 
-class interpreter_base
+PAPILIO_EXPORT class interpreter_base
 {
 public:
     static constexpr char32_t script_start = U'$';
 };
 
-template <typename FormatContext>
+PAPILIO_EXPORT template <typename FormatContext>
 class interpreter : public interpreter_base
 {
 public:

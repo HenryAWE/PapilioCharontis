@@ -9,7 +9,7 @@
 
 namespace papilio
 {
-struct std_formatter_data
+PAPILIO_EXPORT struct std_formatter_data
 {
     using size_type = std::size_t;
 
@@ -52,7 +52,7 @@ struct std_formatter_data
     }
 };
 
-template <typename ParseContext, bool EnablePrecision = false>
+PAPILIO_EXPORT template <typename ParseContext, bool EnablePrecision = false>
 class std_formatter_parser
 {
 public:
@@ -802,7 +802,7 @@ namespace detail
     };
 } // namespace detail
 
-template <std::integral T, typename CharT>
+PAPILIO_EXPORT template <std::integral T, typename CharT>
 requires(!std::is_same_v<T, bool> && !char_like<T>)
 class formatter<T, CharT>
 {
@@ -847,7 +847,7 @@ private:
     std_formatter_data m_data;
 };
 
-template <std::floating_point T, typename CharT>
+PAPILIO_EXPORT template <std::floating_point T, typename CharT>
 class formatter<T, CharT>
 {
 public:
@@ -879,7 +879,7 @@ private:
     std_formatter_data m_data;
 };
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class formatter<utf::codepoint, CharT>
 {
 public:
@@ -920,7 +920,7 @@ private:
     std_formatter_data m_data;
 };
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class formatter<bool, CharT>
 {
 public:
@@ -980,7 +980,7 @@ private:
     }
 };
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class formatter<utf::basic_string_container<CharT>, CharT>
 {
 public:
@@ -1014,7 +1014,7 @@ private:
     std_formatter_data m_data;
 };
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 class formatter<const void*, CharT>
 {
 public:
