@@ -156,6 +156,87 @@ TEST(accessor, contiguous_range)
     }
 }
 
+TEST(accessor, map)
+{
+    using namespace papilio;
+
+    {
+        std::map<int, std::string> m{
+            {0,  "zero"},
+            {2,   "two"},
+            {3, "three"}
+        };
+
+        EXPECT_EQ(PAPILIO_NS format("{[0]}", m), "zero");
+        EXPECT_EQ(PAPILIO_NS format("{[2]}", m), "two");
+        EXPECT_EQ(PAPILIO_NS format("{.min}", m), "zero");
+        EXPECT_EQ(PAPILIO_NS format("{.max}", m), "three");
+
+        std::map<int, std::string, std::greater<int>> m_desc{
+            {0,  "zero"},
+            {2,   "two"},
+            {3, "three"}
+        };
+
+        EXPECT_EQ(PAPILIO_NS format("{[0]}", m_desc), "zero");
+        EXPECT_EQ(PAPILIO_NS format("{[2]}", m_desc), "two");
+        EXPECT_EQ(PAPILIO_NS format("{.min}", m_desc), "zero");
+        EXPECT_EQ(PAPILIO_NS format("{.max}", m_desc), "three");
+    }
+
+    {
+        std::map<int, std::wstring> m{
+            {0,  L"zero"},
+            {2,   L"two"},
+            {3, L"three"}
+        };
+
+        EXPECT_EQ(PAPILIO_NS format(L"{[0]}", m), L"zero");
+        EXPECT_EQ(PAPILIO_NS format(L"{[2]}", m), L"two");
+        EXPECT_EQ(PAPILIO_NS format(L"{.min}", m), L"zero");
+        EXPECT_EQ(PAPILIO_NS format(L"{.max}", m), L"three");
+
+        std::map<int, std::wstring, std::greater<int>> m_desc{
+            {0,  L"zero"},
+            {2,   L"two"},
+            {3, L"three"}
+        };
+
+        EXPECT_EQ(PAPILIO_NS format(L"{[0]}", m_desc), L"zero");
+        EXPECT_EQ(PAPILIO_NS format(L"{[2]}", m_desc), L"two");
+        EXPECT_EQ(PAPILIO_NS format(L"{.min}", m_desc), L"zero");
+        EXPECT_EQ(PAPILIO_NS format(L"{.max}", m_desc), L"three");
+    }
+
+    {
+        std::map<std::string, int> m{
+            {"zero", 0},
+            { "two", 2}
+        };
+
+        EXPECT_EQ(PAPILIO_NS format("{['zero']}", m), "0");
+        EXPECT_EQ(PAPILIO_NS format("{['two']}", m), "2");
+
+        std::map<std::string, int, std::less<>> m_transparent{
+            {"zero", 0},
+            { "two", 2}
+        };
+
+        EXPECT_EQ(PAPILIO_NS format("{['zero']}", m_transparent), "0");
+        EXPECT_EQ(PAPILIO_NS format("{['two']}", m_transparent), "2");
+    }
+
+    {
+        std::map<std::wstring, int> m{
+            {L"zero", 0},
+            { L"two", 2}
+        };
+
+        EXPECT_EQ(PAPILIO_NS format(L"{['zero']}", m), L"0");
+        EXPECT_EQ(PAPILIO_NS format(L"{['two']}", m), L"2");
+    }
+}
+
 TEST(accessor, type_info)
 {
     using namespace papilio;

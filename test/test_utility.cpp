@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/utility.hpp>
+#include <map>
+#include <papilio/container.hpp>
 
 static_assert(papilio::tuple_like<std::tuple<>>);
 static_assert(papilio::tuple_like<std::tuple<int>>);
@@ -36,6 +38,9 @@ static_assert(papilio::u8string_like<char8_t[]>);
 static_assert(papilio::u8string_like<const char8_t[]>);
 static_assert(papilio::u8string_like<std::u8string>);
 static_assert(papilio::u8string_like<std::u8string_view>);
+
+static_assert(papilio::map_like<std::map<int, int>>);
+static_assert(papilio::map_like<papilio::fixed_flat_map<int, int, 8>>);
 
 TEST(slice, slice)
 {

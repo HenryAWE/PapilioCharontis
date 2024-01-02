@@ -84,6 +84,29 @@ concept tuple_like = detail::tuple_like_helper<std::remove_cvref_t<T>>;
 template <typename T>
 concept pair_like = detail::pair_like_helper<std::remove_cvref_t<T>>;
 
+namespace detail
+{
+    // clang-format off
+
+    template <typename MapType, typename Key, typename T>
+    concept map_like_impl =
+        //std::convertible_to<std::iter_value_t<typename MapType::iterator>, T> &&
+        requires(MapType m, const MapType cm, const Key& k) {
+            { m.find(k) } -> std::convertible_to<typename MapType::iterator>;
+            { m.end() } -> std::equality_comparable_with<typename MapType::iterator>;
+            { cm.find(k) } -> std::convertible_to<typename MapType::const_iterator>;
+            { cm.end() } -> std::equality_comparable_with<typename MapType::const_iterator>;
+        };
+
+    // clang-format on
+} // namespace detail
+
+template <typename MapType>
+concept map_like = detail::map_like_impl<
+    std::remove_cv_t<MapType>,
+    typename MapType::key_type,
+    typename MapType::mapped_type>;
+
 // ^^^ concepts ^^^ / vvv tags vvv
 
 // clang-format off

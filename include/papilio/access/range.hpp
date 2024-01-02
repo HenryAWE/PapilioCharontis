@@ -4,6 +4,7 @@
 #include <span>
 #include <ranges>
 #include <vector>
+#include <map>
 #include "../access.hpp"
 #include "../utility.hpp"
 
@@ -72,5 +73,110 @@ PAPILIO_EXPORT template <typename T, typename Allocator, typename Context>
 requires(!std::is_same_v<T, bool>) // Avoid std::vector<bool>
 struct accessor<std::vector<T, Allocator>, Context> :
     public contiguous_range_accessor<std::vector<T, Allocator>, Context>
+{};
+
+namespace detail
+{
+    template <typename Compare>
+    struct cp_is_less : public std::false_type
+    {};
+
+    template <typename T>
+    struct cp_is_less<std::less<T>> : public std::true_type
+    {};
+
+    template <typename Compare>
+    struct cp_is_greater : public std::false_type
+    {};
+
+    template <typename T>
+    struct cp_is_greater<std::greater<T>> : public std::true_type
+    {};
+} // namespace detail
+
+template <typename MapType, typename Context>
+requires(map_like<MapType>)
+struct map_accessor
+{
+    using char_type = typename Context::char_type;
+    using format_arg_type = basic_format_arg<Context>;
+    using attribute_name_type = basic_attribute_name<char_type>;
+    using string_view_type = std::basic_string_view<char_type>;
+
+    using key_type = typename MapType::key_type;
+    using mapped_type = typename MapType::mapped_type;
+
+    [[nodiscard]]
+    static format_arg_type index(const MapType& m, ssize_t i) requires(std::integral<key_type>)
+    {
+        if constexpr(std::is_unsigned_v<key_type>)
+        {
+            if(i < 0)
+                return format_arg_type();
+        }
+
+        auto it = m.find(static_cast<key_type>(i));
+        return it != m.end() ?
+                   static_cast<mapped_type>(it->second) :
+                   format_arg_type();
+    }
+
+    [[nodiscard]]
+    static format_arg_type index(const MapType& m, string_view_type k)
+        requires(basic_string_like<key_type, char_type>)
+    {
+        if constexpr(is_transparent_v<typename MapType::value_compare>)
+        {
+            auto it = m.find(k);
+            return it != m.end() ?
+                       static_cast<mapped_type>(it->second) :
+                       format_arg_type();
+        }
+        else
+        {
+            auto it = m.find(static_cast<key_type>(k));
+            return it != m.end() ?
+                       static_cast<mapped_type>(it->second) :
+                       format_arg_type();
+        }
+    }
+
+    [[nodiscard]]
+    static format_arg_type attribute(const MapType& m, const attribute_name_type& attr)
+    {
+        if(attr == PAPILIO_TSTRING_VIEW(char_type, "size"))
+        {
+            return m.size();
+        }
+        if constexpr(detail::cp_is_less<typename MapType::key_compare>::value)
+        {
+            if(attr == PAPILIO_TSTRING_VIEW(char_type, "min"))
+            {
+                return !m.empty() ? m.begin()->second : format_arg_type();
+            }
+            else if(attr == PAPILIO_TSTRING_VIEW(char_type, "max"))
+            {
+                return !m.empty() ? std::prev(m.end())->second : format_arg_type();
+            }
+        }
+        if constexpr(detail::cp_is_greater<typename MapType::key_compare>::value)
+        {
+            if(attr == PAPILIO_TSTRING_VIEW(char_type, "max"))
+            {
+                return !m.empty() ? m.begin()->second : format_arg_type();
+            }
+            else if(attr == PAPILIO_TSTRING_VIEW(char_type, "min"))
+            {
+                return !m.empty() ? std::prev(m.end())->second : format_arg_type();
+            }
+        }
+
+        throw_invalid_attribute(attr);
+    }
+};
+
+PAPILIO_EXPORT template <typename Key, typename T, typename Compare, typename Allocator, typename Context>
+struct accessor<std::map<Key, T, Compare, Allocator>, Context> :
+    public map_accessor<std::map<Key, T, Compare, Allocator>, Context>
 {};
 } // namespace papilio
