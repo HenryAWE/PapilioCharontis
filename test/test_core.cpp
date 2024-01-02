@@ -69,7 +69,7 @@ TEST(format_arg, constructor)
         EXPECT_TRUE(fmt_arg.holds<format_arg::handle>());
         EXPECT_EQ(get<std::span<const int>>(fmt_arg).data(), arr);
     }
-    
+
     {
         std::array<int, 4> arr = {0, 1, 2, 3};
         format_arg fmt_arg(arr);

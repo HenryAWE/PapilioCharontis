@@ -289,7 +289,7 @@ TEST(basic_string_container, string_container)
         EXPECT_EQ(sc[2], U's');
         EXPECT_EQ(sc[3], U't');
 
-#if __cpp_multidimensional_subscript >= 202110L
+#ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
 
         EXPECT_EQ((sc[reverse_index, 0]), U't');
         EXPECT_EQ((sc[reverse_index, 1]), U's');

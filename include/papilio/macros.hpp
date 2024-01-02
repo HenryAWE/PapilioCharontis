@@ -22,6 +22,10 @@
 #    define PAPILIO_COMPILER_GCC __GNUC__
 #endif
 
+#if defined(__cpp_multidimensional_subscript) && __cpp_multidimensional_subscript >= 202110L
+#    define PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT __cpp_multidimensional_subscript
+#endif
+
 #ifdef PAPILIO_COMPILER_MSVC
 // [[no_unique_address]] is ignored by MSVC even in C++20 mode.
 // https://devblogs.microsoft.com/cppblog/msvc-cpp20-and-the-std-cpp20-switch/#msvc-extensions-and-abi

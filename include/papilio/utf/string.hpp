@@ -161,7 +161,7 @@ namespace detail
             {
                 m_offset = next_offset;
                 std::uint16_t ch = m_str[next_offset];
-                if(is_high_surrogate(ch))
+                if(PAPILIO_NS utf::is_high_surrogate(ch))
                     m_len = 2;
                 else
                     m_len = 1;
@@ -177,7 +177,8 @@ namespace detail
         {
             PAPILIO_ASSUME(m_offset != 0);
             --m_offset;
-            while(is_low_surrogate(m_str[m_offset])) --m_offset;
+            while(PAPILIO_NS utf::is_low_surrogate(m_str[m_offset]))
+                --m_offset;
         }
 
     public:
@@ -509,7 +510,7 @@ namespace detail
             return index(i);
         }
 
-#if __cpp_multidimensional_subscript >= 202110L
+#ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
 
         [[nodiscard]]
         constexpr codepoint operator[](reverse_index_t, size_type i) const noexcept
@@ -722,9 +723,9 @@ namespace detail
                 {
                     idx = -idx; // abs(idx)
 
-                    const auto sentinel = as_derived().cbegin();
+                    const auto sentinel = cbegin();
 
-                    const_iterator it = as_derived().cend();
+                    const_iterator it = cend();
                     for(slice::index_type i = 0; i < idx; ++i)
                     {
                         if(it == sentinel)

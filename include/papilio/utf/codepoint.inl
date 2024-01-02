@@ -103,7 +103,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(co
 
 constexpr std::uint8_t decoder<char8_t>::size_bytes(char8_t ch) noexcept
 {
-    return byte_count(ch);
+    return PAPILIO_NS utf::byte_count(ch);
 }
 
 constexpr std::pair<codepoint, std::uint8_t> decoder<char8_t>::to_codepoint(std::u8string_view ch)
@@ -119,7 +119,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(std::
     if(ch.empty()) [[unlikely]]
         return std::make_pair(U'\0', std::uint8_t(0));
 
-    if(!is_high_surrogate(ch[0])) [[likely]]
+    if(!PAPILIO_NS utf::is_high_surrogate(ch[0])) [[likely]]
     {
         char32_t result = ch[0];
         return std::make_pair(result, std::uint8_t(1));
@@ -128,7 +128,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(std::
     {
         if(ch.size() < 2) [[unlikely]]
             throw invalid_surrogate(ch[0]);
-        else if(!is_low_surrogate(ch[1])) [[unlikely]]
+        else if(!PAPILIO_NS utf::is_low_surrogate(ch[1])) [[unlikely]]
             throw invalid_surrogate(ch[1]);
 
         char32_t result =
