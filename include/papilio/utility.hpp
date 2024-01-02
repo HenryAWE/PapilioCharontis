@@ -72,10 +72,17 @@ namespace detail
     concept tuple_like_helper =
         requires() { typename std::tuple_size<T>; } &&
         check_tuple_like<T>(std::make_index_sequence<std::tuple_size<T>::value>());
+
+    template <typename T>
+    concept pair_like_helper =
+        tuple_like_helper<T> &&
+        std::tuple_size<T>::value == 2;
 } // namespace detail
 
 template <typename T>
 concept tuple_like = detail::tuple_like_helper<std::remove_cvref_t<T>>;
+template <typename T>
+concept pair_like = detail::pair_like_helper<std::remove_cvref_t<T>>;
 
 // ^^^ concepts ^^^ / vvv tags vvv
 

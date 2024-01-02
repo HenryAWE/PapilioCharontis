@@ -64,6 +64,20 @@ TEST(format_arg, constructor)
     }
 
     {
+        int arr[4] = {0, 1, 2, 3};
+        format_arg fmt_arg(arr);
+        EXPECT_TRUE(fmt_arg.holds<format_arg::handle>());
+        EXPECT_EQ(get<std::span<const int>>(fmt_arg).data(), arr);
+    }
+    
+    {
+        std::array<int, 4> arr = {0, 1, 2, 3};
+        format_arg fmt_arg(arr);
+        EXPECT_TRUE(fmt_arg.holds<format_arg::handle>());
+        EXPECT_EQ(get<std::span<const int>>(fmt_arg).data(), arr.data());
+    }
+
+    {
         using namespace std::literals;
 
         PAPILIO_NS format_arg fmt_arg("test");

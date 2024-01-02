@@ -1,29 +1,41 @@
 #pragma once
 
 #include <string_view>
+#include <tuple>
 #include "../access.hpp"
 #include "../utility.hpp"
 
 namespace papilio
 {
-PAPILIO_EXPORT template <typename Tuple, typename Context>
-requires(tuple_like<Tuple>)
-struct accessor<Tuple, Context>
+PAPILIO_EXPORT template <
+    tuple_like Tuple,
+    typename Context,
+    bool PairLike = pair_like<Tuple>>
+struct tuple_accessor
 {
+    // pair-like -> tuple_size == 2
+    static_assert(!PairLike || std::tuple_size_v<Tuple> == 2, "Invalid tuple size");
+
     using char_type = typename Context::char_type;
     using attribute_name_type = basic_attribute_name<char_type>;
     using format_arg_type = basic_format_arg<Context>;
 
     [[nodiscard]]
+    static consteval std::size_t size() noexcept
+    {
+        return std::tuple_size_v<Tuple>;
+    }
+
+    [[nodiscard]]
     static format_arg_type index(const Tuple& tp, ssize_t i)
     {
-        if constexpr(std::tuple_size_v<Tuple> == 0)
+        if constexpr(size() == 0)
             return format_arg_type();
         else
         {
             if(i < 0)
-            {
-                i = std::tuple_size_v<Tuple> + i;
+            { // reverse index
+                i = size() + i;
                 if(i < 0) [[unlikely]]
                     return format_arg_type();
             }
@@ -45,7 +57,7 @@ struct accessor<Tuple, Context>
     [[nodiscard]]
     static format_arg_type attribute(const Tuple& tp, const attribute_name_type& attr)
     {
-        if constexpr(std::tuple_size_v<Tuple> == 2) // pair-like
+        if constexpr(PairLike)
         {
             if(attr == PAPILIO_TSTRING_VIEW(char_type, "first"))
                 return std::get<0>(tp);
@@ -66,4 +78,14 @@ private:
         return format_arg_type(std::get<Idx>(tp));
     }
 };
+
+PAPILIO_EXPORT template <typename Context, typename... Ts>
+struct accessor<std::tuple<Ts...>, Context> :
+    public tuple_accessor<std::tuple<Ts...>, Context, false>
+{};
+
+PAPILIO_EXPORT template <typename Context, typename T1, typename T2>
+struct accessor<std::pair<T1, T2>, Context> :
+    public tuple_accessor<std::pair<T1, T2>, Context, true>
+{};
 } // namespace papilio

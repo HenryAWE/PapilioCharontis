@@ -982,7 +982,7 @@ private:
             }
         }
 
-        return std::make_pair(current, start);
+        return std::make_pair(std::move(current), start);
     }
 
     static std::pair<indexing_value_type, iterator> parse_indexing_value(iterator start, iterator stop)

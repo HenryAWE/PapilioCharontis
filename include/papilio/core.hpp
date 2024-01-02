@@ -4,6 +4,8 @@
 #include <typeinfo>
 #include <vector>
 #include <map>
+#include <span>
+#include <array>
 #include "macros.hpp"
 #include "fmtfwd.hpp"
 #include "utility.hpp"
@@ -59,8 +61,8 @@ namespace detail
 {
     template <typename T>
     concept acceptable_integral =
-        !std::is_same_v<T, bool> &&
-        std::integral<T> &&
+        !std::is_same_v<std::remove_cv_t<T>, bool> &&
+        std::integral<std::remove_cv_t<T>> &&
         !char_like<T> &&
         sizeof(T) <= sizeof(unsigned long long int);
 
@@ -84,6 +86,8 @@ namespace detail
         !char_like<T> &&
         !acceptable_integral<T> &&
         !acceptable_fp<T> &&
+        !std::is_pointer_v<T> &&
+        !std::is_bounded_array_v<T> &&
         !basic_string_like<T, CharT>;
 
     template <typename T>
@@ -524,14 +528,8 @@ public:
     {}
 
     template <typename T>
-    requires(!char_like<T>)
-    basic_format_arg(T* ptr) noexcept
-        : m_val(std::in_place_type<const void*>, ptr)
-    {}
-
-    template <typename T>
-    requires(!char_like<T>)
-    basic_format_arg(const T* ptr) noexcept
+    requires(std::is_pointer_v<T> && !char_like<std::remove_pointer_t<T>>)
+    basic_format_arg(T ptr) noexcept
         : m_val(std::in_place_type<const void*>, ptr)
     {}
 
@@ -543,10 +541,25 @@ public:
         : m_val(std::in_place_type<handle>, val)
     {}
 
+    template <typename T, std::size_t N>
+    requires(!char_like<T>)
+    basic_format_arg(T (&arr)[N]) noexcept
+        : m_val(std::in_place_type<handle>, std::span<std::add_const_t<T>>(arr, N))
+    {}
+
+    template <typename T, std::size_t N>
+    requires(!char_like<T>)
+    basic_format_arg(const std::array<T, N>& arr) noexcept
+        : m_val(std::in_place_type<handle>, std::span<const T>(arr.data(), N))
+    {}
+
     template <detail::use_handle<char_type> T>
     basic_format_arg(independent_t, T&& val) noexcept
         : m_val(std::in_place_type<handle>, independent, std::forward<T>(val))
     {}
+
+    basic_format_arg(const std::type_info& info) noexcept
+        : m_val(std::in_place_type<handle>, std::type_index(info)) {}
 
     basic_format_arg& operator=(const basic_format_arg&) = default;
     basic_format_arg& operator=(basic_format_arg&&) noexcept = default;

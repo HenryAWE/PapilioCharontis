@@ -108,6 +108,71 @@ TEST(accessor, tuple)
     }
 }
 
+TEST(accessor, contiguous_range)
+{
+    using namespace papilio;
+
+    {
+        int arr[] = {0, 1, 2, 3};
+        std::span<const int> view = arr;
+
+        EXPECT_EQ(PAPILIO_NS format("{.size}", view), "4");
+        EXPECT_EQ(PAPILIO_NS format("{.size}", arr), "4");
+        EXPECT_EQ(PAPILIO_NS format("{[1:4].size}", view), "3");
+        EXPECT_EQ(PAPILIO_NS format("{[1:4].size}", arr), "3");
+        EXPECT_EQ(PAPILIO_NS format("{0[0]},{0[1]},{0[2]},{0[3]}", view), "0,1,2,3");
+        EXPECT_EQ(PAPILIO_NS format("{0[0]},{0[1]},{0[2]},{0[3]}", arr), "0,1,2,3");
+
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", view), L"4");
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", arr), L"4");
+        EXPECT_EQ(PAPILIO_NS format(L"{[1:4].size}", view), L"3");
+        EXPECT_EQ(PAPILIO_NS format(L"{[1:4].size}", arr), L"3");
+        EXPECT_EQ(PAPILIO_NS format(L"{0[0]},{0[1]},{0[2]},{0[3]}", view), L"0,1,2,3");
+        EXPECT_EQ(PAPILIO_NS format(L"{0[0]},{0[1]},{0[2]},{0[3]}", arr), L"0,1,2,3");
+    }
+
+    {
+        std::array<int, 4> arr = {0, 1, 2, 3};
+
+        EXPECT_EQ(PAPILIO_NS format("{.size}", arr), "4");
+        EXPECT_EQ(PAPILIO_NS format("{.size}", arr), "4");
+        EXPECT_EQ(PAPILIO_NS format("{[1:4].size}", arr), "3");
+        EXPECT_EQ(PAPILIO_NS format("{0[0]},{0[1]},{0[2]},{0[3]}", arr), "0,1,2,3");
+        
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", arr), L"4");
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", arr), L"4");
+        EXPECT_EQ(PAPILIO_NS format(L"{[1:4].size}", arr), L"3");
+        EXPECT_EQ(PAPILIO_NS format(L"{0[0]},{0[1]},{0[2]},{0[3]}", arr), L"0,1,2,3");
+    }
+
+    {
+        std::vector<int> vi = {0, 1};
+
+        EXPECT_EQ(PAPILIO_NS format("{.size}", vi), "2");
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", vi), L"2");
+
+        EXPECT_EQ(PAPILIO_NS format("{0[0]},{0[1]}", vi), "0,1");
+        EXPECT_EQ(PAPILIO_NS format(L"{0[0]},{0[1]}", vi), L"0,1");
+    }
+}
+
+TEST(accessor, type_info)
+{
+    using namespace papilio;
+
+    {
+        const std::type_info& info = typeid(int);
+        EXPECT_EQ(
+            PAPILIO_NS format("{0.name}: {0.hash_code}", typeid(int)),
+            PAPILIO_NS format("{}: {}", info.name(), info.hash_code())
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{0.name}: {0.hash_code}", typeid(int)),
+            PAPILIO_NS format(L"{}: {}", utf::string_ref(info.name()).to_wstring(), info.hash_code())
+        );
+    }
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

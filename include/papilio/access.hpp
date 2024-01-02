@@ -388,3 +388,5 @@ public:
 
 #include "access/string.hpp"
 #include "access/tuple.hpp"
+#include "access/range.hpp"
+#include "access/misc.hpp"
