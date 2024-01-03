@@ -90,8 +90,8 @@ namespace detail
 
     template <typename MapType, typename Key, typename T>
     concept map_like_impl =
-        //std::convertible_to<std::iter_value_t<typename MapType::iterator>, T> &&
         requires(MapType m, const MapType cm, const Key& k) {
+            typename MapType::key_compare;
             { m.find(k) } -> std::convertible_to<typename MapType::iterator>;
             { m.end() } -> std::equality_comparable_with<typename MapType::iterator>;
             { cm.find(k) } -> std::convertible_to<typename MapType::const_iterator>;
@@ -383,7 +383,7 @@ namespace detail
         constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
         constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
 
-        constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+        constexpr compressed_pair_impl(const T1& v1, const T2& v2)
             : m_first(v1), m_second(v2) {}
 
         template <typename U1, typename U2>
@@ -391,6 +391,16 @@ namespace detail
             : m_first(std::forward<U1>(v1)), m_second(std::forward<U2>(v2))
         {}
 
+
+    protected:
+        template <typename Tuple1, typename Tuple2, std::size_t... Indices1, std::size_t... Indices2>
+        constexpr compressed_pair_impl(
+            Tuple1& args1, Tuple2& args2, std::index_sequence<Indices1...>, std::index_sequence<Indices2...>
+        )
+            : m_first(std::get<Indices1>(std::move(args1))...), m_second(std::get<Indices2>(std::move(args2))...)
+        {}
+
+    public:
         [[nodiscard]]
         constexpr first_type& first() noexcept
         {
@@ -445,7 +455,7 @@ namespace detail
         constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
         constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
 
-        constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+        constexpr compressed_pair_impl(const T1& v1, const T2& v2)
             : T1(v1), m_second(v2) {}
 
         template <typename U1, typename U2>
@@ -453,6 +463,16 @@ namespace detail
             : T1(std::forward<U1>(v1)), m_second(std::forward<U2>(v2))
         {}
 
+
+    protected:
+        template <typename Tuple1, typename Tuple2, std::size_t... Indices1, std::size_t... Indices2>
+        constexpr compressed_pair_impl(
+            Tuple1& args1, Tuple2 args2, std::index_sequence<Indices1...>, std::index_sequence<Indices2...>
+        )
+            : T1(std::get<Indices1>(std::move(args1))...), m_second(std::get<Indices2>(std::move(args2))...)
+        {}
+
+    public:
         [[nodiscard]]
         constexpr first_type& first() noexcept
         {
@@ -499,7 +519,7 @@ namespace detail
         constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
         constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
 
-        constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+        constexpr compressed_pair_impl(const T1& v1, const T2& v2)
             : T2(v2), m_first(v1) {}
 
         template <typename U1, typename U2>
@@ -507,6 +527,16 @@ namespace detail
             : T2(std::forward<U1>(v2)), m_first(std::forward<U2>(v1))
         {}
 
+
+    protected:
+        template <typename Tuple1, typename Tuple2, std::size_t... Indices1, std::size_t... Indices2>
+        constexpr compressed_pair_impl(
+            Tuple1& args1, Tuple2& args2, std::index_sequence<Indices1...>, std::index_sequence<Indices2...>
+        )
+            : T2(std::get<Indices2>(std::move(args2))...), m_first(std::get<Indices1>(std::move(args1))...)
+        {}
+
+    public:
         [[nodiscard]]
         constexpr first_type& first() noexcept
         {
@@ -553,7 +583,7 @@ namespace detail
         constexpr compressed_pair_impl(const compressed_pair_impl&) = default;
         constexpr compressed_pair_impl(compressed_pair_impl&&) = default;
 
-        constexpr compressed_pair_impl(const T1& v1, const T2 v2)
+        constexpr compressed_pair_impl(const T1& v1, const T2& v2)
             : T1(v1), T2(v2) {}
 
         template <typename U1, typename U2>
@@ -561,6 +591,15 @@ namespace detail
             : T1(std::forward<U1>(v1)), T2(std::forward<U2>(v2))
         {}
 
+    protected:
+        template <typename Tuple1, typename Tuple2, std::size_t... Indices1, std::size_t... Indices2>
+        constexpr compressed_pair_impl(
+            Tuple1& args1, Tuple2& args2, std::index_sequence<Indices1...>, std::index_sequence<Indices2...>
+        )
+            : T1(std::get<Indices1>(std::move(args1))...), T2(std::get<Indices2>(std::move(args2))...)
+        {}
+
+    public:
         [[nodiscard]]
         constexpr first_type& first() noexcept
         {
@@ -603,7 +642,27 @@ class compressed_pair :
     using base = detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>;
 
 public:
-    using base::base;
+    constexpr compressed_pair() = default;
+    constexpr compressed_pair(const compressed_pair&) = default;
+    constexpr compressed_pair(compressed_pair&&) = default;
+
+    constexpr compressed_pair(const T1& v1, const T2& v2)
+        : base(v1, v2) {}
+
+    template <typename U1, typename U2>
+    constexpr compressed_pair(U1&& v1, U2&& v2)
+        : base(std::forward<U1>(v1), std::forward<U2>(v2))
+    {}
+
+    template <typename... Args1, typename... Args2>
+    constexpr compressed_pair(std::piecewise_construct_t, std::tuple<Args1...> args1, std::tuple<Args2...> args2)
+        : base(
+              args1,
+              args2,
+              std::make_index_sequence<sizeof...(Args1)>(),
+              std::make_index_sequence<sizeof...(Args2)>()
+          )
+    {}
 };
 
 namespace detail

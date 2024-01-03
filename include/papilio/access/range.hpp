@@ -17,6 +17,7 @@ struct contiguous_range_accessor
     using format_arg_type = basic_format_arg<Context>;
     using attribute_name_type = basic_attribute_name<char_type>;
 
+    [[nodiscard]]
     static format_arg_type index(const Range& rng, ssize_t i)
     {
         namespace stdr = std::ranges;
@@ -34,6 +35,7 @@ struct contiguous_range_accessor
         return stdr::cdata(rng)[i];
     }
 
+    [[nodiscard]]
     static format_arg_type index(const Range& rng, slice s)
     {
         namespace stdr = std::ranges;
@@ -55,6 +57,7 @@ struct contiguous_range_accessor
         return span_t(ptr + s.first, s.length());
     }
 
+    [[nodiscard]]
     static format_arg_type attribute(const Range& rng, const attribute_name_type& attr)
     {
         if(attr == PAPILIO_TSTRING_VIEW(char_type, "size"))
@@ -74,6 +77,50 @@ requires(!std::is_same_v<T, bool>) // Avoid std::vector<bool>
 struct accessor<std::vector<T, Allocator>, Context> :
     public contiguous_range_accessor<std::vector<T, Allocator>, Context>
 {};
+
+PAPILIO_EXPORT template <typename T, std::size_t Capacity, typename Context>
+struct accessor<fixed_vector<T, Capacity>, Context> :
+    public contiguous_range_accessor<fixed_vector<T, Capacity>, Context>
+{};
+
+PAPILIO_EXPORT template <typename T, std::size_t Capacity, typename Allocator, typename Context>
+struct accessor<small_vector<T, Capacity, Allocator>, Context> : 
+    public contiguous_range_accessor<small_vector_base<T, Allocator>, Context>
+{};
+
+// Specialization for std::vector<bool>
+PAPILIO_EXPORT template <typename Allocator, typename Context>
+struct accessor<std::vector<bool, Allocator>, Context>
+{
+    using char_type = typename Context::char_type;
+    using attribute_name_type = basic_attribute_name<char_type>;
+    using format_arg_type = basic_format_arg<Context>;
+
+    using vector_type = std::vector<bool, Allocator>;
+
+    static format_arg_type index(const vector_type& vec, ssize_t i)
+    {
+        if(i < 0)
+        {
+            i = vec.size() + i;
+            if(i < 0)
+                return format_arg_type();
+        }
+
+        if(i >= vec.size())
+            return format_arg_type();
+
+        return format_arg_type(std::in_place_type<bool>, vec[i]);
+    }
+
+    static format_arg_type attribute(const vector_type& vec, const attribute_name_type& attr)
+    {
+        if(attr == PAPILIO_TSTRING_VIEW(char_type, "size"))
+            return vec.size();
+
+        throw_invalid_attribute(attr);
+    }
+};
 
 namespace detail
 {
@@ -107,7 +154,8 @@ struct map_accessor
     using mapped_type = typename MapType::mapped_type;
 
     [[nodiscard]]
-    static format_arg_type index(const MapType& m, ssize_t i) requires(std::integral<key_type>)
+    static format_arg_type index(const MapType& m, ssize_t i)
+        requires(std::integral<key_type>)
     {
         if constexpr(std::is_unsigned_v<key_type>)
         {
@@ -125,7 +173,7 @@ struct map_accessor
     static format_arg_type index(const MapType& m, string_view_type k)
         requires(basic_string_like<key_type, char_type>)
     {
-        if constexpr(is_transparent_v<typename MapType::value_compare>)
+        if constexpr(is_transparent_v<typename MapType::key_compare>)
         {
             auto it = m.find(k);
             return it != m.end() ?
@@ -178,5 +226,10 @@ struct map_accessor
 PAPILIO_EXPORT template <typename Key, typename T, typename Compare, typename Allocator, typename Context>
 struct accessor<std::map<Key, T, Compare, Allocator>, Context> :
     public map_accessor<std::map<Key, T, Compare, Allocator>, Context>
+{};
+
+PAPILIO_EXPORT template <typename Key, typename T, std::size_t Capacity, typename Compare, typename Context>
+struct accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context> :
+    public map_accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context>
 {};
 } // namespace papilio

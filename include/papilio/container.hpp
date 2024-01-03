@@ -44,7 +44,7 @@ class small_vector_base : public detail::small_vector_impl_base
 public:
     using value_type = T;
     using allocator_type = Allocator;
-    using size_type = small_vector_impl_base::size_type;
+    using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using reference = value_type&;
     using const_reference = const value_type&;
@@ -71,19 +71,21 @@ public:
         this->throw_out_of_range();
     }
 
+    // clang-format off
+
     [[nodiscard]]
-    reference
-        operator[](size_type i) noexcept
+    reference operator[](size_type i) noexcept
     {
         return data()[i];
     }
 
     [[nodiscard]]
-    const_reference
-        operator[](size_type i) const noexcept
+    const_reference operator[](size_type i) const noexcept
     {
         return data()[i];
     }
+
+    // clang-format on
 
     [[nodiscard]]
     reference front() noexcept
@@ -238,12 +240,14 @@ class small_vector : public small_vector_base<T, Allocator>
     using base = small_vector_base<T, Allocator>;
 
 public:
-    using value_type = base::value_type;
-    using allocator_type = base::allocator_type;
-    using size_type = base::size_type;
-    using difference_type = base::size_type;
-    using reference = base::reference;
-    using const_reference = base::const_reference;
+    static_assert(std::is_object_v<T>, "Container of non-object type is invalid");
+
+    using value_type = T;
+    using allocator_type = Allocator;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type&;
+    using const_reference = const value_type&;
     using pointer = base::pointer;
     using const_pointer = base::const_pointer;
     using iterator = base::iterator;
@@ -258,7 +262,8 @@ public:
     }
 
     explicit small_vector(const Allocator& alloc) noexcept
-        : base()
+        : base(),
+          m_data(std::piecewise_construct, std::forward_as_tuple(), std::forward_as_tuple(alloc))
     {
         set_ptrs(getbuf(), static_size());
     }
@@ -269,7 +274,7 @@ public:
         reserve(other.size());
         for(size_type i = 0; i < other.size(); ++i)
         {
-            emplace_back_raw(other[i]);
+            emplace_back_impl(other[i]);
         }
     }
 
@@ -290,7 +295,7 @@ public:
             PAPILIO_ASSERT(other.size() <= this->capacity());
             for(auto&& i : other)
             {
-                emplace_back_raw(std::move(i));
+                emplace_back_impl(std::move(i));
             }
             other.clear();
         }
@@ -342,7 +347,7 @@ public:
             reserve(std::distance(first, last));
             for(auto it = first; it != last; ++it)
             {
-                emplace_back_raw(*it);
+                emplace_back_impl(*it);
             }
         }
         else
@@ -416,7 +421,7 @@ public:
             size_type current = this->size();
             reserve(this->calc_mem_size(current, current + 1));
         }
-        emplace_back_raw(std::forward<Args>(args)...);
+        emplace_back_impl(std::forward<Args>(args)...);
     }
 
     void pop_back() noexcept
@@ -440,7 +445,7 @@ public:
         {
             reserve(count);
             while(this->size() != count)
-                emplace_back_raw(val);
+                emplace_back_impl(val);
         }
     }
 
@@ -529,14 +534,14 @@ private:
         allocator_type>
         m_data;
 
-    pointer getbuf() noexcept
+    value_type* getbuf() noexcept
     {
-        return reinterpret_cast<pointer>(m_data.first().data());
+        return reinterpret_cast<value_type*>(m_data.first().data());
     }
 
-    const_pointer getbuf() const noexcept
+    const value_type* getbuf() const noexcept
     {
-        return reinterpret_cast<const_pointer>(m_data.first().data());
+        return reinterpret_cast<const value_type*>(m_data.first().data());
     }
 
     // get reference of the allocator
@@ -575,13 +580,13 @@ private:
 
     // Note: This function assumes that the container has enough memory.
     template <typename... Args>
-    void emplace_back_raw(Args&&... args)
+    void emplace_back_impl(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
     {
         PAPILIO_ASSERT(m_p_end < m_p_capacity);
         if(!dynamic_allocated()) [[likely]]
         {
             std::construct_at(
-                m_p_end,
+                static_cast<value_type*>(m_p_end),
                 std::forward<Args>(args)...
             );
         }
@@ -731,7 +736,7 @@ private:
 
         for(size_type i = 0; i < this->size(); ++i)
         {
-            other.emplace_back_raw(
+            other.emplace_back_impl(
                 std::move(*(m_p_begin + i))
             );
         }
@@ -767,6 +772,8 @@ template <typename T, std::size_t Capacity>
 class fixed_vector : public detail::fixed_vector_impl_base
 {
 public:
+    static_assert(std::is_object_v<T>, "Container of non-object type is invalid");
+
     using value_type = T;
     using reference = T&;
     using const_reference = const T&;
@@ -821,6 +828,8 @@ public:
         return data()[pos];
     }
 
+    // clang-format off
+
     [[nodiscard]]
     reference operator[](size_type pos) noexcept
     {
@@ -832,6 +841,8 @@ public:
     {
         return data()[pos];
     }
+
+    // clang-format on
 
     [[nodiscard]]
     reference front() noexcept

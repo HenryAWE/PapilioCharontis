@@ -254,6 +254,19 @@ TEST(accessor, type_info)
     }
 }
 
+TEST(accessor, vector_bool)
+{
+    using namespace papilio;
+
+    std::vector<bool> vec{true, true, false, true};
+
+    EXPECT_EQ(PAPILIO_NS format("{.size}", vec), "4");
+    EXPECT_EQ(PAPILIO_NS format(L"{.size}", vec), L"4");
+
+    EXPECT_EQ(PAPILIO_NS format("{0[0]} {0[-2]}", vec), "true false");
+    EXPECT_EQ(PAPILIO_NS format(L"{0[0]} {0[-2]}", vec), L"true false");
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);
