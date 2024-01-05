@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/script/interpreter.hpp>
+#include <papilio/format.hpp>
 
 TEST(variable, constructor)
 {
@@ -42,7 +43,7 @@ TEST(variable, constructor)
         EXPECT_TRUE(var.holds_float());
         EXPECT_TRUE(var.has_ownership());
     }
-    
+
     {
         variable var = 10.0L;
         EXPECT_TRUE(var.holds_float());
@@ -54,7 +55,7 @@ TEST(variable, constructor)
         EXPECT_TRUE(var.holds_string());
         EXPECT_TRUE(var.has_ownership());
     }
-    
+
     {
         utf::string_container sc = "test"_sc;
         sc.obtain_ownership();
@@ -62,13 +63,13 @@ TEST(variable, constructor)
         EXPECT_TRUE(var.holds_string());
         EXPECT_TRUE(var.has_ownership());
     }
-    
+
     {
         variable var = "test"_sc;
         EXPECT_TRUE(var.holds_string());
         EXPECT_FALSE(var.has_ownership());
     }
-    
+
     {
         utf::string_container sc = "test"_sc;
         variable var = sc;
@@ -395,6 +396,12 @@ TEST(interpreter, run)
 
         EXPECT_EQ(variable(arg.to_variant()), "zero");
     }
+
+    {
+        auto arg = run_script("{$ 0 == {val}: 'zero'}", "val"_a = 0);
+
+        EXPECT_EQ(variable(arg.to_variant()), "zero");
+    }
 }
 
 TEST(interpreter, format)
@@ -414,6 +421,40 @@ TEST(interpreter, format)
 
         EXPECT_EQ(buf, "test");
     }
+}
+
+namespace test_script_interpreter
+{
+template <typename... Args>
+auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
+{
+    using namespace papilio;
+    using namespace script;
+
+    try
+    {
+        (void)PAPILIO_NS format(fmt, std::forward<Args>(args)...);
+
+        throw;
+    }
+    catch(const interpreter_base::script_error& e)
+    {
+        return e;
+    }
+}
+} // namespace test_script_interpreter
+
+TEST(interpreter, exception)
+{
+    using namespace papilio;
+    using enum script::interpreter_base::script_error_code;
+    using test_script_interpreter::get_err;
+
+    EXPECT_EQ(get_err("{").error_code(), end_of_string);
+    EXPECT_EQ(get_err("{$ 'str'}").error_code(), invalid_condition);
+    EXPECT_EQ(get_err("{$ 'str':}").error_code(), invalid_string);
+    EXPECT_EQ(get_err("{$ 'str': 'incomplete\\").error_code(), invalid_string);
+    EXPECT_EQ(get_err("{$ 'str': 'incomplete}").error_code(), end_of_string);
 }
 
 int main(int argc, char* argv[])

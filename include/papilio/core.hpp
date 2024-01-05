@@ -36,10 +36,10 @@ PAPILIO_EXPORT enum class format_sign
     space
 };
 
-PAPILIO_EXPORT class invalid_format : public std::invalid_argument
+PAPILIO_EXPORT class format_error : public std::runtime_error
 {
 public:
-    using invalid_argument::invalid_argument;
+    using runtime_error::runtime_error;
 };
 
 PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
@@ -114,7 +114,7 @@ private:
     [[noreturn]]
     static void throw_unformattable()
     {
-        throw invalid_format("unformattable");
+        throw format_error("unformattable");
     }
 
     class handle_impl_base
@@ -1408,13 +1408,13 @@ public:
     {
         enable_manual_indexing();
         if(!get_args().check(i))
-            throw invalid_format("invalid arg id");
+            throw format_error("invalid arg id");
     }
 
     void check_arg_id(string_view_type name) const
     {
         if(!get_args().check(name))
-            throw invalid_format("invalid arg id");
+            throw format_error("invalid arg id");
     }
 
     [[nodiscard]]
@@ -1426,7 +1426,7 @@ public:
     [[noreturn]]
     static void invalid_default_argument()
     {
-        throw invalid_format("no default argument after an explicit argument");
+        throw format_error("no default argument after an explicit argument");
     }
 
 private:

@@ -35,7 +35,7 @@ PAPILIO_EXPORT struct std_formatter_data
     {
         if(!contains_type(types))
         {
-            throw invalid_format("invalid format type");
+            throw format_error("invalid format type");
         }
     }
 
@@ -122,7 +122,7 @@ public:
         if(char32_t ch = *start; utf::is_digit(ch))
         {
             if(ch == U'0')
-                throw invalid_format("invalid format");
+                throw format_error("invalid format");
 
             ctx.advance_to(start);
             std::tie(result.width, start) = parse_value<false>(ctx);
@@ -139,7 +139,7 @@ public:
         {
             ++start;
             if(start == stop)
-                throw invalid_format("invalid precision");
+                throw format_error("invalid precision");
 
             ctx.advance_to(start);
             std::tie(result.precision, start) = parse_value<true>(ctx);
@@ -162,7 +162,7 @@ public:
         }
         else
         {
-            throw invalid_format("invalid format");
+            throw format_error("invalid format");
         }
 
 parse_end:
@@ -240,7 +240,7 @@ private:
         {
             if(first_ch == U'0')
             {
-                throw invalid_format("invalid format");
+                throw format_error("invalid format");
             }
         }
 
@@ -254,23 +254,23 @@ private:
 
             if(next_it == stop || *next_it != U'}')
             {
-                throw invalid_format("invalid format");
+                throw format_error("invalid format");
             }
             ++next_it;
 
             auto var = script::variable(arg.to_variant());
             if(!var.holds_int())
-                throw invalid_format("invalid type");
+                throw format_error("invalid type");
             ssize_t val = var.as<ssize_t>();
             if constexpr(IsPrecision)
             {
                 if(val < 0)
-                    throw invalid_format("invalid format");
+                    throw format_error("invalid format");
             }
             else
             {
                 if(val <= 0)
-                    throw invalid_format("invalid format");
+                    throw format_error("invalid format");
             }
 
             return std::make_pair(val, next_it);
@@ -296,7 +296,7 @@ private:
             return std::make_pair(val, start);
         }
 
-        throw invalid_format("invalid format");
+        throw format_error("invalid format");
     }
 };
 
@@ -684,7 +684,7 @@ namespace detail
 
             if(result.ec == std::errc::value_too_large) [[unlikely]]
             {
-                throw invalid_format("value too large");
+                throw format_error("value too large");
             }
             else if(result.ec != std::errc())
             {
@@ -829,7 +829,7 @@ public:
         if(m_data.type == U'c')
         {
             if(std::cmp_greater(val, std::numeric_limits<std::uint32_t>::max()))
-                throw invalid_format("integer value out of range");
+                throw format_error("integer value out of range");
 
             detail::codepoint_formatter fmt;
             fmt.set_data(m_data);
@@ -1031,7 +1031,7 @@ public:
         std::tie(m_data, it) = parser.parse(ctx, U"pP"sv);
 
         if(m_data.use_locale)
-            throw invalid_format("invalid format");
+            throw format_error("invalid format");
 
         switch(m_data.type)
         {

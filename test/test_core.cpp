@@ -365,7 +365,7 @@ TEST(format_parse_context, char)
         ctx.check_arg_id(2);
 
         ctx.check_arg_id("value");
-        EXPECT_THROW(ctx.check_arg_id("error"), invalid_format);
+        EXPECT_THROW(ctx.check_arg_id("error"), format_error);
     }
 
     {
@@ -378,7 +378,7 @@ TEST(format_parse_context, char)
         EXPECT_EQ(ctx.current_arg_id(), 0);
         EXPECT_EQ(ctx.next_arg_id(), 1);
         ctx.check_arg_id(0);
-        EXPECT_THROW((void)ctx.current_arg_id(), invalid_format);
+        EXPECT_THROW((void)ctx.current_arg_id(), format_error);
     }
 }
 

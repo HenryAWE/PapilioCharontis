@@ -393,8 +393,8 @@ TEST(format, exception)
 {
     using namespace papilio;
 
-    EXPECT_THROW((void)PAPILIO_NS format("{"), papilio::invalid_format);
-    EXPECT_THROW((void)PAPILIO_NS format("}"), papilio::invalid_format);
+    EXPECT_THROW((void)PAPILIO_NS format("{"), papilio::format_error);
+    EXPECT_THROW((void)PAPILIO_NS format("}"), papilio::format_error);
 }
 
 TEST(format, script)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <optional>
 #include <charconv>
 #include "../core.hpp"
@@ -420,6 +421,46 @@ PAPILIO_EXPORT class interpreter_base
 {
 public:
     static constexpr char32_t script_start = U'$';
+    static constexpr char32_t condition_end = U':';
+
+    enum class script_error_code : int
+    {
+        end_of_string = 1,
+        invalid_field_name,
+        invalid_condition,
+        invalid_index,
+        invalid_attribute,
+        invalid_operator,
+        invalid_string,
+        unclosed_brace
+    };
+
+    friend std::string to_string(script_error_code ec);
+
+    friend std::ostream& operator<<(std::ostream& os, script_error_code ec);
+
+    class script_error : public format_error
+    {
+    public:
+        script_error(const script_error&) = default;
+        explicit script_error(script_error_code ec);
+
+        [[nodiscard]]
+        script_error_code error_code() const noexcept
+        {
+            return m_ec;
+        }
+
+    private:
+        script_error_code m_ec;
+    };
+
+protected:
+    [[noreturn]]
+    static void throw_end_of_string();
+
+    [[noreturn]]
+    static void throw_error(script_error_code ec);
 };
 
 PAPILIO_EXPORT template <typename FormatContext>
@@ -447,50 +488,50 @@ public:
     std::pair<format_arg_type, iterator> run(parse_context& ctx) const
     {
         iterator start = ctx.begin();
-        const iterator sentinel = ctx.end();
+        const iterator stop = ctx.end();
 
         bool cond_result;
-        std::tie(cond_result, start) = parse_condition(ctx, start, sentinel);
+        std::tie(cond_result, start) = parse_condition(ctx, start, stop);
 
-        start = skip_ws(start, sentinel);
-        if(start == sentinel)
-            throw_error("invalid script");
+        start = skip_ws(start, stop);
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
         if(*start != U'\'')
-            throw_error("invalid script");
+            throw_error(script_error_code::invalid_string);
         ++start;
 
         string_container_type result_1;
         if(cond_result)
-            std::tie(result_1, start) = parse_string(start, sentinel);
+            std::tie(result_1, start) = parse_string(start, stop);
         else
-            start = skip_string(start, sentinel);
-        start = skip_ws(start, sentinel);
+            start = skip_string(start, stop);
+        start = skip_ws(start, stop);
 
-        if(start != sentinel && *start == U':')
+        if(start != stop && *start == U':')
         {
             ++start;
-            start = skip_ws(start, sentinel);
+            start = skip_ws(start, stop);
 
             if(*start != U'\'')
-                throw_error("invalid script");
+                throw_error(script_error_code::invalid_string);
             ++start;
 
             if(!cond_result)
             {
                 string_container_type result_2;
-                std::tie(result_2, start) = parse_string(start, sentinel);
-                return std::make_pair(std::move(result_2), skip_ws(start, sentinel));
+                std::tie(result_2, start) = parse_string(start, stop);
+                return std::make_pair(std::move(result_2), skip_ws(start, stop));
             }
             else
             {
-                start = skip_string(start, sentinel);
+                start = skip_string(start, stop);
             }
         }
 
         if(cond_result)
-            return std::make_pair(std::move(result_1), skip_ws(start, sentinel));
+            return std::make_pair(std::move(result_1), skip_ws(start, stop));
         else
-            return std::make_pair(string_container_type(), skip_ws(start, sentinel));
+            return std::make_pair(string_container_type(), skip_ws(start, stop));
     }
 
     void format(
@@ -509,12 +550,10 @@ public:
             if(ch == U'}')
             {
                 ++parse_it;
-                if(parse_it == parse_ctx.end())
-                    throw_error("invalid format");
-
-                ch = *parse_it;
-                if(ch != U'}')
-                    throw_error("invalid format");
+                if(parse_it == parse_ctx.end()) [[unlikely]]
+                    throw_end_of_string();
+                if(*parse_it != U'}')
+                    throw_error(script_error_code::unclosed_brace);
 
                 context_t::append(fmt_ctx, U'}');
                 ++parse_it;
@@ -522,8 +561,8 @@ public:
             else if(ch == U'{')
             {
                 ++parse_it;
-                if(parse_it == parse_ctx.end())
-                    throw_error("invalid format");
+                if(parse_it == parse_ctx.end()) [[unlikely]]
+                    throw_end_of_string();
 
                 ch = *parse_it;
                 if(ch == U'{')
@@ -545,8 +584,10 @@ public:
                         context_t::append(fmt_ctx, cp);
 
                     parse_it = next_it;
-                    if(parse_it == parse_ctx.end() || *parse_it != U'}')
-                        throw_error("invalid format");
+                    if(parse_it == parse_ctx.end()) [[unlikely]]
+                        throw_end_of_string();
+                    if(*parse_it != U'}')
+                        throw_error(script_error_code::unclosed_brace);
                     ++parse_it;
                 }
                 else
@@ -554,8 +595,8 @@ public:
                     parse_ctx.advance_to(parse_it);
                     auto [arg, next_it] = access(parse_ctx);
 
-                    if(next_it == parse_ctx.end())
-                        throw_error("invalid format");
+                    if(next_it == parse_ctx.end()) [[unlikely]]
+                        throw_end_of_string();
                     if(*next_it == U':')
                         ++next_it;
                     parse_ctx.advance_to(next_it);
@@ -563,8 +604,10 @@ public:
                     arg.format(parse_ctx, fmt_ctx);
 
                     parse_it = parse_ctx.begin();
-                    if(parse_it == parse_ctx.end() || *parse_it != U'}')
-                        throw_error("invalid format");
+                    if(parse_it == parse_ctx.end())
+                        throw_end_of_string();
+                    if(*parse_it != U'}')
+                        throw_error(script_error_code::unclosed_brace);
                     ++parse_it;
                 }
             }
@@ -580,17 +623,17 @@ public:
 private:
     static std::pair<format_arg_type, iterator> access_impl(parse_context& ctx, iterator start, iterator stop)
     {
-        if(start == stop)
-            throw_error("invalid access");
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
 
-        auto [arg, next_it] = parse_field_id(ctx, start, stop);
+        auto [arg, next_it] = parse_field_name(ctx, start, stop);
 
         std::tie(arg, next_it) = parse_chained_access(arg, next_it, stop);
 
         return std::make_pair(std::move(arg), next_it);
     }
 
-    static bool is_id_char(char32_t ch, bool first = false) noexcept
+    static bool is_field_name_ch(char32_t ch, bool first = false) noexcept
     {
         bool digit = utf::is_digit(ch);
         if(digit && first)
@@ -603,11 +646,11 @@ private:
                ch >= 128;
     }
 
-    static iterator find_id_end(iterator start, iterator stop, bool first = true) noexcept
+    static iterator find_field_name_end(iterator start, iterator stop, bool first = true) noexcept
     {
         while(start != stop)
         {
-            if(!is_id_char(*start, first))
+            if(!is_field_name_ch(*start, first))
                 break;
             first = false;
             ++start;
@@ -634,10 +677,19 @@ private:
                ch == U'<';
     }
 
+    static bool is_var_start_ch(char32_t ch) noexcept
+    {
+        return ch == U'\'' ||
+               ch == U'{' ||
+               PAPILIO_NS utf::is_digit(ch) ||
+               ch == U'-' ||
+               ch == U'.';
+    }
+
     static std::pair<op_id, iterator> parse_op(iterator start, iterator stop)
     {
-        if(start == stop)
-            throw_error("invalid operator");
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
 
         char32_t first_ch = *start;
         if(first_ch == U'=')
@@ -646,7 +698,7 @@ private:
             if(start != stop)
             {
                 if(*start != U'=')
-                    throw_error("invalid operator");
+                    throw_error(script_error_code::invalid_operator);
                 ++start;
             }
 
@@ -655,8 +707,10 @@ private:
         else if(first_ch == U'!')
         {
             ++start;
-            if(start == stop || *start != U'=')
-                throw_error("invalid operator");
+            if(start == stop)
+                throw_end_of_string();
+            if(*start != U'=')
+                throw_error(script_error_code::invalid_operator);
             ++start;
             return std::make_pair(op_id::not_equal, start);
         }
@@ -682,7 +736,7 @@ private:
             }
         }
 
-        throw_error("invalid operator");
+        throw_error(script_error_code::invalid_operator);
     }
 
     static bool execute_op(op_id op, const variable_type& lhs, const variable_type& rhs)
@@ -715,16 +769,18 @@ private:
 
     static std::pair<variable_type, iterator> parse_variable(parse_context& ctx, iterator start, iterator stop)
     {
-        if(start == stop)
-            throw_error("invalid value");
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
 
         char32_t first_ch = *start;
         if(first_ch == U'{')
         {
             ++start;
             auto [arg, next_it] = access_impl(ctx, start, stop);
-            if(next_it == stop || *next_it != U'}')
-                throw_error("invalid script");
+            if(next_it == stop)
+                throw_end_of_string();
+            if(*next_it != U'}')
+                throw_error(script_error_code::unclosed_brace);
 
             ++next_it;
             return std::make_pair(
@@ -781,14 +837,14 @@ private:
             }
         }
 
-        throw_error("invalid variable");
+        throw_error(script_error_code::invalid_condition);
     }
 
     static std::pair<bool, iterator> parse_condition(parse_context& ctx, iterator start, iterator stop)
     {
         start = skip_ws(start, stop);
-        if(start == stop)
-            throw_error("invalid condition");
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
 
         char32_t first_ch = *start;
         if(first_ch == U'!')
@@ -799,23 +855,23 @@ private:
             auto [var, next_it] = parse_variable(ctx, start, stop);
             next_it = skip_ws(next_it, stop);
             if(next_it == stop)
-                throw_error("invalid condition");
-            if(*next_it != U':')
-                throw_error("invalid condition");
+                throw_end_of_string();
+            if(*next_it != condition_end)
+                throw_error(script_error_code::invalid_condition);
 
             ++next_it;
             return std::make_pair(!var.template as<bool>(), next_it);
         }
-        else if(first_ch == U'{')
+        else if(is_var_start_ch(first_ch))
         {
             auto [var, next_it] = parse_variable(ctx, start, stop);
 
             next_it = skip_ws(next_it, stop);
             if(next_it == stop)
-                throw_error("invalid condition");
+                throw_end_of_string();
 
             char32_t ch = *next_it;
-            if(ch == U':')
+            if(ch == condition_end)
             {
                 ++next_it;
                 return std::make_pair(var.template as<bool>(), next_it);
@@ -830,8 +886,10 @@ private:
                 auto [var_2, next_it_2] = parse_variable(ctx, next_it, stop);
                 next_it = skip_ws(next_it_2, stop);
 
-                if(next_it == stop || *next_it != U':')
-                    throw_error("invalid condition");
+                if(next_it == stop)
+                    throw_end_of_string();
+                if(*next_it != U':')
+                    throw_error(script_error_code::invalid_condition);
 
                 ++next_it;
                 return std::make_pair(
@@ -841,15 +899,15 @@ private:
             }
         }
 
-        throw_error("invalid condition");
+        throw_error(script_error_code::invalid_condition);
     }
 
     // Parses integer value
     template <std::integral T>
     static std::pair<T, iterator> parse_integer(iterator start, iterator stop)
     {
-        if(start == stop)
-            throw_error("invalid integer");
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
 
         T value = 0;
         bool negative = false;
@@ -875,22 +933,20 @@ private:
             if constexpr(std::is_signed_v<T>)
                 value = -value;
             else
-                throw_error("invalid integer");
+                throw std::out_of_range("integer value out of range");
         }
 
         return std::make_pair(value, start);
     }
 
-    static std::pair<format_arg_type, iterator> parse_field_id(
+    static std::pair<format_arg_type, iterator> parse_field_name(
         parse_context& ctx, iterator start, iterator stop
     )
     {
         using namespace std::literals;
 
-        if(start == stop)
-        {
-            throw_error("script error");
-        }
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
 
         char32_t first_ch = *start;
 
@@ -913,11 +969,11 @@ private:
             ctx.check_arg_id(idx);
             return std::make_pair(ctx.get_args()[idx], start);
         }
-        else if(is_id_char(first_ch, true))
+        else if(is_field_name_ch(first_ch, true))
         {
             iterator str_start = start;
             ++start;
-            iterator str_end = find_id_end(start, stop, false);
+            iterator str_end = find_field_name_end(start, stop, false);
 
             string_ref_type name(str_start, str_end);
 
@@ -933,7 +989,7 @@ private:
             return std::make_pair(ctx.get_args()[idx], start);
         }
 
-        throw_error("invalid field id");
+        throw_error(script_error_code::invalid_field_name);
     }
 
     static std::pair<format_arg_type, iterator> parse_chained_access(
@@ -950,15 +1006,11 @@ private:
                 ++start;
                 iterator str_start = start;
 
-                // clang-format off
-
-                iterator str_end = find_id_end(start, stop);
-
-                // clang-format on
+                iterator str_end = find_field_name_end(start, stop);
 
                 string_ref_type attr_name(str_start, str_end);
                 if(attr_name.empty())
-                    throw_error("missing attribute name after '.'");
+                    throw_error(script_error_code::invalid_attribute);
 
                 current = current.attribute(attr_name);
 
@@ -969,7 +1021,7 @@ private:
                 ++start;
                 auto [idx, next_it] = parse_indexing_value(start, stop);
                 if(next_it == stop || *next_it != U']')
-                    throw_error("invalid index");
+                    throw_error(script_error_code::invalid_index);
                 ++next_it;
 
                 current = current.index(idx);
@@ -987,8 +1039,8 @@ private:
 
     static std::pair<indexing_value_type, iterator> parse_indexing_value(iterator start, iterator stop)
     {
-        if(start == stop)
-            throw_error("invalid index");
+        if(start == stop) [[unlikely]]
+            throw_end_of_string();
 
         char32_t first_ch = *start;
         if(first_ch == U'\'')
@@ -1005,8 +1057,8 @@ private:
             if(*next_it == U':')
             {
                 ++next_it;
-                if(next_it == stop)
-                    throw_error("invalid index");
+                if(next_it == stop) [[unlikely]]
+                    throw_end_of_string();
 
                 char32_t next_ch = *next_it;
                 ssize_t next_idx = slice::npos;
@@ -1023,8 +1075,8 @@ private:
         else if(first_ch == U':')
         {
             ++start;
-            if(start == stop)
-                throw_error("invalid index");
+            if(start == stop) [[unlikely]]
+                throw_end_of_string();
 
             char32_t next_ch = *start;
             if(next_ch == '-' || utf::is_digit(next_ch))
@@ -1038,7 +1090,7 @@ private:
             }
         }
 
-        throw_error("invalid index");
+        throw_error(script_error_code::invalid_index);
     }
 
     static char32_t get_esc_ch(char32_t ch) noexcept
@@ -1092,7 +1144,7 @@ private:
 
                 ++it;
                 if(it == stop)
-                    throw_error("invalid string");
+                    throw_error(script_error_code::invalid_string);
 
                 result.push_back(utf::codepoint(get_esc_ch(*it++)));
 
@@ -1103,7 +1155,7 @@ private:
                     {
                         ++it;
                         if(it == stop)
-                            throw_error("invalid string");
+                            throw_error(script_error_code::invalid_string);
 
                         result.push_back(utf::codepoint(get_esc_ch(*it)));
                     }
@@ -1128,14 +1180,8 @@ private:
 
         return std::make_pair(
             string_container_type(start, it),
-            it + 1 // +1 to skip '\''
+            std::next(it) // +1 to skip '\''
         );
-    }
-
-    [[noreturn]]
-    static void throw_error(const char* msg = "script error")
-    {
-        throw invalid_format(msg); // TODO: Better exception
     }
 };
 } // namespace papilio::script
