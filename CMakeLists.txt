@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
+option(papilio_c_interface "build C interface" ON)
 option(papilio_build_unit_test "build unit tests" OFF)
 option(papilio_build_example "build examples" OFF)
 option(papilio_build_module "build module (experimental)" OFF)
@@ -27,6 +28,9 @@ project(
 )
 
 set(glob_expr "src/*.cpp" "include/*.hpp")
+if(${papilio_c_interface})
+    list(APPEND glob_expr "src/*.c" "include/*.h")
+endif()
 file(GLOB_RECURSE papilio_src ${glob_expr})
 
 if(${papilio_build_module})
