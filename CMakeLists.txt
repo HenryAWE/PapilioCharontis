@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 
-option(papilio_c_interface "build C interface" ON)
+option(papilio_c_interface "build C interface" $<$<C_COMPILER_ID:MSVC>:OFF:ON>)
 option(papilio_build_unit_test "build unit tests" OFF)
 option(papilio_build_example "build examples" OFF)
 option(papilio_build_module "build module (experimental)" OFF)
@@ -50,6 +50,9 @@ target_compile_options(papilio PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
 )
+if(${papilio_c_interface})
+    target_compile_options(papilio PRIVATE $<$<C_COMPILER_ID:MSVC>:/Zc:preprocessor>)
+endif()
 
 if(${papilio_build_example})
     add_subdirectory(example)
