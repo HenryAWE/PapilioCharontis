@@ -109,4 +109,9 @@ void println()
 {
     println(stdout);
 }
+
+void println(std::ostream& os)
+{
+    os << '\n';
+}
 } // namespace papilio

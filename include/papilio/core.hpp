@@ -28,7 +28,7 @@ PAPILIO_EXPORT enum class format_align : std::uint8_t
     middle,
     right
 };
-PAPILIO_EXPORT enum class format_sign
+PAPILIO_EXPORT enum class format_sign : std::uint8_t
 {
     default_sign = 0,
     positive,
@@ -43,7 +43,13 @@ public:
 };
 
 PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
-{};
+{
+public:
+    const char* what() const noexcept override
+    {
+        return "bad handle cast";
+    }
+};
 
 PAPILIO_EXPORT template <typename T, typename CharT>
 class formatter
