@@ -30,6 +30,9 @@ project(
 set(glob_expr "src/*.cpp" "include/*.hpp")
 if(${papilio_c_interface})
     list(APPEND glob_expr "src/*.c" "include/*.h")
+
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
 endif()
 file(GLOB_RECURSE papilio_src ${glob_expr})
 

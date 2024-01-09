@@ -76,7 +76,7 @@ int papilio_push_str(papilio_context* ctx, const char* str)
     return papilio_push_nstr(ctx, str, strlen(str));
 }
 
-int papilio_format_s(papilio_context* ctx, const char* fmt, size_t fmt_sz)
+int papilio_vformat_s(papilio_context* ctx, const char* fmt, size_t fmt_sz)
 {
     using namespace papilio;
 
@@ -101,9 +101,9 @@ int papilio_format_s(papilio_context* ctx, const char* fmt, size_t fmt_sz)
     }
 }
 
-int papilio_format(papilio_context* ctx, const char* fmt)
+int papilio_vformat(papilio_context* ctx, const char* fmt)
 {
-    return papilio_format_s(ctx, fmt, strlen(fmt));
+    return papilio_vformat_s(ctx, fmt, strlen(fmt));
 }
 
 size_t papilio_get_str_size(const papilio_context* ctx)
@@ -126,7 +126,7 @@ void papilio_clear_str(papilio_context* ctx)
     ctx->str.clear();
 }
 
-void papilio_reset_context(papilio_context* ctx)
+void papilio_clear_context(papilio_context* ctx)
 {
     papilio_clear_args(ctx);
     papilio_clear_str(ctx);
