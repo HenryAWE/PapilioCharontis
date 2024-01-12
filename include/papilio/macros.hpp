@@ -24,13 +24,21 @@
 #    define PAPILIO_COMPILER_GCC __GNUC__
 #endif
 
+#define PAPILIO_ASSERT(expr) assert(expr)
+
 #if defined(_WIN32) || defined(_WIN64)
 #    define PAPILIO_PLATFORM_WINDOWS 1
 #elif defined(__linux__) || defined(__gnu_linux__)
 #    define PAPILIO_PLATFORM_LINUX 1
 #endif
 
-#define PAPILIO_ASSERT(expr) assert(expr)
+#define PAPILIO_HAS_VA_OPT_HELPER(_0, _1, result, ...) result
+#define PAPILIO_HAS_VA_OPT_IMPL(...) \
+    PAPILIO_HAS_VA_OPT_HELPER(__VA_OPT__(, ), 1, 0)
+
+#if PAPILIO_HAS_VA_OPT_IMPL(_0) == 1
+#    define PAPILIO_HAS_VA_OPT 1
+#endif
 
 #ifdef __cplusplus // C compatibility
 #    define PAPILIO_NS ::papilio::

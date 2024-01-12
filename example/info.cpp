@@ -20,6 +20,10 @@ int main()
     println("PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT = {:d}L", PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT);
 #endif
 
+#ifdef PAPILIO_HAS_VA_OPT
+    println("PAPILIO_HAS_VA_OPT = {:d}L", PAPILIO_HAS_VA_OPT);
+#endif
+
     println();
 
     println("Script test:");
