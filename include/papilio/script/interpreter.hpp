@@ -417,27 +417,31 @@ inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 
 // ^^^ variable ^^^ / vvv interpreter vvv
 
+PAPILIO_EXPORT enum class script_error_code : int
+{
+    no_error = 0,
+    end_of_string = 1,
+    invalid_field_name,
+    invalid_condition,
+    invalid_index,
+    invalid_attribute,
+    invalid_operator,
+    invalid_string,
+    unclosed_brace,
+
+    unknown_error = -1,
+};
+
+[[nodiscard]]
+std::string to_string(script_error_code ec);
+
+std::ostream& operator<<(std::ostream& os, script_error_code ec);
+
 PAPILIO_EXPORT class interpreter_base
 {
 public:
     static constexpr char32_t script_start = U'$';
     static constexpr char32_t condition_end = U':';
-
-    enum class script_error_code : int
-    {
-        end_of_string = 1,
-        invalid_field_name,
-        invalid_condition,
-        invalid_index,
-        invalid_attribute,
-        invalid_operator,
-        invalid_string,
-        unclosed_brace
-    };
-
-    friend std::string to_string(script_error_code ec);
-
-    friend std::ostream& operator<<(std::ostream& os, script_error_code ec);
 
     class script_error : public format_error
     {
@@ -454,6 +458,9 @@ public:
     private:
         script_error_code m_ec;
     };
+
+    [[nodiscard]]
+    static script_error make_error(script_error_code ec);
 
 protected:
     [[noreturn]]

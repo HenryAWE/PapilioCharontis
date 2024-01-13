@@ -447,7 +447,7 @@ auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
 TEST(interpreter, exception)
 {
     using namespace papilio;
-    using enum script::interpreter_base::script_error_code;
+    using enum script::script_error_code;
     using test_script_interpreter::get_err;
 
     EXPECT_EQ(get_err("{").error_code(), end_of_string);
