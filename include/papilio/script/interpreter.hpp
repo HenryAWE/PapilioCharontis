@@ -464,15 +464,20 @@ public:
 
 protected:
     [[noreturn]]
-    static void throw_end_of_string();
+    static void throw_end_of_string()
+    {
+        throw make_error(script_error_code::end_of_string);
+    }
 
     [[noreturn]]
     static void throw_error(script_error_code ec);
 };
 
-PAPILIO_EXPORT template <typename FormatContext>
-class interpreter : public interpreter_base
+PAPILIO_EXPORT template <typename FormatContext, bool Debug = false>
+class basic_interpreter : public interpreter_base
 {
+    using base = interpreter_base;
+
 public:
     using char_type = typename FormatContext::char_type;
     using variable_type = basic_variable<char_type>;
@@ -485,7 +490,28 @@ public:
     using parse_context = basic_format_parse_context<FormatContext>;
     using iterator = typename parse_context::iterator;
 
-    interpreter() = default;
+    class script_error_ex : public base::script_error
+    {
+    public:
+        script_error_ex(script_error_code ec, iterator it)
+            : script_error(ec), m_it(std::move(it)) {}
+
+        [[nodiscard]]
+        iterator get_iter() const noexcept
+        {
+            return m_it;
+        }
+
+    private:
+        iterator m_it;
+    };
+
+    basic_interpreter() = default;
+
+    static constexpr bool debug() noexcept
+    {
+        return Debug;
+    }
 
     std::pair<format_arg_type, iterator> access(parse_context& ctx) const
     {
@@ -497,14 +523,14 @@ public:
         iterator start = ctx.begin();
         const iterator stop = ctx.end();
 
-        bool cond_result;
+        bool cond_result = false;
         std::tie(cond_result, start) = parse_condition(ctx, start, stop);
 
         start = skip_ws(start, stop);
         if(start == stop) [[unlikely]]
             throw_end_of_string();
-        if(*start != U'\'')
-            throw_error(script_error_code::invalid_string);
+        if(*start != U'\'') [[unlikely]]
+            throw_error(script_error_code::invalid_string, start);
         ++start;
 
         string_container_type result_1;
@@ -519,8 +545,8 @@ public:
             ++start;
             start = skip_ws(start, stop);
 
-            if(*start != U'\'')
-                throw_error(script_error_code::invalid_string);
+            if(*start != U'\'') [[unlikely]]
+                throw_error(script_error_code::invalid_string, start);
             ++start;
 
             if(!cond_result)
@@ -559,8 +585,8 @@ public:
                 ++parse_it;
                 if(parse_it == parse_ctx.end()) [[unlikely]]
                     throw_end_of_string();
-                if(*parse_it != U'}')
-                    throw_error(script_error_code::unclosed_brace);
+                if(*parse_it != U'}') [[unlikely]]
+                    throw_error(script_error_code::unclosed_brace, parse_it);
 
                 context_t::append(fmt_ctx, U'}');
                 ++parse_it;
@@ -593,8 +619,8 @@ public:
                     parse_it = next_it;
                     if(parse_it == parse_ctx.end()) [[unlikely]]
                         throw_end_of_string();
-                    if(*parse_it != U'}')
-                        throw_error(script_error_code::unclosed_brace);
+                    if(*parse_it != U'}') [[unlikely]]
+                        throw_error(script_error_code::unclosed_brace, parse_it);
                     ++parse_it;
                 }
                 else
@@ -611,10 +637,10 @@ public:
                     arg.format(parse_ctx, fmt_ctx);
 
                     parse_it = parse_ctx.begin();
-                    if(parse_it == parse_ctx.end())
+                    if(parse_it == parse_ctx.end()) [[unlikely]]
                         throw_end_of_string();
-                    if(*parse_it != U'}')
-                        throw_error(script_error_code::unclosed_brace);
+                    if(*parse_it != U'}') [[unlikely]]
+                        throw_error(script_error_code::unclosed_brace, parse_it);
                     ++parse_it;
                 }
             }
@@ -668,8 +694,8 @@ private:
 
     enum class op_id
     {
-        equal, // !=
-        not_equal, // = and ==
+        equal, // = and ==
+        not_equal, // !=
         greater_equal, // >=
         less_equal, // <=
         greater, // >
@@ -705,7 +731,7 @@ private:
             if(start != stop)
             {
                 if(*start != U'=')
-                    throw_error(script_error_code::invalid_operator);
+                    throw_error(script_error_code::invalid_operator, start);
                 ++start;
             }
 
@@ -716,8 +742,8 @@ private:
             ++start;
             if(start == stop)
                 throw_end_of_string();
-            if(*start != U'=')
-                throw_error(script_error_code::invalid_operator);
+            if(*start != U'=') [[unlikely]]
+                throw_error(script_error_code::invalid_operator, start);
             ++start;
             return std::make_pair(op_id::not_equal, start);
         }
@@ -743,7 +769,7 @@ private:
             }
         }
 
-        throw_error(script_error_code::invalid_operator);
+        throw_error(script_error_code::invalid_operator, start);
     }
 
     static bool execute_op(op_id op, const variable_type& lhs, const variable_type& rhs)
@@ -784,10 +810,10 @@ private:
         {
             ++start;
             auto [arg, next_it] = access_impl(ctx, start, stop);
-            if(next_it == stop)
+            if(next_it == stop) [[unlikely]]
                 throw_end_of_string();
-            if(*next_it != U'}')
-                throw_error(script_error_code::unclosed_brace);
+            if(*next_it != U'}') [[unlikely]]
+                throw_error(script_error_code::unclosed_brace, next_it);
 
             ++next_it;
             return std::make_pair(
@@ -844,7 +870,7 @@ private:
             }
         }
 
-        throw_error(script_error_code::invalid_condition);
+        throw_error(script_error_code::invalid_condition, start);
     }
 
     static std::pair<bool, iterator> parse_condition(parse_context& ctx, iterator start, iterator stop)
@@ -864,7 +890,7 @@ private:
             if(next_it == stop)
                 throw_end_of_string();
             if(*next_it != condition_end)
-                throw_error(script_error_code::invalid_condition);
+                throw_error(script_error_code::invalid_condition, next_it);
 
             ++next_it;
             return std::make_pair(!var.template as<bool>(), next_it);
@@ -885,7 +911,7 @@ private:
             }
             else if(is_op_ch(ch))
             {
-                op_id op;
+                op_id op{};
                 std::tie(op, next_it) = parse_op(next_it, stop);
 
                 next_it = skip_ws(next_it, stop);
@@ -893,10 +919,10 @@ private:
                 auto [var_2, next_it_2] = parse_variable(ctx, next_it, stop);
                 next_it = skip_ws(next_it_2, stop);
 
-                if(next_it == stop)
+                if(next_it == stop) [[unlikely]]
                     throw_end_of_string();
-                if(*next_it != U':')
-                    throw_error(script_error_code::invalid_condition);
+                if(*next_it != U':') [[unlikely]]
+                    throw_error(script_error_code::invalid_condition, next_it);
 
                 ++next_it;
                 return std::make_pair(
@@ -904,9 +930,11 @@ private:
                     next_it
                 );
             }
+
+            throw_error(script_error_code::invalid_condition, next_it);
         }
 
-        throw_error(script_error_code::invalid_condition);
+        throw_error(script_error_code::invalid_condition, start);
     }
 
     // Parses integer value
@@ -996,7 +1024,7 @@ private:
             return std::make_pair(ctx.get_args()[idx], start);
         }
 
-        throw_error(script_error_code::invalid_field_name);
+        throw_error(script_error_code::invalid_field_name, start);
     }
 
     static std::pair<format_arg_type, iterator> parse_chained_access(
@@ -1017,7 +1045,7 @@ private:
 
                 string_ref_type attr_name(str_start, str_end);
                 if(attr_name.empty())
-                    throw_error(script_error_code::invalid_attribute);
+                    throw_error(script_error_code::invalid_attribute, str_end);
 
                 current = current.attribute(attr_name);
 
@@ -1027,8 +1055,10 @@ private:
             {
                 ++start;
                 auto [idx, next_it] = parse_indexing_value(start, stop);
-                if(next_it == stop || *next_it != U']')
-                    throw_error(script_error_code::invalid_index);
+                if(next_it == stop) [[unlikely]]
+                    throw_end_of_string();
+                if(*next_it != U']') [[unlikely]]
+                    throw_error(script_error_code::invalid_index, next_it);
                 ++next_it;
 
                 current = current.index(idx);
@@ -1097,7 +1127,7 @@ private:
             }
         }
 
-        throw_error(script_error_code::invalid_index);
+        throw_error(script_error_code::invalid_index, start);
     }
 
     static char32_t get_esc_ch(char32_t ch) noexcept
@@ -1150,8 +1180,8 @@ private:
                 string_container_type result(start, it);
 
                 ++it;
-                if(it == stop)
-                    throw_error(script_error_code::invalid_string);
+                if(it == stop) [[unlikely]]
+                    throw_error(script_error_code::invalid_string, it);
 
                 result.push_back(utf::codepoint(get_esc_ch(*it++)));
 
@@ -1161,8 +1191,8 @@ private:
                     if(ch == U'\\')
                     {
                         ++it;
-                        if(it == stop)
-                            throw_error(script_error_code::invalid_string);
+                        if(it == stop) [[unlikely]]
+                            throw_error(script_error_code::invalid_string, it);
 
                         result.push_back(utf::codepoint(get_esc_ch(*it)));
                     }
@@ -1190,5 +1220,27 @@ private:
             std::next(it) // +1 to skip '\''
         );
     }
+
+    using base::throw_end_of_string;
+
+    static script_error_ex make_error_ex(script_error_code ec, iterator it)
+    {
+        return script_error_ex(ec, std::move(it));
+    }
+
+    [[noreturn]]
+    static void throw_error(script_error_code ec, iterator it)
+    {
+        if constexpr(debug())
+        {
+            throw make_error_ex(ec, std::move(it));
+        }
+        else
+        {
+            base::throw_error(ec);
+        }
+    }
 };
+
+PAPILIO_EXPORT using interpreter = basic_interpreter<format_context>;
 } // namespace papilio::script

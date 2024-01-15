@@ -45,11 +45,6 @@ interpreter_base::script_error interpreter_base::make_error(script_error_code ec
     return script_error(ec);
 }
 
-void interpreter_base::throw_end_of_string()
-{
-    throw make_error(script_error_code::end_of_string);
-}
-
 void interpreter_base::throw_error(script_error_code ec)
 {
     throw make_error(ec);

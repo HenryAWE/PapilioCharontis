@@ -60,7 +60,7 @@ public:
     using iterator = typename ParseContext::iterator;
 
     using result_type = std_formatter_data;
-    using interpreter_type = script::interpreter<typename ParseContext::format_context_type>;
+    using interpreter_type = script::basic_interpreter<typename ParseContext::format_context_type>;
 
     std::pair<result_type, iterator> parse(ParseContext& ctx, std::u32string_view types)
     {
