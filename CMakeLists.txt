@@ -44,7 +44,6 @@ target_compile_options(papilio PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
 )
 
-add_subdirectory(binding)
 if(${papilio_build_example})
     add_subdirectory(example)
 endif()
@@ -52,3 +51,4 @@ if(${papilio_build_unit_test})
     enable_testing()
     add_subdirectory(test)
 endif()
+add_subdirectory(binding)

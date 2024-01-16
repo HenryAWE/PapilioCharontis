@@ -38,22 +38,26 @@ C_PAPILIO_PUSH_DECL(intptr_t, iptr);
 C_PAPILIO_PUSH_DECL(uintptr_t, uptr);
 C_PAPILIO_PUSH_DECL(const void*, ptr);
 
+#    undef C_PAPILIO_PUSH_DECL
+
 int papilio_push_nstr(papilio_context* ctx, const char* str, size_t sz);
 int papilio_push_str(papilio_context* ctx, const char* str);
 
-#    define papilio_push(ctx, arg) _Generic(   \
-        (arg),                                 \
-        int: papilio_push_i,                   \
-        long: papilio_push_l,                  \
-        long long: papilio_push_ll,            \
-        unsigned int: papilio_push_ui,         \
-        unsigned long: papilio_push_ul,        \
-        unsigned long long: papilio_push_ull,  \
-        float: papilio_push_f,                 \
-        double: papilio_push_lf,               \
-        long double: papilio_push_llf,         \
-        char*: papilio_push_str,               \
-        void*: papilio_push_ptr                \
+#    define papilio_push(ctx, arg) _Generic(  \
+        (arg),                                \
+        int: papilio_push_i,                  \
+        long: papilio_push_l,                 \
+        long long: papilio_push_ll,           \
+        unsigned int: papilio_push_ui,        \
+        unsigned long: papilio_push_ul,       \
+        unsigned long long: papilio_push_ull, \
+        float: papilio_push_f,                \
+        double: papilio_push_lf,              \
+        long double: papilio_push_llf,        \
+        const char*: papilio_push_str,              \
+        char*: papilio_push_str,              \
+        const void*: papilio_push_ptr,        \
+        void*: papilio_push_ptr               \
     )(ctx, arg)
 
 int papilio_vformat_s(papilio_context* ctx, const char* fmt, size_t fmt_sz);

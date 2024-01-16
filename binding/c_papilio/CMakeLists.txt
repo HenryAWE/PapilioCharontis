@@ -13,3 +13,17 @@ if(${papilio_c_interface})
         PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/example"
     )
 endif()
+
+if(${papilio_build_unit_test})
+    find_package(GTest CONFIG REQUIRED)
+    include(GoogleTest)
+
+    enable_testing()
+
+    file(GLOB test_c_papilio_src "test/*.cpp" "test/*.h" "test/*.c")
+
+    add_executable(test_c_papilio ${test_c_papilio_src})
+    target_link_libraries(test_c_papilio PRIVATE c_papilio)
+    target_link_libraries(test_c_papilio PRIVATE GTest::gtest GTest::gtest_main)
+    gtest_discover_tests(test_c_papilio)
+endif()
