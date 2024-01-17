@@ -419,17 +419,17 @@ inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 
 PAPILIO_EXPORT enum class script_error_code : int
 {
-    no_error = 0,
-    end_of_string = 1,
-    invalid_field_name,
-    invalid_condition,
-    invalid_index,
-    invalid_attribute,
-    invalid_operator,
-    invalid_string,
-    unclosed_brace,
+    no_error = PAPILIO_ERR_NO_ERROR,
+    end_of_string = PAPILIO_ERR_END_OF_STRING,
+    invalid_field_name = PAPILIO_ERR_INVALID_FIELD_NAME,
+    invalid_condition = PAPILIO_ERR_INVALID_CONDITION,
+    invalid_index = PAPILIO_ERR_INVALID_INDEX,
+    invalid_attribute = PAPILIO_ERR_INVALID_ATTRIBUTE,
+    invalid_operator = PAPILIO_ERR_INVALID_OPERATOR,
+    invalid_string = PAPILIO_ERR_INVALID_STRING,
+    unclosed_brace = PAPILIO_ERR_UNCLOSED_BRACE,
 
-    unknown_error = -1,
+    unknown_error = PAPILIO_ERR_UNKNOWN_ERROR
 };
 
 [[nodiscard]]

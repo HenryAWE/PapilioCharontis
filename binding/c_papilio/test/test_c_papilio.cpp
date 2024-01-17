@@ -40,6 +40,21 @@ TEST(c_papilio, format)
     ctx = nullptr;
 }
 
+TEST(c_papilio, error)
+{
+    papilio_context* ctx = papilio_create_context();
+    ASSERT_TRUE(ctx);
+
+    EXPECT_EQ(papilio_vformat(ctx, "{"), PAPILIO_ERR_END_OF_STRING);
+    EXPECT_EQ(papilio_vformat(ctx, "{$ 'str'}"), PAPILIO_ERR_INVALID_CONDITION);
+    EXPECT_EQ(papilio_vformat(ctx, "{$ 'str':}"), PAPILIO_ERR_INVALID_STRING);
+    EXPECT_EQ(papilio_vformat(ctx, "{$ 'str': 'incomplete\\"), PAPILIO_ERR_INVALID_STRING);
+    EXPECT_EQ(papilio_vformat(ctx, "{$ 'str': 'incomplete}"), PAPILIO_ERR_END_OF_STRING);
+
+    papilio_clear_context(ctx);
+    ctx = nullptr;
+}
+
 int main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);

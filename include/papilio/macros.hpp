@@ -40,6 +40,18 @@
 #    define PAPILIO_HAS_VA_OPT 1
 #endif
 
+#define PAPILIO_ERR_NO_ERROR           0x0
+#define PAPILIO_ERR_END_OF_STRING      0x1
+#define PAPILIO_ERR_INVALID_FIELD_NAME 0x2
+#define PAPILIO_ERR_INVALID_CONDITION  0x3
+#define PAPILIO_ERR_INVALID_INDEX      0x4
+#define PAPILIO_ERR_INVALID_ATTRIBUTE  0x5
+#define PAPILIO_ERR_INVALID_OPERATOR   0x6
+#define PAPILIO_ERR_INVALID_STRING     0x7
+#define PAPILIO_ERR_UNCLOSED_BRACE     0x8
+
+#define PAPILIO_ERR_UNKNOWN_ERROR      -1
+
 #ifdef __cplusplus // C compatibility
 #    define PAPILIO_NS ::papilio::
 

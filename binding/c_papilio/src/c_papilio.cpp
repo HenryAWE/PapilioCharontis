@@ -1,5 +1,6 @@
 #include <papilio/papilio.hpp>
 #include <cstring>
+#include <cerrno>
 #include <c_papilio.h>
 
 struct papilio_context_t
@@ -16,6 +17,7 @@ papilio_context* papilio_create_context(void)
     }
     catch(...)
     {
+        errno = ENOMEM;
         return nullptr;
     }
 }
@@ -37,6 +39,7 @@ static int papilio_push_impl(papilio_context* ctx, T arg) noexcept
     }
     catch(...)
     {
+        errno = EINVAL;
         return -1;
     }
 }
@@ -73,7 +76,7 @@ int papilio_push_nstr(papilio_context* ctx, const char* str, size_t sz)
 
 int papilio_push_str(papilio_context* ctx, const char* str)
 {
-    return papilio_push_nstr(ctx, str, strlen(str));
+    return papilio_push_nstr(ctx, str, std::strlen(str));
 }
 
 int papilio_vformat_s(papilio_context* ctx, const char* fmt, size_t fmt_sz)
@@ -93,11 +96,18 @@ int papilio_vformat_s(papilio_context* ctx, const char* fmt, size_t fmt_sz)
     }
     catch(const script::interpreter_base::script_error& e)
     {
+        errno = EINVAL;
         return static_cast<int>(e.error_code());
+    }
+    catch(const papilio::format_error&)
+    {
+        errno = EINVAL;
+        return PAPILIO_ERR_UNKNOWN_ERROR;
     }
     catch(...)
     {
-        return -1;
+        errno = EINVAL;
+        return PAPILIO_ERR_UNKNOWN_ERROR;
     }
 }
 
