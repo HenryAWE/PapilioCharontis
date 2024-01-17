@@ -10,15 +10,14 @@ public:
 namespace papilio
 {
     template <>
-    struct accessor
+    struct accessor<my_type>
     {
-        using has_index = void;
-        
-        static format_arg get(const my_type& val, indexing_value::index_type i)
+        static format_arg index(const my_type& val, ssize_t i)
         {
             if(i < 0 || i >= 10)
                 return format_arg();
-            return format_arg(val.values[i]);
+
+            return val.values[i];
         }
     };
 }
@@ -27,12 +26,20 @@ namespace papilio
 ## 更多功能
 ### 属性
 ```c++
-static format_arg get_attr(const my_type& val, const attribute_name& attr)
+namespace papilio
 {
-    using namespace std::literals;
-    if(attr == "size"sv)
-        return format_arg(10);
-    else
-        throw invalid_attribute(attr);
+    template <>
+    struct accessor<my_type>
+    {
+        static format_arg attribute(const my_type& val, const attribute_name& attr)
+        {
+            using namespace std::literals;
+
+            if(attr == "size"sv)
+                return 10;
+
+            throw_invalid_attribute(attr);
+        }
+    }
 }
 ```

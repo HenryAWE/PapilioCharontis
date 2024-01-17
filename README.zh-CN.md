@@ -1,15 +1,19 @@
-[English](README.md) **中文（简体）**
+其他语言：[English](README.md)
 # 引蝶座（Papilio Charontis）
-功能灵活的 C++ 格式化库。
+功能灵活的 C++ 格式化库，可以作为 `printf`，`iostream` 和 `std::format` 的替代品。
 
 ## 概览
 ### 核心特性：脚本
-使用内嵌脚本控制输出。
+使用内嵌脚本控制输出，例如对某个数字使用单词的复数形式。
+
+#### 示例 1：
+根据警告的数量，决定是否使用“warning”一词的复数形式。
 ```c++
 papilio::format("{0} warning{${0}>1:'s'}", 1); // 返回 "1 warning"
 papilio::format("{0} warning{${0}>1:'s'}", 2); // 返回 "2 warnings"
 ```
-
+#### 示例 2：
+根据苹果的数量决定动词的形式。
 ```c++
 std::string_view fmt =
     "There"
@@ -49,7 +53,7 @@ papilio::format("{[:2]}", "你好，世界");
 papilio::format("长度：{0.length}；大小：{0.size}", "你好，世界");
 // 返回 "长度：5；大小：15"
 ```
-注意：要运行上文的代码，你需要保证你使用 UTF-8 编码保存了代码并且设置了正确的编译器选项。你可以使用“u8”前缀以强制字符串使用 UTF-8 编码。
+注意：要运行上文的代码，需要保证代码使用了 UTF-8 编码保存，并且设置了正确的编译器选项（如 MSVC 的 `/utf-8` 选项）。你可以使用 `u8` 前缀以强制字符串使用 UTF-8 编码。
 
 ## 文档
 1. [构建项目](doc/zh-CN/build.md)

@@ -1,7 +1,7 @@
 # Built-In Accessor
 Built-in accessor for common types.
 
-## String Type（`papilio::string_container`）
+## String Type（`papilio::utf::basic_string_container<CharT>`）
 ### Indexing by Integer
 Forward index starts from `0` , returns null character when exceeding maximum index.  
 Backward (Reverse) index starts from `-1` (similar to Python), also returns null character when exceeding maximum index.  
@@ -22,10 +22,9 @@ Example: Given string "hello world!"
 -  `[-6:]`: Returns `"world!"`
 
 ### Attributes
-- `size`：The number of *bytes* in the string.
-- `length`：The number of *characters* in the string.
-NOTE: For string containing non-ASCII characters, these two values will not be equal.  
-For example, the `size` of string `"ü"` is `2`, but its `length` is `1`.
+- `size`：The number of *elements* in the string. That is, the string is regarded as a container whose value type is `char` (or other character type), and the result is its number of elements.
+- `length`：The number of *characters* in the string.  
+For string containing non-ASCII characters, these two values may not be equal. For example, the `size` of string `"ü"` is `2`, but its `length` is `1`; for string `L"ü"` (`wchar_t` string), its `size` and `length` are both `1`.
 
 ---
 *NOTE: The accessor support for following types needs to include the header file `<papilio/util/stl_container.hpp>`.*
@@ -37,25 +36,28 @@ Backward (Reverse) index starts from `-1` and returns null when exceeding maximu
 Note: Outputting null value will cause an exception.
 
 ### Attributes
-- `size`: Number of elements in tuple.
+- `size`: Number of elements in tuple (i.e. `std::tuple_size_v`).
 
-The type `pair` has two external attributes:  
+The type `pair` has two additional attributes:  
 - `first`: The first element of `pair`.
 - `second`: The second element of `pair`.
 
-## Contiguous Containers (`vector`, `array` and `span`)
+## Contiguous Ranges (e.g. `std::vector`, `std::array` and `std::span`)
 ### Indexing by Integer
 Forward index starts from `0` and returns null when exceeding maximum index.  
-Backward (reverse) index starts from ‘-1′ and returns null when exceeding maximum index.  
+Backward (reverse) index starts from `-1` and returns null when exceeding maximum index.  
 Note: Outputting null value will cause an exception.
 
 ### Attributes
 - `size`: Size of the container.
 
-## Associative Containers Whose Key Types Are Integer or String (`map<Integral, T>`, `map<String, T>`, etc.)
+## Associative Containers (`std::map`)
 ### Indexing by Integer or String
-Will return the corresponding value in the container, or null value if the key doesn't exist.  
-Note: Outputting null value will cause an exception.
+Will return the corresponding value in the container, or null value if the key doesn't exist. This function is only enabled when `key_type` of the container is integer or string.  
 
 ### Attributes
 - `size`: Size of the container.
+
+If the comparator of the container (i.e. the `key_compare` type) is specialization of `std::less<T>` or `std::greater<T>`, there are will be two additional attributes:
+- `min`: The minimum element of the container, or null value if the container is empty.
+- `max`: The maximum element of the container, or null value if the container is empty.

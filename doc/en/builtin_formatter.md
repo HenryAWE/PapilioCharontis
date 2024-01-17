@@ -31,8 +31,6 @@ papilio::format("{0:},{0:+},{0:-},{0: }", nan); // "nan,+nan,nan, nan"
 - Integral type: When use binary, octal or hexadecimal for displaying, this option will insert prefix (`0b`, `0o` or `0x`) in the output.
 - Floating type: not implemented yet
 
-*NOTE: Different from `<format>` of C++ 20, this library use `0o` as the prefix for octal.*
-
 ### Width and Precision
 Width is a decimal positive integer and can be dynamically specified by a replacement field (`{}`).  
 Precision is also a decimal positive integer and be dynamically specified by a replacement field (`{}`).  Precision is only available for floating point and string. For floating point, this value determines the precision for formatting output. For string, this value determines the upper bound of the estimated width (see below) of output string.  
@@ -44,24 +42,24 @@ papilio::format("{:.5f}", pi); // "3.14000"
 papilio::format("{:10.5f}", pi); // "   3.14000"
 ```
 For calculating width of a character, if its Unicode value is in the following intervals, its value will be 2, otherwise its value will be 1:  
-- U+1100 - U+115F
-- U+2329 - U+232A
-- U+2E80 - U+303E
-- U+3040 - U+A4CF
-- U+AC00 - U+D7A3
-- U+F900 - U+FAFF
-- U+FE10 - U+FE19
-- U+FE30 - U+FE6F
-- U+FF00 - U+FF60
-- U+FFE0 - U+FFE6
-- U+1F300 - U+1F64F
-- U+1F900 - U+1F9FF
-- U+20000 - U+2FFFD
-- U+30000 - U+3FFFD
+- `U+1100` - `U+115F`
+- `U+2329` - `U+232A`
+- `U+2E80` - `U+303E`
+- `U+3040` - `U+A4CF`
+- `U+AC00` - `U+D7A3`
+- `U+F900` - `U+FAFF`
+- `U+FE10` - `U+FE19`
+- `U+FE30` - `U+FE6F`
+- `U+FF00` - `U+FF60`
+- `U+FFE0` - `U+FFE6`
+- `U+1F300` - `U+1F64F`
+- `U+1F900` - `U+1F9FF`
+- `U+20000` - `U+2FFFD`
+- `U+30000` - `U+3FFFD`
 
 ```c++
-papilio::format("{:.^5s}", "文"); // ".文.."
-papilio::format("{:.5s}", "文文文"); // "文文"
+papilio::format("{:.^5s}", "文");       // ".文.."
+papilio::format("{:.5s}", "文文文");    // "文文"
 papilio::format("{:.<5.5s}", "文文文"); // "文文."
 ```
 
@@ -97,20 +95,3 @@ Infinite values and NaN are formatted to `inf` and `nan`, respectively.
 
 ### Pointer
 - None, `p`: Use hexadecimal  integer representation with  `static_cast<std::uniptr_t>(value)`, adding prefix `0x` into the output.
-
-## Chrono Types
-*NOTE: The formatter support for types involved in this section needs to include the header file `<papilio/util/chrono.hpp>`.*
-
-### `std::tm` (In Header File `<ctime>`)
-- None: Produces output as if by calling [`std::asctime`](https://en.cppreference.com/w/cpp/chrono/c/asctime).
-- Format String: Produces output as if by calling [`std::strftime`](https://en.cppreference.com/w/cpp/chrono/c/strftime) with the format string.
-
-```c++
-std::tm t{};
-t.tm_year = 2022 - 1900;
-t.tm_mday = 1;
-t.tm_wday = 6;
-
-papilio::format("{}", t); // "Sat Jan  1 00:00:00 2022\n"
-papilio::format("{:%H:%M:%S}", t); // "00:00:00"
-```

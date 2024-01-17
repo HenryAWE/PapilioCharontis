@@ -1,15 +1,19 @@
-**English** [中文（简体）](README.zh-CN.md)
+Other language: [中文](README.zh-CN.md)
 # Papilio Charontis
-A flexible formatting library for C++.
+A flexible formatting library for C++. It can be used as a replacement for `printf`, `iostream` and `std::format`.
 
 ## Overview
 ### Main Feature: Scripting
-Using embedded script to control the output.
+You can use the embedded script to control the output, such as using plural form of a word for a certain number.
+
+#### Example 1:
+Based on the number of warnings, decide whether to use the plural form of the word "warning".
 ```c++
 papilio::format("{0} warning{${0}>1:'s'}", 1); // Returns "1 warning"
 papilio::format("{0} warning{${0}>1:'s'}", 2); // Returns "2 warnings"
 ```
-
+#### Example 2:
+Determine the form of verb based on the number of apples.
 ```c++
 std::string_view fmt =
     "There"
@@ -49,7 +53,7 @@ papilio::format("{[:2]}", "你好，世界");
 papilio::format("Length: {0.length}; Size: {0.size}", "你好，世界");
 // Returns "Length: 5; Size: 15"
 ```
-NOTE: In order to run the above code, you need to make sure you code is saved in UTF-8 encoding and correct compiler flags is set. You can use the "u8" prefix to force the string to use UTF-8 encoding.
+NOTE: In order to run the above code, you need to make sure your code is saved in UTF-8 encoding and the correct compiler flags is set (like `/utf-8` of MSVC). You can use the `u8` prefix to force the string to use UTF-8 encoding.
 
 ## Documentation
 1. [Build the Project](doc/en/build.md)

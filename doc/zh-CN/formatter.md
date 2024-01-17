@@ -18,27 +18,32 @@ namespace papilio
     class formatter<test_format::my_value>
     {
     public:
-        void parse(format_spec_parse_context& spec)
+        template <typename ParseContext>
+        auto parse(ParseContext& ctx)
         {
-            std::string_view view(spec.begin(), spec.end());
-            if(view == "s")
+            auto it = ctx.begin();
+
+            if(*it == U's')
+            {
                 m_as_str = true;
+                ++it;
+            }
+
+            return it;
         }
+
         template <typename Context>
-        void format(const test_format::my_value& val, Context& ctx)
+        auto format(const test_format::my_value& val, Context& ctx)
         {
-            format_context_traits traits(ctx);
             if(m_as_str)
-                traits.append(val.ch, val.count);
+            {
+                using context_t = format_context_traits<Context>;
+                context_t::append(ctx, val.ch, val.count);
+                return ctx.out();
+            }
             else
             {
-                std::string result;
-                result += '(';
-                result += val.ch;
-                result += ", ";
-                result += std::to_string(val.count);
-                result += ')';
-                traits.append(result);
+                return format_to(ctx.out(), "({}, {})", val.ch, val.count);
             }
         }
 
@@ -50,6 +55,7 @@ namespace papilio
 用户代码：
 ```c++
 my_value my_val('B', 3);
+
 format("{}", my_val); // 返回 "(B, 3)"
 format("{:s}", my_val); // 返回 "BBB"
 ```
