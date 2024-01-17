@@ -6,7 +6,7 @@
 
 namespace detail
 {
-std::string input(std::istream& is, std::string_view prefix = "")
+static std::string input(std::istream& is, std::string_view prefix = "")
 {
     if(prefix.empty())
         papilio::print("> ");
@@ -199,13 +199,13 @@ void ipapilio::run()
         utf::string_ref parsed(fmt.begin(), e.get_iter());
 
         script::script_error_code ec = e.error_code();
-        std::size_t len = parsed.length();
+        std::size_t pos = parsed.length() + 1;
         papilio::println("{}", fmt);
-        papilio::println("{:~>{}}", '^', len + 1);
+        papilio::println("{:~>{}}", '^', pos);
         papilio::println(
             "{: >{}} (0x{:X})",
             to_string(ec),
-            len + 1,
+            pos,
             static_cast<std::underlying_type_t<decltype(ec)>>(ec)
         );
         return;
@@ -215,13 +215,13 @@ void ipapilio::run()
         if(e.error_code() == script::script_error_code::end_of_string)
         {
             const script::script_error_code ec = script::script_error_code::end_of_string;
-            std::size_t len = fmt.length();
+            std::size_t pos = fmt.length() + 1;
             papilio::println("{}", fmt);
-            papilio::println("{:~>{}}", '^', len + 1);
+            papilio::println("{:~>{}}", '^', pos);
             papilio::println(
                 "{: >{}} (0x{:X})",
                 to_string(ec),
-                len + 1,
+                pos,
                 static_cast<std::underlying_type_t<decltype(ec)>>(ec)
             );
         }

@@ -7,7 +7,7 @@ int main()
     println("Papilio Charontis version {0[0]}.{0[1]}.{0[2]}", get_version());
 
     println();
-    println("__cpluscplus = {}", __cplusplus);
+    println("__cplusplus = {}", __cplusplus);
 
 #ifdef PAPILIO_COMPILER_MSVC
     println("PAPILIO_COMPILER_MSVC = {}", PAPILIO_COMPILER_MSVC);
