@@ -83,7 +83,7 @@ int papilio_vformat_s(papilio_context* ctx, const char* fmt, size_t fmt_sz)
     try
     {
         std::string_view fmt_sv(fmt, fmt_sz);
-        script::interpreter<format_context> intp;
+        script::interpreter intp;
         format_parse_context parse_ctx(fmt_sv, ctx->args);
         format_context fmt_ctx(std::back_inserter(ctx->str), ctx->args);
 

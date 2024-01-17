@@ -80,8 +80,8 @@ TEST(print, stream)
 
     std::ostringstream os;
 
-    PAPILIO_NS print(os, "val={val}", "val"_a = 1);
-    EXPECT_EQ(os.str(), "val=1");
+    PAPILIO_NS println(os, "val={val}", "val"_a = 1);
+    EXPECT_EQ(os.str(), "val=1\n");
 }
 
 int main(int argc, char* argv[])

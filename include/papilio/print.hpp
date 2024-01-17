@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdio> // FILE*
-#include <iosfwd>
+#include <iostream>
 #include <iterator>
 #include "macros.hpp"
 #include "format.hpp"
@@ -141,13 +141,7 @@ namespace detail
         return cfile_iterator(file);
 #endif
     }
-
-    using print_context = basic_format_context<cfile_iterator>;
-    using print_context_conv = basic_format_context<cfile_iterator_conv>;
 } // namespace detail
-
-void vprint_nonunicode(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args);
-void vprint_unicode(std::FILE* file, std::string_view fmt, const dynamic_format_args<format_context>& args);
 
 void println(std::FILE* file);
 void println();
@@ -209,8 +203,18 @@ void print(std::ostream& os, format_string<Args...> fmt, Args&&... args)
     using context_type = basic_format_context<iter_t>;
     PAPILIO_NS vformat_to(
         iter_t(os),
+        os.getloc(),
         fmt.get(),
         PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     );
+}
+
+void println(std::ostream& os);
+
+template <typename... Args>
+void println(std::ostream& os, format_string<Args...> fmt, Args&&... args)
+{
+    PAPILIO_NS print(os, fmt.get(), std::forward<Args>(args)...);
+    PAPILIO_NS println(os);
 }
 } // namespace papilio

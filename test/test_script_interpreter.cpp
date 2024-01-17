@@ -252,7 +252,7 @@ auto test_access(std::string_view fmt, Args&&... args)
     format_parse_context parse_ctx(fmt, fmt_args);
     parse_ctx.advance_to(parse_ctx.begin() + 1); // skip '{'
 
-    script::interpreter<format_context> intp;
+    script::basic_interpreter<format_context> intp;
     auto [result, it] = intp.access(parse_ctx);
 
     EXPECT_NE(it, parse_ctx.end());
@@ -339,7 +339,7 @@ auto run_script(std::string_view fmt, Args&&... args)
     format_parse_context parse_ctx(fmt, fmt_args);
     parse_ctx.advance_to(parse_ctx.begin() + 2); // skip "{$"
 
-    script::interpreter<format_context> intp;
+    script::basic_interpreter<format_context> intp;
 
     auto [arg, it] = intp.run(parse_ctx);
     EXPECT_NE(it, parse_ctx.end());
@@ -410,7 +410,7 @@ TEST(interpreter, format)
     using namespace script;
 
     {
-        interpreter<format_context> intp;
+        interpreter intp;
 
         std::string buf;
         mutable_format_args args;
@@ -447,7 +447,7 @@ auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
 TEST(interpreter, exception)
 {
     using namespace papilio;
-    using enum script::interpreter_base::script_error_code;
+    using enum script::script_error_code;
     using test_script_interpreter::get_err;
 
     EXPECT_EQ(get_err("{").error_code(), end_of_string);
@@ -455,6 +455,45 @@ TEST(interpreter, exception)
     EXPECT_EQ(get_err("{$ 'str':}").error_code(), invalid_string);
     EXPECT_EQ(get_err("{$ 'str': 'incomplete\\").error_code(), invalid_string);
     EXPECT_EQ(get_err("{$ 'str': 'incomplete}").error_code(), end_of_string);
+}
+
+TEST(interpreter, debug)
+{
+    using namespace papilio;
+    using namespace script;
+    using enum script_error_code;
+
+    using intp_t = basic_interpreter<format_context, true>;
+
+    auto helper = [](utf::string_ref fmt)
+    {
+        mutable_format_args args;
+        format_parse_context parse_ctx(fmt, args);
+        std::string str;
+        format_context fmt_ctx(std::back_inserter(str), args);
+        intp_t intp;
+        intp.format(parse_ctx, fmt_ctx);
+
+        FAIL() << "unreachable";
+    };
+
+#define PAPILIO_TEST_INTERPRETER_DEBUG(fmt, ec, pos)                      \
+    do                                                                    \
+    {                                                                     \
+        utf::string_ref fmt_str = fmt;                                    \
+        try                                                               \
+        {                                                                 \
+            return helper(fmt_str);                                       \
+        }                                                                 \
+        catch(const intp_t::script_error_ex& e)                           \
+        {                                                                 \
+            EXPECT_EQ(e.error_code(), ec);                                \
+            EXPECT_EQ(std::distance(fmt_str.begin(), e.get_iter()), pos); \
+        }                                                                 \
+    } while(0)
+
+    PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'}", invalid_condition, 8);
+    PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str':}", invalid_string, 9);
 }
 
 int main(int argc, char* argv[])
