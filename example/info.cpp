@@ -41,5 +41,15 @@ int main()
     // Esperanto
     test_script("Estas {0} granda{${0}>1:'j'} pomo{${0}>1:'j'}");
 
+    print(fg(color::red) | bg(color::white) | style::bold, "WARNING");
+    println(fg(color::yellow) | style::underline, ", underlined");
+
+    println(
+        "{}, {}, {}",
+        styled(fg(color::red), "red"_sc),
+        styled(fg(color::green), "green"_sc),
+        styled(fg(color::blue), "blue"_sc)
+    );
+
     return 0;
 }

@@ -9,9 +9,9 @@ namespace detail
 static std::string input(std::istream& is, std::string_view prefix = "")
 {
     if(prefix.empty())
-        papilio::print("> ");
+        papilio::print(papilio::style::faint, "> ");
     else
-        papilio::print("[{}]> ", prefix);
+        papilio::print(papilio::style::faint, "[{}]> ", prefix);
 
     std::string result;
     is >> std::ws;
@@ -117,12 +117,19 @@ void ipapilio::addi()
     );
     if(result.ec != std::errc())
     {
-        papilio::println("Bad value: {}", std::make_error_code(result.ec).message());
+        papilio::println(
+            papilio::fg(papilio::color::red) | papilio::style::bold,
+            "Bad value: {}",
+            std::make_error_code(result.ec).message()
+        );
         return;
     }
 
     m_args.push(val);
-    papilio::println("Added integer argument: {}", val);
+    papilio::println(
+        "Added integer argument: {}",
+        papilio::styled(papilio::fg(papilio::color::green), val)
+    );
 }
 
 void ipapilio::addf()
@@ -137,12 +144,19 @@ void ipapilio::addf()
     );
     if(result.ec != std::errc())
     {
-        papilio::println("Bad value: {}", std::make_error_code(result.ec).message());
+        papilio::println(
+            papilio::fg(papilio::color::red) | papilio::style::bold,
+            "Bad value: {}",
+            std::make_error_code(result.ec).message()
+        );
         return;
     }
 
     m_args.push(val);
-    papilio::println("Added floating point argument: {}", val);
+    papilio::println(
+        "Added floating point argument: {}",
+        papilio::styled(papilio::fg(papilio::color::green), val)
+    );
 }
 
 void ipapilio::adds()
@@ -150,14 +164,20 @@ void ipapilio::adds()
     papilio::utf::string_container str = detail::input(std::cin, "adds");
     PAPILIO_ASSERT(str.has_ownership());
 
-    papilio::println("Added string argument: {}", str);
+    papilio::println(
+        "Added string argument: {}",
+        papilio::styled(papilio::fg(papilio::color::yellow), str)
+    );
     m_args.push(std::move(str));
 }
 
 void ipapilio::setf()
 {
     m_fmt = detail::input(std::cin, "setf");
-    papilio::println("Set format string: {}", m_fmt);
+    papilio::println(
+        "Set format string: {}",
+        papilio::styled(papilio::fg(papilio::color::yellow), papilio::utf::string_container(m_fmt))
+    );
 }
 
 void ipapilio::list_arg()
@@ -200,13 +220,15 @@ void ipapilio::run()
 
         script::script_error_code ec = e.error_code();
         std::size_t pos = parsed.length() + 1;
-        papilio::println("{}", fmt);
-        papilio::println("{:~>{}}", '^', pos);
+        papilio::println(fg(color::yellow), "{}", fmt);
+        papilio::println(
+            "{:~>{}}", styled(fg(color::red) | style::bold, utf::codepoint('^')), pos
+        );
         papilio::println(
             "{: >{}} (0x{:X})",
             to_string(ec),
             pos,
-            static_cast<std::underlying_type_t<decltype(ec)>>(ec)
+            to_underlying(ec)
         );
         return;
     }
@@ -216,13 +238,15 @@ void ipapilio::run()
         {
             const script::script_error_code ec = script::script_error_code::end_of_string;
             std::size_t pos = fmt.length() + 1;
-            papilio::println("{}", fmt);
-            papilio::println("{:~>{}}", '^', pos);
+            papilio::println(fg(color::yellow), "{}", fmt);
+            papilio::println(
+                "{:~>{}}", styled(fg(color::red) | style::bold, utf::codepoint('^')), pos
+            );
             papilio::println(
                 "{: >{}} (0x{:X})",
                 to_string(ec),
                 pos,
-                static_cast<std::underlying_type_t<decltype(ec)>>(ec)
+                to_underlying(ec)
             );
         }
         else
@@ -251,7 +275,8 @@ void ipapilio::run()
         return;
     }
 
-    papilio::println("Result:\n{}", result);
+    papilio::println("Result:");
+    papilio::println(fg(color::yellow), "{}", result);
     if(result.empty())
     {
         papilio::println("(Empty string)");

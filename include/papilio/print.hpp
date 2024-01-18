@@ -5,6 +5,7 @@
 #include <iterator>
 #include "macros.hpp"
 #include "format.hpp"
+#include "color.hpp"
 
 namespace papilio
 {
@@ -171,6 +172,25 @@ void print(format_string<Args...> fmt, Args&&... args)
 }
 
 template <typename... Args>
+void print(text_style st, format_string<Args...> fmt, Args&&... args)
+{
+    using iter_t = detail::cfile_iterator_conv;
+    using context_type = basic_format_context<iter_t>;
+
+    auto it = iter_t(stdout, detail::get_output_cp_win());
+
+    it = st.set(it);
+
+    it = PAPILIO_NS vformat_to(
+        it,
+        fmt.get(),
+        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+    );
+
+    st.reset(it);
+}
+
+template <typename... Args>
 void println(std::FILE* file, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = detail::cfile_iterator;
@@ -193,6 +213,27 @@ void println(format_string<Args...> fmt, Args&&... args)
         fmt.get(),
         PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     );
+    *it = '\n';
+}
+
+template <typename... Args>
+void println(text_style st, format_string<Args...> fmt, Args&&... args)
+{
+    using iter_t = detail::cfile_iterator_conv;
+    using context_type = basic_format_context<iter_t>;
+
+    auto it = iter_t(stdout, detail::get_output_cp_win());
+
+    it = st.set(it);
+
+    it = PAPILIO_NS vformat_to(
+        it,
+        fmt.get(),
+        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+    );
+
+    it = st.reset(it);
+
     *it = '\n';
 }
 

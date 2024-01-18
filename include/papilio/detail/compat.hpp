@@ -45,4 +45,11 @@ constexpr auto&& forward_like(U&& x) noexcept
             return std::move(x);
     }
 }
+
+// to_underlying<Enum> of C++ 23
+template <typename Enum>
+constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
+{
+    return static_cast<std::underlying_type_t<Enum>>(e);
+}
 } // namespace papilio
