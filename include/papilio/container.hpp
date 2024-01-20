@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <array>
@@ -14,7 +13,7 @@ namespace papilio
 {
 namespace detail
 {
-    class small_vector_impl_base
+    class small_vector_impl
     {
     public:
         using size_type = std::size_t;
@@ -26,7 +25,7 @@ namespace detail
 
     protected:
         [[nodiscard]]
-        static size_type calc_mem_size(size_type current, size_type required) noexcept
+        static size_type get_mem_size(size_type current, size_type required) noexcept
         {
             PAPILIO_ASSERT(current < required);
             if(current <= 1)
@@ -39,7 +38,7 @@ namespace detail
 } // namespace detail
 
 template <typename T, typename Allocator = std::allocator<T>>
-class small_vector_base : public detail::small_vector_impl_base
+class small_vector_base : public detail::small_vector_impl
 {
 public:
     using value_type = T;
@@ -419,7 +418,7 @@ public:
         if(m_p_end == m_p_capacity)
         {
             size_type current = this->size();
-            reserve(this->calc_mem_size(current, current + 1));
+            reserve(this->get_mem_size(current, current + 1));
         }
         emplace_back_impl(std::forward<Args>(args)...);
     }
@@ -427,10 +426,15 @@ public:
     void pop_back() noexcept
     {
         PAPILIO_ASSERT(!this->empty());
-        std::allocator_traits<Allocator>::destroy(
-            getal(),
-            m_p_end - 1
-        );
+        if(!dynamic_allocated()) [[likely]]
+            std::destroy_at(m_p_end - 1);
+        else
+        {
+            std::allocator_traits<Allocator>::destroy(
+                getal(),
+                m_p_end - 1
+            );
+        }
         --m_p_end;
     }
 
@@ -750,7 +754,7 @@ private:
 
 namespace detail
 {
-    class fixed_vector_impl_base
+    class fixed_vector_impl
     {
     public:
         using size_type = std::size_t;
@@ -769,7 +773,7 @@ namespace detail
 #endif
 
 template <typename T, std::size_t Capacity>
-class fixed_vector : public detail::fixed_vector_impl_base
+class fixed_vector : public detail::fixed_vector_impl
 {
 public:
     static_assert(std::is_object_v<T>, "Container of non-object type is invalid");
@@ -868,11 +872,13 @@ public:
         return *(end() - 1);
     }
 
+    [[nodiscard]]
     pointer data() noexcept
     {
         return static_cast<pointer>(getbuf());
     }
 
+    [[nodiscard]]
     const_pointer data() const noexcept
     {
         return static_cast<const_pointer>(getbuf());
@@ -1070,7 +1076,7 @@ namespace detail
             : Compare(comp) {}
     };
 
-    class fixed_flat_map_impl_base
+    class fixed_flat_map_impl
     {
     public:
         using size_type = std::size_t;
@@ -1090,7 +1096,7 @@ template <typename Compare>
 inline constexpr bool is_transparent_v = is_transparent<Compare>::value;
 
 template <typename Key, typename T, std::size_t Capacity, typename Compare = std::less<>>
-class fixed_flat_map : public detail::fixed_flat_map_impl_base
+class fixed_flat_map : public detail::fixed_flat_map_impl
 {
 public:
     using key_type = Key;
@@ -1223,9 +1229,7 @@ public:
         }
 
         get_storage().emplace(
-            pos,
-            k,
-            std::forward<U>(val)
+            pos, k, std::forward<U>(val)
         );
 
         return std::make_pair(pos, true);
@@ -1247,8 +1251,7 @@ public:
             std::forward_as_tuple(std::forward<Args>(args))...
         );
         return std::make_pair(
-            pos,
-            true
+            pos, true
         );
     }
 
@@ -1261,8 +1264,22 @@ public:
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
     }
 
+    template <typename K>
+    iterator find(const K& k) requires is_transparent_v<Compare>
+    {
+        auto it = lower_bound(k);
+        return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
+    }
+
     [[nodiscard]]
     const_iterator find(const Key& k) const
+    {
+        auto it = lower_bound(k);
+        return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
+    }
+
+    template <typename K>
+    const_iterator find(const K& k) const requires is_transparent_v<Compare>
     {
         auto it = lower_bound(k);
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
@@ -1274,14 +1291,35 @@ public:
         return find(k) != end();
     }
 
+    template <typename K>
+    [[nodiscard]]
+    bool contains(const K& k) const
+    {
+        return find(k) != end();
+    }
+
     [[nodiscard]]
     iterator lower_bound(const Key& k)
     {
         return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());
     }
 
+    template <typename K>
+    [[nodiscard]]
+    iterator lower_bound(const K& k) requires is_transparent_v<Compare>
+    {
+        return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());
+    }
+
     [[nodiscard]]
     const_iterator lower_bound(const Key& k) const
+    {
+        return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());
+    }
+
+    template <typename K>
+    [[nodiscard]]
+    const_iterator lower_bound(const K& k) const requires is_transparent_v<Compare>
     {
         return lower_bound_impl(begin(), end(), k, get_comp().as_key_comp());
     }
@@ -1314,23 +1352,17 @@ private:
     }
 
     template <typename Iterator, typename K, typename Pred>
-    static Iterator lower_bound_impl(Iterator start, Iterator stop, K&& k, Pred&& pred)
+    static Iterator lower_bound_impl(Iterator start, Iterator stop, const K& k, Pred&& pred)
     {
-        if constexpr(!is_transparent_v<std::remove_cvref_t<Pred>>)
-        {
-            static_assert(
-                std::is_same_v<std::remove_cvref_t<K>, Key>,
-                "transparent compare not available"
-            );
-        }
+        using diff_t = std::iter_difference_t<Iterator>;
 
-        std::iter_difference_t<Iterator> count = std::distance(start, stop);
+        diff_t count = std::distance(start, stop);
 
         while(count > 0)
         {
-            const std::iter_difference_t<Iterator> tmp_count = count / 2;
+            const diff_t tmp_count = count / 2;
             const auto mid = std::next(start, tmp_count);
-            if(pred(mid->first, std::forward<K>(k)))
+            if(pred(mid->first, k))
             {
                 start = std::next(mid);
                 count -= tmp_count + 1;

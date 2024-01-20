@@ -570,6 +570,18 @@ public:
     basic_format_arg& operator=(const basic_format_arg&) = default;
     basic_format_arg& operator=(basic_format_arg&&) noexcept = default;
 
+    void swap(basic_format_arg& other) noexcept
+    {
+        using std::swap;
+
+        swap(m_val, other.m_val);
+    }
+
+    friend void swap(basic_format_arg& lhs, basic_format_arg& rhs) noexcept
+    {
+        lhs.swap(rhs);
+    }
+
     template <typename Visitor>
     decltype(auto) visit(Visitor&& vis) const // GCC needs this function to be defined in the front of the class
     {

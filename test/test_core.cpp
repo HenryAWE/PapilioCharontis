@@ -149,6 +149,33 @@ TEST(format_arg, constructor)
     }
 }
 
+TEST(format_arg, swap)
+{
+    // Not using namespace papilio to test ADL
+    using papilio::utf::codepoint;
+
+    {
+        papilio::format_arg arg1('a');
+        papilio::format_arg arg2('b');
+
+        std::swap(arg1, arg2);
+
+        EXPECT_EQ(get<codepoint>(arg1), U'b');
+        EXPECT_EQ(get<codepoint>(arg2), U'a');
+    }
+
+    {
+        papilio::format_arg arg1('a');
+        papilio::format_arg arg2('b');
+
+        // ADL
+        swap(arg1, arg2);
+
+        EXPECT_EQ(get<codepoint>(arg1), U'b');
+        EXPECT_EQ(get<codepoint>(arg2), U'a');
+    }
+}
+
 TEST(format_arg, access)
 {
     using namespace papilio;
