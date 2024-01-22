@@ -142,7 +142,7 @@ private:
         char buf[4] = {
             '\033',
             '[',
-            '0' + val,
+            static_cast<char>('0' + val),
             'm'};
 
         return std::copy_n(buf, 4, it);

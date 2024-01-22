@@ -350,8 +350,8 @@ private:
     static bool equal_impl(float_type, T lhs, U rhs) noexcept
     {
         // int_type and bool
-        using commont_t = std::common_type_t<T, U>;
-        return static_cast<commont_t>(lhs) == static_cast<commont_t>(rhs);
+        using common_t = std::common_type_t<T, U>;
+        return static_cast<common_t>(lhs) == static_cast<common_t>(rhs);
     }
 
     static bool equal_impl(float_type epsilon, float_type lhs, float_type rhs) noexcept
