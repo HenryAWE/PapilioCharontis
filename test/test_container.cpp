@@ -8,7 +8,7 @@ TEST(small_vector, emplace)
 
     small_vector<int, 8> sv;
 
-    static_assert(sv.static_size() == 8);
+    static_assert(sv.static_capacity() == 8);
     for(int i = 0; i < 8; ++i)
     {
         sv.emplace_back(i);
@@ -23,7 +23,7 @@ TEST(small_vector, emplace)
         EXPECT_EQ(std::as_const(sv).back(), i);
 
         EXPECT_EQ(sv.size(), i + 1);
-        EXPECT_EQ(sv.capacity(), sv.static_size());
+        EXPECT_EQ(sv.capacity(), sv.static_capacity());
         EXPECT_FALSE(sv.dynamic_allocated());
     }
 
@@ -32,7 +32,7 @@ TEST(small_vector, emplace)
 
     sv.emplace_back(8);
     EXPECT_EQ(sv.size(), 9);
-    EXPECT_GT(sv.capacity(), sv.static_size());
+    EXPECT_GT(sv.capacity(), sv.static_capacity());
     EXPECT_TRUE(sv.dynamic_allocated());
     EXPECT_EQ(sv.back(), 8);
 
@@ -101,7 +101,7 @@ TEST(small_vector, constructor)
     small_vector<std::string, 2> sv_2(std::move(sv_1));
     EXPECT_FALSE(sv_1.dynamic_allocated());
     EXPECT_TRUE(sv_1.empty());
-    EXPECT_EQ(sv_1.capacity(), sv_1.static_size());
+    EXPECT_EQ(sv_1.capacity(), sv_1.static_capacity());
     EXPECT_TRUE(sv_2.dynamic_allocated());
     EXPECT_GE(sv_2.capacity(), 3);
 

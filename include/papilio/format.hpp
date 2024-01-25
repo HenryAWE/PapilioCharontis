@@ -186,9 +186,7 @@ namespace detail
         [[nodiscard]]
         format_to_n_result<OutputIt> get_result() const noexcept(std::is_nothrow_copy_constructible_v<OutputIt>)
         {
-            return format_to_n_result<OutputIt>{
-                .out = m_out,
-                .size = m_counter};
+            return format_to_n_result<OutputIt>{.out = m_out, .size = m_counter};
         }
 
     private:

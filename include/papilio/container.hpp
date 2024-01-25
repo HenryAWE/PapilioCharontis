@@ -233,7 +233,10 @@ protected:
     }
 };
 
-PAPILIO_EXPORT template <typename T, std::size_t N, typename Allocator = std::allocator<T>>
+PAPILIO_EXPORT template <
+    typename T,
+    std::size_t StaticCapacity,
+    typename Allocator = std::allocator<T>>
 class small_vector : public small_vector_base<T, Allocator>
 {
     using my_base = small_vector_base<T, Allocator>;
@@ -255,20 +258,26 @@ public:
     using const_reverse_iterator = my_base::const_reverse_iterator;
 
     small_vector() noexcept(std::is_nothrow_default_constructible_v<Allocator>)
-        : my_base()
+        : my_base(), m_data()
     {
-        set_ptrs(getbuf(), static_size());
+        set_ptrs(getbuf(), static_capacity());
     }
 
-    explicit small_vector(const Allocator& alloc) noexcept
+    explicit small_vector(const Allocator& alloc) noexcept(std::is_nothrow_copy_constructible_v<Allocator>)
         : my_base(),
-          m_data(std::piecewise_construct, std::forward_as_tuple(), std::forward_as_tuple(alloc))
+          m_data(
+              std::piecewise_construct,
+              std::forward_as_tuple(),
+              std::forward_as_tuple(alloc)
+          )
     {
-        set_ptrs(getbuf(), static_size());
+        set_ptrs(getbuf(), static_capacity());
     }
 
     small_vector(const small_vector& other)
-        : small_vector()
+        : small_vector(
+              std::allocator_traits<Allocator>::select_on_container_copy_construction(other.getal())
+          )
     {
         reserve(other.size());
         for(size_type i = 0; i < other.size(); ++i)
@@ -278,18 +287,24 @@ public:
     }
 
     small_vector(small_vector&& other) noexcept(std::is_nothrow_move_constructible_v<value_type>)
-        : my_base()
+        requires std::is_nothrow_move_constructible_v<Allocator>
+        : my_base(),
+          m_data(
+              std::piecewise_construct,
+              std::forward_as_tuple(),
+              std::forward_as_tuple(std::move(other.getal()))
+          )
     {
         if(other.dynamic_allocated())
         {
             pointer other_buf = other.getbuf();
             m_p_begin = std::exchange(other.m_p_begin, other_buf);
             m_p_end = std::exchange(other.m_p_end, other_buf);
-            m_p_capacity = std::exchange(other.m_p_capacity, other_buf + static_size());
+            m_p_capacity = std::exchange(other.m_p_capacity, other_buf + static_capacity());
         }
         else [[likely]]
         {
-            set_ptrs(getbuf(), static_size());
+            set_ptrs(getbuf(), static_capacity());
 
             PAPILIO_ASSERT(other.size() <= this->capacity());
             for(auto&& i : other)
@@ -377,9 +392,9 @@ public:
     }
 
     [[nodiscard]]
-    static constexpr size_type static_size() noexcept
+    static constexpr size_type static_capacity() noexcept
     {
-        return N;
+        return StaticCapacity;
     }
 
     void reserve(size_type n)
@@ -535,7 +550,7 @@ private:
     using my_base::m_p_end;
 
     compressed_pair<
-        static_storage<sizeof(value_type) * N, alignof(value_type)>,
+        static_storage<sizeof(value_type) * StaticCapacity, alignof(value_type)>,
         allocator_type>
         m_data;
 
@@ -630,8 +645,7 @@ private:
             for(pointer i = m_p_begin; i < m_p_end; ++i)
             {
                 std::allocator_traits<Allocator>::destroy(
-                    getal(),
-                    i
+                    getal(), i
                 );
             }
         }
@@ -644,11 +658,11 @@ private:
 
     void shrink_mem()
     {
-        if(this->size() <= static_size())
+        if(this->size() <= static_capacity())
         {
             if(!dynamic_allocated())
             {
-                PAPILIO_ASSERT(this->capacity() == static_size());
+                PAPILIO_ASSERT(this->capacity() == static_capacity());
                 return;
             }
 
@@ -659,21 +673,19 @@ private:
             size_type tmp_capacity = this->capacity();
 
             m_p_begin = getbuf();
-            m_p_capacity = m_p_begin + static_size();
+            m_p_capacity = m_p_begin + static_capacity();
 
             try
             {
                 for(size_type i = 0; i < tmp_size; ++i)
                 {
                     std::construct_at(
-                        m_p_begin + i,
-                        std::move(*(tmp_ptr + i))
+                        m_p_begin + i, std::move(*(tmp_ptr + i))
                     );
                     m_p_end = m_p_begin + i + 1;
 
                     std::allocator_traits<Allocator>::destroy(
-                        getal(),
-                        tmp_ptr + i
+                        getal(), tmp_ptr + i
                     );
                 }
             }
@@ -706,14 +718,12 @@ private:
                 for(size_type i = 0; i < tmp_size; ++i)
                 {
                     std::construct_at(
-                        m_p_begin + i,
-                        std::move(*(tmp_ptr + i))
+                        m_p_begin + i, std::move(*(tmp_ptr + i))
                     );
                     m_p_end = m_p_begin + i + 1;
 
                     std::allocator_traits<Allocator>::destroy(
-                        getal(),
-                        tmp_ptr + i
+                        getal(), tmp_ptr + i
                     );
                 }
             }
@@ -765,14 +775,11 @@ private:
             for(size_type j = 0; j < i; ++j)
             {
                 std::allocator_traits<Allocator>::destroy(
-                    getal(),
-                    new_mem + j
+                    getal(), new_mem + j
                 );
             }
             std::allocator_traits<Allocator>::deallocate(
-                getal(),
-                new_mem,
-                new_cap
+                getal(), new_mem, new_cap
             );
             throw;
         }
@@ -789,7 +796,7 @@ private:
         pointer tmp_p_begin = other.m_p_begin;
         pointer tmp_p_end = other.m_p_end;
         pointer tmp_p_capacity = other.m_p_capacity;
-        other.set_ptrs(other.getbuf(), static_size());
+        other.set_ptrs(other.getbuf(), static_capacity());
 
         for(size_type i = 0; i < this->size(); ++i)
         {
