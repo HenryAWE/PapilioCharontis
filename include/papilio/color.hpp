@@ -5,9 +5,9 @@
 
 namespace papilio
 {
-class text_style;
+PAPILIO_EXPORT class text_style;
 
-enum class color : std::uint8_t
+PAPILIO_EXPORT enum class color : std::uint8_t
 {
     none = 0,
     black = 30,
@@ -20,7 +20,7 @@ enum class color : std::uint8_t
     white = 37
 };
 
-enum class style : std::uint8_t
+PAPILIO_EXPORT enum class style : std::uint8_t
 {
     none = 0,
     bold = 1,
@@ -29,11 +29,11 @@ enum class style : std::uint8_t
     underline = 1 << 3
 };
 
-text_style fg(color col) noexcept;
+PAPILIO_EXPORT text_style fg(color col) noexcept;
 
-text_style bg(color col) noexcept;
+PAPILIO_EXPORT text_style bg(color col) noexcept;
 
-class text_style
+PAPILIO_EXPORT class text_style
 {
 public:
     constexpr text_style(style st = style::none) noexcept
@@ -190,7 +190,7 @@ namespace detail
     };
 } // namespace detail
 
-template <typename T>
+PAPILIO_EXPORT template <typename T>
 requires(formattable<T>)
 struct formatter<detail::styled_arg<T>, char> : public formatter<T>
 {
@@ -218,7 +218,7 @@ struct formatter<detail::styled_arg<T>, char> : public formatter<T>
     }
 };
 
-template <typename T>
+PAPILIO_EXPORT template <typename T>
 auto styled(text_style st, const T& val)
 {
     return detail::styled_arg<std::remove_const_t<T>>(st, val);

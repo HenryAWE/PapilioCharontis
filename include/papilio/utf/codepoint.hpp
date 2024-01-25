@@ -10,22 +10,16 @@
 #include <iterator>
 #include "stralgo.hpp"
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(push)
-// Variable 'variable' is uninitialized. Always initialize a member variable (type.6).
-#    pragma warning(disable : 26495)
-#endif
-
 namespace papilio::utf
 {
 // forward declarations
-template <char_like Char>
+PAPILIO_EXPORT template <char_like Char>
 class decoder;
-class codepoint;
+PAPILIO_EXPORT class codepoint;
 
 // vvv decoders vvv
 
-template <>
+PAPILIO_EXPORT template <>
 class decoder<char32_t>
 {
 public:
@@ -36,7 +30,7 @@ public:
     static constexpr std::pair<char32_t, std::uint8_t> from_codepoint(codepoint cp) noexcept;
 };
 
-template <>
+PAPILIO_EXPORT template <>
 class decoder<char8_t>
 {
 public:
@@ -45,7 +39,7 @@ public:
     static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(std::u8string_view ch);
 };
 
-template <>
+PAPILIO_EXPORT template <>
 class decoder<char16_t>
 {
 public:
@@ -81,7 +75,7 @@ public:
     static constexpr auto from_codepoint(codepoint cp) -> from_codepoint_result;
 };
 
-template <>
+PAPILIO_EXPORT template <>
 class decoder<wchar_t>
 {
 public:
@@ -117,7 +111,13 @@ public:
 
 // ^^^ decoders ^^^ / vvv codepoint vvv
 
-class codepoint
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(push)
+// Variable 'variable' is uninitialized. Always initialize a member variable (type.6).
+#    pragma warning(disable : 26495)
+#endif
+
+PAPILIO_EXPORT class codepoint
 {
 public:
     using value_type = char8_t;
@@ -274,8 +274,7 @@ public:
             static_cast<To>(m_data[0]),
             static_cast<To>(m_data[1]),
             static_cast<To>(m_data[2]),
-            static_cast<To>(m_data[3])
-        };
+            static_cast<To>(m_data[3])};
 
         return std::make_pair(arr, size_bytes());
     }
@@ -406,17 +405,17 @@ private:
     char8_t m_data[4];
 };
 
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(pop)
+#endif
+
 inline namespace literals
 {
-    constexpr codepoint operator""_cp(char32_t ch) noexcept
+    PAPILIO_EXPORT constexpr codepoint operator""_cp(char32_t ch) noexcept
     {
         return decoder<char32_t>::to_codepoint(ch).first;
     }
 } // namespace literals
 } // namespace papilio::utf
-
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(pop)
-#endif
 
 #include "codepoint.inl"

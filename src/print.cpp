@@ -9,9 +9,9 @@ namespace papilio
 {
 namespace detail
 {
-    void cfile_iterator::write(char ch)
+    void fp_iterator::write(char ch)
     {
-        int result = std::fputc(ch, m_file);
+        int result = std::fputc(ch, m_fp);
         if(result == EOF)
         {
             throw std::system_error(
@@ -20,7 +20,7 @@ namespace detail
         }
     }
 
-    void cfile_iterator_conv::write(char ch)
+    void fp_iterator_conv::write(char ch)
     {
         if(m_byte_len == 0)
         {
@@ -101,7 +101,7 @@ namespace detail
 
 void println(std::FILE* file)
 {
-    detail::cfile_iterator it(file);
+    detail::fp_iterator it(file);
     *it = '\n';
 }
 

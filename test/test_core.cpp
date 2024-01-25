@@ -289,18 +289,18 @@ TEST(format_args, dynamic)
 
     {
         mutable_format_args underlying_fmt_args;
-        dynamic_format_args<format_context> dyn_fmt_args(underlying_fmt_args);
+        dynamic_format_args dyn_fmt_args(underlying_fmt_args);
 
         EXPECT_EQ(&dyn_fmt_args.cast_to<mutable_format_args>(), &underlying_fmt_args);
 
-        dynamic_format_args<format_context> new_dyn_fmt_args(dyn_fmt_args);
+        dynamic_format_args new_dyn_fmt_args(dyn_fmt_args);
 
         EXPECT_EQ(&new_dyn_fmt_args.cast_to<mutable_format_args>(), &underlying_fmt_args);
     }
 
     {
         auto underlying_fmt_args = make_format_args(182375, 182376);
-        dynamic_format_args<format_context> dyn_fmt_args(underlying_fmt_args);
+        dynamic_format_args dyn_fmt_args(underlying_fmt_args);
 
         EXPECT_EQ(&dyn_fmt_args.cast_to<decltype(underlying_fmt_args)>(), &underlying_fmt_args);
     }

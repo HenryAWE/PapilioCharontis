@@ -9,6 +9,14 @@ TEST(modules, version_info)
     EXPECT_EQ(std::get<2>(ver), papilio::version_patch);
 }
 
+TEST(modules, format)
+{
+    EXPECT_EQ(papilio::formatted_size(""), 0);
+
+    EXPECT_EQ(papilio::format("{}", 182376), "182376");
+    EXPECT_EQ(papilio::format(L"{}", 182376), L"182376");
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

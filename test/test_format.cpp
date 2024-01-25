@@ -200,18 +200,44 @@ TEST(formatter, pointer)
     EXPECT_EQ(PAPILIO_NS format("{:P}", nullptr), "0X0");
     EXPECT_EQ(PAPILIO_NS format(L"{:P}", nullptr), L"0X0");
 
-    void* ptr = reinterpret_cast<void*>(0x7fff);
-    const void* cptr = ptr;
+    {
+        void* p = reinterpret_cast<void*>(0x7fff);
+        const void* cp = p;
 
-    EXPECT_EQ(PAPILIO_NS format("{:p}", ptr), "0x7fff");
-    EXPECT_EQ(PAPILIO_NS format("{:p}", cptr), "0x7fff");
-    EXPECT_EQ(PAPILIO_NS format(L"{:p}", ptr), L"0x7fff");
-    EXPECT_EQ(PAPILIO_NS format(L"{:p}", cptr), L"0x7fff");
+        EXPECT_EQ(PAPILIO_NS format("{:p}", p), "0x7fff");
+        EXPECT_EQ(PAPILIO_NS format("{:p}", cp), "0x7fff");
+        EXPECT_EQ(PAPILIO_NS format(L"{:p}", p), L"0x7fff");
+        EXPECT_EQ(PAPILIO_NS format(L"{:p}", cp), L"0x7fff");
 
-    EXPECT_EQ(PAPILIO_NS format("{:P}", ptr), "0X7FFF");
-    EXPECT_EQ(PAPILIO_NS format("{:P}", cptr), "0X7FFF");
-    EXPECT_EQ(PAPILIO_NS format(L"{:P}", ptr), L"0X7FFF");
-    EXPECT_EQ(PAPILIO_NS format(L"{:P}", cptr), L"0X7FFF");
+        EXPECT_EQ(PAPILIO_NS format("{:P}", p), "0X7FFF");
+        EXPECT_EQ(PAPILIO_NS format("{:P}", cp), "0X7FFF");
+        EXPECT_EQ(PAPILIO_NS format(L"{:P}", p), L"0X7FFF");
+        EXPECT_EQ(PAPILIO_NS format(L"{:P}", cp), L"0X7FFF");
+    }
+
+    {
+        char* p = nullptr;
+        const char* cp = nullptr;
+
+        EXPECT_EQ(PAPILIO_NS format("{:p}", PAPILIO_NS ptr(p)), "0x0");
+        EXPECT_EQ(PAPILIO_NS format("{:p}", PAPILIO_NS ptr(cp)), "0x0");
+        EXPECT_EQ(PAPILIO_NS format(L"{:p}", PAPILIO_NS ptr(p)), L"0x0");
+        EXPECT_EQ(PAPILIO_NS format(L"{:p}", PAPILIO_NS ptr(cp)), L"0x0");
+    }
+
+    {
+        std::unique_ptr<int> p;
+
+        EXPECT_EQ(PAPILIO_NS format("{:p}", PAPILIO_NS ptr(p)), "0x0");
+        EXPECT_EQ(PAPILIO_NS format(L"{:p}", PAPILIO_NS ptr(p)), L"0x0");
+    }
+
+    {
+        std::shared_ptr<int> p;
+
+        EXPECT_EQ(PAPILIO_NS format("{:p}", PAPILIO_NS ptr(p)), "0x0");
+        EXPECT_EQ(PAPILIO_NS format(L"{:p}", PAPILIO_NS ptr(p)), L"0x0");
+    }
 }
 
 TEST(format, plain_text)

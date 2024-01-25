@@ -7,6 +7,7 @@ macro(define_papilio_test test_name)
     add_executable(${test_name} ${test_name}.cpp)
     target_link_libraries(${test_name} PRIVATE papilio)
     target_link_libraries(${test_name} PRIVATE GTest::gtest GTest::gtest_main)
+    target_sources(${test_name} PRIVATE "cpp.hint")
     gtest_discover_tests(${test_name})
 endmacro()
 
@@ -19,6 +20,7 @@ define_papilio_test(test_container)
 define_papilio_test(test_memory)
 
 define_papilio_test(test_format)
+target_compile_options(test_format PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/bigobj>)
 
 define_papilio_test(test_locale)
 

@@ -2,7 +2,9 @@
 
 namespace papilio
 {
-std::string vformat(std::string_view fmt, const dynamic_format_args<format_context>& args)
+std::string vformat(
+    std::string_view fmt, const dynamic_format_args& args
+)
 {
     std::string result;
     PAPILIO_NS vformat_to(std::back_inserter(result), fmt, args);
@@ -10,7 +12,9 @@ std::string vformat(std::string_view fmt, const dynamic_format_args<format_conte
     return result;
 }
 
-std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_args<format_context>& args)
+std::string vformat(
+    const std::locale& loc, std::string_view fmt, const dynamic_format_args& args
+)
 {
     std::string result;
     PAPILIO_NS vformat_to(std::back_inserter(result), loc, fmt, args);
@@ -18,7 +22,9 @@ std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_
     return result;
 }
 
-std::wstring vformat(std::wstring_view fmt, const dynamic_format_args<wformat_context>& args)
+std::wstring vformat(
+    std::wstring_view fmt, const wdynamic_format_args& args
+)
 {
     std::wstring result;
     PAPILIO_NS vformat_to(std::back_inserter(result), fmt, args);
@@ -26,11 +32,13 @@ std::wstring vformat(std::wstring_view fmt, const dynamic_format_args<wformat_co
     return result;
 }
 
-std::wstring vformat(const std::locale& loc, std::wstring_view fmt, const dynamic_format_args<wformat_context>& args)
+std::wstring vformat(
+    const std::locale& loc, std::wstring_view fmt, const wdynamic_format_args& args
+)
 {
     std::wstring result;
     PAPILIO_NS vformat_to(std::back_inserter(result), loc, fmt, args);
 
     return result;
 }
-}
+} // namespace papilio

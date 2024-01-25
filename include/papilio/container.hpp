@@ -37,7 +37,7 @@ namespace detail
     };
 } // namespace detail
 
-template <typename T, typename Allocator = std::allocator<T>>
+PAPILIO_EXPORT template <typename T, typename Allocator = std::allocator<T>>
 class small_vector_base : public detail::small_vector_impl
 {
 public:
@@ -233,10 +233,10 @@ protected:
     }
 };
 
-template <typename T, std::size_t N, typename Allocator = std::allocator<T>>
+PAPILIO_EXPORT template <typename T, std::size_t N, typename Allocator = std::allocator<T>>
 class small_vector : public small_vector_base<T, Allocator>
 {
-    using base = small_vector_base<T, Allocator>;
+    using my_base = small_vector_base<T, Allocator>;
 
 public:
     static_assert(std::is_object_v<T>, "Container of non-object type is invalid");
@@ -247,21 +247,21 @@ public:
     using difference_type = std::ptrdiff_t;
     using reference = value_type&;
     using const_reference = const value_type&;
-    using pointer = base::pointer;
-    using const_pointer = base::const_pointer;
-    using iterator = base::iterator;
-    using const_iterator = base::const_iterator;
-    using reverse_iterator = base::reverse_iterator;
-    using const_reverse_iterator = base::const_reverse_iterator;
+    using pointer = my_base::pointer;
+    using const_pointer = my_base::const_pointer;
+    using iterator = my_base::iterator;
+    using const_iterator = my_base::const_iterator;
+    using reverse_iterator = my_base::reverse_iterator;
+    using const_reverse_iterator = my_base::const_reverse_iterator;
 
     small_vector() noexcept(std::is_nothrow_default_constructible_v<Allocator>)
-        : base()
+        : my_base()
     {
         set_ptrs(getbuf(), static_size());
     }
 
     explicit small_vector(const Allocator& alloc) noexcept
-        : base(),
+        : my_base(),
           m_data(std::piecewise_construct, std::forward_as_tuple(), std::forward_as_tuple(alloc))
     {
         set_ptrs(getbuf(), static_size());
@@ -278,7 +278,7 @@ public:
     }
 
     small_vector(small_vector&& other) noexcept(std::is_nothrow_move_constructible_v<value_type>)
-        : base()
+        : my_base()
     {
         if(other.dynamic_allocated())
         {
@@ -530,9 +530,10 @@ public:
 #endif
 
 private:
-    using base::m_p_begin;
-    using base::m_p_capacity;
-    using base::m_p_end;
+    using my_base::m_p_begin;
+    using my_base::m_p_capacity;
+    using my_base::m_p_end;
+
     compressed_pair<
         static_storage<sizeof(value_type) * N, alignof(value_type)>,
         allocator_type>
@@ -580,7 +581,7 @@ private:
         m_p_capacity = p_capacity;
     }
 
-    using base::swap_ptrs;
+    using my_base::swap_ptrs;
 
     // Note: This function assumes that the container has enough memory.
     template <typename... Args>
@@ -652,31 +653,80 @@ private:
             }
 
             // move from dynamic allocated memory to static storage
+
             pointer tmp_ptr = m_p_begin;
             size_type tmp_size = this->size();
             size_type tmp_capacity = this->capacity();
+
             m_p_begin = getbuf();
+            m_p_capacity = m_p_begin + static_size();
 
-            for(size_type i = 0; i < tmp_size; ++i)
+            try
             {
-                std::construct_at(
-                    m_p_begin + i,
-                    std::move(*(tmp_ptr + i))
-                );
-                std::allocator_traits<Allocator>::destroy(
-                    getal(),
-                    tmp_ptr + i
-                );
-            }
-            m_p_end = m_p_begin + tmp_size;
+                for(size_type i = 0; i < tmp_size; ++i)
+                {
+                    std::construct_at(
+                        m_p_begin + i,
+                        std::move(*(tmp_ptr + i))
+                    );
+                    m_p_end = m_p_begin + i + 1;
 
+                    std::allocator_traits<Allocator>::destroy(
+                        getal(),
+                        tmp_ptr + i
+                    );
+                }
+            }
+            catch(...)
+            {
+                std::allocator_traits<Allocator>::deallocate(
+                    getal(), tmp_ptr, tmp_capacity
+                );
+                throw;
+            }
             std::allocator_traits<Allocator>::deallocate(
-                getal(),
-                tmp_ptr,
-                tmp_capacity
+                getal(), tmp_ptr, tmp_capacity
+            );
+        }
+        else
+        {
+            if(this->size() == this->capacity())
+                return;
+
+            PAPILIO_ASSERT(this->size() < this->capacity());
+
+            size_type tmp_size = this->size();
+            size_type tmp_capacity = this->capacity();
+            pointer tmp_ptr = std::allocator_traits<Allocator>::allocate(
+                getal(), tmp_size
             );
 
-            m_p_capacity = m_p_begin + static_size();
+            try
+            {
+                for(size_type i = 0; i < tmp_size; ++i)
+                {
+                    std::construct_at(
+                        m_p_begin + i,
+                        std::move(*(tmp_ptr + i))
+                    );
+                    m_p_end = m_p_begin + i + 1;
+
+                    std::allocator_traits<Allocator>::destroy(
+                        getal(),
+                        tmp_ptr + i
+                    );
+                }
+            }
+            catch(...)
+            {
+                std::allocator_traits<Allocator>::deallocate(
+                    getal(), tmp_ptr, tmp_size
+                );
+                throw;
+            }
+
+            free_mem();
+            set_ptrs(tmp_ptr, tmp_size, tmp_size);
         }
     }
 
@@ -690,8 +740,11 @@ private:
         if(new_cap > this->max_size())
             this->throw_length_error();
 
-        pointer new_mem = getal().allocate(new_cap);
+        pointer new_mem = std::allocator_traits<Allocator>::allocate(
+            getal(), new_cap
+        );
         size_type i = 0;
+
         try
         {
             size_type tmp_size = this->size();
@@ -772,7 +825,7 @@ namespace detail
 #    pragma warning(disable : 26495)
 #endif
 
-template <typename T, std::size_t Capacity>
+PAPILIO_EXPORT template <typename T, std::size_t Capacity>
 class fixed_vector : public detail::fixed_vector_impl
 {
 public:
@@ -1087,15 +1140,19 @@ namespace detail
     };
 } // namespace detail
 
-template <typename Compare>
+PAPILIO_EXPORT template <typename Compare>
 struct is_transparent :
     public std::bool_constant<detail::is_transparent_helper<Compare>>
 {};
 
-template <typename Compare>
+PAPILIO_EXPORT template <typename Compare>
 inline constexpr bool is_transparent_v = is_transparent<Compare>::value;
 
-template <typename Key, typename T, std::size_t Capacity, typename Compare = std::less<>>
+PAPILIO_EXPORT template <
+    typename Key,
+    typename T,
+    std::size_t Capacity,
+    typename Compare = std::less<>>
 class fixed_flat_map : public detail::fixed_flat_map_impl
 {
 public:

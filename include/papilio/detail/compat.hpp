@@ -5,27 +5,27 @@
 
 namespace papilio
 {
-namespace detail
+// Implement unreachable() of C++ 23 for compatibility.
+PAPILIO_EXPORT [[noreturn]]
+inline void unreachable()
 {
-    // Implement unreachable() of C++ 23 for compatibility.
-    [[noreturn]]
-    inline void unreachable()
-    {
 #ifdef __cpp_lib_unreachable
-        std::unreachable();
+    std::unreachable();
 #elif defined PAPILIO_COMPILER_MSVC
-        __assume(false);
+    __assume(false);
 #elif defined PAPILIO_COMPILER_GCC
-        __builtin_unreachable();
+    __builtin_unreachable();
+
+    // TODO: Clang support
+
 #else
-        // An empty function body and the [[noreturn]] attribute is enough to raise undefined behavior.
+    // An empty function body and the [[noreturn]] attribute is enough to raise undefined behavior.
 #endif
-    }
-} // namespace detail
+}
 
 // forwark_like<T, U> of C++ 23
 // Use implementation from cppreference.com
-template <class T, class U>
+PAPILIO_EXPORT template <class T, class U>
 [[nodiscard]]
 constexpr auto&& forward_like(U&& x) noexcept
 {
@@ -47,7 +47,7 @@ constexpr auto&& forward_like(U&& x) noexcept
 }
 
 // to_underlying<Enum> of C++ 23
-template <typename Enum>
+PAPILIO_EXPORT template <typename Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
 {
     return static_cast<std::underlying_type_t<Enum>>(e);

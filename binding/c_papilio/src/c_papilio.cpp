@@ -94,7 +94,7 @@ int papilio_vformat_s(papilio_context* ctx, const char* fmt, size_t fmt_sz)
 
         return 0;
     }
-    catch(const script::interpreter_base::script_error& e)
+    catch(const script::script_base::error& e)
     {
         errno = EINVAL;
         return static_cast<int>(e.error_code());

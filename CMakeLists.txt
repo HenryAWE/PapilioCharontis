@@ -38,6 +38,7 @@ endif()
 
 add_library(papilio ${papilio_src})
 target_sources(papilio PUBLIC "natvis/papilio.natvis")
+target_sources(papilio PUBLIC "cpp.hint")
 target_include_directories(papilio PUBLIC include)
 target_compile_options(papilio PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>

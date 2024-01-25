@@ -7,9 +7,9 @@
 
 namespace papilio::utf
 {
-constexpr inline std::size_t npos = std::u8string::npos;
+PAPILIO_EXPORT constexpr inline std::size_t npos = std::u8string::npos;
 
-class invalid_byte : public std::invalid_argument
+PAPILIO_EXPORT class invalid_byte : public std::invalid_argument
 {
 public:
     explicit invalid_byte(std::uint8_t ch)
@@ -25,7 +25,7 @@ private:
     std::uint8_t m_byte;
 };
 
-class invalid_surrogate : public std::invalid_argument
+PAPILIO_EXPORT class invalid_surrogate : public std::invalid_argument
 {
 public:
     explicit invalid_surrogate(std::uint16_t ch)
@@ -41,19 +41,19 @@ private:
     std::uint16_t m_ch;
 };
 
-[[nodiscard]]
+PAPILIO_EXPORT [[nodiscard]]
 constexpr bool is_leading_byte(std::uint8_t ch) noexcept
 {
     return (ch & 0b1100'0000) != 0b1000'0000;
 }
 
-[[nodiscard]]
+PAPILIO_EXPORT [[nodiscard]]
 constexpr bool is_trailing_byte(std::uint8_t ch) noexcept
 {
     return (ch & 0b1100'0000) == 0b1000'0000;
 }
 
-[[nodiscard]]
+PAPILIO_EXPORT [[nodiscard]]
 constexpr std::uint8_t byte_count(std::uint8_t leading_byte) noexcept
 {
     PAPILIO_ASSERT(is_leading_byte(leading_byte));
@@ -69,32 +69,33 @@ constexpr std::uint8_t byte_count(std::uint8_t leading_byte) noexcept
     PAPILIO_UNREACHABLE();
 }
 
-[[nodiscard]]
+PAPILIO_EXPORT [[nodiscard]]
 constexpr bool is_high_surrogate(std::uint16_t ch) noexcept
 {
     return 0xD7FF <= ch && ch <= 0xE000;
 }
 
-[[nodiscard]]
+PAPILIO_EXPORT [[nodiscard]]
 constexpr bool is_low_surrogate(std::uint16_t ch) noexcept
 {
     return 0xDC00 <= ch && ch <= 0xDFFF;
 }
 
-enum class strlen_behavior
+PAPILIO_EXPORT enum class strlen_behavior
 {
     replace = 0,
     ignore = 1,
     stop = 2,
     exception = 3
 };
-enum class substr_behavior
+
+PAPILIO_EXPORT enum class substr_behavior
 {
     exception = 0,
     empty_string = 1
 };
 
-template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
+PAPILIO_EXPORT template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
 [[nodiscard]]
 constexpr std::size_t strlen(
     const CharT* str, std::size_t max_chars
@@ -154,7 +155,7 @@ constexpr std::size_t strlen(
     return result;
 }
 
-template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
+PAPILIO_EXPORT template <strlen_behavior OnInvalid = strlen_behavior::replace, char8_like CharT>
 [[nodiscard]]
 constexpr std::size_t strlen(
     std::basic_string_view<CharT> str
@@ -212,7 +213,7 @@ constexpr std::size_t strlen(
     return result;
 }
 
-template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
+PAPILIO_EXPORT template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
 [[nodiscard]]
 constexpr std::size_t strlen(
     const CharT* str, std::size_t max_chars
@@ -230,7 +231,7 @@ constexpr std::size_t strlen(
     return result;
 }
 
-template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
+PAPILIO_EXPORT template <strlen_behavior OnInvalid = strlen_behavior::replace, char16_like CharT>
 [[nodiscard]]
 constexpr std::size_t strlen(
     std::basic_string_view<CharT> str
@@ -247,7 +248,7 @@ constexpr std::size_t strlen(
     return result;
 }
 
-template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
+PAPILIO_EXPORT template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
 [[nodiscard]]
 constexpr std::size_t strlen(const CharT* str, std::size_t max_chars) noexcept
 {
@@ -258,21 +259,21 @@ constexpr std::size_t strlen(const CharT* str, std::size_t max_chars) noexcept
     }
 }
 
-template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
+PAPILIO_EXPORT template <strlen_behavior /* unused */ = strlen_behavior::replace, char32_like CharT>
 [[nodiscard]]
 constexpr std::size_t strlen(std::basic_string_view<CharT> str) noexcept
 {
     return str.size();
 }
 
-template <strlen_behavior OnInvalid = strlen_behavior::replace, char_like CharT>
+PAPILIO_EXPORT template <strlen_behavior OnInvalid = strlen_behavior::replace, char_like CharT>
 [[nodiscard]]
 constexpr std::size_t strlen(const CharT* str)
 {
     return strlen<OnInvalid, CharT>(std::basic_string_view<CharT>(str));
 }
 
-template <char8_like CharT>
+PAPILIO_EXPORT template <char8_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
@@ -303,7 +304,7 @@ constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_
     return npos;
 }
 
-template <char8_like CharT>
+PAPILIO_EXPORT template <char8_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
@@ -322,7 +323,7 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
     return npos;
 }
 
-template <char16_like CharT>
+PAPILIO_EXPORT template <char16_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
@@ -353,7 +354,7 @@ constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_
     return npos;
 }
 
-template <char16_like CharT>
+PAPILIO_EXPORT template <char16_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
@@ -372,7 +373,7 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
     return npos;
 }
 
-template <char32_like CharT>
+PAPILIO_EXPORT template <char32_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
@@ -380,7 +381,7 @@ constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_
     return idx < max_chars ? idx : npos;
 }
 
-template <char32_like CharT>
+PAPILIO_EXPORT template <char32_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
 {
@@ -390,14 +391,14 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
     return max_chars - 1 - idx;
 }
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, std::basic_string_view<CharT> str) noexcept
 {
     return index_offset(idx, str.data(), str.size());
 }
 
-template <typename CharT>
+PAPILIO_EXPORT template <typename CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, std::basic_string_view<CharT> str) noexcept
 {
@@ -406,13 +407,13 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, std::basic_
 
 // vvv locale independent APIs vvv
 
-[[nodiscard]]
+PAPILIO_EXPORT [[nodiscard]]
 constexpr bool is_digit(char32_t ch) noexcept
 {
     return U'0' <= ch && ch <= U'9';
 }
 
-[[nodiscard]]
+PAPILIO_EXPORT [[nodiscard]]
 constexpr bool is_whitespace(char32_t ch) noexcept
 {
     using namespace std::literals;

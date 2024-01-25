@@ -214,7 +214,7 @@ void ipapilio::run()
 
         intp.format(parse_ctx, fmt_ctx);
     }
-    catch(const intp_t::script_error_ex& e)
+    catch(const intp_t::extended_error& e)
     {
         utf::string_ref parsed(fmt.begin(), e.get_iter());
 
@@ -232,7 +232,7 @@ void ipapilio::run()
         );
         return;
     }
-    catch(const intp_t::script_error& e)
+    catch(const intp_t::error& e)
     {
         if(e.error_code() == script::script_error_code::end_of_string)
         {

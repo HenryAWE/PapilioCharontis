@@ -410,7 +410,7 @@ TEST(interpreter, format)
     using namespace script;
 
     {
-        interpreter intp;
+        interpreter intp{};
 
         std::string buf;
         mutable_format_args args;
@@ -437,7 +437,7 @@ auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
 
         throw;
     }
-    catch(const interpreter_base::script_error& e)
+    catch(const script_base::error& e)
     {
         return e;
     }
@@ -471,7 +471,9 @@ TEST(interpreter, debug)
         format_parse_context parse_ctx(fmt, args);
         std::string str;
         format_context fmt_ctx(std::back_inserter(str), args);
-        intp_t intp;
+        intp_t intp{};
+        static_assert(intp_t::debug());
+
         intp.format(parse_ctx, fmt_ctx);
 
         FAIL() << "unreachable";
@@ -485,7 +487,7 @@ TEST(interpreter, debug)
         {                                                                 \
             return helper(fmt_str);                                       \
         }                                                                 \
-        catch(const intp_t::script_error_ex& e)                           \
+        catch(const intp_t::extended_error& e)                            \
         {                                                                 \
             EXPECT_EQ(e.error_code(), ec);                                \
             EXPECT_EQ(std::distance(fmt_str.begin(), e.get_iter()), pos); \

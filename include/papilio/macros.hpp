@@ -24,6 +24,8 @@
 #    define PAPILIO_COMPILER_GCC __GNUC__
 #endif
 
+// TODO: Clang support
+
 #define PAPILIO_ASSERT(expr) assert(expr)
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -114,6 +116,6 @@
     )
 
 // NOTE: #include <papilio/detail/compat.hpp> first
-#    define PAPILIO_UNREACHABLE() (PAPILIO_NS detail::unreachable())
+#    define PAPILIO_UNREACHABLE() (PAPILIO_NS unreachable())
 
 #endif
