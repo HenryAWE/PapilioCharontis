@@ -492,7 +492,7 @@ public:
     basic_format_arg(basic_format_arg&& other) noexcept
         : m_val(std::move(other.m_val))
     {
-        other.m_val.emplace<std::monostate>();
+        other.m_val.template emplace<std::monostate>();
     }
 
     basic_format_arg(bool val) noexcept
