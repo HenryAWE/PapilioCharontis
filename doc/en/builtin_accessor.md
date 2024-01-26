@@ -26,9 +26,6 @@ Example: Given string "hello world!"
 - `length`：The number of *characters* in the string.  
 For string containing non-ASCII characters, these two values may not be equal. For example, the `size` of string `"ü"` is `2`, but its `length` is `1`; for string `L"ü"` (`wchar_t` string), its `size` and `length` are both `1`.
 
----
-*NOTE: The accessor support for following types needs to include the header file `<papilio/util/stl_container.hpp>`.*
-
 ## Tuples (`tuple` and `pair`)
 ### Indexing by Integer
 Forward index starts from `0` and returns null when exceeding maximum index  

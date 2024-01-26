@@ -11,7 +11,7 @@ Fill can be any character, followed by align option which is one of the `<`, `>`
 Align Option:
 - `<`: Force the output to align to the beginning of available space. This is the default option for outputting non-integer or non-floating point values.
 - `>`: Force the output to align to the ending of available space. This is the default option for outputting integer and floating point values.
-- `^`: Force the output to align to the middle of available space. Given `n` characters waiting for insertion, this option will insert $\lfloor\frac{n}{2}\rfloor$ (`n / 2` in C++) characters before the output and $\lceil\frac{n}{2}\rceil$ (`n / 2 + n % 2` in C++) characters after the output.
+- `^`: Force the output to align to the middle of available space. Given `n` characters waiting for insertion, this option will insert $\lfloor\frac{n}{2}\rfloor$ characters before the output and $\lceil\frac{n}{2}\rceil$ characters after the output.
 
 ### Sign, # and 0
 Sign options:
@@ -23,11 +23,11 @@ The sign options are available for infinite values and NaN:
 ```c++
 double inf = std::numeric_limits<double>::infinity();
 double nan = std::numeric_limits<double>::quiet_NaN();
-papilio::format("{0:},{0:+},{0:-},{0: }", inf); // "inf,+inf,inf, inf"
-papilio::format("{0:},{0:+},{0:-},{0: }", nan); // "nan,+nan,nan, nan"
+papilio::format("{0:},{0:+},{0:-},{0: }", inf); // Returns "inf,+inf,inf, inf"
+papilio::format("{0:},{0:+},{0:-},{0: }", nan); // Returns "nan,+nan,nan, nan"
 ```
 
-`#` Optional will enable the alternate form:
+The `#` option will enable the alternate form:
 - Integral type: When use binary, octal or hexadecimal for displaying, this option will insert prefix (`0b`, `0o` or `0x`) in the output.
 - Floating type: not implemented yet
 
