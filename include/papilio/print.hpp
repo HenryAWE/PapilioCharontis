@@ -144,10 +144,10 @@ namespace detail
     }
 } // namespace detail
 
-void println(std::FILE* file);
-void println();
+PAPILIO_EXPORT void println(std::FILE* file);
+PAPILIO_EXPORT void println();
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void print(std::FILE* file, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = detail::fp_iterator;
@@ -159,7 +159,7 @@ void print(std::FILE* file, format_string<Args...> fmt, Args&&... args)
     );
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void print(format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = detail::fp_iterator_conv;
@@ -171,7 +171,7 @@ void print(format_string<Args...> fmt, Args&&... args)
     );
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void print(text_style st, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = detail::fp_iterator_conv;
@@ -190,7 +190,7 @@ void print(text_style st, format_string<Args...> fmt, Args&&... args)
     st.reset(it);
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void println(std::FILE* file, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = detail::fp_iterator;
@@ -203,7 +203,7 @@ void println(std::FILE* file, format_string<Args...> fmt, Args&&... args)
     *it = '\n';
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void println(format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = detail::fp_iterator_conv;
@@ -216,7 +216,7 @@ void println(format_string<Args...> fmt, Args&&... args)
     *it = '\n';
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void println(text_style st, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = detail::fp_iterator_conv;
@@ -237,7 +237,7 @@ void println(text_style st, format_string<Args...> fmt, Args&&... args)
     *it = '\n';
 }
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void print(std::ostream& os, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = std::ostream_iterator<char>;
@@ -250,9 +250,9 @@ void print(std::ostream& os, format_string<Args...> fmt, Args&&... args)
     );
 }
 
-void println(std::ostream& os);
+PAPILIO_EXPORT void println(std::ostream& os);
 
-template <typename... Args>
+PAPILIO_EXPORT template <typename... Args>
 void println(std::ostream& os, format_string<Args...> fmt, Args&&... args)
 {
     PAPILIO_NS print(os, fmt.get(), std::forward<Args>(args)...);
