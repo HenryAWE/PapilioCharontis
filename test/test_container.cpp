@@ -75,6 +75,8 @@ TEST(small_vector, dynamic_allocated)
     EXPECT_FALSE(sv.dynamic_allocated());
 
     sv.assign({"first", "second"});
+    EXPECT_NE(sv.front(), "one");
+
     EXPECT_FALSE(sv.dynamic_allocated());
     sv.push_back("third");
     EXPECT_FALSE(sv.dynamic_allocated());
@@ -83,6 +85,14 @@ TEST(small_vector, dynamic_allocated)
     sv.push_back("fifth");
     EXPECT_TRUE(sv.dynamic_allocated());
     EXPECT_EQ(sv.size(), 5);
+
+    sv.reserve(16);
+    EXPECT_GE(sv.capacity(), 16);
+    EXPECT_EQ(sv.size(), 5);
+    EXPECT_EQ(sv.back(), "fifth");
+
+    sv.shrink_to_fit();
+    EXPECT_EQ(sv.capacity(), sv.size());
 
     sv.pop_back();
     EXPECT_EQ(sv.size(), 4);

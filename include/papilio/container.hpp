@@ -718,12 +718,11 @@ private:
                 for(size_type i = 0; i < tmp_size; ++i)
                 {
                     std::construct_at(
-                        m_p_begin + i, std::move(*(tmp_ptr + i))
+                        tmp_ptr + i, std::move(*(m_p_begin + i))
                     );
-                    m_p_end = m_p_begin + i + 1;
 
                     std::allocator_traits<Allocator>::destroy(
-                        getal(), tmp_ptr + i
+                        getal(), m_p_begin + i
                     );
                 }
             }
