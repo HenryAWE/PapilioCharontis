@@ -276,7 +276,7 @@ public:
 
     small_vector(const small_vector& other)
         : small_vector(
-              std::allocator_traits<Allocator>::select_on_container_copy_construction(other.getal())
+              std::allocator_traits<Allocator>::select_on_container_copy_construction(other.get_alloc())
           )
     {
         reserve(other.size());
@@ -292,7 +292,7 @@ public:
           m_data(
               std::piecewise_construct,
               std::forward_as_tuple(),
-              std::forward_as_tuple(std::move(other.getal()))
+              std::forward_as_tuple(std::move(other.get_alloc()))
           )
     {
         if(other.dynamic_allocated())
@@ -330,7 +330,7 @@ public:
 
     ~small_vector() noexcept
     {
-        clear();
+        destroy_all();
         free_mem();
     }
 
@@ -339,48 +339,37 @@ public:
         if(this == &rhs)
             return *this;
         assign(rhs.begin(), rhs.end());
+
         return *this;
     }
 
     small_vector& operator=(small_vector&& rhs) noexcept(std::is_nothrow_move_constructible_v<small_vector>)
     {
-        small_vector tmp(std::move(rhs));
-        swap(tmp);
+        small_vector(std::move(rhs)).swap(*this);
+
         return *this;
     }
 
     template <typename Iterator>
     void assign(Iterator first, Iterator last)
     {
-        clear();
-        constexpr bool random_access = std::is_convertible_v<
-            typename std::iterator_traits<Iterator>::iterator_category,
-            std::random_access_iterator_tag>;
-        if constexpr(random_access)
-        {
-            reserve(std::distance(first, last));
-            for(auto it = first; it != last; ++it)
-            {
-                emplace_back_impl(*it);
-            }
-        }
-        else
-        {
-            for(auto it = first; it != last; ++it)
-            {
-                emplace_back(*it);
-            }
-        }
+        assign_iter(first, last);
     }
 
     void assign(std::initializer_list<value_type> il)
     {
-        assign(il.begin(), il.end());
+        assign_range(il);
+    }
+
+    template <std::ranges::input_range R>
+    void assign_range(R&& rng)
+    {
+        assign_iter(std::ranges::begin(rng), std::ranges::end(rng));
     }
 
     allocator_type get_allocator() const noexcept
     {
-        return getal();
+        return get_alloc();
     }
 
     // capacity
@@ -406,7 +395,10 @@ public:
 
     void shrink_to_fit()
     {
-        shrink_mem();
+        if(this->size() <= static_capacity()) [[likely]]
+            shrink_dyn_to_static();
+        else
+            shrink_dyn();
     }
 
     // modifiers
@@ -446,7 +438,7 @@ public:
         else
         {
             std::allocator_traits<Allocator>::destroy(
-                getal(),
+                get_alloc(),
                 m_p_end - 1
             );
         }
@@ -473,12 +465,10 @@ public:
         resize(count, value_type());
     }
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(push)
-#    pragma warning(disable : 26800) // lifetime.1
-#endif
-
-    void swap(small_vector& other) noexcept
+    void swap(small_vector& other) noexcept(
+        std::is_nothrow_swappable_v<T> && std::is_nothrow_move_constructible_v<T> &&
+        (!std::allocator_traits<Allocator>::propagate_on_container_swap::value || std::is_nothrow_swappable_v<Allocator>)
+    )
     {
         using std::swap;
 
@@ -486,8 +476,6 @@ public:
         {
             // both are dynamic allocated
             swap_ptrs(other);
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
-                swap(getal(), other.getal());
         }
         else if(!dynamic_allocated() && other.dynamic_allocated())
         {
@@ -497,52 +485,20 @@ public:
         {
             other.swap_static_to_dyn(*this);
         }
-        else
+        else [[likely]]
         {
             // both are using static storage
-            PAPILIO_ASSERT(!dynamic_allocated() && !other.dynamic_allocated());
-
-            size_type tmp_size_1 = this->size();
-            size_type tmp_size_2 = other.size();
-            for(size_type i = 0; i < std::max(tmp_size_1, tmp_size_2); ++i)
-            {
-                if(i < this->size() && i >= other.size())
-                {
-                    // this->size() > other.size()
-                    // copy elements to the other one
-                    std::construct_at(
-                        other.m_p_begin + i,
-                        std::move(*(m_p_begin + i))
-                    );
-                    std::destroy_at(getbuf() + i);
-                }
-                else if(i >= this->size() && i < other.size())
-                {
-                    // this->size() < other.size()
-                    // copy elements from the other one
-                    std::construct_at(
-                        m_p_begin + i,
-                        std::move(*(other.m_p_begin + i))
-                    );
-                    std::destroy_at(other.m_p_begin + i);
-                }
-                else
-                {
-                    swap(*(m_p_begin + i), *(other.m_p_begin + i));
-                }
-            }
-
-            // set correct size values
-            m_p_end = m_p_begin + tmp_size_2;
-            other.m_p_end = other.m_p_begin + tmp_size_1;
-            if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
-                swap(getal(), other.getal());
+            swap_static(other);
         }
+
+        if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
+            swap(get_alloc(), other.get_alloc());
     }
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(pop)
-#endif
+    friend void swap(small_vector& lhs, small_vector& rhs) noexcept(std::is_nothrow_swappable_v<small_vector>)
+    {
+        lhs.swap(rhs);
+    }
 
 private:
     using my_base::m_p_begin;
@@ -565,7 +521,7 @@ private:
     }
 
     // get reference of the allocator
-    allocator_type& getal() noexcept
+    allocator_type& get_alloc() noexcept
     {
         return m_data.second();
     }
@@ -613,7 +569,7 @@ private:
         else
         {
             std::allocator_traits<Allocator>::construct(
-                getal(),
+                get_alloc(),
                 m_p_end,
                 std::forward<Args>(args)...
             );
@@ -627,7 +583,7 @@ private:
         if(!dynamic_allocated())
             return;
         std::allocator_traits<Allocator>::deallocate(
-            getal(),
+            get_alloc(),
             m_p_begin,
             this->capacity()
         );
@@ -645,102 +601,74 @@ private:
             for(pointer i = m_p_begin; i < m_p_end; ++i)
             {
                 std::allocator_traits<Allocator>::destroy(
-                    getal(), i
+                    get_alloc(), i
                 );
             }
         }
     }
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(push)
-#    pragma warning(disable : 26800) // lifetime.1
-#endif
-
-    void shrink_mem()
+    // move from dynamic allocated memory to static storage
+    void shrink_dyn_to_static()
     {
-        if(this->size() <= static_capacity())
+        PAPILIO_ASSERT(this->size() <= static_capacity());
+
+        if(!dynamic_allocated())
         {
-            if(!dynamic_allocated())
-            {
-                PAPILIO_ASSERT(this->capacity() == static_capacity());
-                return;
-            }
+            PAPILIO_ASSERT(this->capacity() == static_capacity());
+            return;
+        }
 
-            // move from dynamic allocated memory to static storage
+        pointer tmp_ptr = m_p_begin;
+        size_type tmp_size = this->size();
+        size_type tmp_capacity = this->capacity();
 
-            pointer tmp_ptr = m_p_begin;
-            size_type tmp_size = this->size();
-            size_type tmp_capacity = this->capacity();
+        set_ptrs(getbuf(), static_capacity());
 
-            m_p_begin = getbuf();
-            m_p_capacity = m_p_begin + static_capacity();
-
-            try
-            {
-                for(size_type i = 0; i < tmp_size; ++i)
-                {
-                    std::construct_at(
-                        m_p_begin + i, std::move(*(tmp_ptr + i))
-                    );
-                    m_p_end = m_p_begin + i + 1;
-
-                    std::allocator_traits<Allocator>::destroy(
-                        getal(), tmp_ptr + i
-                    );
-                }
-            }
-            catch(...)
-            {
-                std::allocator_traits<Allocator>::deallocate(
-                    getal(), tmp_ptr, tmp_capacity
-                );
-                throw;
-            }
+        try
+        {
+            std::uninitialized_move_n(tmp_ptr, tmp_size, m_p_begin);
+            std::destroy_n(tmp_ptr, tmp_size);
+        }
+        catch(...)
+        {
             std::allocator_traits<Allocator>::deallocate(
-                getal(), tmp_ptr, tmp_capacity
+                get_alloc(), tmp_ptr, tmp_capacity
             );
+            throw;
         }
-        else
-        {
-            if(this->size() == this->capacity())
-                return;
 
-            PAPILIO_ASSERT(this->size() < this->capacity());
-
-            size_type tmp_size = this->size();
-            pointer tmp_ptr = std::allocator_traits<Allocator>::allocate(
-                getal(), tmp_size
-            );
-
-            try
-            {
-                for(size_type i = 0; i < tmp_size; ++i)
-                {
-                    std::construct_at(
-                        tmp_ptr + i, std::move(*(m_p_begin + i))
-                    );
-
-                    std::allocator_traits<Allocator>::destroy(
-                        getal(), m_p_begin + i
-                    );
-                }
-            }
-            catch(...)
-            {
-                std::allocator_traits<Allocator>::deallocate(
-                    getal(), tmp_ptr, tmp_size
-                );
-                throw;
-            }
-
-            free_mem();
-            set_ptrs(tmp_ptr, tmp_size, tmp_size);
-        }
+        std::allocator_traits<Allocator>::deallocate(
+            get_alloc(), tmp_ptr, tmp_capacity
+        );
+        m_p_end = m_p_begin + tmp_size;
     }
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(pop)
-#endif
+    void shrink_dyn()
+    {
+        PAPILIO_ASSERT(dynamic_allocated());
+        PAPILIO_ASSERT(this->size() > this->static_capacity());
+
+        size_type tmp_size = this->size();
+        pointer tmp_ptr = std::allocator_traits<Allocator>::allocate(
+            get_alloc(), tmp_size
+        );
+
+        try
+        {
+            std::uninitialized_move_n(m_p_begin, tmp_size, tmp_ptr);
+        }
+        catch(...)
+        {
+            std::allocator_traits<Allocator>::deallocate(
+                get_alloc(), tmp_ptr, tmp_size
+            );
+            throw;
+        }
+
+        destroy_all();
+        free_mem();
+        set_ptrs(tmp_ptr, tmp_size, tmp_size);
+    }
 
     void grow_mem(size_type new_cap)
     {
@@ -749,7 +677,7 @@ private:
             this->throw_length_error();
 
         pointer new_mem = std::allocator_traits<Allocator>::allocate(
-            getal(), new_cap
+            get_alloc(), new_cap
         );
         size_type i = 0;
 
@@ -759,7 +687,7 @@ private:
             for(i = 0; i < tmp_size; ++i)
             {
                 std::allocator_traits<Allocator>::construct(
-                    getal(),
+                    get_alloc(),
                     new_mem + i,
                     std::move(*(m_p_begin + i))
                 );
@@ -773,11 +701,11 @@ private:
             for(size_type j = 0; j < i; ++j)
             {
                 std::allocator_traits<Allocator>::destroy(
-                    getal(), new_mem + j
+                    get_alloc(), new_mem + j
                 );
             }
             std::allocator_traits<Allocator>::deallocate(
-                getal(), new_mem, new_cap
+                get_alloc(), new_mem, new_cap
             );
             throw;
         }
@@ -805,8 +733,64 @@ private:
         destroy_all();
 
         set_ptrs(tmp_p_begin, tmp_p_end, tmp_p_capacity);
-        if constexpr(std::allocator_traits<Allocator>::propagate_on_container_swap::value)
-            swap(getal(), other.getal());
+    }
+
+    // Swap data between two small_vectors using static storage
+    void swap_static(small_vector& other) noexcept(
+        std::is_nothrow_swappable_v<T> && std::is_nothrow_move_constructible_v<T>
+    )
+    {
+        using std::swap;
+
+        PAPILIO_ASSERT(!dynamic_allocated() && !other.dynamic_allocated());
+
+        size_type tmp_size_1 = this->size();
+        size_type tmp_size_2 = other.size();
+
+        std::size_t i = 0;
+        for(; i < std::min(tmp_size_1, tmp_size_2); ++i)
+        {
+            swap(*(m_p_begin + i), *(other.m_p_begin + i));
+        }
+
+        if(tmp_size_1 < tmp_size_2)
+        {
+            std::uninitialized_move_n(other.m_p_begin + i, tmp_size_2 - i, m_p_end);
+            std::destroy_n(other.m_p_begin + i, tmp_size_2 - i);
+        }
+        else if(tmp_size_1 > tmp_size_2)
+        {
+            std::uninitialized_move_n(m_p_begin + i, tmp_size_1 - i, other.m_p_end);
+            std::destroy_n(m_p_begin + i, tmp_size_1 - i);
+        }
+
+        // set correct size values
+        m_p_end = m_p_begin + tmp_size_2;
+        other.m_p_end = other.m_p_begin + tmp_size_1;
+    }
+
+    template <typename Iterator, std::sentinel_for<Iterator> Sentinel>
+    void assign_iter(Iterator first, Sentinel last)
+    {
+        clear();
+        constexpr bool random_access = std::is_convertible_v<
+            typename std::iterator_traits<Iterator>::iterator_category,
+            std::random_access_iterator_tag>;
+        if constexpr(random_access)
+        {
+            reserve(std::distance(first, last));
+            for(auto it = first; it != last; ++it)
+            {
+                emplace_back_impl(*it);
+            }
+        }
+        else
+        {
+            for(auto it = first; it != last; ++it)
+            {
+                emplace_back(*it);
+            }
+        }
     }
 };
 
@@ -878,14 +862,14 @@ public:
 
     reference at(size_type pos)
     {
-        [[unlikely]] if(pos >= size())
+        if(pos >= size()) [[unlikely]]
             throw_out_of_range();
         return data()[pos];
     }
 
     const_reference at(size_type pos) const
     {
-        [[unlikely]] if(pos >= size())
+        if(pos >= size()) [[unlikely]]
             throw_out_of_range();
         return data()[pos];
     }
@@ -921,13 +905,13 @@ public:
     [[nodiscard]]
     reference back() noexcept
     {
-        return *(end() - 1);
+        return *std::prev(end());
     }
 
     [[nodiscard]]
     const_reference back() const noexcept
     {
-        return *(end() - 1);
+        return *std::prev(end());
     }
 
     [[nodiscard]]
@@ -1169,7 +1153,7 @@ public:
     using reference = value_type&;
     using const_reference = value_type&;
     using iterator = typename underlying_type::iterator;
-    using const_iterator = typename  underlying_type::const_iterator;
+    using const_iterator = typename underlying_type::const_iterator;
 
     class value_compare :
         public detail::value_compare_base<key_compare, is_transparent_v<Compare>>
