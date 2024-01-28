@@ -21,10 +21,12 @@
 #    define PAPILIO_COMPILER_MSVC _MSC_VER
 #endif
 #ifdef __GNUC__
-#    define PAPILIO_COMPILER_GCC __GNUC__
+#    ifndef __clang__
+#        define PAPILIO_COMPILER_GCC __GNUC__
+#    else
+#        define PAPILIO_COMPILER_CLANG __clang_major__
+#    endif
 #endif
-
-// TODO: Clang support
 
 #define PAPILIO_ASSERT(expr) assert(expr)
 

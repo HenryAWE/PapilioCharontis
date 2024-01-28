@@ -228,6 +228,8 @@ public:
         return *this;
     }
 
+    constexpr codepoint& operator=(const codepoint&) noexcept = default;
+
     constexpr void clear() noexcept
     {
         m_data[0] = 0;

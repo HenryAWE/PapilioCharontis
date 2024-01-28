@@ -283,11 +283,9 @@ TEST(basic_oiterstream, char)
     using namespace papilio;
 
     std::string buf;
-    oiterstream os(std::back_inserter(buf));
-
-    static_assert(std::is_same_v<
-                  decltype(os)::iterator,
-                  std::back_insert_iterator<std::string>>);
+    oiterstream<std::back_insert_iterator<std::string>> os(
+        std::back_inserter(buf)
+    );
 
     os << "hello";
     os << ' ';
@@ -302,11 +300,9 @@ TEST(basic_oiterstream, wchar_t)
     using namespace papilio;
 
     std::wstring buf;
-    woiterstream os(std::back_inserter(buf));
-
-    static_assert(std::is_same_v<
-                  decltype(os)::iterator,
-                  std::back_insert_iterator<std::wstring>>);
+    woiterstream<std::back_insert_iterator<std::wstring>> os(
+        std::back_inserter(buf)
+    );
 
     os << L"hello";
     os << L' ';

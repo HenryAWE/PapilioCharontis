@@ -13,17 +13,14 @@ inline void unreachable()
     std::unreachable();
 #elif defined PAPILIO_COMPILER_MSVC
     __assume(false);
-#elif defined PAPILIO_COMPILER_GCC
+#elif defined PAPILIO_COMPILER_GCC || defined PAPILIO_COMPILER_CLANG
     __builtin_unreachable();
-
-    // TODO: Clang support
-
 #else
     // An empty function body and the [[noreturn]] attribute is enough to raise undefined behavior.
 #endif
 }
 
-// forwark_like<T, U> of C++ 23
+// forward_like<T, U> of C++ 23
 // Use implementation from cppreference.com
 PAPILIO_EXPORT template <class T, class U>
 [[nodiscard]]

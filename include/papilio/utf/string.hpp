@@ -40,6 +40,8 @@ namespace detail
         constexpr const_str_iter_impl() noexcept = default;
         constexpr const_str_iter_impl(const const_str_iter_impl&) noexcept = default;
 
+        constexpr const_str_iter_impl& operator=(const const_str_iter_impl&) noexcept = default;
+
     protected:
         constexpr const_str_iter_impl(string_view_type str, size_type offset, std::uint8_t len) noexcept
             : m_str(str), m_offset(offset), m_len(len) {}
@@ -150,6 +152,8 @@ namespace detail
         constexpr const_str_iter_impl() noexcept = default;
         constexpr const_str_iter_impl(const const_str_iter_impl&) noexcept = default;
 
+        constexpr const_str_iter_impl& operator=(const const_str_iter_impl&) noexcept = default;
+
     protected:
         constexpr const_str_iter_impl(string_view_type str, size_type offset, std::uint8_t len) noexcept
             : m_str(str), m_offset(offset), m_len(len) {}
@@ -238,8 +242,13 @@ namespace detail
         constexpr const_str_iter_impl() noexcept = default;
         constexpr const_str_iter_impl(const const_str_iter_impl&) noexcept = default;
 
+        constexpr const_str_iter_impl& operator=(const const_str_iter_impl&) noexcept = default;
+
+    private:
+        using base_iter_t = typename string_view_type::const_iterator;
+
     protected:
-        constexpr const_str_iter_impl(string_view_type::const_iterator iter) noexcept
+        constexpr const_str_iter_impl(base_iter_t iter) noexcept
             : m_iter(iter) {}
 
         constexpr void next() noexcept
@@ -288,7 +297,7 @@ namespace detail
         }
 
     private:
-        string_view_type::const_iterator m_iter;
+        base_iter_t m_iter;
     };
 
     class str_static_base
@@ -833,9 +842,9 @@ public:
     using string_type = std::basic_string<CharT>;
     using string_view_type = std::basic_string_view<CharT>;
 
-    using const_iterator = my_base::const_iterator;
+    using const_iterator = typename my_base::const_iterator;
     using iterator = const_iterator;
-    using const_reverse_iterator = my_base::const_reverse_iterator;
+    using const_reverse_iterator = typename my_base::const_reverse_iterator;
     using reverse_iterator = const_reverse_iterator;
 
     constexpr basic_string_ref() noexcept = default;
@@ -1260,8 +1269,8 @@ public:
     using string_type = std::basic_string<CharT>;
     using string_ref_type = basic_string_ref<CharT>;
 
-    using const_iterator = my_base::const_iterator;
-    using const_reverse_iterator = my_base::const_reverse_iterator;
+    using const_iterator = typename my_base::const_iterator;
+    using const_reverse_iterator = typename my_base::const_reverse_iterator;
 
     basic_string_container() noexcept = default;
     basic_string_container(std::nullptr_t) = delete;

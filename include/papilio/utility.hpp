@@ -302,7 +302,9 @@ inline namespace literals
 
 PAPILIO_EXPORT template <typename T>
 struct independent_proxy : public std::reference_wrapper<T>
-{};
+{
+    using std::reference_wrapper<T>::reference_wrapper;
+};
 
 PAPILIO_EXPORT struct independent_t
 {
@@ -623,7 +625,7 @@ namespace detail
             return *this;
         }
 
-        constexpr void swap(compressed_pair_impl& other) noexcept
+        constexpr void swap(compressed_pair_impl&) noexcept
         {
             // empty
         }
@@ -698,8 +700,8 @@ class basic_iterbuf :
 public:
     using char_type = CharT;
     using iterator = Iterator;
-    using int_type = base::int_type;
-    using traits_type = base::traits_type;
+    using int_type = typename base::int_type;
+    using traits_type = typename base::traits_type;
 
     basic_iterbuf() = default;
 

@@ -174,7 +174,7 @@ private:
     {
     public:
         using value_type = std::remove_cvref_t<T>;
-        using accessor_t = handle_impl<T>::accessor_t;
+        using accessor_t = typename handle_impl<T>::accessor_t;
 
         handle_impl_ptr(const T& val) noexcept
             : m_ptr(std::addressof(val), false) {}
@@ -235,7 +235,7 @@ private:
     {
     public:
         using value_type = std::remove_cvref_t<T>;
-        using accessor_t = handle_impl<T>::accessor_t;
+        using accessor_t = typename handle_impl<T>::accessor_t;
 
         template <typename Arg>
         requires std::is_constructible_v<T, Arg>
@@ -415,7 +415,7 @@ public:
         void construct_impl(Args&&... args)
         {
             static_assert(detail::use_handle<typename Impl::value_type, char_type>);
-            static_assert(sizeof(Impl) <= m_storage.size());
+            static_assert(sizeof(Impl) <= storage_size);
 
             new(ptr()) Impl(std::forward<Args>(args)...);
         }
@@ -806,7 +806,7 @@ namespace detail
             return idx.visit(
                 [this]<typename T>(const T& v) -> bool
                 {
-                    if constexpr(std::is_same_v<T, indexing_value_type::index_type>)
+                    if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
                     {
                         if(v < 0)
                             return false;
@@ -912,7 +912,7 @@ public:
     using my_base::get;
 
     [[nodiscard]]
-    bool check(string_view_type key) const noexcept
+    bool check(string_view_type key) const noexcept override
     {
         return m_named_args.contains(key);
     }
@@ -1394,7 +1394,7 @@ public:
     using string_type = std::basic_string<char_type>;
     using string_view_type = std::basic_string_view<char_type>;
     using string_ref_type = utf::basic_string_ref<char_type>;
-    using const_iterator = string_ref_type::const_iterator;
+    using const_iterator = typename string_ref_type::const_iterator;
     using iterator = const_iterator;
     using size_type = std::size_t;
     using format_context_type = FormatContext;
@@ -1499,13 +1499,19 @@ namespace detail
 {
     // clang-format off
 
-    template <typename T, typename Context, typename Formatter = Context::template formatter_type<std::remove_const_t<T>>>
+    template <
+        typename T,
+        typename Context,
+        typename Formatter = typename Context::template formatter_type<std::remove_const_t<T>>>
     concept formattable_with_impl =
         std::semiregular<Formatter> &&
-        requires(Formatter& f, const Formatter& cf, T&& val, Context fmt_ctx, basic_format_parse_context<Context> parse_ctx)
-        {
-            { f.parse(parse_ctx) } -> std::same_as<typename decltype(parse_ctx)::iterator>;
-            { cf.format(val, fmt_ctx) } -> std::same_as<typename Context::iterator>;
+        requires(Formatter& f, const Formatter& cf, T&& val, Context fmt_ctx, basic_format_parse_context<Context> parse_ctx) {
+            {
+                f.parse(parse_ctx)
+            } -> std::same_as<typename decltype(parse_ctx)::iterator>;
+            {
+                cf.format(val, fmt_ctx)
+            } -> std::same_as<typename Context::iterator>;
         };
 
     // clang-format on

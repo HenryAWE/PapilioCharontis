@@ -21,7 +21,7 @@ struct tuple_accessor
     using format_arg_type = basic_format_arg<Context>;
 
     [[nodiscard]]
-    static consteval std::size_t size() noexcept
+    static constexpr std::size_t size() noexcept
     {
         return std::tuple_size_v<Tuple>;
     }

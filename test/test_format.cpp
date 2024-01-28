@@ -139,7 +139,7 @@ class yes_no_numpunct : public std::numpunct<CharT>
     using base = std::numpunct<CharT>;
 
 public:
-    using string_type = base::string_type;
+    using string_type = typename base::string_type;
 
 protected:
     string_type do_truename() const override
@@ -262,6 +262,9 @@ struct large_unformattable_type
 struct custom_type
 {
     int val = 0;
+
+    custom_type(int v)
+        : val(v) {}
 };
 
 struct large_custom_type

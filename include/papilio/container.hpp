@@ -47,8 +47,8 @@ public:
     using difference_type = std::ptrdiff_t;
     using reference = value_type&;
     using const_reference = const value_type&;
-    using pointer = std::allocator_traits<Allocator>::pointer;
-    using const_pointer = std::allocator_traits<Allocator>::const_pointer;
+    using pointer = typename std::allocator_traits<Allocator>::pointer;
+    using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
     using iterator = pointer;
     using const_iterator = const_pointer;
     using reverse_iterator = std::reverse_iterator<iterator>;
@@ -250,12 +250,12 @@ public:
     using difference_type = std::ptrdiff_t;
     using reference = value_type&;
     using const_reference = const value_type&;
-    using pointer = my_base::pointer;
-    using const_pointer = my_base::const_pointer;
-    using iterator = my_base::iterator;
-    using const_iterator = my_base::const_iterator;
-    using reverse_iterator = my_base::reverse_iterator;
-    using const_reverse_iterator = my_base::const_reverse_iterator;
+    using pointer = typename my_base::pointer;
+    using const_pointer = typename my_base::const_pointer;
+    using iterator = typename my_base::iterator;
+    using const_iterator = typename my_base::const_iterator;
+    using reverse_iterator = typename my_base::reverse_iterator;
+    using const_reverse_iterator = typename my_base::const_reverse_iterator;
 
     small_vector() noexcept(std::is_nothrow_default_constructible_v<Allocator>)
         : my_base(), m_data()
@@ -708,7 +708,6 @@ private:
             PAPILIO_ASSERT(this->size() < this->capacity());
 
             size_type tmp_size = this->size();
-            size_type tmp_capacity = this->capacity();
             pointer tmp_ptr = std::allocator_traits<Allocator>::allocate(
                 getal(), tmp_size
             );
@@ -1169,8 +1168,8 @@ public:
     using key_compare = Compare;
     using reference = value_type&;
     using const_reference = value_type&;
-    using iterator = underlying_type::iterator;
-    using const_iterator = underlying_type::const_iterator;
+    using iterator = typename underlying_type::iterator;
+    using const_iterator = typename  underlying_type::const_iterator;
 
     class value_compare :
         public detail::value_compare_base<key_compare, is_transparent_v<Compare>>

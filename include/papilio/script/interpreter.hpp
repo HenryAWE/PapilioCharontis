@@ -708,7 +708,7 @@ protected:
 
         if constexpr(char8_like<char_type>)
         {
-            auto result = std::from_chars(
+            std::from_chars(
                 std::bit_cast<const char_type*>(start.base()),
                 std::bit_cast<const char_type*>(stop.base()),
                 val
@@ -717,7 +717,7 @@ protected:
         else
         {
             std::string tmp = string_ref_type(start, stop).to_string();
-            auto result = std::from_chars(
+            std::from_chars(
                 std::to_address(tmp.begin()),
                 std::to_address(tmp.end()),
                 val
@@ -895,7 +895,7 @@ public:
 
     using parse_context = basic_format_parse_context<FormatContext>;
 
-    using iterator = my_base::iterator;
+    using iterator = typename my_base::iterator;
     static_assert(std::is_same_v<iterator, typename parse_context::iterator>);
 
     basic_interpreter() = default;
@@ -1111,7 +1111,7 @@ private:
             }
             else
             {
-                using int_t = variable_type::int_type;
+                using int_t = typename variable_type::int_type;
                 int_t val = my_base::template parse_integer<int_t>(start, int_end).first;
 
                 return std::make_pair(val, int_end);

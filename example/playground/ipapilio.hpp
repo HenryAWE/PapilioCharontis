@@ -27,6 +27,9 @@ private:
 
         std::string help;
         callback_t callback;
+
+        command_data(std::string h, callback_t cb)
+            : help(std::move(h)), callback(cb) {}
     };
 
     std::map<std::string, command_data, std::less<>> m_cmds;
