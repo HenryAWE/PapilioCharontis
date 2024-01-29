@@ -3,7 +3,7 @@
 namespace papilio
 {
 std::string vformat(
-    std::string_view fmt, const dynamic_format_args& args
+    std::string_view fmt, const format_args_ref& args
 )
 {
     std::string result;
@@ -13,7 +13,7 @@ std::string vformat(
 }
 
 std::string vformat(
-    const std::locale& loc, std::string_view fmt, const dynamic_format_args& args
+    const std::locale& loc, std::string_view fmt, const format_args_ref& args
 )
 {
     std::string result;
@@ -23,7 +23,7 @@ std::string vformat(
 }
 
 std::wstring vformat(
-    std::wstring_view fmt, const wdynamic_format_args& args
+    std::wstring_view fmt, const wformat_args_ref& args
 )
 {
     std::wstring result;
@@ -33,7 +33,7 @@ std::wstring vformat(
 }
 
 std::wstring vformat(
-    const std::locale& loc, std::wstring_view fmt, const wdynamic_format_args& args
+    const std::locale& loc, std::wstring_view fmt, const wformat_args_ref& args
 )
 {
     std::wstring result;

@@ -44,7 +44,7 @@ namespace detail
         OutputIt out,
         locale_ref loc,
         std::basic_string_view<CharT> fmt,
-        const basic_dynamic_format_args<Context>& args
+        const basic_format_args_ref<Context>& args
     )
     {
         static_assert(std::is_same_v<OutputIt, typename Context::iterator>);
@@ -59,7 +59,7 @@ namespace detail
     }
 
     template <typename OutputIt, typename CharT>
-    using vfmt_ctx_for = basic_dynamic_format_args<basic_format_context<OutputIt, CharT>>;
+    using vfmt_ctx_for = basic_format_args_ref<basic_format_context<OutputIt, CharT>>;
 } // namespace detail
 
 PAPILIO_EXPORT template <typename OutputIt>
@@ -246,19 +246,19 @@ namespace detail
 
 PAPILIO_EXPORT
 [[nodiscard]]
-std::string vformat(std::string_view fmt, const dynamic_format_args& args);
+std::string vformat(std::string_view fmt, const format_args_ref& args);
 
 PAPILIO_EXPORT
 [[nodiscard]]
-std::string vformat(const std::locale& loc, std::string_view fmt, const dynamic_format_args& args);
+std::string vformat(const std::locale& loc, std::string_view fmt, const format_args_ref& args);
 
 PAPILIO_EXPORT
 [[nodiscard]]
-std::wstring vformat(std::wstring_view fmt, const wdynamic_format_args& args);
+std::wstring vformat(std::wstring_view fmt, const wformat_args_ref& args);
 
 PAPILIO_EXPORT
 [[nodiscard]]
-std::wstring vformat(const std::locale& loc, std::wstring_view fmt, const wdynamic_format_args& args);
+std::wstring vformat(const std::locale& loc, std::wstring_view fmt, const wformat_args_ref& args);
 
 PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 OutputIt format_to(OutputIt out, format_string<Args...> fmt, Args&&... args)

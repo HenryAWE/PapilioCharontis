@@ -35,7 +35,7 @@ private:
     std::map<std::string, command_data, std::less<>> m_cmds;
 
     std::string m_fmt;
-    papilio::mutable_format_args m_args;
+    papilio::dynamic_format_args m_args;
 
     void build_cmd();
 

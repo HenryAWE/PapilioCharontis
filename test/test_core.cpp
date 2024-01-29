@@ -224,18 +224,18 @@ TEST(format_arg, access)
     }
 }
 
-TEST(format_args, mutable)
+TEST(format_args, dynamic)
 {
     using namespace papilio;
 
     {
-        mutable_format_args args;
+        dynamic_format_args args;
         EXPECT_EQ(args.indexed_size(), 0);
         EXPECT_EQ(args.named_size(), 0);
     }
 
     {
-        mutable_format_args args(1, "three"_a = 3, 2);
+        dynamic_format_args args(1, "three"_a = 3, 2);
 
         EXPECT_EQ(args.indexed_size(), 2);
         EXPECT_EQ(args.named_size(), 1);
@@ -283,24 +283,24 @@ TEST(format_args, static)
     }
 }
 
-TEST(format_args, dynamic)
+TEST(format_args, ref)
 {
     using namespace papilio;
 
     {
-        mutable_format_args underlying_fmt_args;
-        dynamic_format_args dyn_fmt_args(underlying_fmt_args);
+        dynamic_format_args underlying_fmt_args;
+        format_args_ref dyn_fmt_args(underlying_fmt_args);
 
-        EXPECT_EQ(&dyn_fmt_args.cast_to<mutable_format_args>(), &underlying_fmt_args);
+        EXPECT_EQ(&dyn_fmt_args.cast_to<dynamic_format_args>(), &underlying_fmt_args);
 
-        dynamic_format_args new_dyn_fmt_args(dyn_fmt_args);
+        format_args_ref new_dyn_fmt_args(dyn_fmt_args);
 
-        EXPECT_EQ(&new_dyn_fmt_args.cast_to<mutable_format_args>(), &underlying_fmt_args);
+        EXPECT_EQ(&new_dyn_fmt_args.cast_to<dynamic_format_args>(), &underlying_fmt_args);
     }
 
     {
         auto underlying_fmt_args = make_format_args(182375, 182376);
-        dynamic_format_args dyn_fmt_args(underlying_fmt_args);
+        format_args_ref dyn_fmt_args(underlying_fmt_args);
 
         EXPECT_EQ(&dyn_fmt_args.cast_to<decltype(underlying_fmt_args)>(), &underlying_fmt_args);
     }
@@ -313,7 +313,7 @@ TEST(format_context, char)
     using context_type = basic_format_context<
         std::back_insert_iterator<std::string>,
         char>;
-    using args_type = basic_mutable_format_args<context_type>;
+    using args_type = basic_dynamic_format_args<context_type>;
 
     std::string result;
     args_type args;
@@ -343,7 +343,7 @@ TEST(format_context, wchar_t)
     using context_type = basic_format_context<
         std::back_insert_iterator<std::wstring>,
         wchar_t>;
-    using args_type = basic_mutable_format_args<context_type>;
+    using args_type = basic_dynamic_format_args<context_type>;
 
     std::wstring result;
     args_type args;
@@ -371,7 +371,7 @@ TEST(format_parse_context, char)
     using namespace papilio;
 
     {
-        mutable_format_args args;
+        dynamic_format_args args;
         args.push_tuple(0, 1, 2);
         args.push("value"_a = 0);
 
@@ -396,7 +396,7 @@ TEST(format_parse_context, char)
     }
 
     {
-        mutable_format_args args;
+        dynamic_format_args args;
         args.push_tuple(0, 1, 2);
         args.push("value"_a = 0);
 

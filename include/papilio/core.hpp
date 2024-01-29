@@ -569,6 +569,7 @@ public:
         : m_val(std::in_place_type<handle>, std::type_index(info)) {}
 
     basic_format_arg& operator=(const basic_format_arg&) = default;
+
     basic_format_arg& operator=(basic_format_arg&& rhs) noexcept
     {
         basic_format_arg(std::move(rhs)).swap(*this);
@@ -971,7 +972,7 @@ private:
 };
 
 PAPILIO_EXPORT template <typename Context, typename CharT = typename Context::char_type>
-class basic_mutable_format_args final : public detail::format_args_base<Context, CharT>
+class basic_dynamic_format_args final : public detail::format_args_base<Context, CharT>
 {
     using my_base = detail::format_args_base<Context, CharT>;
 
@@ -991,12 +992,12 @@ public:
         format_arg_type,
         std::less<>>;
 
-    basic_mutable_format_args() = default;
-    basic_mutable_format_args(const basic_mutable_format_args&) = delete;
-    basic_mutable_format_args(basic_mutable_format_args&&) = default;
+    basic_dynamic_format_args() = default;
+    basic_dynamic_format_args(const basic_dynamic_format_args&) = delete;
+    basic_dynamic_format_args(basic_dynamic_format_args&&) = default;
 
     template <typename... Args>
-    basic_mutable_format_args(Args&&... args)
+    basic_dynamic_format_args(Args&&... args)
     {
         push_tuple(std::forward<Args>(args)...);
     }
@@ -1096,7 +1097,7 @@ private:
 
 // Type-erased format arguments.
 PAPILIO_EXPORT template <typename Context, typename CharT = typename Context::char_type>
-class basic_dynamic_format_args final : public detail::format_args_base<Context, CharT>
+class basic_format_args_ref final : public detail::format_args_base<Context, CharT>
 {
     using my_base = detail::format_args_base<Context, CharT>;
 
@@ -1106,11 +1107,11 @@ public:
     using size_type = std::size_t;
     using format_arg_type = basic_format_arg<Context>;
 
-    basic_dynamic_format_args() = delete;
-    constexpr basic_dynamic_format_args(const basic_dynamic_format_args&) noexcept = default;
+    basic_format_args_ref() = delete;
+    constexpr basic_format_args_ref(const basic_format_args_ref&) noexcept = default;
 
     template <std::derived_from<my_base> T>
-    constexpr basic_dynamic_format_args(const T& args) noexcept
+    constexpr basic_format_args_ref(const T& args) noexcept
         : m_ptr(&args)
     {
         PAPILIO_ASSERT(m_ptr != this); // avoid circular reference
@@ -1163,8 +1164,8 @@ private:
     const my_base* m_ptr;
 };
 
-PAPILIO_EXPORT using dynamic_format_args = basic_dynamic_format_args<format_context, char>;
-PAPILIO_EXPORT using wdynamic_format_args = basic_dynamic_format_args<wformat_context, wchar_t>;
+PAPILIO_EXPORT using format_args_ref = basic_format_args_ref<format_context, char>;
+PAPILIO_EXPORT using wformat_args_ref = basic_format_args_ref<wformat_context, wchar_t>;
 
 PAPILIO_EXPORT template <typename Context = format_context, typename... Args>
 auto make_format_args(Args&&... args)
@@ -1210,42 +1211,45 @@ namespace detail
         };
 
     // clang-format on
+} // namespace detail
 
-    template <typename T, typename CharT>
-    requires streamable<T, CharT>
-    class streamable_formatter
+PAPILIO_EXPORT template <typename T, typename CharT>
+requires detail::streamable<T, CharT>
+class streamable_formatter
+{
+public:
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx)
     {
-    public:
-        template <typename ParseContext>
-        auto parse(ParseContext& ctx)
+        auto it = ctx.begin();
+        if(*it == U'L')
         {
-            auto it = ctx.begin();
-            if(*it == U'L')
-            {
-                m_use_locale = true;
-                ++it;
-            }
-
-            return it;
+            m_use_locale = true;
+            ++it;
         }
 
-        template <typename Context>
-        auto format(const T& val, Context& ctx) const
-        {
-            basic_oiterstream<CharT, typename Context::iterator> os(ctx.out());
+        return it;
+    }
 
-            if(m_use_locale)
-                os.imbue(ctx.getloc());
+    template <typename Context>
+    auto format(const T& val, Context& ctx) const
+    {
+        basic_oiterstream<CharT, typename Context::iterator> os(ctx.out());
 
-            os << val;
+        if(m_use_locale)
+            os.imbue(ctx.getloc());
 
-            return os.get();
-        }
+        os << val;
 
-    private:
-        bool m_use_locale = false;
-    };
+        return os.get();
+    }
 
+private:
+    bool m_use_locale = false;
+};
+
+namespace detail
+{
     template <typename T, typename CharT>
     struct select_formatter
     {
@@ -1269,7 +1273,7 @@ class basic_format_context
 public:
     using char_type = CharT;
     using iterator = OutputIt;
-    using format_args_type = basic_dynamic_format_args<basic_format_context, char_type>;
+    using format_args_type = basic_format_args_ref<basic_format_context, char_type>;
 
     template <typename T>
     using formatter_type = detail::select_formatter_t<T, char_type>;
@@ -1398,7 +1402,7 @@ public:
     using iterator = const_iterator;
     using size_type = std::size_t;
     using format_context_type = FormatContext;
-    using format_args_type = basic_dynamic_format_args<FormatContext, char_type>;
+    using format_args_type = basic_format_args_ref<FormatContext, char_type>;
 
     basic_format_parse_context() = delete;
     basic_format_parse_context(const basic_format_parse_context&) = delete;
@@ -1492,8 +1496,8 @@ private:
 PAPILIO_EXPORT using format_parse_context = basic_format_parse_context<format_context>;
 PAPILIO_EXPORT using wformat_parse_context = basic_format_parse_context<wformat_context>;
 
-PAPILIO_EXPORT using mutable_format_args = basic_mutable_format_args<format_context>;
-PAPILIO_EXPORT using wmutable_format_args = basic_mutable_format_args<wformat_context>;
+PAPILIO_EXPORT using dynamic_format_args = basic_dynamic_format_args<format_context>;
+PAPILIO_EXPORT using wdynamic_format_args = basic_dynamic_format_args<wformat_context>;
 
 namespace detail
 {
@@ -1527,28 +1531,10 @@ concept formattable = formattable_with<
     std::remove_const_t<T>,
     basic_format_context<detail::fmt_iter_for<CharT>, CharT>>;
 
-PAPILIO_EXPORT template <typename T>
-const void* ptr(T* p) noexcept
+PAPILIO_EXPORT template <pointer_like T>
+const void* ptr(const T& p) noexcept
 {
-    return p;
-}
-
-PAPILIO_EXPORT template <typename T>
-const void* ptr(const std::shared_ptr<T>& p) noexcept
-{
-    return p.get();
-}
-
-PAPILIO_EXPORT template <typename T, typename D>
-const void* ptr(const std::unique_ptr<T, D>& p) noexcept
-{
-    return p.get();
-}
-
-PAPILIO_EXPORT template <typename T, typename D>
-const void* ptr(const optional_unique_ptr<T, D>& p) noexcept
-{
-    return p.get();
+    return std::to_address(p);
 }
 } // namespace papilio
 

@@ -413,7 +413,7 @@ TEST(interpreter, format)
         interpreter intp{};
 
         std::string buf;
-        mutable_format_args args;
+        dynamic_format_args args;
         format_context fmt_ctx(std::back_inserter(buf), args);
         format_parse_context parse_ctx("test", args);
 
@@ -467,7 +467,7 @@ TEST(interpreter, debug)
 
     auto helper = [](utf::string_ref fmt)
     {
-        mutable_format_args args;
+        dynamic_format_args args;
         format_parse_context parse_ctx(fmt, args);
         std::string str;
         format_context fmt_ctx(std::back_inserter(str), args);

@@ -6,7 +6,7 @@
 struct papilio_context_t
 {
     std::string str;
-    papilio::mutable_format_args args;
+    papilio::dynamic_format_args args;
 };
 
 papilio_context* papilio_create_context(void)
