@@ -71,7 +71,7 @@ TEST(optional_unique_ptr, compatibility)
         EXPECT_EQ(p, nullptr);
         EXPECT_EQ(nullptr, p);
 
-        p.reset(std::malloc(4));
+        p.reset(std::malloc(4), true);
         std::memset(p.get(), 0, 4);
         ASSERT_TRUE(p.has_ownership());
 
@@ -110,7 +110,7 @@ TEST(optional_unique_ptr, compatibility)
     }
 
     {
-        optional_unique_ptr<int[]> opt_int_arr(new int[4]{0, 1, 2, 3});
+        optional_unique_ptr<int[]> opt_int_arr(new int[4]{0, 1, 2, 3}, true);
         ASSERT_TRUE(opt_int_arr.has_ownership());
 
         for(std::size_t i = 0; i < 4; ++i)

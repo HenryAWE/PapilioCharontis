@@ -137,9 +137,10 @@ public:
     optional_unique_ptr() noexcept(std::is_nothrow_default_constructible_v<Deleter>)
         : m_ptr(), m_del(), m_has_ownership(false) {}
 
-    optional_unique_ptr(std::nullptr_t) noexcept {}
+    optional_unique_ptr(std::nullptr_t) noexcept(std::is_nothrow_default_constructible_v<Deleter>)
+        : optional_unique_ptr() {}
 
-    optional_unique_ptr(const optional_unique_ptr& other) noexcept
+    optional_unique_ptr(const optional_unique_ptr& other) noexcept(std::is_nothrow_default_constructible_v<Deleter>)
         : m_ptr(other.get()),
           m_del(other.get_deleter()),
           m_has_ownership(false) {}
@@ -150,15 +151,20 @@ public:
           m_has_ownership(false)
     {}
 
-    optional_unique_ptr(optional_unique_ptr&& other) noexcept
+    optional_unique_ptr(optional_unique_ptr&& other) noexcept(std::is_nothrow_default_constructible_v<Deleter>)
         : m_ptr(std::exchange(other.m_ptr, pointer())),
+          m_del(),
           m_has_ownership(std::exchange(other.m_has_ownership, false)) {}
 
-    explicit optional_unique_ptr(pointer ptr, bool ownership = true) noexcept
-        : m_ptr(std::move(ptr)), m_has_ownership(ownership) {}
+    optional_unique_ptr(pointer ptr, bool ownership) noexcept(std::is_nothrow_default_constructible_v<Deleter>)
+        : m_ptr(std::move(ptr)),
+          m_del(),
+          m_has_ownership(ownership) {}
 
     optional_unique_ptr(independent_t, pointer ptr) noexcept
-        : m_ptr(std::move(ptr)), m_has_ownership(true) {}
+        : m_ptr(std::move(ptr)),
+          m_del(),
+          m_has_ownership(true) {}
 
     template <typename D>
     optional_unique_ptr(std::unique_ptr<T, D>&& ptr) noexcept
@@ -196,7 +202,7 @@ public:
 
     // modifiers
 
-    void reset(pointer ptr, bool ownership = true) noexcept
+    void reset(pointer ptr, bool ownership) noexcept
     {
         reset(nullptr);
         if(ptr)
@@ -206,7 +212,7 @@ public:
         }
     }
 
-    void reset(independent_t, pointer ptr)
+    void reset(independent_t, pointer ptr) noexcept
     {
         reset(std::move(ptr), true);
     }
@@ -225,7 +231,10 @@ public:
     void reset(std::nullptr_t) noexcept
     {
         if(has_ownership())
-            m_del(get());
+        {
+            PAPILIO_ASSERT(static_cast<bool>(*this));
+            get_deleter()(get());
+        }
         m_ptr = pointer();
         m_has_ownership = false;
     }
@@ -290,11 +299,13 @@ public:
 
 private:
     pointer m_ptr;
-    PAPILIO_NO_UNIQUE_ADDRESS Deleter m_del{};
-    bool m_has_ownership = true;
+    PAPILIO_NO_UNIQUE_ADDRESS Deleter m_del;
+    bool m_has_ownership;
 };
 
-PAPILIO_EXPORT template <typename T, typename Deleter>
+PAPILIO_EXPORT template <
+    typename T,
+    typename Deleter>
 class optional_unique_ptr<T[], Deleter>
 {
 public:
@@ -305,7 +316,8 @@ public:
     optional_unique_ptr() noexcept(std::is_nothrow_default_constructible_v<Deleter>)
         : m_ptr(), m_del(), m_has_ownership(false) {}
 
-    optional_unique_ptr(std::nullptr_t) noexcept {}
+    optional_unique_ptr(std::nullptr_t) noexcept(std::is_nothrow_default_constructible_v<Deleter>)
+        : optional_unique_ptr() {}
 
     optional_unique_ptr(const optional_unique_ptr& other) noexcept
         : m_ptr(other.get()),
@@ -314,17 +326,18 @@ public:
 
     template <typename D>
     optional_unique_ptr(const optional_unique_ptr<T, D>& other)
-        : m_ptr(other.m_ptr), m_has_ownership(false)
+        : m_ptr(other.m_ptr), m_del(), m_has_ownership(false)
     {}
 
     optional_unique_ptr(optional_unique_ptr&& other) noexcept
         : m_ptr(std::exchange(other.m_ptr, pointer())),
+          m_del(),
           m_has_ownership(std::exchange(other.m_has_ownership, false)) {}
 
     template <typename U>
     requires detail::optional_arr_ptr_acceptable<U, pointer, element_type>
-    explicit optional_unique_ptr(U ptr, bool ownership = true) noexcept
-        : m_ptr(ptr), m_has_ownership(ownership)
+    optional_unique_ptr(U ptr, bool ownership) noexcept
+        : m_ptr(ptr), m_del(), m_has_ownership(ownership)
     {}
 
     template <typename D>
@@ -363,7 +376,7 @@ public:
 
     // modifiers
 
-    void reset(pointer ptr, bool ownership = true) noexcept
+    void reset(pointer ptr, bool ownership) noexcept
     {
         reset(nullptr);
         if(ptr)
@@ -387,7 +400,10 @@ public:
     void reset(std::nullptr_t) noexcept
     {
         if(has_ownership())
+        {
+            PAPILIO_ASSERT(static_cast<bool>(*this));
             m_del(get());
+        }
         m_ptr = pointer();
         m_has_ownership = false;
     }
@@ -447,8 +463,8 @@ public:
 
 private:
     pointer m_ptr;
+    PAPILIO_NO_UNIQUE_ADDRESS Deleter m_del;
     bool m_has_ownership = true;
-    PAPILIO_NO_UNIQUE_ADDRESS Deleter m_del{};
 };
 
 PAPILIO_EXPORT template <typename T, typename Deleter>
@@ -458,7 +474,7 @@ PAPILIO_EXPORT template <typename T, typename... Args>
 requires(!std::is_array_v<T>)
 optional_unique_ptr<T> make_optional_unique(Args&&... args)
 {
-    return optional_unique_ptr<T>(new T(std::forward<Args>(args)...));
+    return optional_unique_ptr<T>(new T(std::forward<Args>(args)...), true);
 }
 
 PAPILIO_EXPORT template <typename T, typename... Args>
@@ -466,7 +482,7 @@ requires(std::is_array_v<T> && std::extent_v<T> == 0)
 optional_unique_ptr<T> make_optional_unique(std::size_t n)
 {
     using element_type = std::remove_extent_t<T>;
-    return optional_unique_ptr<T>(new element_type[n]());
+    return optional_unique_ptr<T>(new element_type[n](), true);
 }
 
 PAPILIO_EXPORT template <typename T, typename... Args>

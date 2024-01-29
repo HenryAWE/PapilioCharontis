@@ -809,11 +809,6 @@ namespace detail
     };
 } // namespace detail
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(push)
-#    pragma warning(disable : 26495)
-#endif
-
 PAPILIO_EXPORT template <typename T, std::size_t Capacity>
 class fixed_vector : public detail::fixed_vector_impl
 {
@@ -1016,9 +1011,8 @@ public:
             }
         }
 
-        value_type tmp(std::forward<Args>(args)...);
         iterator nonconst_pos = const_cast<iterator>(pos);
-        *nonconst_pos = std::move(tmp);
+        *nonconst_pos = std::move(value_type(std::forward<Args>(args)...));
 
         return nonconst_pos;
     }
@@ -1076,10 +1070,6 @@ private:
         return m_buf.data();
     }
 };
-
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(pop)
-#endif
 
 namespace detail
 {

@@ -54,7 +54,7 @@
 #define PAPILIO_ERR_INVALID_STRING     0x7
 #define PAPILIO_ERR_UNCLOSED_BRACE     0x8
 
-#define PAPILIO_ERR_UNKNOWN_ERROR      -1
+#define PAPILIO_ERR_UNKNOWN_ERROR      (-1)
 
 #ifdef __cplusplus // C compatibility
 #    define PAPILIO_NS ::papilio::
