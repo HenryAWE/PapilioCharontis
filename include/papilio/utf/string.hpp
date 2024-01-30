@@ -11,23 +11,26 @@
 namespace papilio::utf
 {
 PAPILIO_EXPORT template <typename CharT>
+class codepoint_iterator;
+
+PAPILIO_EXPORT template <typename CharT>
 class basic_string_ref;
 PAPILIO_EXPORT template <typename CharT>
 class basic_string_container;
 
 namespace detail
 {
-    class const_str_iter_impl_base
+    class cp_iter_impl_base
     {
     public:
         using iterator_category = std::bidirectional_iterator_tag;
     };
 
     template <typename CharT>
-    class const_str_iter_impl;
+    class cp_iter_impl;
 
     template <char8_like CharT>
-    class const_str_iter_impl<CharT> : public const_str_iter_impl_base
+    class cp_iter_impl<CharT> : public cp_iter_impl_base
     {
     public:
         using char_type = CharT;
@@ -37,15 +40,15 @@ namespace detail
         using reference = codepoint;
         using string_view_type = std::basic_string_view<CharT>;
 
-        constexpr const_str_iter_impl() noexcept = default;
-        constexpr const_str_iter_impl(const const_str_iter_impl&) noexcept = default;
+        constexpr cp_iter_impl() noexcept = default;
+        constexpr cp_iter_impl(const cp_iter_impl&) noexcept = default;
 
-        constexpr const_str_iter_impl& operator=(const const_str_iter_impl&) noexcept = default;
+        constexpr cp_iter_impl& operator=(const cp_iter_impl&) noexcept = default;
 
-    protected:
-        constexpr const_str_iter_impl(string_view_type str, size_type offset, std::uint8_t len) noexcept
+        constexpr cp_iter_impl(string_view_type str, size_type offset, std::uint8_t len) noexcept
             : m_str(str), m_offset(offset), m_len(len) {}
 
+    protected:
         constexpr void next() noexcept
         {
             size_type next_offset = m_offset + m_len;
@@ -124,7 +127,7 @@ namespace detail
             return m_len;
         }
 
-        constexpr void swap(const_str_iter_impl& other) noexcept
+        constexpr void swap(cp_iter_impl& other) noexcept
         {
             using std::swap;
             swap(m_str, other.m_str);
@@ -139,7 +142,7 @@ namespace detail
     };
 
     template <char16_like CharT>
-    class const_str_iter_impl<CharT> : public const_str_iter_impl_base
+    class cp_iter_impl<CharT> : public cp_iter_impl_base
     {
     public:
         using char_type = CharT;
@@ -149,15 +152,15 @@ namespace detail
         using reference = codepoint;
         using string_view_type = std::basic_string_view<CharT>;
 
-        constexpr const_str_iter_impl() noexcept = default;
-        constexpr const_str_iter_impl(const const_str_iter_impl&) noexcept = default;
+        constexpr cp_iter_impl() noexcept = default;
+        constexpr cp_iter_impl(const cp_iter_impl&) noexcept = default;
 
-        constexpr const_str_iter_impl& operator=(const const_str_iter_impl&) noexcept = default;
+        constexpr cp_iter_impl& operator=(const cp_iter_impl&) noexcept = default;
 
-    protected:
-        constexpr const_str_iter_impl(string_view_type str, size_type offset, std::uint8_t len) noexcept
+        constexpr cp_iter_impl(string_view_type str, size_type offset, std::uint8_t len) noexcept
             : m_str(str), m_offset(offset), m_len(len) {}
 
+    protected:
         constexpr void next() noexcept
         {
             size_type next_offset = m_offset + m_len;
@@ -214,7 +217,7 @@ namespace detail
             return m_len;
         }
 
-        constexpr void swap(const_str_iter_impl& other) noexcept
+        constexpr void swap(cp_iter_impl& other) noexcept
         {
             using std::swap;
             swap(m_str, other.m_str);
@@ -229,7 +232,7 @@ namespace detail
     };
 
     template <char32_like CharT>
-    class const_str_iter_impl<CharT> : public const_str_iter_impl_base
+    class cp_iter_impl<CharT> : public cp_iter_impl_base
     {
     public:
         using char_type = CharT;
@@ -239,18 +242,17 @@ namespace detail
         using reference = codepoint;
         using string_view_type = std::basic_string_view<CharT>;
 
-        constexpr const_str_iter_impl() noexcept = default;
-        constexpr const_str_iter_impl(const const_str_iter_impl&) noexcept = default;
-
-        constexpr const_str_iter_impl& operator=(const const_str_iter_impl&) noexcept = default;
-
-    private:
         using base_iter_t = typename string_view_type::const_iterator;
 
-    protected:
-        constexpr const_str_iter_impl(base_iter_t iter) noexcept
+        constexpr cp_iter_impl() noexcept = default;
+        constexpr cp_iter_impl(const cp_iter_impl&) noexcept = default;
+
+        constexpr cp_iter_impl& operator=(const cp_iter_impl&) noexcept = default;
+
+        constexpr cp_iter_impl(base_iter_t iter) noexcept
             : m_iter(iter) {}
 
+    protected:
         constexpr void next() noexcept
         {
             ++m_iter;
@@ -290,7 +292,7 @@ namespace detail
             return 1;
         }
 
-        constexpr void swap(const_str_iter_impl& other) noexcept
+        constexpr void swap(cp_iter_impl& other) noexcept
         {
             using std::swap;
             swap(m_iter, other.m_iter);
@@ -299,7 +301,130 @@ namespace detail
     private:
         base_iter_t m_iter;
     };
+} // namespace detail
 
+PAPILIO_EXPORT template <typename CharT>
+class codepoint_iterator : public detail::cp_iter_impl<CharT>
+{
+public:
+    using my_base = detail::cp_iter_impl<CharT>;
+
+public:
+    using char_type = CharT;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using value_type = codepoint;
+    using reference = codepoint;
+    using string_view_type = std::basic_string_view<CharT>;
+
+    constexpr codepoint_iterator() noexcept = default;
+    constexpr codepoint_iterator(const codepoint_iterator&) noexcept = default;
+
+private:
+    using my_base::my_base;
+
+public:
+    constexpr codepoint_iterator& operator=(const codepoint_iterator&) noexcept = default;
+
+    constexpr bool operator==(const codepoint_iterator& rhs) const noexcept
+    {
+        return this->base() == rhs.base();
+    }
+
+    constexpr codepoint_iterator& operator++() noexcept
+    {
+        this->next();
+        return *this;
+    }
+
+    constexpr codepoint_iterator operator++(int) noexcept
+    {
+        codepoint_iterator tmp(*this);
+        ++*this;
+        return tmp;
+    }
+
+    constexpr codepoint_iterator& operator--() noexcept
+    {
+        this->prev();
+        return *this;
+    }
+
+    constexpr codepoint_iterator operator--(int) noexcept
+    {
+        codepoint_iterator tmp(*this);
+        --*this;
+        return tmp;
+    }
+
+    constexpr codepoint_iterator& operator+=(difference_type diff) noexcept
+    {
+        if(diff > 0)
+        {
+            for(difference_type i = 0; i < diff; ++i) ++*this;
+        }
+        else if(diff < 0)
+        {
+            diff = -diff;
+            for(difference_type i = 0; i < diff; ++i) --*this;
+        }
+
+        return *this;
+    }
+
+    constexpr codepoint_iterator& operator-=(difference_type diff) noexcept
+    {
+        return *this += -diff;
+    }
+
+    friend constexpr codepoint_iterator operator+(codepoint_iterator lhs, difference_type rhs) noexcept
+    {
+        return lhs += rhs;
+    }
+
+    friend constexpr codepoint_iterator operator+(difference_type lhs, codepoint_iterator rhs) noexcept
+    {
+        return rhs += lhs;
+    }
+
+    friend constexpr codepoint_iterator operator-(codepoint_iterator lhs, difference_type rhs) noexcept
+    {
+        return lhs -= rhs;
+    }
+
+    friend constexpr codepoint_iterator operator-(difference_type lhs, codepoint_iterator rhs) noexcept
+    {
+        return rhs -= lhs;
+    }
+
+    constexpr difference_type operator-(codepoint_iterator rhs) const noexcept
+    {
+        if(this->to_address() < rhs.to_address())
+        {
+            return -(rhs - *this);
+        }
+        else
+        {
+            difference_type diff = 0;
+
+            while(rhs != *this && rhs)
+            {
+                ++rhs;
+                ++diff;
+            }
+
+            return diff;
+        }
+    }
+
+    friend constexpr void swap(codepoint_iterator& lhs, codepoint_iterator& rhs) noexcept
+    {
+        lhs.swap(rhs);
+    }
+};
+
+namespace detail
+{
     class str_static_base
     {
     public:
@@ -324,136 +449,7 @@ namespace detail
         using size_type = std::size_t;
         using string_view_type = std::basic_string_view<CharT>;
 
-        class const_iterator : public const_str_iter_impl<CharT>
-        {
-        public:
-            using my_base = const_str_iter_impl<CharT>;
-
-        public:
-            using char_type = CharT;
-            using size_type = std::size_t;
-            using difference_type = std::ptrdiff_t;
-            using value_type = codepoint;
-            using reference = codepoint;
-            using string_view_type = std::basic_string_view<CharT>;
-
-            constexpr const_iterator() noexcept = default;
-            constexpr const_iterator(const const_iterator&) noexcept = default;
-
-        private:
-            friend str_base;
-            using my_base::my_base;
-
-        public:
-            constexpr const_iterator& operator=(const const_iterator&) noexcept = default;
-
-            // clang-format off
-
-            [[nodiscard]]
-            constexpr bool operator==(const const_iterator& rhs) const noexcept
-            {
-                return this->base() == rhs.base();
-            }
-
-            // clang-format on
-
-            constexpr const_iterator& operator++() noexcept
-            {
-                this->next();
-                return *this;
-            }
-
-            constexpr const_iterator operator++(int) noexcept
-            {
-                const_iterator tmp(*this);
-                ++*this;
-                return tmp;
-            }
-
-            constexpr const_iterator& operator--() noexcept
-            {
-                this->prev();
-                return *this;
-            }
-
-            constexpr const_iterator operator--(int) noexcept
-            {
-                const_iterator tmp(*this);
-                --*this;
-                return tmp;
-            }
-
-            constexpr const_iterator& operator+=(difference_type diff) noexcept
-            {
-                if(diff > 0)
-                {
-                    for(difference_type i = 0; i < diff; ++i) ++*this;
-                }
-                else if(diff < 0)
-                {
-                    diff = -diff;
-                    for(difference_type i = 0; i < diff; ++i) --*this;
-                }
-
-                return *this;
-            }
-
-            constexpr const_iterator& operator-=(difference_type diff) noexcept
-            {
-                return *this += -diff;
-            }
-
-            // clang-format off
-
-            [[nodiscard]]
-            friend constexpr const_iterator operator+(const_iterator lhs, difference_type rhs) noexcept
-            {
-                return lhs += rhs;
-            }
-
-            [[nodiscard]]
-            friend constexpr const_iterator operator+(difference_type lhs, const_iterator rhs) noexcept
-            {
-                return rhs += lhs;
-            }
-
-            [[nodiscard]]
-            friend constexpr const_iterator operator-(const_iterator lhs, difference_type rhs) noexcept
-            {
-                return lhs -= rhs;
-            }
-
-            [[nodiscard]]
-            friend constexpr const_iterator operator-(difference_type lhs, const_iterator rhs) noexcept
-            {
-                return rhs -= lhs;
-            }
-
-            [[nodiscard]]
-            constexpr difference_type operator-(const_iterator rhs) const noexcept
-            {
-                if(this->to_address() < rhs.to_address())
-                {
-                    return -(rhs - *this);
-                }
-                else
-                {
-                    difference_type diff = 0;
-
-                    while(rhs != *this && rhs)
-                    {
-                        ++rhs;
-                        ++diff;
-                    }
-
-                    return diff;
-                }
-            }
-
-            // clang-format off
-
-            friend constexpr void swap(const_iterator& lhs, const_iterator& rhs) noexcept { lhs.swap(rhs); }
-        };
+        using const_iterator = codepoint_iterator<CharT>;
 
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -499,17 +495,35 @@ namespace detail
             }
         }
 
-        constexpr const_iterator begin() const noexcept { return cbegin(); }
+        constexpr const_iterator begin() const noexcept
+        {
+            return cbegin();
+        }
 
-        constexpr const_iterator end() const noexcept { return cend(); }
+        constexpr const_iterator end() const noexcept
+        {
+            return cend();
+        }
 
-        constexpr const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(cend()); }
+        constexpr const_reverse_iterator crbegin() const noexcept
+        {
+            return const_reverse_iterator(cend());
+        }
 
-        constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator(cbegin()); }
+        constexpr const_reverse_iterator crend() const noexcept
+        {
+            return const_reverse_iterator(cbegin());
+        }
 
-        constexpr const_reverse_iterator rbegin() const noexcept { return crbegin(); }
+        constexpr const_reverse_iterator rbegin() const noexcept
+        {
+            return crbegin();
+        }
 
-        constexpr const_reverse_iterator rend() const noexcept { return crend(); }
+        constexpr const_reverse_iterator rend() const noexcept
+        {
+            return crend();
+        }
 
         // clang-format off
 
@@ -869,8 +883,7 @@ public:
         : m_str(string_view_type(start, stop))
     {}
 
-    template <std::derived_from<detail::const_str_iter_impl<CharT>> Iterator>
-    constexpr basic_string_ref(Iterator start, Iterator stop) noexcept
+    constexpr basic_string_ref(const_iterator start, const_iterator stop) noexcept
         : m_str(string_view_type(start.base(), stop.base()))
     {}
 
@@ -1307,8 +1320,7 @@ public:
     constexpr basic_string_container(independent_t, const CharT* str, size_type count) noexcept
         : m_data(std::in_place_type<string_type>, str, count) {}
 
-    template <std::derived_from<detail::const_str_iter_impl<CharT>> Iterator>
-    basic_string_container(Iterator start, Iterator stop) noexcept
+    basic_string_container(const_iterator start, const_iterator stop) noexcept
         : m_data(std::in_place_type<string_view_type>, start.base(), stop.base())
     {}
 
@@ -1398,8 +1410,7 @@ public:
         return *this;
     }
 
-    template <std::derived_from<detail::const_str_iter_impl<CharT>> Iterator>
-    basic_string_container& assign(Iterator start, Iterator stop) noexcept
+    basic_string_container& assign(const_iterator start, const_iterator stop) noexcept
     {
         emplace_data<string_view_type>(start.base(), stop.base());
         return *this;
