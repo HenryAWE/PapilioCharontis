@@ -248,6 +248,48 @@ TEST(codepoint, append_to)
     }
 }
 
+namespace test_utf_codepoint
+{
+template <typename CharT>
+static void test_cp_iter()
+{
+    using namespace papilio;
+    using namespace utf;
+
+    std::basic_string_view<CharT> str = PAPILIO_TSTRING_VIEW(CharT, "hello");
+
+    auto start = codepoint_begin(str);
+    auto stop = codepoint_end(str);
+
+    EXPECT_EQ(start.base(), str.data());
+    EXPECT_EQ(stop.base(), std::to_address(str.end()));
+
+    EXPECT_EQ(*start, U'h');
+    {
+        auto it = std::prev(stop);
+        EXPECT_EQ(start + 4, it);
+        EXPECT_EQ(*it, U'o');
+    }
+
+    EXPECT_LT(start, stop);
+    EXPECT_GT(stop, start);
+    EXPECT_EQ(std::distance(start, stop), 5);
+    EXPECT_EQ(stop - start, 5);
+}
+} // namespace test_utf_codepoint
+
+TEST(codepoint_iterator, range)
+{
+    using test_utf_codepoint::test_cp_iter;
+
+    test_cp_iter<char>();
+    test_cp_iter<wchar_t>();
+    test_cp_iter<char16_t>();
+    test_cp_iter<char32_t>();
+    test_cp_iter<char8_t>();
+
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

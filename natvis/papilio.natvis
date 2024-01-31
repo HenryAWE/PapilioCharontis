@@ -172,8 +172,8 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
         </Expand>
     </Type>
 
-    <Type Name="papilio::utf::detail::const_str_iter_impl&lt;char&gt;">
-        <AlternativeType Name="papilio::utf::detail::const_str_iter_impl&lt;char8_t&gt;"/>
+    <Type Name="papilio::utf::detail::cp_iter_impl&lt;char&gt;">
+        <AlternativeType Name="papilio::utf::detail::cp_iter_impl&lt;char8_t&gt;"/>
         <DisplayString>{m_str.data()+m_offset, [m_len]}</DisplayString>
         <Expand>
             <Item Name="[ptr]">m_str.data() + m_offset</Item>
@@ -181,8 +181,8 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
             <Item Name="[size]">(size_t)m_len</Item>
         </Expand>
     </Type>
-    <Type Name="papilio::utf::detail::const_str_iter_impl&lt;wchar_t&gt;">
-        <AlternativeType Name="papilio::utf::detail::const_str_iter_impl&lt;char16_t&gt;"/>
+    <Type Name="papilio::utf::detail::cp_iter_impl&lt;wchar_t&gt;">
+        <AlternativeType Name="papilio::utf::detail::cp_iter_impl&lt;char16_t&gt;"/>
         <DisplayString>{m_str.data()+m_offset, [m_len]}</DisplayString>
         <Expand>
             <Item Name="[ptr]">m_str.data() + m_offset</Item>
@@ -190,7 +190,7 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
             <Item Name="[size]">(size_t)m_len</Item>
         </Expand>
     </Type>
-    <Type Name="papilio::utf::detail::const_str_iter_impl&lt;char32_t&gt;">
+    <Type Name="papilio::utf::detail::cp_iter_impl&lt;char32_t&gt;">
         <DisplayString>{*m_iter}</DisplayString>
         <Expand>
             <Item Name="[iter]">m_iter</Item>

@@ -182,4 +182,52 @@ constexpr auto decoder<char16_t>::from_codepoint(codepoint cp) -> from_codepoint
 
     return result;
 }
+
+template <typename CharT>
+codepoint_iterator<CharT> codepoint_begin(std::basic_string_view<CharT> str) noexcept
+{
+    using result_t = codepoint_iterator<CharT>;
+
+    if constexpr(!char32_like<CharT>) // char8_like and char16_like
+    {
+        if(str.empty())
+            return result_t(str, 0, std::uint8_t(0));
+    }
+
+    if constexpr(char8_like<CharT>)
+    {
+        std::uint8_t ch = str[0];
+        std::uint8_t ch_size = PAPILIO_NS utf::is_leading_byte(ch) ?
+                                   PAPILIO_NS utf::byte_count(ch) :
+                                   1;
+        return result_t(str, 0, ch_size);
+    }
+    else if constexpr(char16_like<CharT>)
+    {
+        std::uint16_t ch = str[0];
+        std::uint8_t ch_size = PAPILIO_NS utf::is_high_surrogate(ch) ?
+                                   2 :
+                                   1;
+        return result_t(str, 0, ch_size);
+    }
+    else // char32_like
+    {
+        return result_t(str.begin());
+    }
+}
+
+template <typename CharT>
+codepoint_iterator<CharT> codepoint_end(std::basic_string_view<CharT> str) noexcept
+{
+    using result_t = codepoint_iterator<CharT>;
+
+    if constexpr(!char32_like<CharT>) // char8_like and char16_like
+    {
+        return result_t(str, str.size(), std::uint8_t(0));
+    }
+    else
+    {
+        return result_t(str.end());
+    }
+}
 } // namespace papilio::utf
