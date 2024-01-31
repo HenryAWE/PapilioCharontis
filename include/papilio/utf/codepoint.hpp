@@ -819,11 +819,11 @@ public:
         lhs.swap(rhs);
     }
 
-    template <typename CharT>
-    friend codepoint_iterator<CharT> codepoint_begin(std::basic_string_view<CharT> str) noexcept;
+    template <typename CharU>
+    friend codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noexcept;
 
-    template <typename CharT>
-    friend codepoint_iterator<CharT> codepoint_end(std::basic_string_view<CharT> str) noexcept;
+    template <typename CharU>
+    friend codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexcept;
 };
 } // namespace papilio::utf
 

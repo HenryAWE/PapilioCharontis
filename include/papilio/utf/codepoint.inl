@@ -183,18 +183,18 @@ constexpr auto decoder<char16_t>::from_codepoint(codepoint cp) -> from_codepoint
     return result;
 }
 
-template <typename CharT>
-codepoint_iterator<CharT> codepoint_begin(std::basic_string_view<CharT> str) noexcept
+template <typename CharU>
+codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noexcept
 {
-    using result_t = codepoint_iterator<CharT>;
+    using result_t = codepoint_iterator<CharU>;
 
-    if constexpr(!char32_like<CharT>) // char8_like and char16_like
+    if constexpr(!char32_like<CharU>) // char8_like and char16_like
     {
         if(str.empty())
             return result_t(str, 0, std::uint8_t(0));
     }
 
-    if constexpr(char8_like<CharT>)
+    if constexpr(char8_like<CharU>)
     {
         std::uint8_t ch = str[0];
         std::uint8_t ch_size = PAPILIO_NS utf::is_leading_byte(ch) ?
@@ -202,7 +202,7 @@ codepoint_iterator<CharT> codepoint_begin(std::basic_string_view<CharT> str) noe
                                    1;
         return result_t(str, 0, ch_size);
     }
-    else if constexpr(char16_like<CharT>)
+    else if constexpr(char16_like<CharU>)
     {
         std::uint16_t ch = str[0];
         std::uint8_t ch_size = PAPILIO_NS utf::is_high_surrogate(ch) ?
@@ -216,12 +216,12 @@ codepoint_iterator<CharT> codepoint_begin(std::basic_string_view<CharT> str) noe
     }
 }
 
-template <typename CharT>
-codepoint_iterator<CharT> codepoint_end(std::basic_string_view<CharT> str) noexcept
+template <typename CharU>
+codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexcept
 {
-    using result_t = codepoint_iterator<CharT>;
+    using result_t = codepoint_iterator<CharU>;
 
-    if constexpr(!char32_like<CharT>) // char8_like and char16_like
+    if constexpr(!char32_like<CharU>) // char8_like and char16_like
     {
         return result_t(str, str.size(), std::uint8_t(0));
     }
