@@ -265,9 +265,16 @@ static void test_cp_iter()
     EXPECT_EQ(stop.base(), std::to_address(str.end()));
 
     EXPECT_EQ(*start, U'h');
+
     {
         auto it = std::prev(stop);
         EXPECT_EQ(start + 4, it);
+        EXPECT_EQ(4 + start, it);
+        EXPECT_EQ(start, it - 4);
+
+        EXPECT_EQ(start - it, -4);
+        EXPECT_EQ(it - start, 4);
+
         EXPECT_EQ(*it, U'o');
     }
 
@@ -276,9 +283,28 @@ static void test_cp_iter()
     EXPECT_EQ(std::distance(start, stop), 5);
     EXPECT_EQ(stop - start, 5);
 }
+
+template <typename CharT>
+void test_cp_swap()
+{
+    using namespace papilio;
+
+    auto str = PAPILIO_TSTRING_VIEW(CharT, "swap");
+
+    auto a = utf::codepoint_begin(str);
+    auto b = std::prev(utf::codepoint_end(str));
+
+    EXPECT_EQ(*a, U's');
+    EXPECT_EQ(*b, U'p');
+
+    swap(a, b);
+
+    EXPECT_EQ(*a, U'p');
+    EXPECT_EQ(*b, U's');
+}
 } // namespace test_utf_codepoint
 
-TEST(codepoint_iterator, range)
+TEST(codepoint_iterator, iterator)
 {
     using test_utf_codepoint::test_cp_iter;
 
@@ -287,7 +313,17 @@ TEST(codepoint_iterator, range)
     test_cp_iter<char16_t>();
     test_cp_iter<char32_t>();
     test_cp_iter<char8_t>();
+}
 
+TEST(codepoint_iterator, swap)
+{
+    using test_utf_codepoint::test_cp_swap;
+
+    test_cp_swap<char>();
+    test_cp_swap<wchar_t>();
+    test_cp_swap<char16_t>();
+    test_cp_swap<char32_t>();
+    test_cp_swap<char8_t>();
 }
 
 int main(int argc, char* argv[])

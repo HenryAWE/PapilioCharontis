@@ -59,7 +59,7 @@ namespace detail
     }
 
     template <typename OutputIt, typename CharT>
-    using vfmt_ctx_for = basic_format_args_ref<basic_format_context<OutputIt, CharT>>;
+    using vfmt_args = basic_format_args_ref<basic_format_context<OutputIt, CharT>>;
 } // namespace detail
 
 PAPILIO_EXPORT template <typename OutputIt>
@@ -73,7 +73,7 @@ PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::string_view fmt,
-    const detail::vfmt_ctx_for<std::type_identity_t<OutputIt>, char>& args
+    const detail::vfmt_args<std::type_identity_t<OutputIt>, char>& args
 )
 {
     using context_type = basic_format_context<OutputIt, char>;
@@ -90,7 +90,7 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::string_view fmt,
-    const detail::vfmt_ctx_for<std::type_identity_t<OutputIt>, char>& args
+    const detail::vfmt_args<std::type_identity_t<OutputIt>, char>& args
 )
 {
     using context_type = basic_format_context<OutputIt, char>;
@@ -106,7 +106,7 @@ PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::wstring_view fmt,
-    const detail::vfmt_ctx_for<std::type_identity_t<OutputIt>, wchar_t>& args
+    const detail::vfmt_args<std::type_identity_t<OutputIt>, wchar_t>& args
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
@@ -123,7 +123,7 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::wstring_view fmt,
-    const detail::vfmt_ctx_for<std::type_identity_t<OutputIt>, wchar_t>& args
+    const detail::vfmt_args<std::type_identity_t<OutputIt>, wchar_t>& args
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
