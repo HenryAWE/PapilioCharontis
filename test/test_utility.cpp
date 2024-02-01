@@ -312,6 +312,23 @@ TEST(basic_oiterstream, wchar_t)
     EXPECT_TRUE(os.good());
 }
 
+TEST(enum_name, enum_name)
+{
+    using namespace papilio;
+
+    enum my_enum
+    {
+        first = 1,
+        second = 2
+    };
+
+    static_assert(static_enum_name<first>(true) == "first");
+    static_assert(static_enum_name<second>(true) == "second");
+
+    EXPECT_EQ(enum_name(first, true), "first");
+    EXPECT_EQ(enum_name(second, true), "second");
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

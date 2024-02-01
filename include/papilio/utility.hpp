@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <concepts>
 #include <string>
+#include <array>
 #include <iterator>
 #include <iostream>
 #include "macros.hpp"
@@ -803,4 +804,61 @@ PAPILIO_EXPORT template <std::output_iterator<char> Iterator>
 using oiterstream = basic_oiterstream<char, Iterator>;
 PAPILIO_EXPORT template <std::output_iterator<wchar_t> Iterator>
 using woiterstream = basic_oiterstream<wchar_t, Iterator>;
+
+namespace detail
+{
+    template <auto Value>
+    constexpr std::string_view static_enum_name_impl()
+    {
+        std::string_view name;
+
+#if defined PAPILIO_COMPILER_GCC || defined PAPILIO_COMPILER_CLANG
+        name = __PRETTY_FUNCTION__;
+        std::size_t start = name.find("Value = ") + 8;
+        std::size_t end = name.find_last_of(']');
+        return std::string_view(name.data() + start, end - start);
+
+#elif defined PAPILIO_COMPILER_MSVC
+        name = __FUNCSIG__;
+        std::size_t start = name.find("static_enum_name_impl<") + 22;
+        std::size_t end = name.find_last_of('>');
+        return std::string_view(name.data() + start, end - start);
+
+#else
+        static_assert(false, "Unimplemented");
+#endif
+    }
+} // namespace detail
+
+template <auto Value>
+constexpr std::string_view static_enum_name(bool remove_qualifier = false)
+{
+    constexpr std::string_view name = detail::static_enum_name_impl<Value>();
+
+    if(remove_qualifier)
+    {
+        std::size_t start = name.rfind("::");
+        if(start != std::string_view::npos)
+        {
+            start += 2; // skip "::"
+            return name.substr(start);
+        }
+    }
+
+    return name;
+}
+
+template <typename T>
+requires std::is_enum_v<T>
+constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noexcept
+{
+    auto names = [=]<std::size_t... Is>(std::index_sequence<Is...>)
+    {
+        return std::array<std::string_view, 256>{
+            static_enum_name<static_cast<T>(Is - 128)>(remove_qualifier)...
+        };
+    }(std::make_index_sequence<256>());
+
+    return names[static_cast<std::size_t>(value) + 128];
+}
 } // namespace papilio
