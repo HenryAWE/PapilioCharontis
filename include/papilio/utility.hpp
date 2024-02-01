@@ -815,7 +815,11 @@ namespace detail
 #if defined PAPILIO_COMPILER_GCC || defined PAPILIO_COMPILER_CLANG
         name = __PRETTY_FUNCTION__;
         std::size_t start = name.find("Value = ") + 8;
+#    ifdef PAPILIO_COMPILER_CLANG
         std::size_t end = name.find_last_of(']');
+#    else
+        std::size_t end = std::min(name.find(';', start), name.find_last_of(']'));
+#    endif
         return std::string_view(name.data() + start, end - start);
 
 #elif defined PAPILIO_COMPILER_MSVC
@@ -855,7 +859,7 @@ constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noe
     auto names = [=]<std::size_t... Is>(std::index_sequence<Is...>)
     {
         return std::array<std::string_view, 256>{
-            static_enum_name<static_cast<T>(Is - 128)>(remove_qualifier)...
+            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>(remove_qualifier)...
         };
     }(std::make_index_sequence<256>());
 
