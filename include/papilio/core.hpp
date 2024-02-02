@@ -1199,22 +1199,16 @@ auto make_wformat_args(Args&&... args)
     return result_type(std::forward<Args>(args)...);
 }
 
-namespace detail
-{
-    // clang-format off
-
-    template <typename T, typename CharT>
-    concept streamable =
-        requires(std::basic_ostream<CharT>& os, T&& val)
+template <typename T, typename CharT = char>
+concept streamable =
+    requires(std::basic_ostream<CharT>& os, const T& val) {
         {
-            { os << val } -> std::convertible_to<std::basic_ostream<CharT>&>;
-        };
-
-    // clang-format on
-} // namespace detail
+            os << val
+        } -> std::convertible_to<std::basic_ostream<CharT>&>;
+    };
 
 PAPILIO_EXPORT template <typename T, typename CharT>
-requires detail::streamable<T, CharT>
+requires streamable<T, CharT>
 class streamable_formatter
 {
 public:
@@ -1234,7 +1228,11 @@ public:
     template <typename Context>
     auto format(const T& val, Context& ctx) const
     {
-        basic_oiterstream<CharT, typename Context::iterator> os(ctx.out());
+        using os_t = basic_oiterstream<
+            CharT,
+            typename Context::iterator>;
+
+        os_t os(ctx.out());
 
         if(m_use_locale)
             os.imbue(ctx.getloc());

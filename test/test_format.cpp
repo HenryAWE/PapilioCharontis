@@ -240,6 +240,25 @@ TEST(formatter, pointer)
     }
 }
 
+TEST(format, magic_enum)
+{
+    using namespace papilio;
+
+    enum animal
+    {
+        cat = 1,
+        dog
+    };
+
+    EXPECT_EQ(PAPILIO_NS format("{}", cat), "cat");
+    EXPECT_EQ(PAPILIO_NS format("{}", dog), "dog");
+    EXPECT_EQ(PAPILIO_NS format("{:d}", cat), "1");
+
+    EXPECT_EQ(PAPILIO_NS format(L"{}", cat), L"cat");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", dog), L"dog");
+    EXPECT_EQ(PAPILIO_NS format(L"{:d}", cat), L"1");
+}
+
 TEST(format, plain_text)
 {
     using namespace papilio;

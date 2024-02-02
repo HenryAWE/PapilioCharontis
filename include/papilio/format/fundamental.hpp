@@ -1065,4 +1065,71 @@ public:
 private:
     std_formatter_data m_data{.type = U'x', .alternate_form = true};
 };
+
+namespace detail
+{
+
+    template <typename Enum, typename CharT = char>
+    requires std::is_enum_v<Enum>
+    class enum_formatter
+    {
+    public:
+        template <typename ParseContext>
+        auto parse(ParseContext& ctx) -> typename ParseContext::iterator
+        {
+            std_formatter_parser<ParseContext, true> parser;
+
+            auto [result, it] = parser.parse(ctx, U"sBbXxod");
+
+            m_data = result;
+
+            return it;
+        }
+
+        template <typename FormatContext>
+        auto format(Enum e, FormatContext& ctx) const -> typename FormatContext::iterator
+        {
+            if(m_data.type_or(U's') == U's')
+            {
+                detail::string_formatter<CharT> fmt;
+                fmt.set_data(m_data);
+                if constexpr(char8_like<CharT>)
+                {
+                    std::string_view name = enum_name<Enum>(e, true);
+                    auto name_conv = std::basic_string_view<CharT>(
+                        std::bit_cast<const CharT*>(name.data()),
+                        name.size()
+                    );
+                    return fmt.format(
+                        name_conv,
+                        ctx
+                    );
+                }
+                else
+                {
+                    utf::string_ref name = enum_name<Enum>(e, true);
+                    auto name_conv = name.to_string_as<CharT>();
+                    return fmt.format(
+                        name_conv,
+                        ctx
+                    );
+                }
+            }
+            else
+            {
+                detail::int_formatter<std::underlying_type_t<Enum>, CharT> fmt;
+                fmt.set_data(m_data);
+                return fmt.format(PAPILIO_NS to_underlying(e), ctx);
+            }
+        }
+
+    private:
+        std_formatter_data m_data{.type = U's'};
+    };
+} // namespace detail
+
+template <typename T, typename CharT>
+requires std::is_enum_v<T>
+class formatter<T, CharT> : public detail::enum_formatter<T, CharT>
+{};
 } // namespace papilio
