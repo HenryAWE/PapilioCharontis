@@ -24,13 +24,13 @@ namespace detail
     {
         if(m_byte_len == 0)
         {
-            m_byte_len = utf::is_leading_byte(ch);
-            if(m_byte_len == 0) // invalid UTF-8 data
+            if(!utf::is_leading_byte(ch))
             {
                 throw std::system_error(
                     std::make_error_code(std::errc::io_error)
                 );
             }
+            m_byte_len = utf::byte_count(ch);
         }
 
         m_buf[m_byte_idx] = static_cast<char8_t>(ch);
