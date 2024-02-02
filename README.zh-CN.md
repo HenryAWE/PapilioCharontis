@@ -25,6 +25,12 @@ std::string_view fmt_en =
 papilio::format(fmt_en, 1); // 返回 "There is 1 apple"
 papilio::format(fmt_en, 2); // 返回 "There are 2 apples"
 
+// 法文
+std::string_view fmt_fr =
+    "Il y a {0} pomme{${0}>1:'s'}";
+papilio::format(fmt_fr, 1); // 返回 "Il y a 1 pomme"
+papilio::format(fmt_fr, 2); // 返回 "Il y a 2 pommes"
+
 // 中文（无变形）
 std::string_view fmt_zh =
     "有 {0} 个苹果";
@@ -54,15 +60,31 @@ papilio::format("{text} and {0}", "world", "text"_a = "hello");
 // 返回 "hello and world"
 ```
 如果你不想使用 `using namespace`，可以用 `papilio::arg("text", "hello")` 代替。
+
+#### 额外功能
+无需额外代码即可支持枚举（enum）值转字符串。
+
+```c++
+enum animal
+{
+    cat = 1,
+    dog
+};
+
+papilio::format("{}", cat);   // 返回 "cat"
+papilio::format("{}", dog);   // 返回 "dog"
+papilio::format("{:d}", cat); // 返回 "1"
+```
+
 ### 访问成员
 支持索引（整数或字符串）、切片和访问成员属性。
 ```c++
 papilio::format("length of \"{0}\" is {0.length}", "hello");
 // 返回 "length of "hello" is 5"
-papilio::format("{[:5]:}", "hello world"); // 返回 "hello"
+papilio::format("{[:5]:}", "hello world");  // 返回 "hello"
 papilio::format("{[-5:]:}", "hello world"); // 返回 "world"
-papilio::format("{[0]:}", "hello world"); // 返回 "h"
-papilio::format("{[-1]:}", "hello world"); // 返回 "d"
+papilio::format("{[0]:}", "hello world");   // 返回 "h"
+papilio::format("{[-1]:}", "hello world");  // 返回 "d"
 ```
 详细信息请参阅 [内建访问器（Accessor）](doc/zh-CN/builtin_accessor.md)。
 

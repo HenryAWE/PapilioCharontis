@@ -28,7 +28,7 @@ papilio::format("{0:},{0:+},{0:-},{0: }", nan); // Returns "nan,+nan,nan, nan"
 ```
 
 The `#` option will enable the alternate form:
-- Integral type: When use binary, octal or hexadecimal for displaying, this option will insert prefix (`0b`, `0o` or `0x`) in the output.
+- Integral type: When use binary, octal or hexadecimal for displaying, this option will insert prefix (`0b`, `0` or `0x` for example) in the output.
 - Floating type: not implemented yet
 
 ### Width and Precision
@@ -64,7 +64,10 @@ papilio::format("{:.<5.5s}", "文文文"); // "文文."
 ```
 
 ### L (Locale-Specific Formatting)
-Not implemented yet.
+This option is only available for some types. It may cause the output to be affected by locale.
+- `bool` type: The output will use the result of `std::numpunct::truename()` or `std::numpunct::falsename()` to represent `true` or `false`.
+- Integral type: Not implemented yet.
+- Floating point: Not implemented yet.
 
 ### Type
 #### String
@@ -72,19 +75,21 @@ Not implemented yet.
 
 #### Integral Type (Except `bool` type)
 - `b`: Binary output.
+- `B`: Same as `b`, but prefix `0B` to the output with `#`.
 - None, `d`: Decimal output.
 - `o`: Octal output.
 - `x`: Hexadecimal output.
+- `X`: Same as `x`, but use uppercase letters and prefix `0X` to the output with `#`.
 
-### Character Type
-- None, `c`: Copy the string to the output.
-- `b`, `d`, `o`, `x`: Use integer representation types
+#### Character Type
+- None, `c`: Copy the character to the output.
+- `b`, `B`, `d`, `o`, `x`, `X`: Use integer representation types with `static_cast<std::uint32_t>(value)`.
 
-### `bool` Type
-- None, `s`: Copy textual representation (`true` or `false`) to the output.
-- `b`, `d`, `o`, `x`: Use integer representation types with `static_cast<unsigned int>(value)`.
+#### `bool` Type
+- None, `s`: Copy textual representation string (`true` or `false`) to the output.
+- `b`, `B`, `d`, `o`, `x`, `X`: Use integer representation types with `static_cast<unsigned int>(value)`.
 
-### Floating Point
+#### Floating Point
 - `a`：If precision is specified, produces output as if by calling `std::to_chars(first, last, value, std::chars_format::hex, precision)`, where `precision` is the specified value; otherwise, the output is produced as if by calling `std::to_chars(first, last, value, std::chars_format::hex)`.
 - `e`：Produces output as if by calling `std::to_chars(first, last, value, std::chars_format::scientific, precision)`, where `precision` is the specified precision, or `6` if it is not specified.
 - `f`：Produces output as if by calling `std::to_chars(first, last, value, std::chars_format::fixed, precision)`, where `precision` is the specified precision, or `6` if it is not specified.
@@ -93,5 +98,14 @@ Not implemented yet.
 
 Infinite values and NaN are formatted to `inf` and `nan`, respectively.
 
-### Pointer
-- None, `p`: Use hexadecimal  integer representation with  `static_cast<std::uniptr_t>(value)`, adding prefix `0x` into the output.
+#### Pointer
+- None, `p`: Use hexadecimal  integer representation with  `static_cast<std::uintptr_t>(value)`, adding prefix `0x` into the output.
+- `P`: Same as `p`, but use uppercase letters.
+
+#### Enumeration Type (`enum`)
+- None, `s`: Copy the corresponding string of the enumeration value to the output.
+- `b`, `B`, `d`, `o`, `x`, `X`: Use integer representation types with `static_cast<std::underlying_type_t<Enum>>(value)`.
+
+Note: The `enum_name` function defined in `<papilio/utility.hpp>` uses compiler extension to retrieve string from enumeration value. It has following limitations:
+1. Only support enumeration values within the `[-128, 128)` range.
+2. Output result of multiple enumerations with same value is compiler dependent.

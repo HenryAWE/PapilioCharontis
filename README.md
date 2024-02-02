@@ -25,6 +25,12 @@ std::string_view fmt_en =
 papilio::format(fmt_en, 1); // Returns "There is 1 apple"
 papilio::format(fmt_en, 2); // Returns "There are 2 apples"
 
+// French
+std::string_view fmt_fr =
+    "Il y a {0} pomme{${0}>1:'s'}";
+papilio::format(fmt_fr, 1); // Returns "Il y a 1 pomme"
+papilio::format(fmt_fr, 2); // Returns "Il y a 2 pommes"
+
 // Chinese (no plural form)
 std::string_view fmt_zh =
     "有 {0} 个苹果";
@@ -54,6 +60,20 @@ papilio::format("{text} and {0}", "world", "text"_a = "hello");
 // Returns "hello and world"
 ```
 If you don't want `using namespace`, you can use `papilio::arg("text", "hello")` instead.
+
+#### Additional Feature
+Converting enum values to string without additional code.
+```c++
+enum animal
+{
+    cat = 1,
+    dog
+};
+
+papilio::format("{}", cat);   // Returns "cat"
+papilio::format("{}", dog);   // Returns "dog"
+papilio::format("{:d}", cat); // Returns "1"
+```
 
 ### Accessing Member
 Support indexing (integer or string), slicing and accessing member attributes.

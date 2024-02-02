@@ -28,7 +28,7 @@ papilio::format("{0:},{0:+},{0:-},{0: }", nan); // 返回 "nan,+nan,nan, nan"
 ```
 
 `#` 选项将启用替换形式进行输出
-- 整数类型：使用二进制、八进制或十六进制显示类型时，将插入前缀（`0b`、`0o` 或 `0x`）到输出中
+- 整数类型：使用二进制、八进制或十六进制显示类型时，将向输出中插入前缀（如 `0b`、`0` 或 `0x`）
 - 浮点类型：目前暂无实际效果
 
 ### 宽度与精度
@@ -64,7 +64,10 @@ papilio::format("{:.<5.5s}", "文文文"); // "文文."
 ```
 
 ### L （依赖本地环境的格式化）
-目前暂无实际效果
+此选项仅对部分类型生效，将导致输出受到本地环境（locale）的影响。
+- `bool` 类型：将使用 `std::numpunct::truename()` 或 `std::numpunct::falsename()` 获得的字符串来表示 `true` 或 `false`
+- 整数类型：目前暂无实际效果
+- 浮点类型：目前暂无实际效果
 
 ### 类型
 #### 字符串类型
@@ -72,19 +75,21 @@ papilio::format("{:.<5.5s}", "文文文"); // "文文."
 
 #### 整数类型（除 `bool` 类型）
 - `b`：二进制输出
+- `B`：同 `b`，但是配合 `#` 使用时输出 `0B` 前缀
 - 无、`d`：十进制输出
 - `o`：八进制输出
 - `x`：十六进制输出
+- `X`：同 `x`，但是使用大写字母；配合 `#` 使用时输出 `0X` 前缀
 
-### 字符类型
+#### 字符类型
 - 无、`c`：复制字符到输出
-- `b`、`d`、`o`、`x`：使用整数表示字符
+- `b`、`B`、`d`、`o`、`x`、`X`：以值 `static_cast<std::uint32_t>(value)` 使用整数表示字符
 
-### `bool` 类型
-- 无、`s`：复制文本表示（`true` 或 `false`）到输出
-- `b`、`d`、`o`、`x`：以值 `static_cast<unsigned int>(value)` 使用整数表示字符
+#### `bool` 类型
+- 无、`s`：复制文本表示字符串（`true` 或 `false`）到输出
+- `b`、`B`、`d`、`o`、`x`、`X`：以值 `static_cast<unsigned int>(value)` 使用整数表示
 
-### 浮点型
+#### 浮点型
 - `a`：若指定精度，则等价于 `std::to_chars(first, last, value, std::chars_format::hex, precision)` 产生的输出，其中 `precision` 为指定的精度；否则等价于 `std::to_chars(first, last, value, std::chars_format::hex)` 产生输出
 - `e`：等价于 `std::to_chars(first, last, value, std::chars_format::scientific, precision)`  产生的输出，其中 `precision` 为指定的精度，若未指定精度则默认为 `6`
 - `f`：等价于 `std::to_chars(first, last, value, std::chars_format::fixed, precision)` 产生的输出，其中 `precision` 为指定的精度，若未指定精度则默认为 `6`
@@ -93,5 +98,14 @@ papilio::format("{:.<5.5s}", "文文文"); // "文文."
 
 无穷大和非数（NaN）分别格式化为 `inf` 与 `nan`
 
-### 指针类型
-- 无、`p`：以值 `static_cast<std::uniptr_t>(value)` 使用十六进制整数表示，并添加前缀 `0x` 到输出
+#### 指针类型
+- 无、`p`：以值 `static_cast<std::uintptr_t>(value)` 使用十六进制整数表示，并向输出中添加前缀 `0x`
+- `P`：同 `p`，但是使用大写字母
+
+#### 枚举类型（`enum`）
+- 无、`s`：复制枚举值对应的字符串到输出中
+- `b`、`B`、`d`、`o`、`x`、`X`：以值 `static_cast<std::underlying_type_t<Enum>>(value)` 使用整数表示
+
+注意：`<papilio/utility.hpp>` 中定义的 `enum_name` 函数使用编译器扩展从枚举值中获取字符串，它有以下限制：
+1. 仅支持 `[-128, 128)` 范围内的枚举值
+2. 具有相同值的多个枚举的输出结果取决于编译器

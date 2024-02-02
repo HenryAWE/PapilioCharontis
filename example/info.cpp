@@ -40,12 +40,15 @@ int main()
     };
 
     // English
-    test_script("There {${0}!=1:'are':'is'} {0} big apple{${0}>1:'s'}");
-    // Esperanto
-    test_script("Estas {0} granda{${0}>1:'j'} pomo{${0}>1:'j'}");
+    test_script("There {${0}!=1:'are':'is'} {0} apple{${0}>1:'s'}");
+    // French
+    test_script("Il y a {0} pomme{${0}>1:'s'}");
+    // Chinese
+    test_script("有 {} 个苹果");
 
     print(fg(color::red) | bg(color::white) | style::bold, "WARNING");
-    println(fg(color::yellow) | style::underline, ", underlined");
+    print(", ");
+    println(fg(color::yellow) | style::underline, "underlined");
 
     println(
         "{}, {}, {}",
