@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#if __has_include(<format>)
+#    include <format> // Test ADL-proof
+#endif
 #include <papilio/format.hpp>
 #include <vector>
 #include <iostream>
@@ -60,7 +63,7 @@ public:
     template <typename FormatContext>
     auto format(const test_format::custom_type& v, FormatContext& ctx) const
     {
-        return format_to(ctx.out(), "custom_type.val={}", v.val);
+        return PAPILIO_NS format_to(ctx.out(), "custom_type.val={}", v.val);
     }
 };
 
@@ -77,7 +80,7 @@ public:
     template <typename FormatContext>
     auto format(const test_format::large_custom_type& v, FormatContext& ctx) const
     {
-        return format_to(ctx.out(), "large_custom_type.val={}", v.val);
+        return PAPILIO_NS format_to(ctx.out(), "large_custom_type.val={}", v.val);
     }
 };
 } // namespace papilio
@@ -122,7 +125,7 @@ TEST(format, format_to)
 
     {
         std::vector<char> result;
-        auto it = format_to(std::back_inserter(result), "vec");
+        auto it = PAPILIO_NS format_to(std::back_inserter(result), "vec");
         *it = '\0';
         EXPECT_EQ(result.size(), 4);
         EXPECT_STREQ(result.data(), "vec");
@@ -160,7 +163,7 @@ TEST(format, format_to_n)
     {
         std::string str;
         str.resize(5);
-        auto result = format_to_n(str.begin(), str.size(), "hello world");
+        auto result = PAPILIO_NS format_to_n(str.begin(), str.size(), "hello world");
 
         EXPECT_EQ(result.out, str.begin() + str.size());
         EXPECT_EQ(result.size, str.size());
@@ -173,7 +176,7 @@ TEST(format, format_to_n)
 
         std::string str;
         str.resize(4);
-        auto result = format_to_n(str.begin(), str.size(), loc, "{:L}!!", true);
+        auto result = PAPILIO_NS format_to_n(str.begin(), str.size(), loc, "{:L}!!", true);
 
         EXPECT_EQ(result.out, str.begin() + str.size());
         EXPECT_EQ(result.size, str.size());
@@ -281,7 +284,7 @@ TEST(format, wchar_t)
 
     {
         std::vector<wchar_t> result;
-        auto it = format_to(std::back_inserter(result), L"vec");
+        auto it = PAPILIO_NS format_to(std::back_inserter(result), L"vec");
         *it = L'\0';
         EXPECT_EQ(result.size(), 4);
         EXPECT_STREQ(result.data(), L"vec");
@@ -300,7 +303,7 @@ TEST(format, wchar_t)
     {
         std::wstring str;
         str.resize(5);
-        auto result = format_to_n(str.begin(), str.size(), L"hello world");
+        auto result = PAPILIO_NS format_to_n(str.begin(), str.size(), L"hello world");
 
         EXPECT_EQ(result.out, str.begin() + str.size());
         EXPECT_EQ(result.size, str.size());
@@ -313,7 +316,7 @@ TEST(format, wchar_t)
 
         std::wstring str;
         str.resize(4);
-        auto result = format_to_n(str.begin(), str.size(), loc, L"{:L}!!", true);
+        auto result = PAPILIO_NS format_to_n(str.begin(), str.size(), loc, L"{:L}!!", true);
 
         EXPECT_EQ(result.out, str.begin() + str.size());
         EXPECT_EQ(result.size, str.size());

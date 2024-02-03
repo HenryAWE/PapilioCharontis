@@ -1,4 +1,7 @@
 #include <gtest/gtest.h>
+#if __has_include(<format>)
+#    include <format> // Test ADL-proof
+#endif
 #include <papilio/format.hpp>
 #include "test_format.hpp"
 
