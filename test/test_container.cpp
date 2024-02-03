@@ -9,8 +9,16 @@ TEST(small_vector, emplace)
     {
         small_vector<int, 8> sv;
 
-        EXPECT_EQ(sv.emplace(sv.end(), 1), sv.end() - 1);
-        EXPECT_EQ(sv.insert(sv.begin(), 2), sv.begin());
+        {
+            auto it = sv.emplace(sv.end(), 1);
+            EXPECT_EQ(it, sv.end() - 1);
+        }
+
+        {
+            auto it = sv.insert(sv.begin(), 2);
+            EXPECT_EQ(it, sv.begin());
+        }
+
         EXPECT_EQ(sv[0], 2);
         EXPECT_EQ(sv[1], 1);
         EXPECT_EQ(sv.size(), 2);
@@ -30,11 +38,19 @@ TEST(small_vector, emplace)
     {
         small_vector<std::string, 4> sv{"one", "two", "three"};
 
-        sv.insert(sv.begin(), "zero");
+        {
+            auto it = sv.insert(sv.begin(), "zero");
+            EXPECT_EQ(it, sv.begin());
+        }
+
         EXPECT_EQ(sv.size(), 4);
         EXPECT_EQ(sv.front(), "zero");
 
-        sv.insert(sv.end(), "four");
+        {
+            auto it = sv.insert(sv.end(), "four");
+            EXPECT_EQ(it, sv.end() - 1);
+        }
+
         EXPECT_EQ(sv.size(), 5);
         EXPECT_TRUE(sv.dynamic_allocated());
         EXPECT_EQ(sv.back(), "four");
