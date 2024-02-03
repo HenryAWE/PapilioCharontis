@@ -6,6 +6,7 @@
 #include <utility>
 #include <numeric>
 #include <stdexcept>
+#include <ranges>
 #include "macros.hpp"
 #include "memory.hpp"
 
@@ -25,15 +26,9 @@ namespace detail
 
     protected:
         [[nodiscard]]
-        static size_type get_mem_size(size_type current, size_type required) noexcept
-        {
-            PAPILIO_ASSERT(current < required);
-            if(current <= 1)
-                current = 2;
-            while(current < required)
-                current += current / 2;
-            return current;
-        }
+        static auto get_mem_size(
+            size_type current, size_type required
+        ) noexcept -> size_type;
     };
 } // namespace detail
 
@@ -70,21 +65,15 @@ public:
         this->throw_out_of_range();
     }
 
-    // clang-format off
-
-    [[nodiscard]]
     reference operator[](size_type i) noexcept
     {
         return data()[i];
     }
 
-    [[nodiscard]]
     const_reference operator[](size_type i) const noexcept
     {
         return data()[i];
     }
-
-    // clang-format on
 
     [[nodiscard]]
     reference front() noexcept
@@ -420,14 +409,39 @@ public:
     }
 
     template <typename... Args>
-    void emplace_back(Args&&... args)
+    reference emplace_back(Args&&... args)
     {
         if(m_p_end == m_p_capacity)
         {
             size_type current = this->size();
             reserve(this->get_mem_size(current, current + 1));
         }
-        emplace_back_impl(std::forward<Args>(args)...);
+        return emplace_back_impl(std::forward<Args>(args)...);
+    }
+
+    iterator insert(const_iterator where, const T& val)
+    {
+        return emplace(where, val);
+    }
+
+    iterator insert(const_iterator where, T&& val)
+    {
+        return emplace(where, std::move(val));
+    }
+
+    template <typename... Args>
+    iterator emplace(const_iterator where, Args&&... args)
+    {
+        return emplace_impl(
+            where - this->cbegin(),
+            std::forward<Args>(args)...
+        );
+    }
+
+    template <std::ranges::range R>
+    void append_range(R&& rng)
+    {
+        append_iter(std::ranges::begin(rng), std::ranges::end(rng));
     }
 
     void pop_back() noexcept
@@ -556,13 +570,15 @@ private:
 
     // Note: This function assumes that the container has enough memory.
     template <typename... Args>
-    void emplace_back_impl(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    reference emplace_back_impl(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
     {
         PAPILIO_ASSERT(m_p_end < m_p_capacity);
+
+        const pointer pos = m_p_end;
         if(!dynamic_allocated()) [[likely]]
         {
             std::construct_at(
-                static_cast<value_type*>(m_p_end),
+                pos,
                 std::forward<Args>(args)...
             );
         }
@@ -570,11 +586,36 @@ private:
         {
             std::allocator_traits<Allocator>::construct(
                 get_alloc(),
-                m_p_end,
+                pos,
                 std::forward<Args>(args)...
             );
         }
+
         ++m_p_end;
+        return *pos;
+    }
+
+    template <typename... Args>
+    iterator emplace_impl(size_type off, Args&&... args)
+    {
+        reserve(this->size() + 1);
+
+        if(off == this->size())
+        {
+            emplace_back_impl(std::forward<Args>(args)...);
+            return std::prev(this->end());
+        }
+
+        emplace_back_impl(std::move(this->back()));
+
+        auto move_dst = std::prev(this->end());
+        auto move_src_end = std::prev(move_dst);
+        auto move_src_begin = this->begin() + off;
+        std::move_backward(move_src_begin, move_src_end, move_dst);
+
+        *move_src_begin = value_type(std::forward<Args>(args)...);
+
+        return this->begin() + static_cast<difference_type>(off);
     }
 
     // Note: This function doesn't automatically reset the pointers.
@@ -773,12 +814,18 @@ private:
     void assign_iter(Iterator first, Sentinel last)
     {
         clear();
-        constexpr bool random_access = std::is_convertible_v<
-            typename std::iterator_traits<Iterator>::iterator_category,
-            std::random_access_iterator_tag>;
-        if constexpr(random_access)
+        append_iter(std::move(first), std::move(last));
+    }
+
+    template <typename Iterator, std::sentinel_for<Iterator> Sentinel>
+    void append_iter(Iterator first, Sentinel last)
+    {
+        constexpr bool sized = std::sized_sentinel_for<
+            Sentinel,
+            Iterator>;
+        if constexpr(sized)
         {
-            reserve(std::distance(first, last));
+            reserve(std::ranges::distance(first, last));
             for(auto it = first; it != last; ++it)
             {
                 emplace_back_impl(*it);

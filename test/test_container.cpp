@@ -6,6 +6,45 @@ TEST(small_vector, emplace)
 {
     using papilio::small_vector;
 
+    {
+        small_vector<int, 8> sv;
+
+        EXPECT_EQ(sv.emplace(sv.end(), 1), sv.end() - 1);
+        EXPECT_EQ(sv.insert(sv.begin(), 2), sv.begin());
+        EXPECT_EQ(sv[0], 2);
+        EXPECT_EQ(sv[1], 1);
+        EXPECT_EQ(sv.size(), 2);
+    }
+
+    {
+        small_vector<int, 4> sv{2, 4, 6, 8};
+
+        sv.insert(sv.begin(), 0);
+        EXPECT_EQ(sv.size(), 5);
+        EXPECT_EQ(sv.front(), 0);
+
+        for(int i = 0; i < 5; ++i)
+            EXPECT_EQ(sv[i], i * 2);
+    }
+
+    {
+        small_vector<std::string, 4> sv{"one", "two", "three"};
+
+        sv.insert(sv.begin(), "zero");
+        EXPECT_EQ(sv.size(), 4);
+        EXPECT_EQ(sv.front(), "zero");
+
+        sv.insert(sv.end(), "four");
+        EXPECT_EQ(sv.size(), 5);
+        EXPECT_TRUE(sv.dynamic_allocated());
+        EXPECT_EQ(sv.back(), "four");
+    }
+}
+
+TEST(small_vector, emplace_back)
+{
+    using papilio::small_vector;
+
     small_vector<int, 8> sv;
 
     static_assert(sv.static_capacity() == 8);
@@ -46,6 +85,12 @@ TEST(small_vector, emplace)
 
     sv.shrink_to_fit();
     EXPECT_FALSE(sv.dynamic_allocated());
+
+    int arr[4] = {4, 5, 6, 7};
+    sv.append_range(arr);
+
+    for(int i = 0; i < 8; ++i)
+        EXPECT_EQ(sv[i], i);
 }
 
 TEST(small_vector, iterator)
@@ -100,6 +145,7 @@ TEST(small_vector, dynamic_allocated)
 
     sv.shrink_to_fit();
     EXPECT_FALSE(sv.dynamic_allocated());
+    EXPECT_EQ(sv.capacity(), sv.static_capacity());
 }
 
 TEST(small_vector, constructor)

@@ -15,6 +15,17 @@ namespace detail
         throw std::length_error("length error");
     }
 
+    auto small_vector_impl::get_mem_size(
+        size_type current, size_type required
+    ) noexcept -> size_type
+    {
+        size_type new_size = current + current / 2;
+        if(new_size < required)
+            new_size = required;
+
+        return new_size;
+    }
+
     void fixed_vector_impl::throw_out_of_range()
     {
         throw std::out_of_range("out of range");
