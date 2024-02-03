@@ -5,9 +5,10 @@ on: [push, pull_request]
 jobs:
     GCC:
         runs-on: ubuntu-22.04
-
-        env:
-            BUILD_TYPE: Release
+        strategy:
+          fail-fast: false
+          matrix:
+            cxxstd: [20, 23]
 
         steps:
         - uses: actions/checkout@v4
@@ -18,7 +19,14 @@ jobs:
             sudo apt-get install -y cmake ninja-build gcc-12 libgtest-dev
 
         - name: Build
-          run: ./build.sh -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 -Dpapilio_build_unit_test=1 -Dpapilio_build_example=1
+          run: >
+            ./build.sh
+            -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_C_COMPILER=gcc-12
+            -DCMAKE_CXX_COMPILER=g++-12
+            -Dpapilio_build_unit_test=1
+            -Dpapilio_build_example=1
 
         - name: Test
           working-directory: ${{github.workspace}}/build
@@ -26,9 +34,10 @@ jobs:
 
     Clang:
         runs-on: ubuntu-22.04
-
-        env:
-            BUILD_TYPE: Release
+        strategy:
+          fail-fast: false
+          matrix:
+            cxxstd: [20]
 
         steps:
         - uses: actions/checkout@v4
@@ -39,7 +48,14 @@ jobs:
             sudo apt-get install -y cmake ninja-build clang libgtest-dev
 
         - name: Build
-          run: ./build.sh -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -Dpapilio_build_unit_test=1 -Dpapilio_build_example=1
+          run: >
+            ./build.sh
+            -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_C_COMPILER=clang
+            -DCMAKE_CXX_COMPILER=clang++
+            -Dpapilio_build_unit_test=1
+            -Dpapilio_build_example=1
 
         - name: Test
           working-directory: ${{github.workspace}}/build
@@ -47,9 +63,13 @@ jobs:
 
     MSVC:
       runs-on: windows-2022
+      strategy:
+        fail-fast: false
+        matrix:
+          cxxstd: [20, 23]
 
       env:
-        BUILD_TYPE: Release
+        VCPKG_BUILD_TYPE: release
         VCPKG_DEFAULT_TRIPLET: x64-windows
 
       steps:
@@ -63,7 +83,13 @@ jobs:
           C:\vcpkg\vcpkg.exe install gtest
 
       - name: Build
-        run: ./build.ps1 -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -Dpapilio_build_unit_test=1 -Dpapilio_build_example=1
+        run: >
+          ./build.ps1
+          -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          -Dpapilio_build_unit_test=1
+          -Dpapilio_build_example=1
 
       - name: Test
         working-directory: ${{github.workspace}}/build
