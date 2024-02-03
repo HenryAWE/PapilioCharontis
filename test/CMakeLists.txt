@@ -19,9 +19,6 @@ define_papilio_test(test_container)
 
 define_papilio_test(test_memory)
 
-define_papilio_test(test_format)
-target_compile_options(test_format PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/bigobj>)
-
 define_papilio_test(test_locale)
 
 define_papilio_test(test_print)
@@ -39,3 +36,5 @@ define_papilio_test(test_utf_string)
 if(${papilio_build_module})
     define_papilio_test(test_modules)
 endif()
+
+add_subdirectory(test_format)
