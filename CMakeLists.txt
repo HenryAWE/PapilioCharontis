@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
-# Use C++ 20
-set(CMAKE_CXX_STANDARD 20)
+# Use C++ 20 by default
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Force UTF-8 on MSVC
 add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")

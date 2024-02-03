@@ -9,11 +9,13 @@ if(${papilio_c_interface})
     target_sources(c_papilio PRIVATE "test/cpp.hint")
     target_link_libraries(c_papilio PUBLIC papilio)
 
-    add_executable(c_interface "example/c_interface.c")
-    target_link_libraries(c_interface PRIVATE c_papilio)
-    set_target_properties(c_interface
-        PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/example"
-    )
+    if(${papilio_build_example})
+        add_executable(c_interface "example/c_interface.c")
+        target_link_libraries(c_interface PRIVATE c_papilio)
+        set_target_properties(c_interface
+            PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/example"
+        )
+    endif()
 
     if(${papilio_build_unit_test})
         find_package(GTest CONFIG REQUIRED)
