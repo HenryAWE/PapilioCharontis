@@ -13,7 +13,7 @@
 
 #define PAPILIO_VERSION_MAJOR 0
 #define PAPILIO_VERSION_MINOR 2
-#define PAPILIO_VERSION_PATCH 0
+#define PAPILIO_VERSION_PATCH 1
 
 // clang-format on
 
