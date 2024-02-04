@@ -109,11 +109,14 @@ int main()
 NOTE: This feature requires you to compile the library with `papilio_build_module` set to `ON`. See [Custom Build](doc/en/custom_build.md) for more information.
 
 ## Documentation
-1. [Build the Project](doc/en/build.md)
-2. [Introduction to the Script](doc/en/script.md)
-3. [Frequently Asked Questions](doc/en/faq.md)
-
-[More Topics](doc/en/contents.md)
+1. [Build](doc/en/build.md): How to build the project.
+2. [Frequently Asked Questions](doc/en/faq.md)
+3. [Examples](doc/en/examples.md)
+4. [Introduction to the Script](doc/en/script.md)
+5. [Built-In Formatter](doc/en/builtin_formatter.md): Built-in formatter for common types. You can find documents for format specification of those common types.
+6. [Built-In Accessor](doc/en/builtin_accessor.md): Built-in accessor for common types.
+7. [Custom Formatter](doc/en/formatter.md): Add format support for custom types in order to output them.
+8. [Custom Accessor](doc/en/accessor.md): Add indexing, slicing and attribute support for custom type.
 
 ## License
 [MIT](LICENSE) License

@@ -92,7 +92,7 @@ papilio::format("{[-1]:}", "hello world");  // 返回 "d"
 可以在格式化函数中方便地操作 Unicode 字符串。
 ```c++
 papilio::format("{[:2]}", "你好，世界");
-// 返回 "你好"，而不是返回无法表达有意义字符的前两个字节
+// 返回 "你好" 而不是无法表示有意义字符的前两个字节
 papilio::format("长度：{0.length}；大小：{0.size}", "你好，世界");
 // 返回 "长度：5；大小：15"
 ```
@@ -110,11 +110,14 @@ int main()
 注意：这个特性需要将 `papilio_build_module` 设置为 `ON` 来编译库。详细信息请参阅 [自定义构建](doc/zh-CN/custom_build.md)。
 
 ## 文档
-1. [构建项目](doc/zh-CN/build.md)
-2. [脚本介绍](doc/zh-CN/script.md)
-3. [常见问题（FAQ）](doc/zh-CN/faq.md)
-
-[更多主题](doc/zh-CN/contents.md)
+1. [构建](doc/zh-CN/build.md)：如何构建项目
+2. [常见问题（FAQ）](doc/zh-CN/faq.md)
+3. [示例](doc/zh-CN/examples.md)
+4. [脚本介绍](doc/zh-CN/script.md)
+5. [内建格式化器（Formatter）](doc/zh-CN/builtin_formatter.md)：常见类型的内建格式化器，你可以在这里找到常见类型的格式化说明的文档
+6. [内建访问器（Accessor）](doc/zh-CN/builtin_accessor.md)：常见类型的内建访问器
+7. [自定义格式化器（Formatter）](doc/zh-CN/formatter.md)：为自定义类型添加格式化支持，使得它们能够被输出
+8. [自定义访问器（Accessor）](doc/zh-CN/accessor.md)：为自定义类添加索引、切片与属性支持
 
 ## 许可证
 [MIT](LICENSE) 许可证

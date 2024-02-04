@@ -31,6 +31,9 @@ ipapilio::ipapilio()
 
 void ipapilio::mainloop()
 {
+    papilio::println("Papilio Charontis {0[0]}.{0[1]}.{0[2]}", papilio::get_version());
+    papilio::println("Type \"help\" for more information.");
+
     while(!m_quit)
     {
         std::string cmd_id = detail::input(std::cin);
