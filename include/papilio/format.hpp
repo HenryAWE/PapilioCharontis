@@ -3,7 +3,6 @@
 #include "macros.hpp"
 #include "core.hpp"
 #include "script.hpp"
-#include "format/fundamental.hpp"
 
 namespace papilio
 {
@@ -512,3 +511,6 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
     );
 }
 } // namespace papilio
+
+#include "format/fundamental.hpp"
+#include "format/misc.hpp"

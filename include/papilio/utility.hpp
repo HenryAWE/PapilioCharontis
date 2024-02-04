@@ -865,4 +865,92 @@ constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noe
 
     return names[static_cast<std::size_t>(value) + 128];
 }
+
+namespace detail
+{
+    template <typename CharT>
+    class joiner_base
+    {
+    public:
+        using char_type = CharT;
+        using string_view_type = std::basic_string_view<CharT>;
+
+        inline static const string_view_type default_sep =
+            PAPILIO_TSTRING_VIEW(CharT, ", ");
+    };
+} // namespace detail
+
+template <std::ranges::range R, typename CharT = char>
+class joiner : public detail::joiner_base<CharT>
+{
+    using my_base = detail::joiner_base<CharT>;
+
+public:
+    using char_type = CharT;
+    using string_view_type = std::basic_string_view<CharT>;
+    using range_type = R;
+
+    joiner() = delete;
+
+    joiner(const joiner&) noexcept = default;
+
+    explicit joiner(R& rng, string_view_type sep = my_base::default_sep)
+        : m_p_rng(std::addressof(rng)), m_sep(sep) {}
+
+    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const joiner& j)
+    {
+        bool first = true;
+
+        for(auto&& i : *j.m_p_rng)
+        {
+            if(!first)
+            {
+                os << j.m_sep;
+            }
+            first = false;
+
+            os << i;
+        }
+
+        return os;
+    }
+
+    auto begin() const
+    {
+        return std::ranges::begin(*m_p_rng);
+    }
+
+    auto end() const
+    {
+        return std::ranges::end(*m_p_rng);
+    }
+
+    [[nodiscard]]
+    string_view_type separator() const noexcept
+    {
+        return m_sep;
+    }
+
+private:
+    R* m_p_rng;
+    string_view_type m_sep;
+};
+
+template <typename CharT = char, std::ranges::range R>
+auto join(R& rng)
+{
+    return joiner<R, CharT>(rng);
+}
+
+template <typename CharT = char, std::ranges::range R>
+auto join(R& rng, std::basic_string_view<CharT> sep)
+{
+    return joiner<R, CharT>(rng, sep);
+}
+
+template <typename CharT = char, std::ranges::range R>
+auto join(R& rng, const CharT* sep)
+{
+    return joiner<R, CharT>(rng, sep);
+}
 } // namespace papilio

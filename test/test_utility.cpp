@@ -329,6 +329,38 @@ TEST(enum_name, enum_name)
     EXPECT_EQ(enum_name(second, true), "second");
 }
 
+TEST(join, ostream)
+{
+    {
+        std::stringstream ss;
+
+        int arr[4] = {1, 2, 3, 4};
+        ss << papilio::join(arr);
+
+        EXPECT_EQ(ss.str(), "1, 2, 3, 4");
+    }
+    
+    {
+        using namespace std::literals;
+
+        std::stringstream ss;
+
+        int arr[4] = {1, 2, 3, 4};
+        ss << papilio::join(arr, " | "sv);
+
+        EXPECT_EQ(ss.str(), "1 | 2 | 3 | 4");
+    }
+    
+    {
+        std::stringstream ss;
+
+        int arr[4] = {1, 2, 3, 4};
+        ss << papilio::join(arr, "-");
+
+        EXPECT_EQ(ss.str(), "1-2-3-4");
+    }
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

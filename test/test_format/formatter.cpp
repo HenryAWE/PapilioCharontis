@@ -229,3 +229,32 @@ TEST(format, magic_enum)
     EXPECT_EQ(PAPILIO_NS format(L"{}", dog), L"dog");
     EXPECT_EQ(PAPILIO_NS format(L"{:d}", cat), L"1");
 }
+
+TEST(format, join)
+{
+    using namespace papilio;
+
+    {
+        int arr[4] = {1, 2, 3, 4};
+        EXPECT_EQ(
+            PAPILIO_NS format("{}", PAPILIO_NS join(arr)),
+            "1, 2, 3, 4"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{}", PAPILIO_NS join<wchar_t>(arr)),
+            L"1, 2, 3, 4"
+        );
+    }
+
+    {
+        int arr[4] = {1, 2, 3, 4};
+        EXPECT_EQ(
+            PAPILIO_NS format("{}", PAPILIO_NS join(arr, " | ")),
+            "1 | 2 | 3 | 4"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{}", PAPILIO_NS join(arr, L" | ")),
+            L"1 | 2 | 3 | 4"
+        );
+    }
+}
