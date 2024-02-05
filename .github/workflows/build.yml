@@ -37,6 +37,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
+            compiler: [14, 15]
             cxxstd: [20]
 
         steps:
@@ -45,15 +46,15 @@ jobs:
         - name: Install Dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build clang libgtest-dev
+            sudo apt-get install -y cmake ninja-build clang-${{matrix.compiler}} libgtest-dev
 
         - name: Build
           run: >
             ./build.sh
             -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
             -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_C_COMPILER=clang
-            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_C_COMPILER=clang-${{matrix.compiler}}
+            -DCMAKE_CXX_COMPILER=clang++-${{matrix.compiler}}
             -Dpapilio_build_unit_test=1
             -Dpapilio_build_example=1
 
