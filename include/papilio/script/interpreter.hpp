@@ -81,7 +81,7 @@ private:
         }
         else if constexpr(basic_string_like<arg_type, CharT>)
         {
-            return variant_type(in_place_type<string_container_type>, forward<T>(arg));
+            return variant_type(in_place_type<string_container_type>, std::forward<T>(arg));
         }
         else
         {
