@@ -248,7 +248,7 @@ private:
         {
             ++start;
 
-            interpreter_type intp;
+            interpreter_type intp{};
             ctx.advance_to(start);
             auto [arg, next_it] = intp.access(ctx);
 
@@ -278,7 +278,7 @@ private:
         else if(utf::is_digit(first_ch))
         {
             ++start;
-            std::size_t val = first_ch - U'0';
+            std::size_t val = static_cast<std::size_t>(first_ch - U'0');
 
             while(start != stop)
             {
@@ -286,7 +286,7 @@ private:
                 if(!utf::is_digit(ch))
                     break;
                 val *= 10;
-                val += ch - U'0';
+                val += static_cast<std::size_t>(ch - U'0');
 
                 ++start;
             }
@@ -816,7 +816,7 @@ public:
 
         parser_t parser;
 
-        typename ParseContext::iterator it;
+        typename ParseContext::iterator it{};
         std::tie(m_data, it) = parser.parse(ctx, U"XxBbodc"sv);
 
         ctx.advance_to(it);
@@ -860,7 +860,7 @@ public:
 
         parser_t parser;
 
-        typename ParseContext::iterator it;
+        typename ParseContext::iterator it{};
         std::tie(m_data, it) = parser.parse(ctx, U"fFgGeEaA"sv);
 
         ctx.advance_to(it);
@@ -892,7 +892,7 @@ public:
 
         parser_t parser;
 
-        typename ParseContext::iterator it;
+        typename ParseContext::iterator it{};
         std::tie(m_data, it) = parser.parse(ctx, U"XxBbodc"sv);
 
         ctx.advance_to(it);
@@ -933,7 +933,7 @@ public:
 
         parser_t parser;
 
-        typename ParseContext::iterator it;
+        typename ParseContext::iterator it{};
         std::tie(m_data, it) = parser.parse(ctx, U"sXxBbod"sv);
 
         ctx.advance_to(it);
@@ -995,7 +995,7 @@ public:
 
         parser_t parser;
 
-        typename ParseContext::iterator it;
+        typename ParseContext::iterator it{};
         std::tie(m_data, it) = parser.parse(ctx, U"s"sv);
 
         ctx.advance_to(it);
@@ -1027,7 +1027,7 @@ public:
 
         parser_t parser;
 
-        typename ParseContext::iterator it;
+        typename ParseContext::iterator it{};
         std::tie(m_data, it) = parser.parse(ctx, U"pP"sv);
 
         if(m_data.use_locale)

@@ -5,7 +5,7 @@
 
 namespace papilio
 {
-template <typename R, typename CharT>
+PAPILIO_EXPORT template <typename R, typename CharT>
 class formatter<joiner<R, CharT>>
 {
 public:

@@ -916,21 +916,15 @@ public:
         return data()[pos];
     }
 
-    // clang-format off
-
-    [[nodiscard]]
     reference operator[](size_type pos) noexcept
     {
         return data()[pos];
     }
 
-    [[nodiscard]]
     const_reference operator[](size_type pos) const noexcept
     {
         return data()[pos];
     }
-
-    // clang-format on
 
     [[nodiscard]]
     reference front() noexcept

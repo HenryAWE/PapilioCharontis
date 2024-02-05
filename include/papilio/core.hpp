@@ -828,15 +828,10 @@ namespace detail
         virtual size_type indexed_size() const noexcept = 0;
         virtual size_type named_size() const noexcept = 0;
 
-        // clang-format off
-
-        [[nodiscard]]
         const format_arg_type& operator[](const indexing_value_type& idx) const
         {
             return get(idx);
         }
-
-        // clang-format on
 
     protected:
         [[noreturn]]
@@ -1499,8 +1494,6 @@ PAPILIO_EXPORT using wdynamic_format_args = basic_dynamic_format_args<wformat_co
 
 namespace detail
 {
-    // clang-format off
-
     template <
         typename T,
         typename Context,
@@ -1515,8 +1508,6 @@ namespace detail
                 cf.format(val, fmt_ctx)
             } -> std::same_as<typename Context::iterator>;
         };
-
-    // clang-format on
 } // namespace detail
 
 PAPILIO_EXPORT template <typename T, typename Context>

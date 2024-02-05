@@ -242,15 +242,10 @@ public:
         );
     }
 
-    // clang-format off
-
-    [[nodiscard]]
     std::partial_ordering operator<=>(const basic_variable& rhs) const
     {
         return compare(rhs);
     }
-
-    // clang-format on
 
     [[nodiscard]]
     bool equal(

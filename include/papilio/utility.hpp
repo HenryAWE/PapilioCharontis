@@ -87,19 +87,23 @@ concept pair_like = detail::pair_like_helper<std::remove_cvref_t<T>>;
 
 namespace detail
 {
-    // clang-format off
-
     template <typename MapType, typename Key, typename T>
     concept map_like_impl =
         requires(MapType m, const MapType cm, const Key& k) {
             typename MapType::key_compare;
-            { m.find(k) } -> std::convertible_to<typename MapType::iterator>;
-            { m.end() } -> std::equality_comparable_with<typename MapType::iterator>;
-            { cm.find(k) } -> std::convertible_to<typename MapType::const_iterator>;
-            { cm.end() } -> std::equality_comparable_with<typename MapType::const_iterator>;
+            {
+                m.find(k)
+            } -> std::convertible_to<typename MapType::iterator>;
+            {
+                m.end()
+            } -> std::equality_comparable_with<typename MapType::iterator>;
+            {
+                cm.find(k)
+            } -> std::convertible_to<typename MapType::const_iterator>;
+            {
+                cm.end()
+            } -> std::equality_comparable_with<typename MapType::const_iterator>;
         };
-
-    // clang-format on
 } // namespace detail
 
 PAPILIO_EXPORT template <typename MapType>
@@ -834,7 +838,7 @@ namespace detail
     }
 } // namespace detail
 
-template <auto Value>
+PAPILIO_EXPORT template <auto Value>
 constexpr std::string_view static_enum_name(bool remove_qualifier = false)
 {
     constexpr std::string_view name = detail::static_enum_name_impl<Value>();
@@ -852,7 +856,7 @@ constexpr std::string_view static_enum_name(bool remove_qualifier = false)
     return name;
 }
 
-template <typename T>
+PAPILIO_EXPORT template <typename T>
 requires std::is_enum_v<T>
 constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noexcept
 {
@@ -880,7 +884,7 @@ namespace detail
     };
 } // namespace detail
 
-template <std::ranges::range R, typename CharT = char>
+PAPILIO_EXPORT template <std::ranges::range R, typename CharT = char>
 class joiner : public detail::joiner_base<CharT>
 {
     using my_base = detail::joiner_base<CharT>;
@@ -936,19 +940,19 @@ private:
     string_view_type m_sep;
 };
 
-template <typename CharT = char, std::ranges::range R>
+PAPILIO_EXPORT template <typename CharT = char, std::ranges::range R>
 auto join(R& rng)
 {
     return joiner<R, CharT>(rng);
 }
 
-template <typename CharT = char, std::ranges::range R>
+PAPILIO_EXPORT template <typename CharT = char, std::ranges::range R>
 auto join(R& rng, std::basic_string_view<CharT> sep)
 {
     return joiner<R, CharT>(rng, sep);
 }
 
-template <typename CharT = char, std::ranges::range R>
+PAPILIO_EXPORT template <typename CharT = char, std::ranges::range R>
 auto join(R& rng, const CharT* sep)
 {
     return joiner<R, CharT>(rng, sep);

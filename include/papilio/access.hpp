@@ -133,47 +133,37 @@ public:
         : m_name(std::forward<Args>(args)...)
     {}
 
-    // clang-format off
-
     bool operator==(const basic_attribute_name& rhs) const noexcept = default;
 
-    [[nodiscard]]
     friend bool operator==(const basic_attribute_name& lhs, const string_type& rhs) noexcept
     {
         return lhs.m_name == rhs;
     }
 
-    [[nodiscard]]
     friend bool operator==(const string_type& lhs, const basic_attribute_name& rhs) noexcept
     {
         return lhs == rhs.m_name;
     }
 
-    [[nodiscard]]
     friend bool operator==(const basic_attribute_name& lhs, string_view_type rhs) noexcept
     {
         return lhs.m_name == rhs;
     }
 
-    [[nodiscard]]
     friend bool operator==(string_view_type lhs, const basic_attribute_name& rhs) noexcept
     {
         return lhs == rhs.m_name;
     }
 
-    [[nodiscard]]
     friend bool operator==(const basic_attribute_name& lhs, const char* rhs) noexcept
     {
         return lhs.m_name == rhs;
     }
 
-    [[nodiscard]]
     friend bool operator==(const char* lhs, const basic_attribute_name& rhs) noexcept
     {
         return lhs == rhs.m_name;
     }
-
-    // clang-format on
 
     [[nodiscard]]
     const string_container_type& name() const noexcept
