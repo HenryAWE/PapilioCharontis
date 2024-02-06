@@ -6,38 +6,63 @@
 namespace papilio
 {
 PAPILIO_EXPORT template <typename R, typename CharT>
-class formatter<joiner<R, CharT>>
+class formatter<joiner<R, CharT>, CharT>
 {
 public:
+    formatter() = default;
+    formatter(const formatter&) = default;
+
+    formatter& operator=(const formatter&) = default;
+
     using joiner_t = joiner<R, CharT>;
 
-    template <typename ParseContext>
-    auto parse(ParseContext& ctx)
+    template <typename ParseContext, typename FormatContext>
+    auto format(const joiner_t& j, ParseContext& parse_ctx, FormatContext& fmt_ctx) const
     {
-        return ctx.begin();
-    }
+        using value_t = std::ranges::range_value_t<typename joiner_t::range_type>;
+        using formatter_t = typename FormatContext::template formatter_type<value_t>;
 
-    template <typename FormatContext>
-    auto format(const joiner_t& j, FormatContext& ctx) const
-    {
-        using context_t = format_context_traits<FormatContext>;
-
-        bool first = true;
-
-        for(auto&& i : j)
+        if constexpr(formatter_traits<formatter_t>::template parsable<FormatContext>())
         {
-            if(!first)
-            {
-                context_t::append(ctx, j.separator());
-            }
-            first = false;
+            formatter_t fmt;
+            parse_ctx.advance_to(fmt.parse(parse_ctx));
 
-            ctx.advance_to(
-                PAPILIO_NS format_to(ctx.out(), "{}", i)
-            );
+            bool first = true;
+            for(auto&& i : j)
+            {
+                if(!first)
+                    append_sep(fmt_ctx, j);
+                first = false;
+
+                fmt_ctx.advance_to(
+                    fmt.format(i, fmt_ctx)
+                );
+            }
+        }
+        else
+        {
+            bool first = true;
+            for(auto&& i : j)
+            {
+                if(!first)
+                    append_sep(fmt_ctx, j);
+                first = false;
+
+                fmt_ctx.advance_to(
+                    PAPILIO_NS format_to(fmt_ctx.out(), "{}", i)
+                );
+            }
         }
 
-        return ctx.out();
+        return fmt_ctx.out();
+    }
+
+private:
+    template <typename FormatContext>
+    static void append_sep(FormatContext& fmt_ctx, const joiner_t& j)
+    {
+        using context_t = format_context_traits<FormatContext>;
+        context_t::append(fmt_ctx, j.separator());
     }
 };
 } // namespace papilio

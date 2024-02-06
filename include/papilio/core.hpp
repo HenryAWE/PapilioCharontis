@@ -1212,7 +1212,7 @@ namespace detail
         } -> std::same_as<typename FormatContext::iterator>;
     };
 
-    template <typename T, typename ParseContext, typename FormatContext>
+    template <typename T, typename FormatContext>
     concept check_adl_format =
         check_adl_format_simple<T, FormatContext> ||
         check_adl_format_complex<T, FormatContext>;
@@ -1237,18 +1237,16 @@ namespace detail
 
 PAPILIO_EXPORT template <
     typename T,
-    typename ParseContext = basic_format_parse_context<format_context>,
     typename FormatContext = format_context>
 struct has_adl_format :
-    public std::bool_constant<detail::check_adl_format<T, ParseContext, FormatContext>>
+    public std::bool_constant<detail::check_adl_format<T, FormatContext>>
 {};
 
 PAPILIO_EXPORT template <
     typename T,
-    typename ParseContext = basic_format_parse_context<format_context>,
     typename FormatContext = format_context>
 inline constexpr bool has_adl_format_v =
-    has_adl_format<T, ParseContext, FormatContext>::value;
+    has_adl_format<T, FormatContext>::value;
 
 PAPILIO_EXPORT template <typename T, typename FormatContext = format_context>
 class adl_format_adaptor

@@ -257,4 +257,20 @@ TEST(format, join)
             L"1 | 2 | 3 | 4"
         );
     }
+
+    {
+        int arr[4] = {1, 2, 3, 4};
+
+        static_assert(formattable<decltype(join(arr, "|"))>);
+        static_assert(formattable<decltype(join(arr, L"|")), wchar_t>);
+
+        EXPECT_EQ(
+            PAPILIO_NS format("{:02}", PAPILIO_NS join(arr, " | ")),
+            "01 | 02 | 03 | 04"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{:02}", PAPILIO_NS join(arr, L" | ")),
+            L"01 | 02 | 03 | 04"
+        );
+    }
 }

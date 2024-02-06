@@ -55,7 +55,7 @@ inline bool basic_format_arg<Context>::is_formattable() const noexcept
             }
             else
             {
-                return formattable<T, char_type>;
+                return formattable_with<T, Context>;
             }
         }
     );
