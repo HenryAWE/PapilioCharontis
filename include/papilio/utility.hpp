@@ -641,7 +641,7 @@ PAPILIO_EXPORT template <typename T1, typename T2>
 class compressed_pair :
     public detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>
 {
-    using base = detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>;
+    using my_base = detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>;
 
 public:
     constexpr compressed_pair() = default;
@@ -649,16 +649,16 @@ public:
     constexpr compressed_pair(compressed_pair&&) = default;
 
     constexpr compressed_pair(const T1& v1, const T2& v2)
-        : base(v1, v2) {}
+        : my_base(v1, v2) {}
 
     template <typename U1, typename U2>
     constexpr compressed_pair(U1&& v1, U2&& v2)
-        : base(std::forward<U1>(v1), std::forward<U2>(v2))
+        : my_base(std::forward<U1>(v1), std::forward<U2>(v2))
     {}
 
     template <typename... Args1, typename... Args2>
     constexpr compressed_pair(std::piecewise_construct_t, std::tuple<Args1...> args1, std::tuple<Args2...> args2)
-        : base(
+        : my_base(
               args1,
               args2,
               std::make_index_sequence<sizeof...(Args1)>(),
@@ -696,13 +696,13 @@ PAPILIO_EXPORT template <
 class basic_iterbuf :
     public detail::basic_iterbuf_base<std::input_iterator<Iterator>, CharT>
 {
-    using base = detail::basic_iterbuf_base<std::input_iterator<Iterator>, CharT>;
+    using my_base = detail::basic_iterbuf_base<std::input_iterator<Iterator>, CharT>;
 
 public:
     using char_type = CharT;
     using iterator = Iterator;
-    using int_type = typename base::int_type;
-    using traits_type = typename base::traits_type;
+    using int_type = typename my_base::int_type;
+    using traits_type = typename my_base::traits_type;
 
     basic_iterbuf() = default;
 
@@ -734,7 +734,7 @@ protected:
         }
         else
         {
-            return base::underflow();
+            return my_base::underflow();
         }
     }
 
@@ -748,7 +748,7 @@ protected:
         }
         else
         {
-            return base::overflow(c);
+            return my_base::overflow(c);
         }
     }
 
@@ -775,7 +775,7 @@ PAPILIO_EXPORT template <
     std::output_iterator<CharT> Iterator>
 class basic_oiterstream : public std::basic_ostream<CharT>
 {
-    using base = std::basic_ostream<CharT>;
+    using my_base = std::basic_ostream<CharT>;
 
 public:
     using iterator = Iterator;
@@ -783,11 +783,11 @@ public:
     basic_oiterstream() = default;
 
     basic_oiterstream(Iterator iter)
-        : base(&m_buf), m_buf(std::move(iter)) {}
+        : my_base(&m_buf), m_buf(std::move(iter)) {}
 
     template <typename... Args>
     basic_oiterstream(std::in_place_t, Args&&... args)
-        : base(&m_buf), m_buf(std::in_place, std::forward<Args>(args)...)
+        : my_base(&m_buf), m_buf(std::in_place, std::forward<Args>(args)...)
     {}
 
     [[nodiscard]]
