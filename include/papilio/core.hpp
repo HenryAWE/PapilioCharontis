@@ -1194,6 +1194,77 @@ auto make_wformat_args(Args&&... args)
     return result_type(std::forward<Args>(args)...);
 }
 
+namespace detail
+{
+    template <typename T, typename FormatContext>
+    concept check_adl_format_simple = requires(T&& val, FormatContext fmt_ctx) {
+        {
+            format(val, fmt_ctx)
+        } -> std::same_as<typename FormatContext::iterator>;
+    };
+
+    template <typename T, typename FormatContext>
+    concept check_adl_format_complex = requires(
+        T&& val, basic_format_parse_context<FormatContext> parse_ctx, FormatContext fmt_ctx
+    ) {
+        {
+            format(val, parse_ctx, fmt_ctx)
+        } -> std::same_as<typename FormatContext::iterator>;
+    };
+
+    template <typename T, typename ParseContext, typename FormatContext>
+    concept check_adl_format =
+        check_adl_format_simple<T, FormatContext> ||
+        check_adl_format_complex<T, FormatContext>;
+
+    template <typename T, typename ParseContext, typename FormatContext>
+    void invoke_adl_format(T&& val, ParseContext& parse_ctx, FormatContext& fmt_ctx)
+    {
+        if constexpr(detail::check_adl_format_simple<T, FormatContext>)
+        {
+            fmt_ctx.advance_to(
+                format(val, fmt_ctx)
+            );
+        }
+        else
+        {
+            fmt_ctx.advance_to(
+                format(val, parse_ctx, fmt_ctx)
+            );
+        }
+    }
+} // namespace detail
+
+PAPILIO_EXPORT template <
+    typename T,
+    typename ParseContext = basic_format_parse_context<format_context>,
+    typename FormatContext = format_context>
+struct has_adl_format :
+    public std::bool_constant<detail::check_adl_format<T, ParseContext, FormatContext>>
+{};
+
+PAPILIO_EXPORT template <
+    typename T,
+    typename ParseContext = basic_format_parse_context<format_context>,
+    typename FormatContext = format_context>
+inline constexpr bool has_adl_format_v =
+    has_adl_format<T, ParseContext, FormatContext>::value;
+
+PAPILIO_EXPORT template <typename T, typename FormatContext = format_context>
+class adl_format_adaptor
+{
+public:
+    using parse_context = basic_format_parse_context<FormatContext>;
+
+    auto format(const T& val, parse_context& parse_ctx, FormatContext& fmt_ctx) const
+        -> typename FormatContext::iterator
+    {
+        detail::invoke_adl_format(val, parse_ctx, fmt_ctx);
+
+        return fmt_ctx.out();
+    }
+};
+
 template <typename T, typename CharT = char>
 concept streamable =
     requires(std::basic_ostream<CharT>& os, const T& val) {
@@ -1243,21 +1314,29 @@ private:
 
 namespace detail
 {
-    template <typename T, typename CharT>
+    template <typename T, typename Context, typename CharT>
     struct select_formatter
     {
         using type = formatter<T, CharT>;
     };
 
-    template <typename T, typename CharT>
-    requires(!std::semiregular<formatter<T, CharT>> && streamable<T, CharT>)
-    struct select_formatter<T, CharT>
+    template <typename T, typename Context, typename CharT>
+    requires(!std::semiregular<formatter<T, CharT>> && has_adl_format_v<T, Context>)
+    struct select_formatter<T, Context, CharT>
+    {
+        using type = adl_format_adaptor<T, Context>;
+    };
+
+    template <typename T, typename Context, typename CharT>
+    requires(!std::semiregular<formatter<T, CharT>> && !has_adl_format_v<T, Context> && streamable<T, CharT>)
+    struct select_formatter<T, Context, CharT>
     {
         using type = streamable_formatter<T, CharT>;
     };
 
-    template <typename T, typename CharT>
-    using select_formatter_t = typename select_formatter<T, CharT>::type;
+    template <typename T, typename Context>
+    using select_formatter_t =
+        typename select_formatter<T, Context, typename Context::char_type>::type;
 } // namespace detail
 
 PAPILIO_EXPORT template <typename OutputIt, typename CharT>
@@ -1269,7 +1348,7 @@ public:
     using format_args_type = basic_format_args_ref<basic_format_context, char_type>;
 
     template <typename T>
-    using formatter_type = detail::select_formatter_t<T, char_type>;
+    using formatter_type = detail::select_formatter_t<T, basic_format_context>;
 
     basic_format_context(iterator it, format_args_type args)
         : m_out(std::move(it)), m_args(args), m_loc(nullptr) {}
@@ -1494,20 +1573,90 @@ PAPILIO_EXPORT using wdynamic_format_args = basic_dynamic_format_args<wformat_co
 
 namespace detail
 {
+    template <typename Formatter, typename ParseContext>
+    concept check_parse_method = requires(Formatter& f, ParseContext parse_ctx) {
+        {
+            f.parse(parse_ctx)
+        } -> std::same_as<typename ParseContext::iterator>;
+    };
+} // namespace detail
+
+PAPILIO_EXPORT template <typename Formatter>
+struct formatter_traits
+{
+    // Returns true if the formatter has a standalone parse function
+    template <typename ParseContext = format_parse_context>
+    static constexpr bool parsable() noexcept
+    {
+        return detail::check_parse_method<Formatter, ParseContext>;
+    }
+
+    template <typename T, typename ParseContext, typename FormatContext>
+    static void format(T&& val, ParseContext& parse_ctx, FormatContext& fmt_ctx)
+    {
+        using context_t = format_context_traits<FormatContext>;
+
+        Formatter fmt;
+
+        if constexpr(!parsable<ParseContext>())
+        {
+            context_t::advance_to(
+                fmt_ctx,
+                fmt.format(std::forward<T>(val), parse_ctx, fmt_ctx)
+            );
+        }
+        else
+        {
+            parse_ctx.advance_to(fmt.parse(parse_ctx));
+
+            context_t::advance_to(
+                fmt_ctx,
+                fmt.format(std::forward<T>(val), fmt_ctx)
+            );
+        }
+    }
+};
+
+namespace detail
+{
+    template <
+        typename T,
+        typename Formatter,
+        typename FormatContext>
+    concept check_format_method_separated = requires(const Formatter& cf, T&& val, FormatContext fmt_ctx) {
+        {
+            cf.format(val, fmt_ctx)
+        } -> std::same_as<typename FormatContext::iterator>;
+    };
+
+    template <
+        typename T,
+        typename Formatter,
+        typename FormatContext,
+        typename ParseContext>
+    concept check_format_method_combined = requires(const Formatter& cf, T&& val, FormatContext fmt_ctx, ParseContext parse_ctx) {
+        {
+            cf.format(val, parse_ctx, fmt_ctx)
+        } -> std::same_as<typename FormatContext::iterator>;
+    };
+
+    template <
+        typename T,
+        typename Formatter,
+        typename FormatContext,
+        typename ParseContext>
+    concept check_format_method =
+        check_format_method_combined<T, Formatter, FormatContext, ParseContext> ||
+        (formatter_traits<Formatter>::template parsable<ParseContext>() &&
+         check_format_method_separated<T, Formatter, FormatContext>);
+
     template <
         typename T,
         typename Context,
         typename Formatter = typename Context::template formatter_type<std::remove_const_t<T>>>
     concept formattable_with_impl =
         std::semiregular<Formatter> &&
-        requires(Formatter& f, const Formatter& cf, T&& val, Context fmt_ctx, basic_format_parse_context<Context> parse_ctx) {
-            {
-                f.parse(parse_ctx)
-            } -> std::same_as<typename decltype(parse_ctx)::iterator>;
-            {
-                cf.format(val, fmt_ctx)
-            } -> std::same_as<typename Context::iterator>;
-        };
+        check_format_method<T, Formatter, Context, basic_format_parse_context<Context>>;
 } // namespace detail
 
 PAPILIO_EXPORT template <typename T, typename Context>
