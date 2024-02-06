@@ -18,7 +18,7 @@ protected:
     }
 };
 
-std::string print_bool(bool value, const std::locale& loc)
+std::string bool_to_string(bool value, const std::locale& loc)
 {
     auto& f = std::use_facet<std::numpunct<char>>(loc);
     return value ?
@@ -27,29 +27,29 @@ std::string print_bool(bool value, const std::locale& loc)
 };
 } // namespace test_locale
 
-TEST(locale_ref, fallback)
+TEST(locale, locale_ref)
 {
     using namespace papilio;
     using namespace test_locale;
 
-    locale_ref c_loc;
-    EXPECT_TRUE(std::isalpha('A', c_loc));
-    EXPECT_FALSE(std::isalpha('1', c_loc));
+    // fallback to C locale
+    {
+        locale_ref c_loc;
+        EXPECT_TRUE(std::isalpha('A', c_loc));
+        EXPECT_FALSE(std::isalpha('1', c_loc));
 
-    EXPECT_EQ(print_bool(true, c_loc), "true");
-    EXPECT_EQ(print_bool(false, c_loc), "false");
-}
+        EXPECT_EQ(bool_to_string(true, c_loc), "true");
+        EXPECT_EQ(bool_to_string(false, c_loc), "false");
+    }
 
-TEST(locale_ref, custom_locale)
-{
-    using namespace papilio;
-    using namespace test_locale;
+    // custom locale
+    {
+        std::locale custom(std::locale("C"), new bool_yes_no);
+        locale_ref custom_ref = custom;
 
-    std::locale custom(std::locale("C"), new bool_yes_no);
-    locale_ref custom_ref = custom;
-
-    EXPECT_EQ(print_bool(true, custom_ref), "yes");
-    EXPECT_EQ(print_bool(false, custom_ref), "no");
+        EXPECT_EQ(bool_to_string(true, custom_ref), "yes");
+        EXPECT_EQ(bool_to_string(false, custom_ref), "no");
+    }
 }
 
 int main(int argc, char* argv[])

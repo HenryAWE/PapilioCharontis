@@ -210,106 +210,102 @@ TEST(compressed_pair, optimized)
     static_assert(!std::is_empty_v<compressed_pair<empty_1, empty_1>>);
 }
 
-TEST(basic_iter_buf, input)
+namespace test_utility
 {
-    using namespace papilio;
+template <typename CharT>
+void test_iter_buf_input()
+{
+    std::basic_string<CharT> src = PAPILIO_TSTRING(CharT, "12345");
 
-    std::string src = "12345";
-
-    using streambuf_type = iterbuf<decltype(std::begin(src))>;
+    using streambuf_type = papilio::basic_iterbuf<
+        CharT,
+        decltype(std::begin(src))>;
 
     streambuf_type sbuf(std::begin(src));
-    std::istream is(&sbuf);
+    std::basic_istream<CharT> is(&sbuf);
 
-    char result_buf[5]{};
+    CharT result_buf[5]{};
     is.read(result_buf, 5);
-    EXPECT_EQ(std::string_view(result_buf, 5), "12345");
-    EXPECT_EQ(sbuf.get(), src.end());
     EXPECT_TRUE(is.good());
+    EXPECT_EQ(sbuf.get(), src.end());
+
+    const auto expected_result = PAPILIO_TSTRING(CharT, "12345");
+    EXPECT_EQ(
+        std::basic_string_view<CharT>(result_buf, 5),
+        expected_result
+    );
 }
+} // namespace test_utility
+
+TEST(basic_iter_buf, input)
+{
+    using test_utility::test_iter_buf_input;
+
+    test_iter_buf_input<char>();
+    test_iter_buf_input<wchar_t>();
+}
+
+namespace test_utility
+{
+template <typename CharT>
+void test_iter_buf_output()
+{
+    using string_type = std::basic_string<CharT>;
+
+    string_type buf;
+
+    using streambuf_type = papilio::basic_iterbuf<
+        CharT,
+        std::back_insert_iterator<string_type>>;
+    streambuf_type sbuf(std::back_inserter(buf));
+    std::basic_ostream<CharT> os(&sbuf);
+
+    os << PAPILIO_TSTRING(CharT, "hello");
+    EXPECT_TRUE(os.good());
+
+    const auto hello_str = PAPILIO_TSTRING(CharT, "hello");
+    EXPECT_EQ(buf, hello_str);
+}
+} // namespace test_utility
 
 TEST(basic_iter_buf, output)
 {
-    using namespace papilio;
+    using test_utility::test_iter_buf_output;
 
-    std::string buf;
-
-    using streambuf_type = iterbuf<std::back_insert_iterator<std::string>>;
-
-    streambuf_type sbuf(std::back_inserter(buf));
-    std::ostream os(&sbuf);
-
-    os << "hello";
-    EXPECT_EQ(buf, "hello");
-    EXPECT_TRUE(os.good());
+    test_iter_buf_output<char>();
+    test_iter_buf_output<wchar_t>();
 }
 
-TEST(basic_iter_buf, winput)
+namespace test_utility
 {
-    using namespace papilio;
-
-    std::wstring src = L"12345";
-
-    using streambuf_type = witerbuf<decltype(std::begin(src))>;
-
-    streambuf_type sbuf(std::begin(src));
-    std::wistream is(&sbuf);
-
-    wchar_t result_buf[5]{};
-    is.read(result_buf, 5);
-    EXPECT_EQ(std::wstring_view(result_buf, 5), L"12345");
-    EXPECT_EQ(sbuf.get(), src.end());
-    EXPECT_TRUE(is.good());
-}
-
-TEST(basic_iter_buf, woutput)
+template <typename CharT>
+void test_oiterstream()
 {
-    using namespace papilio;
+    using string_type = std::basic_string<CharT>;
 
-    std::wstring buf;
+    string_type buf;
 
-    using streambuf_type = witerbuf<std::back_insert_iterator<std::wstring>>;
+    using os_t = papilio::basic_oiterstream<
+        CharT,
+        std::back_insert_iterator<string_type>>;
+    os_t os(std::back_inserter(buf));
 
-    streambuf_type sbuf(std::back_inserter(buf));
-    std::wostream os(&sbuf);
-
-    os << L"hello";
-    EXPECT_EQ(buf, L"hello");
+    os << PAPILIO_TSTRING(CharT, "hello");
+    os << CharT(' ');
+    os << 12345;
     EXPECT_TRUE(os.good());
+
+    const auto expected_result = PAPILIO_TSTRING(CharT, "hello 12345");
+    EXPECT_EQ(buf, expected_result);
 }
+} // namespace test_utility
 
 TEST(basic_oiterstream, char)
 {
-    using namespace papilio;
+    using test_utility::test_oiterstream;
 
-    std::string buf;
-    oiterstream<std::back_insert_iterator<std::string>> os(
-        std::back_inserter(buf)
-    );
-
-    os << "hello";
-    os << ' ';
-    os << 12345;
-
-    EXPECT_EQ(buf, "hello 12345");
-    EXPECT_TRUE(os.good());
-}
-
-TEST(basic_oiterstream, wchar_t)
-{
-    using namespace papilio;
-
-    std::wstring buf;
-    woiterstream<std::back_insert_iterator<std::wstring>> os(
-        std::back_inserter(buf)
-    );
-
-    os << L"hello";
-    os << L' ';
-    os << 12345;
-
-    EXPECT_EQ(buf, L"hello 12345");
-    EXPECT_TRUE(os.good());
+    test_oiterstream<char>();
+    test_oiterstream<wchar_t>();
 }
 
 TEST(enum_name, enum_name)
@@ -339,7 +335,7 @@ TEST(join, ostream)
 
         EXPECT_EQ(ss.str(), "1, 2, 3, 4");
     }
-    
+
     {
         using namespace std::literals;
 
@@ -350,7 +346,7 @@ TEST(join, ostream)
 
         EXPECT_EQ(ss.str(), "1 | 2 | 3 | 4");
     }
-    
+
     {
         std::stringstream ss;
 

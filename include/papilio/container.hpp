@@ -1189,7 +1189,7 @@ public:
     class value_compare :
         public detail::value_compare_base<key_compare, is_transparent_v<Compare>>
     {
-        using base = detail::value_compare_base<key_compare, is_transparent_v<Compare>>;
+        using my_base = detail::value_compare_base<key_compare, is_transparent_v<Compare>>;
 
     public:
         value_compare() = default;
@@ -1215,7 +1215,7 @@ public:
     private:
         friend class fixed_flat_map;
 
-        using base::base;
+        using my_base::my_base;
 
         const key_compare& as_key_comp() const noexcept
         {
