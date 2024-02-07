@@ -11,6 +11,21 @@ inline bool basic_format_arg<Context>::handle_impl<T>::is_formattable() const no
 
 template <typename Context>
 template <typename T>
+void basic_format_arg<Context>::handle_impl<T>::skip_spec(parse_context& parse_ctx) const
+{
+    if constexpr(formattable_with<value_type, Context>)
+    {
+        using formatter_t = typename Context::template formatter_type<value_type>;
+        formatter_traits<formatter_t>::skip_spec(parse_ctx);
+    }
+    else
+    {
+        throw_unformattable();
+    }
+}
+
+template <typename Context>
+template <typename T>
 void basic_format_arg<Context>::handle_impl_ptr<T>::format(parse_context& parse_ctx, Context& out_ctx) const
 {
     if constexpr(formattable_with<value_type, Context>)
@@ -77,6 +92,29 @@ void basic_format_arg<Context>::format(parse_context& parse_ctx, Context& out_ct
                 formatter_traits<formatter_t>::format(
                     v, parse_ctx, out_ctx
                 );
+            }
+            else
+            {
+                throw_unformattable();
+            }
+        }
+    );
+}
+
+template <typename Context>
+void basic_format_arg<Context>::skip_spec(parse_context& parse_ctx)
+{
+    visit(
+        [&]<typename T>(const T& v)
+        {
+            if constexpr(std::is_same_v<T, handle>)
+            {
+                v.skip_spec(parse_ctx);
+            }
+            else if constexpr(formattable_with<T, Context>)
+            {
+                using formatter_t = typename Context::template formatter_type<T>;
+                formatter_traits<formatter_t>::skip_spec(parse_ctx);
             }
             else
             {

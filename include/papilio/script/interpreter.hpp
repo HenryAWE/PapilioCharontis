@@ -986,10 +986,26 @@ private:
         return std::make_pair(std::move(arg), next_it);
     }
 
+    static void skip_repl(parse_context& parse_ctx)
+    {
+        auto [arg, next_it] = access(parse_ctx);
+
+        if(next_it == parse_ctx.end()) [[unlikely]]
+            my_base::throw_end_of_string();
+        if(*next_it == U':')
+            ++next_it;
+
+        parse_ctx.advance_to(next_it);
+        arg.skip_spec(parse_ctx);
+    }
+
     // NOTE: Call "skip_ws" before calling this function.
     // This function assumes start != stop.
-    static iterator skip_branch(iterator start, iterator stop)
+    static iterator skip_branch(parse_context& parse_ctx)
     {
+        auto start = parse_ctx.begin();
+        const auto stop = parse_ctx.end();
+
         PAPILIO_ASSERT(start != stop);
 
         if(char32_t ch = *start; ch == U'\'')
@@ -997,14 +1013,32 @@ private:
             ++start;
             return my_base::skip_string(start, stop);
         }
+        else if(ch == U'{')
+        {
+            ++start;
+            parse_ctx.advance_to(start);
+            skip_repl(parse_ctx);
+
+            start = parse_ctx.begin();
+            if(start == parse_ctx.end()) [[unlikely]]
+                my_base::throw_end_of_string();
+            if(*start != U'}') [[unlikely]]
+                my_base::throw_error(script_error_code::unclosed_brace, start);
+            ++start;
+
+            return start;
+        }
         else
         {
             my_base::throw_error(script_error_code::invalid_string, start);
         }
     }
 
-    static iterator exec_branch(iterator start, iterator stop, FormatContext& fmt_ctx)
+    static iterator exec_branch(parse_context& parse_ctx, FormatContext& fmt_ctx)
     {
+        auto start = parse_ctx.begin();
+        const auto stop = parse_ctx.end();
+
         PAPILIO_ASSERT(start != stop);
 
         using context_t = format_context_traits<FormatContext>;
@@ -1020,6 +1054,21 @@ private:
 
             return start;
         }
+        else if(ch == U'{')
+        {
+            ++start;
+            parse_ctx.advance_to(start);
+            exec_repl(parse_ctx, fmt_ctx);
+
+            start = parse_ctx.begin();
+            if(start == parse_ctx.end()) [[unlikely]]
+                my_base::throw_end_of_string();
+            if(*start != U'}') [[unlikely]]
+                my_base::throw_error(script_error_code::unclosed_brace, start);
+            ++start;
+
+            return start;
+        }
         else
         {
             my_base::throw_error(script_error_code::invalid_string, start);
@@ -1027,17 +1076,22 @@ private:
     }
 
     static iterator exec_branch_if(
-        bool cond, iterator start, iterator stop, FormatContext& fmt_ctx
+        bool cond, parse_context& parse_ctx, FormatContext& fmt_ctx
     )
     {
-        start = my_base::skip_ws(start, stop);
+        auto start = my_base::skip_ws(
+            parse_ctx.begin(), parse_ctx.end()
+        );
+        const auto stop = parse_ctx.end();
+
         if(start == stop) [[unlikely]]
             my_base::throw_end_of_string();
+        parse_ctx.advance_to(start);
 
         if(cond)
-            start = exec_branch(start, stop, fmt_ctx);
+            start = exec_branch(parse_ctx, fmt_ctx);
         else
-            start = skip_branch(start, stop);
+            start = skip_branch(parse_ctx);
 
         return my_base::skip_ws(start, stop);
     }
@@ -1053,15 +1107,17 @@ private:
         bool cond_result = false;
         std::tie(cond_result, start) = parse_condition(parse_ctx, start, stop);
 
+        parse_ctx.advance_to(start);
         start = exec_branch_if(
-            cond_result, start, stop, fmt_ctx
+            cond_result, parse_ctx, fmt_ctx
         );
 
         if(start != stop && *start == U':')
         {
             ++start;
+            parse_ctx.advance_to(start);
             start = exec_branch_if(
-                !cond_result, start, stop, fmt_ctx
+                !cond_result, parse_ctx, fmt_ctx
             );
         }
 

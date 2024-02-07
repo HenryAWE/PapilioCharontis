@@ -132,6 +132,8 @@ private:
 
         virtual void format(parse_context& parse_ctx, Context& out_ctx) const = 0;
 
+        virtual void skip_spec(parse_context& parse_ctx) const = 0;
+
         virtual void copy(void* mem) const noexcept = 0;
 
         virtual void move(void* mem) noexcept = 0;
@@ -162,6 +164,8 @@ private:
         using accessor_t = accessor_traits<T, Context>;
 
         bool is_formattable() const noexcept final;
+
+        void skip_spec(parse_context& parse_ctx) const final;
 
         const std::type_info& type() const noexcept final
         {
@@ -363,6 +367,11 @@ public:
         void format(parse_context& parse_ctx, Context& out_ctx) const
         {
             ptr()->format(parse_ctx, out_ctx);
+        }
+
+        void skip_spec(parse_context& parse_ctx) const
+        {
+            ptr()->skip_spec(parse_ctx);
         }
 
         [[nodiscard]]
@@ -716,6 +725,8 @@ public:
     }
 
     void format(parse_context& parse_ctx, Context& out_ctx) const;
+
+    void skip_spec(parse_context& parse_ctx);
 
 private:
     variant_type m_val;
@@ -1550,6 +1561,29 @@ public:
         throw format_error("no default argument after an explicit argument");
     }
 
+    // Default implementation of skipping unused format specification.
+    // WARNING: This function cannot skip specification that contains unbalanced braces ("{" and "}")!
+    void skip_spec()
+    {
+        auto it = begin();
+
+        std::size_t counter = 0;
+        for(; it != end(); ++it)
+        {
+            char32_t ch = *it;
+            if(ch == U'{')
+                ++counter;
+            if(ch == U'}')
+            {
+                if(counter == 0)
+                    break;
+                --counter;
+            }
+        }
+
+        advance_to(it);
+    }
+
 private:
     string_ref_type m_ref;
     iterator m_it;
@@ -1594,7 +1628,7 @@ struct formatter_traits
     {
         using context_t = format_context_traits<FormatContext>;
 
-        Formatter fmt;
+        Formatter fmt{};
 
         if constexpr(!parsable<ParseContext>())
         {
@@ -1611,6 +1645,22 @@ struct formatter_traits
                 fmt_ctx,
                 fmt.format(std::forward<T>(val), fmt_ctx)
             );
+        }
+    }
+
+    template <typename ParseContext>
+    static void skip_spec(ParseContext& parse_ctx) noexcept
+    {
+        if constexpr(parsable<ParseContext>())
+        {
+            Formatter tmp{};
+            parse_ctx.advance_to(
+                tmp.parse(parse_ctx)
+            );
+        }
+        else
+        {
+            parse_ctx.skip_spec();
         }
     }
 };

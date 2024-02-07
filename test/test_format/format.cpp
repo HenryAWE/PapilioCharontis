@@ -140,6 +140,14 @@ TEST(format, composite)
         EXPECT_EQ(PAPILIO_NS format(fmt, 1), "There is 1 apple");
         EXPECT_EQ(PAPILIO_NS format(fmt, 2), "There are 2 apples");
     }
+
+    {
+        std::string_view fmt = "{${0}==0: 'zero' : {0}}";
+
+        EXPECT_EQ(PAPILIO_NS format(fmt, 0), "zero");
+        EXPECT_EQ(PAPILIO_NS format(fmt, 1), "1");
+        EXPECT_EQ(PAPILIO_NS format(fmt, 2), "2");
+    }
 }
 
 namespace test_format
@@ -240,5 +248,13 @@ TEST(format, wchar_t)
 
         EXPECT_EQ(PAPILIO_NS format(fmt, 1), L"1 warning");
         EXPECT_EQ(PAPILIO_NS format(fmt, 2), L"2 warnings");
+    }
+
+    {
+        std::wstring_view fmt = L"{${0}==0: 'zero' : {0}}";
+
+        EXPECT_EQ(PAPILIO_NS format(fmt, 0), L"zero");
+        EXPECT_EQ(PAPILIO_NS format(fmt, 1), L"1");
+        EXPECT_EQ(PAPILIO_NS format(fmt, 2), L"2");
     }
 }
