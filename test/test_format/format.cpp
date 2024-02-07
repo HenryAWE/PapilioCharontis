@@ -14,6 +14,10 @@ TEST(format, plain_text)
     EXPECT_EQ(PAPILIO_NS format(""), "");
     EXPECT_EQ(PAPILIO_NS format("plain text"), "plain text");
     EXPECT_EQ(PAPILIO_NS format("{{plain text}}"), "{plain text}");
+
+    EXPECT_EQ(PAPILIO_NS format(L""), L"");
+    EXPECT_EQ(PAPILIO_NS format(L"plain text"), L"plain text");
+    EXPECT_EQ(PAPILIO_NS format(L"{{plain text}}"), L"{plain text}");
 }
 
 TEST(format, format_to)
