@@ -43,8 +43,8 @@ target_sources(papilio PUBLIC "natvis/papilio.natvis")
 target_sources(papilio PUBLIC "cpp.hint")
 target_include_directories(papilio PUBLIC include)
 target_compile_options(papilio PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
 
 if(${papilio_build_example})
