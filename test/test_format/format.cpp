@@ -112,6 +112,28 @@ TEST(format, script)
     EXPECT_EQ(PAPILIO_NS format("{$ {} <= {}: 'le'}", 1, 2), "le");
     EXPECT_EQ(PAPILIO_NS format("{$ {} >= {}: 'ge'}", 1, 1), "ge");
     EXPECT_EQ(PAPILIO_NS format("{$ {} <= {}: 'le'}", 1, 1), "le");
+
+    {
+        std::string_view script = "{$ {}: 'a': ${}: 'b' : 'c'}";
+
+        EXPECT_EQ(PAPILIO_NS format(script, true, true), "a");
+        EXPECT_EQ(PAPILIO_NS format(script, true, false), "a");
+        EXPECT_THROW((void)PAPILIO_NS format(script, true), std::out_of_range);
+
+        EXPECT_EQ(PAPILIO_NS format(script, false, true), "b");
+        EXPECT_EQ(PAPILIO_NS format(script, false, false), "c");
+    }
+
+    {
+        std::string_view script = "{$ {}: 'a': ${}: 'b' : ${} : 'c'}";
+
+        EXPECT_EQ(PAPILIO_NS format(script, true, true, false), "a");
+        EXPECT_EQ(PAPILIO_NS format(script, true, false, false), "a");
+
+        EXPECT_EQ(PAPILIO_NS format(script, false, true, true), "b");
+        EXPECT_EQ(PAPILIO_NS format(script, false, false, true), "c");
+        EXPECT_EQ(PAPILIO_NS format(script, false, false, false), "");
+    }
 }
 
 TEST(format, composite)
@@ -256,5 +278,16 @@ TEST(format, wchar_t)
         EXPECT_EQ(PAPILIO_NS format(fmt, 0), L"zero");
         EXPECT_EQ(PAPILIO_NS format(fmt, 1), L"1");
         EXPECT_EQ(PAPILIO_NS format(fmt, 2), L"2");
+    }
+
+    {
+        std::wstring_view script = L"{$ {}: 'a': ${}: 'b' : 'c'}";
+
+        EXPECT_EQ(PAPILIO_NS format(script, true, true), L"a");
+        EXPECT_EQ(PAPILIO_NS format(script, true, false), L"a");
+        EXPECT_THROW((void)PAPILIO_NS format(script, true), std::out_of_range);
+
+        EXPECT_EQ(PAPILIO_NS format(script, false, true), L"b");
+        EXPECT_EQ(PAPILIO_NS format(script, false, false), L"c");
     }
 }

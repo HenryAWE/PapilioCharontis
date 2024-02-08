@@ -1104,6 +1104,8 @@ private:
         iterator start = parse_ctx.begin();
         const iterator stop = parse_ctx.end();
 
+        bool executed = false;
+
         bool cond_result = false;
         std::tie(cond_result, start) = parse_condition(parse_ctx, start, stop);
 
@@ -1111,14 +1113,39 @@ private:
         start = exec_branch_if(
             cond_result, parse_ctx, fmt_ctx
         );
+        executed |= cond_result;
 
-        if(start != stop && *start == U':')
+        while(start != stop && *start == U':')
         {
-            ++start;
-            parse_ctx.advance_to(start);
-            start = exec_branch_if(
-                !cond_result, parse_ctx, fmt_ctx
-            );
+            start = my_base::skip_ws(std::next(start), stop);
+            if(start != stop && *start == U'$')
+            {
+                start = my_base::skip_ws(std::next(start), stop);
+
+                parse_ctx.advance_to(start);
+                std::tie(cond_result, start) = parse_condition(
+                    parse_ctx, start, stop
+                );
+
+                bool exec_this_branch = !executed && cond_result;
+
+                parse_ctx.advance_to(start);
+                start = exec_branch_if(
+                    exec_this_branch, parse_ctx, fmt_ctx
+                );
+                executed |= exec_this_branch;
+
+                continue;
+            }
+            else
+            {
+                bool exec_this_branch = !executed;
+
+                parse_ctx.advance_to(start);
+                start = exec_branch_if(
+                    exec_this_branch, parse_ctx, fmt_ctx
+                );
+            }
         }
 
         parse_ctx.advance_to(start);
