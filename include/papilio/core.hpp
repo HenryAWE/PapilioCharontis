@@ -1157,15 +1157,6 @@ public:
 
     using my_base::check;
 
-    // WARNING: This function does not perform any runtime checks!
-    template <std::derived_from<my_base> T>
-    [[nodiscard]]
-    constexpr const T& cast_to() const noexcept
-    {
-        PAPILIO_ASSERT(dynamic_cast<const T*>(m_ptr));
-        return *static_cast<const T*>(m_ptr);
-    }
-
 private:
     const my_base* m_ptr;
 };
@@ -1314,7 +1305,7 @@ public:
 
         os << val;
 
-        return os.get();
+        return os.base();
     }
 
 private:

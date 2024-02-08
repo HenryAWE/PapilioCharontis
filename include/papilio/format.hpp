@@ -6,6 +6,7 @@
 
 namespace papilio
 {
+// NOTE: This class does not provide any compile-time check.
 PAPILIO_EXPORT template <typename CharT, typename... Args>
 class basic_format_string
 {

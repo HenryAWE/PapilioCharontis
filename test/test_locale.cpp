@@ -1,26 +1,25 @@
 #include <gtest/gtest.h>
-#include <sstream>
 #include <papilio/locale.hpp>
 
 namespace test_locale
 {
-class bool_yes_no : public std::numpunct<char>
+class my_numpunct : public std::numpunct<char>
 {
 protected:
     string_type do_truename() const override
     {
-        return "yes";
+        return "T";
     }
 
     string_type do_falsename() const override
     {
-        return "no";
+        return "F";
     }
 };
 
-std::string bool_to_string(bool value, const std::locale& loc)
+static std::string bool_to_string(bool value, const std::locale& loc)
 {
-    auto& f = std::use_facet<std::numpunct<char>>(loc);
+    const auto& f = std::use_facet<std::numpunct<char>>(loc);
     return value ?
                f.truename() :
                f.falsename();
@@ -44,11 +43,11 @@ TEST(locale, locale_ref)
 
     // custom locale
     {
-        std::locale custom(std::locale("C"), new bool_yes_no);
+        std::locale custom(std::locale("C"), new my_numpunct);
         locale_ref custom_ref = custom;
 
-        EXPECT_EQ(bool_to_string(true, custom_ref), "yes");
-        EXPECT_EQ(bool_to_string(false, custom_ref), "no");
+        EXPECT_EQ(bool_to_string(true, custom_ref), "T");
+        EXPECT_EQ(bool_to_string(false, custom_ref), "F");
     }
 }
 

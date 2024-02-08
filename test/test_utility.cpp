@@ -159,20 +159,21 @@ TEST(independent_t, proxy)
     }
 }
 
-namespace test_memory
+namespace test_utility
 {
 class empty_1
 {};
 
 class empty_2
 {};
-} // namespace test_memory
+} // namespace test_utility
 
 TEST(compressed_pair, normal)
 {
     using namespace papilio;
 
     compressed_pair<int, int> p_1{0, 1};
+    static_assert(tuple_like<decltype(p_1)>);
     static_assert(sizeof(p_1) == sizeof(int) * 2);
 
     EXPECT_EQ(p_1.first(), 0);
@@ -189,23 +190,33 @@ TEST(compressed_pair, normal)
     EXPECT_EQ(p_1.second(), 3);
     EXPECT_EQ(p_2.first(), 0);
     EXPECT_EQ(p_2.second(), 1);
+
+    {
+        auto& [a, b] = p_1;
+        EXPECT_EQ(a, 2);
+        EXPECT_EQ(b, 3);
+    }
 }
 
 TEST(compressed_pair, optimized)
 {
     using namespace papilio;
-    using namespace test_memory;
+    using namespace test_utility;
 
     compressed_pair<std::string, empty_1> p_1;
+    static_assert(tuple_like<decltype(p_1)>);
     static_assert(sizeof(p_1) == sizeof(std::string));
     compressed_pair<empty_1, std::string> p_2;
+    static_assert(tuple_like<decltype(p_2)>);
     static_assert(sizeof(p_2) == sizeof(std::string));
     compressed_pair<empty_1, empty_2> p_3;
+    static_assert(tuple_like<decltype(p_3)>);
     static_assert(sizeof(p_3) == 1);
     static_assert(std::is_empty_v<compressed_pair<empty_1, empty_2>>);
 
     // only optimize for the first member when T1 == T2
-    compressed_pair<empty_1, empty_1> p_4;
+    compressed_pair<empty_1, empty_1> p_4{};
+    static_assert(tuple_like<decltype(p_4)>);
     static_assert(sizeof(p_4) <= 2);
     static_assert(!std::is_empty_v<compressed_pair<empty_1, empty_1>>);
 }
@@ -227,7 +238,7 @@ void test_iter_buf_input()
     CharT result_buf[5]{};
     is.read(result_buf, 5);
     EXPECT_TRUE(is.good());
-    EXPECT_EQ(sbuf.get(), src.end());
+    EXPECT_EQ(sbuf.base(), src.end());
 
     const auto expected_result = PAPILIO_TSTRING(CharT, "12345");
     EXPECT_EQ(

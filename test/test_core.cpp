@@ -14,21 +14,21 @@ TEST(format_arg, constructor)
     }
 
     {
-        PAPILIO_NS format_arg fmt_arg('a');
+        format_arg fmt_arg('a');
         EXPECT_TRUE(fmt_arg.holds<utf::codepoint>());
         EXPECT_EQ(get<utf::codepoint>(fmt_arg), U'a');
         EXPECT_TRUE(fmt_arg.has_ownership());
     }
 
     {
-        PAPILIO_NS format_arg fmt_arg(1);
+        format_arg fmt_arg(1);
         EXPECT_TRUE(fmt_arg.holds<int>());
         EXPECT_EQ(get<int>(fmt_arg), 1);
         EXPECT_TRUE(fmt_arg.has_ownership());
     }
 
     {
-        PAPILIO_NS format_arg fmt_arg(1.0);
+        format_arg fmt_arg(1.0);
         EXPECT_TRUE(fmt_arg.holds<double>());
         EXPECT_DOUBLE_EQ(get<double>(fmt_arg), 1.0);
         EXPECT_TRUE(fmt_arg.has_ownership());
@@ -181,7 +181,7 @@ TEST(format_arg, access)
     using namespace papilio;
 
     {
-        PAPILIO_NS format_arg fmt_arg("test");
+        format_arg fmt_arg("test");
         EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
         EXPECT_FALSE(get<utf::string_container>(fmt_arg).has_ownership());
 
@@ -195,7 +195,7 @@ TEST(format_arg, access)
 
     {
         // "测试", test in Chinese
-        PAPILIO_NS format_arg fmt_arg("\u6d4b\u8bd5");
+        format_arg fmt_arg("\u6d4b\u8bd5");
         EXPECT_TRUE(fmt_arg.holds<utf::string_container>());
 
         EXPECT_EQ(get<std::size_t>(fmt_arg.attribute("length")), 2);
@@ -205,14 +205,14 @@ TEST(format_arg, access)
     }
 
     {
-        PAPILIO_NS format_arg fmt_arg("test");
+        format_arg fmt_arg("test");
 
         auto var = script::variable(fmt_arg.to_variant());
         EXPECT_EQ(var.as<utf::string_container>(), "test");
     }
 
     {
-        PAPILIO_NS format_arg fmt_arg("long sentence for testing slicing");
+        format_arg fmt_arg("long sentence for testing slicing");
 
         EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(0, 4))), "long");
         EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
@@ -289,20 +289,18 @@ TEST(format_args, ref)
 
     {
         dynamic_format_args underlying_fmt_args;
-        format_args_ref dyn_fmt_args(underlying_fmt_args);
+        format_args_ref args_ref(underlying_fmt_args);
 
-        EXPECT_EQ(&dyn_fmt_args.cast_to<dynamic_format_args>(), &underlying_fmt_args);
+        EXPECT_EQ(args_ref.indexed_size(), 0);
 
-        format_args_ref new_dyn_fmt_args(dyn_fmt_args);
-
-        EXPECT_EQ(&new_dyn_fmt_args.cast_to<dynamic_format_args>(), &underlying_fmt_args);
+        format_args_ref new_ref(args_ref);
     }
 
     {
         auto underlying_fmt_args = make_format_args(182375, 182376);
-        format_args_ref dyn_fmt_args(underlying_fmt_args);
+        format_args_ref args_ref(underlying_fmt_args);
 
-        EXPECT_EQ(&dyn_fmt_args.cast_to<decltype(underlying_fmt_args)>(), &underlying_fmt_args);
+        EXPECT_EQ(args_ref.indexed_size(), 2);
     }
 }
 
@@ -321,8 +319,7 @@ TEST(format_context, char)
         std::back_inserter(result), args
     );
 
-    using context_traits = format_context_traits<decltype(ctx)>;
-    EXPECT_EQ(&context_traits::get_args(ctx).cast_to<args_type>(), &args);
+    using context_traits = format_context_traits<context_type>;
 
     context_traits::append(ctx, "1234");
     EXPECT_EQ(result, "1234");
@@ -351,8 +348,7 @@ TEST(format_context, wchar_t)
         std::back_inserter(result), args
     );
 
-    using context_traits = format_context_traits<decltype(ctx)>;
-    EXPECT_EQ(&context_traits::get_args(ctx).cast_to<args_type>(), &args);
+    using context_traits = format_context_traits<context_type>;
 
     context_traits::append(ctx, L"1234");
     EXPECT_EQ(result, L"1234");

@@ -106,6 +106,20 @@ TEST(accessor, tuple)
         EXPECT_EQ(PAPILIO_NS format(L"{.size}", val), L"2");
         EXPECT_EQ(PAPILIO_NS format(L"{0.first} {0.second}", val), L"scene 182376");
     }
+
+    {
+        compressed_pair<std::string, int> val("scene", 182376);
+
+        EXPECT_EQ(PAPILIO_NS format("{.size}", val), "2");
+        EXPECT_EQ(PAPILIO_NS format("{0.first} {0.second}", val), "scene 182376");
+    }
+
+    {
+        compressed_pair<std::wstring, int> val(L"scene", 182376);
+
+        EXPECT_EQ(PAPILIO_NS format(L"{.size}", val), L"2");
+        EXPECT_EQ(PAPILIO_NS format(L"{0.first} {0.second}", val), L"scene 182376");
+    }
 }
 
 TEST(accessor, contiguous_range)

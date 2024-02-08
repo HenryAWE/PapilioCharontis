@@ -65,7 +65,7 @@ namespace detail
     {
         return (requires(Tuple tp) {
             typename std::tuple_element_t<Is, Tuple>;
-            std::get<Is>(tp);
+            get<Is>(tp);
         } && ...);
     }
 
@@ -648,6 +648,9 @@ class compressed_pair :
     using my_base = detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>;
 
 public:
+    using first_type = T1;
+    using second_type = T2;
+
     constexpr compressed_pair() = default;
     constexpr compressed_pair(const compressed_pair&) = default;
     constexpr compressed_pair(compressed_pair&&) = default;
@@ -669,6 +672,38 @@ public:
               std::make_index_sequence<sizeof...(Args2)>()
           )
     {}
+
+    template <std::size_t Index>
+    requires(Index < 2)
+    friend decltype(auto) get(compressed_pair& cp)
+    {
+        if constexpr(Index == 0)
+            return cp.first();
+        else
+            return cp.second();
+    }
+
+    template <std::size_t Index>
+    requires(Index < 2)
+    friend decltype(auto) get(compressed_pair&& cp)
+    {
+        if constexpr(Index == 0)
+            return cp.first();
+        else
+            return cp.second();
+    }
+
+    template <std::size_t Index>
+    requires(Index < 2)
+    friend decltype(auto) get(const compressed_pair& cp)
+    {
+        if constexpr(Index == 0)
+            return cp.first();
+        else
+            return cp.second();
+    }
+
+    // The specializations of tuple_element and tuple_size are at the end of this file.
 };
 
 namespace detail
@@ -719,7 +754,7 @@ public:
     {}
 
     [[nodiscard]]
-    Iterator get() const
+    Iterator base() const
     {
         return m_iter;
     }
@@ -789,15 +824,10 @@ public:
     basic_oiterstream(Iterator iter)
         : my_base(&m_buf), m_buf(std::move(iter)) {}
 
-    template <typename... Args>
-    basic_oiterstream(std::in_place_t, Args&&... args)
-        : my_base(&m_buf), m_buf(std::in_place, std::forward<Args>(args)...)
-    {}
-
     [[nodiscard]]
-    Iterator get() const
+    Iterator base() const
     {
-        return m_buf.get();
+        return m_buf.base();
     }
 
 private:
@@ -863,8 +893,7 @@ constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noe
     auto names = [=]<std::size_t... Is>(std::index_sequence<Is...>)
     {
         return std::array<std::string_view, 256>{
-            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>(remove_qualifier)...
-        };
+            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>(remove_qualifier)...};
     }(std::make_index_sequence<256>());
 
     return names[static_cast<std::size_t>(value) + 128];
@@ -958,3 +987,23 @@ auto join(R& rng, const CharT* sep)
     return joiner<R, CharT>(rng, sep);
 }
 } // namespace papilio
+
+namespace std
+{
+template <typename T1, typename T2>
+struct tuple_element<0, ::papilio::compressed_pair<T1, T2>>
+{
+    using type = T1;
+};
+
+template <typename T1, typename T2>
+struct tuple_element<1, ::papilio::compressed_pair<T1, T2>>
+{
+    using type = T2;
+};
+
+template <typename T1, typename T2>
+struct tuple_size<::papilio::compressed_pair<T1, T2>> :
+    integral_constant<size_t, 2>
+{};
+} // namespace std

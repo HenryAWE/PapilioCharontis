@@ -60,9 +60,9 @@ struct tuple_accessor
         if constexpr(PairLike)
         {
             if(attr == PAPILIO_TSTRING_VIEW(char_type, "first"))
-                return std::get<0>(tp);
+                return get<0>(tp);
             else if(attr == PAPILIO_TSTRING_VIEW(char_type, "second"))
-                return std::get<1>(tp);
+                return get<1>(tp);
         }
 
         if(attr == PAPILIO_TSTRING_VIEW(char_type, "size"))
@@ -75,17 +75,22 @@ private:
     template <std::size_t Idx>
     static format_arg_type index_helper(const Tuple& tp)
     {
-        return format_arg_type(std::get<Idx>(tp));
+        return format_arg_type(get<Idx>(tp));
     }
 };
 
 PAPILIO_EXPORT template <typename Context, typename... Ts>
 struct accessor<std::tuple<Ts...>, Context> :
-    public tuple_accessor<std::tuple<Ts...>, Context, false>
+    public tuple_accessor<std::tuple<Ts...>, Context, std::tuple_size_v<std::tuple<Ts...>> == 2>
 {};
 
 PAPILIO_EXPORT template <typename Context, typename T1, typename T2>
 struct accessor<std::pair<T1, T2>, Context> :
     public tuple_accessor<std::pair<T1, T2>, Context, true>
+{};
+
+PAPILIO_EXPORT template <typename Context, typename T1, typename T2>
+struct accessor<compressed_pair<T1, T2>, Context> :
+    public tuple_accessor<compressed_pair<T1, T2>, Context, true>
 {};
 } // namespace papilio
