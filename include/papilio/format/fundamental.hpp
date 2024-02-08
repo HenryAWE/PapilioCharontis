@@ -623,7 +623,7 @@ namespace detail
 
         std::pair<std::chars_format, bool> get_chars_fmt() const
         {
-            std::chars_format ch_fmt;
+            std::chars_format ch_fmt{};
             bool uppercase = false;
 
             switch(m_data.type)

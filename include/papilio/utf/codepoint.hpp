@@ -117,6 +117,11 @@ public:
 #    pragma warning(disable : 26495)
 #endif
 
+#ifdef PAPILIO_COMPILER_GCC
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wstringop-overflow="
+#endif
+
 PAPILIO_EXPORT class codepoint
 {
 public:
@@ -409,6 +414,10 @@ private:
 
 #ifdef PAPILIO_COMPILER_MSVC
 #    pragma warning(pop)
+#endif
+
+#ifdef PAPILIO_COMPILER_GCC
+#    pragma GCC diagnostic pop
 #endif
 
 inline namespace literals

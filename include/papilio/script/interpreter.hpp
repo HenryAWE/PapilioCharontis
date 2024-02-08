@@ -1099,8 +1099,6 @@ private:
     // execute scripted field
     static void exec_script(parse_context& parse_ctx, FormatContext& fmt_ctx)
     {
-        using context_t = format_context_traits<FormatContext>;
-
         iterator start = parse_ctx.begin();
         const iterator stop = parse_ctx.end();
 
