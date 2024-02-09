@@ -12,8 +12,8 @@
 // CMakeLists.txt will use following macros to determine library version.
 
 #define PAPILIO_VERSION_MAJOR 0
-#define PAPILIO_VERSION_MINOR 2
-#define PAPILIO_VERSION_PATCH 1
+#define PAPILIO_VERSION_MINOR 3
+#define PAPILIO_VERSION_PATCH 0
 
 // clang-format on
 
