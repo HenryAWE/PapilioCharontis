@@ -1,10 +1,23 @@
 Other language: [中文](README.zh-CN.md)
 # 🦋 Papilio Charontis
-A flexible C++ formatting library, mainly designed for internationalization (i18n) scenarios.
+A flexible C++ formatting library, mainly designed for internationalization (i18n) scenarios. 
+It can also be used as a replacement for `printf`, `<iostream>` and `std::format`.
 
 The output content can be controlled by embedded scripts. Output logics such as plural form or grammatical gender is detached from the program logic, leaving it completely under control of the translation.
 
-It can also be used as a replacement for `printf`, `<iostream>` and `std::format`.
+For example, if you want to output correctly in the legacy way, the code may look like this:
+```c++
+if(n == 1)
+    print(translate("Found {} file"), n);
+else
+    print(translate("Found {} files"), n);
+```
+This code will mix the output logic with other logic, and it cannot handle languages whose number of plural forms is not similar to English such as Russian.
+
+With this library, the code can be rewritten as:
+```c++
+print(translate("Found {0} file{${0}!=1:'s'}"), n);
+```
 
 ## Overview
 ### Main Feature: Embedded Script

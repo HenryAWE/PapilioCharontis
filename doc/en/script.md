@@ -48,6 +48,18 @@ Logical not is preceding by an exclamation mark (`!`). It only has one operand.
    Non-zero numerical value and non-empty string are considered as `true`, otherwise, they are considered as `false`.
 
 ### Branch
-When the conditional statement evaluates to `true`, the first branch is executed, otherwise the second branch is executed. For script fields with only one branch, no output will be produced if the conditional statement evaluates to `false`.
+When the conditional statement evaluates to `true`, the first branch is executed, otherwise the following branch is executed. For script fields with only one branch, no output will be produced if the conditional statement evaluates to `false`.
 
-The execution result of the branch is to output a string, which is defined by the same way as the conditional statement.
+The execution result of the branch is to output a string, which is defined by the same way as the conditional statement. You can also use a replacement field as the result of a branch.
+
+#### Multi-Branch
+Used to deal with complex output.
+
+Syntax: `{$ cond-1: result-1 : $ cond-2: result-2: result-3}`
+
+| `cond-1` | `cond-2` |  Result  |
+| :------: | :------: | :------: |
+|  `true`  |  `true`  | result-1 |
+|  `true`  | `false`  | result-1 |
+| `false`  |  `true`  | result-2 |
+| `false`  | `false`  | result-3 |

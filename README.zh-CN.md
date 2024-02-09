@@ -1,10 +1,22 @@
 其他语言：[English](README.md)
 # 🦋 引蝶座（Papilio Charontis）
-功能灵活的 C++ 格式化库，主要为国际化（i18n）场景设计。
+功能灵活的 C++ 格式化库，主要为国际化（i18n）场景设计。同时，它也可以作为 `printf`、`<iostream>` 和 `std::format` 的替代品。
 
 通过内嵌的脚本控制输出内容，将单复数、阴阳性等逻辑与程序逻辑解耦，完全由翻译来掌控。
 
-同时，它也可以作为 `printf`、`<iostream>` 和 `std::format` 的替代品。
+例如，如果要以传统方式正确输出，代码可能如下所示：
+```c++
+if(n == 1)
+     print(translate("Found {} file"), n);
+else
+     print(translate("Found {} files"), n);
+```
+该代码的输出逻辑与其他逻辑混合在一起，并且它无法处理复数形式数量与英语不同的语言（如俄语）。
+
+有了这个库，代码可以改为：
+```c++
+print(translate("Found {0} file{${0}!=1:'s'}"), n);
+```
 
 ## 概览
 ### 核心特性：内嵌脚本
