@@ -93,10 +93,19 @@ namespace detail
 
 #ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
 
+#    ifdef PAPILIO_COMPILER_CLANG
+#        pragma clang diagnostic push
+#        pragma clang diagnostic ignored "-Wpre-c++2b-compat"
+#    endif
+
         constexpr codepoint operator[](reverse_index_t, size_type i) const noexcept
         {
             return index(reverse_index, i);
         }
+
+#    ifdef PAPILIO_COMPILER_CLANG
+#        pragma clang diagnostic pop
+#    endif
 
 #endif
 
