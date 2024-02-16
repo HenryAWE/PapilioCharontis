@@ -856,6 +856,11 @@ namespace detail
     };
 } // namespace detail
 
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(push)
+#    pragma warning(disable : 26495)
+#endif
+
 PAPILIO_EXPORT template <typename T, std::size_t Capacity>
 class fixed_vector : public detail::fixed_vector_impl
 {
@@ -1111,6 +1116,10 @@ private:
         return m_buf.data();
     }
 };
+
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(pop)
+#endif
 
 namespace detail
 {
