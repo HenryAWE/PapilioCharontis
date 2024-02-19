@@ -8,10 +8,10 @@ namespace test_format
 template <typename CharT>
 class yes_no_numpunct : public std::numpunct<CharT>
 {
-    using base = std::numpunct<CharT>;
+    using my_base = std::numpunct<CharT>;
 
 public:
-    using string_type = typename base::string_type;
+    using string_type = typename my_base::string_type;
 
 protected:
     string_type do_truename() const override

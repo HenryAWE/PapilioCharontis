@@ -646,8 +646,10 @@ namespace detail
         using reference = codepoint;
         using string_view_type = std::basic_string_view<CharT>;
 
+    private:
         using base_iter_t = typename string_view_type::const_iterator;
 
+    public:
         constexpr cp_iter_impl() noexcept = default;
         constexpr cp_iter_impl(const cp_iter_impl&) noexcept = default;
 
