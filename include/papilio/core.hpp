@@ -59,6 +59,17 @@ public:
     formatter& operator=(formatter&&) = delete;
 };
 
+// Derive your formatter from this class to explicitly prevent a type from being formatted.
+PAPILIO_EXPORT class disabled_formatter
+{
+    disabled_formatter() = delete;
+    disabled_formatter(const disabled_formatter&) = delete;
+    disabled_formatter(disabled_formatter&&) = delete;
+
+    disabled_formatter& operator=(const disabled_formatter&) = delete;
+    disabled_formatter& operator=(disabled_formatter&&) = delete;
+};
+
 namespace detail
 {
     template <typename T>
@@ -1314,6 +1325,11 @@ private:
 
 namespace detail
 {
+    template <typename T, typename CharT>
+    concept is_formatter_disabled = std::is_base_of_v<
+        disabled_formatter,
+        formatter<T, CharT>>;
+
     template <typename T, typename Context, typename CharT>
     struct select_formatter
     {
@@ -1321,14 +1337,14 @@ namespace detail
     };
 
     template <typename T, typename Context, typename CharT>
-    requires(!std::semiregular<formatter<T, CharT>> && has_adl_format_v<T, Context>)
+    requires(!is_formatter_disabled<T, CharT> && !std::semiregular<formatter<T, CharT>> && has_adl_format_v<T, Context>)
     struct select_formatter<T, Context, CharT>
     {
         using type = adl_format_adaptor<T, Context>;
     };
 
     template <typename T, typename Context, typename CharT>
-    requires(!std::semiregular<formatter<T, CharT>> && !has_adl_format_v<T, Context> && streamable<T, CharT>)
+    requires(!is_formatter_disabled<T, CharT> && !std::semiregular<formatter<T, CharT>> && !has_adl_format_v<T, Context> && streamable<T, CharT>)
     struct select_formatter<T, Context, CharT>
     {
         using type = streamable_formatter<T, CharT>;
