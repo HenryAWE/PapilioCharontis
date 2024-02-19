@@ -1,32 +1,6 @@
 #include <gtest/gtest.h>
 #include "test_format.hpp"
 
-namespace test_format
-{
-class format_disabled
-{
-public:
-    static friend std::ostream& operator<<(std::ostream& os, format_disabled)
-    {
-        os << "format disabled";
-        return os;
-    }
-
-    static friend std::wostream& operator<<(std::wostream& os, format_disabled)
-    {
-        os << L"format disabled";
-        return os;
-    }
-};
-} // namespace test_format
-
-namespace papilio
-{
-template <typename CharT>
-struct formatter<test_format::format_disabled, CharT> : public disabled_formatter
-{};
-} // namespace papilio
-
 TEST(disabled_formatter, disable_format)
 {
     using namespace papilio;

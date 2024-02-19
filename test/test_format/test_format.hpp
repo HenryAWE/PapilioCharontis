@@ -27,9 +27,27 @@ protected:
     }
 };
 
+class format_disabled
+{
+public:
+    template <typename CharT>
+    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, format_disabled)
+    {
+        os << PAPILIO_TSTRING_VIEW(CharT, "format disabled");
+        return os;
+    }
+};
+
 template <typename CharT = char>
 std::locale attach_yes_no(const std::locale& loc = std::locale::classic())
 {
     return std::locale(loc, new yes_no_numpunct<CharT>());
 }
 } // namespace test_format
+
+namespace papilio
+{
+template <typename CharT>
+struct formatter<test_format::format_disabled, CharT> : public disabled_formatter
+{};
+} // namespace papilio
