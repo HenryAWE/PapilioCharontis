@@ -14,6 +14,12 @@
 #include "macros.hpp"
 #include "detail/compat.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wc++20-compat"
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT template <typename T>
@@ -150,14 +156,15 @@ public:
     constexpr void normalize(std::in_place_t, size_type len) noexcept
     {
         PAPILIO_ASSERT(len <= static_cast<size_type>(std::numeric_limits<index_type>::max()));
+        index_type slen = static_cast<index_type>(len);
 
         if(first < 0)
-            first = len + first;
+            first = slen + first;
 
         if(second < 0)
-            second = len + second;
+            second = slen + second;
         else if(second == npos)
-            second = len;
+            second = slen;
     }
 
     [[nodiscard]]
@@ -186,7 +193,7 @@ public:
         PAPILIO_ASSERT(first > 0);
         PAPILIO_ASSERT(second > 0);
         PAPILIO_ASSERT(second != npos);
-        return second - first;
+        return static_cast<size_type>(second - first);
     }
 };
 
@@ -844,6 +851,7 @@ namespace detail
     template <auto Value>
     constexpr std::string_view static_enum_name_impl()
     {
+        [[maybe_unused]]
         std::string_view name;
 
 #if defined PAPILIO_COMPILER_GCC || defined PAPILIO_COMPILER_CLANG
@@ -856,17 +864,32 @@ namespace detail
 #    endif
         return std::string_view(name.data() + start, end - start);
 
-#elif defined PAPILIO_COMPILER_MSVC
+#elif defined PAPILIO_COMPILER_MSVC || defined PAPILIO_COMPILER_CLANG_CL
+
+#    ifdef PAPILIO_COMPILER_CLANG_CL
+#        pragma clang diagnostic push
+#        pragma clang diagnostic ignored "-Wlanguage-extension-token"
+#    endif
+
         name = __FUNCSIG__;
         std::size_t start = name.find("static_enum_name_impl<") + 22;
         std::size_t end = name.find_last_of('>');
         return std::string_view(name.data() + start, end - start);
+
+#    ifdef PAPILIO_COMPILER_CLANG_CL
+#        pragma clang diagnostic pop
+#    endif
 
 #else
         static_assert(false, "Unimplemented");
 #endif
     }
 } // namespace detail
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
+#endif
 
 PAPILIO_EXPORT template <auto Value>
 constexpr std::string_view static_enum_name(bool remove_qualifier = false)
@@ -898,6 +921,10 @@ constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noe
 
     return names[static_cast<std::size_t>(value) + 128];
 }
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
 
 namespace detail
 {
@@ -1007,3 +1034,7 @@ struct tuple_size<::papilio::compressed_pair<T1, T2>> :
     integral_constant<size_t, 2>
 {};
 } // namespace std
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

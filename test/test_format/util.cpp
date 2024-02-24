@@ -6,15 +6,10 @@ namespace test_format
 class format_disabled
 {
 public:
-    static friend std::ostream& operator<<(std::ostream& os, format_disabled)
+    template <typename CharT>
+    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, format_disabled)
     {
-        os << "format disabled";
-        return os;
-    }
-
-    static friend std::wostream& operator<<(std::wostream& os, format_disabled)
-    {
-        os << L"format disabled";
+        os << PAPILIO_TSTRING(CharT, "format disabled");
         return os;
     }
 };

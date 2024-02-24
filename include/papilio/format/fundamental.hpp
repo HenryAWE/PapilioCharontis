@@ -7,6 +7,12 @@
 #include <cmath>
 #include "../core.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
+#    pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT struct std_formatter_data
@@ -336,6 +342,11 @@ namespace detail
         }
     };
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
     template <std::integral T, typename CharT>
     class int_formatter : public std_formatter_base
     {
@@ -382,9 +393,10 @@ namespace detail
 
             do
             {
-                const T digit = val % base;
+                const T t_base = static_cast<T>(base);
+                const T digit = val % t_base;
                 buf[buf_size++] = digits[digit];
-                val /= static_cast<T>(base);
+                val /= static_cast<T>(t_base);
             } while(val);
 
             using context_t = format_context_traits<FormatContext>;
@@ -691,7 +703,7 @@ namespace detail
                 PAPILIO_UNREACHABLE();
             }
 
-            std::size_t size = result.ptr - buf.data();
+            std::size_t size = static_cast<std::size_t>(result.ptr - buf.data());
 
             if(uppercase)
             {
@@ -800,6 +812,10 @@ namespace detail
             return context_t::out(ctx);
         }
     };
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
 } // namespace detail
 
 PAPILIO_EXPORT template <std::integral T, typename CharT>
@@ -1133,3 +1149,7 @@ requires std::is_enum_v<T>
 class formatter<T, CharT> : public detail::enum_formatter<T, CharT>
 {};
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

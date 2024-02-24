@@ -3,6 +3,11 @@
 #include <cstdint>
 #include "format.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT class text_style;
@@ -224,3 +229,7 @@ auto styled(text_style st, const T& val)
     return detail::styled_arg<std::remove_const_t<T>>(st, val);
 }
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

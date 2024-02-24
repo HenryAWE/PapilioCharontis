@@ -5,6 +5,11 @@
 #    include <Windows.h>
 #endif
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 namespace detail
@@ -22,15 +27,20 @@ namespace detail
 
     void fp_iterator_conv::write(char ch)
     {
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
         if(m_byte_len == 0)
         {
-            if(!utf::is_leading_byte(ch))
+            if(!utf::is_leading_byte(std::uint8_t(ch)))
             {
                 throw std::system_error(
                     std::make_error_code(std::errc::io_error)
                 );
             }
-            m_byte_len = utf::byte_count(ch);
+            m_byte_len = utf::byte_count(std::uint8_t(ch));
         }
 
         m_buf[m_byte_idx] = static_cast<char8_t>(ch);
@@ -43,11 +53,11 @@ namespace detail
                 m_buf, m_buf + m_byte_len, m_underlying
             );
 #else
-            wchar_t wbuf[2]{};
+            wchar_t wbuf[2];
             int wconv_result = ::MultiByteToWideChar(
                 CP_UTF8,
                 MB_ERR_INVALID_CHARS,
-                (::LPSTR)m_buf,
+                reinterpret_cast<::LPSTR>(m_buf),
                 m_byte_len,
                 wbuf,
                 2
@@ -59,7 +69,7 @@ namespace detail
                 );
             }
 
-            char mbbuf[8]{};
+            char mbbuf[8];
             int mbconv_result = ::WideCharToMultiByte(
                 get_cp(),
                 0,
@@ -87,6 +97,10 @@ namespace detail
             m_byte_len = 0;
             m_byte_idx = 0;
         }
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
     }
 
     unsigned int get_output_cp_win() noexcept
@@ -115,3 +129,7 @@ void println(std::ostream& os)
     os << '\n';
 }
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

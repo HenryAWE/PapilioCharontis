@@ -1,5 +1,10 @@
 #include <papilio/script/interpreter.hpp>
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio::script
 {
 static const char* to_cstr(script_error_code ec) noexcept
@@ -8,6 +13,11 @@ static const char* to_cstr(script_error_code ec) noexcept
 
 #define PAPILIO_SCRIPT_ERR(code, msg) \
     case code: return msg
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
 
     switch(ec)
     {
@@ -24,6 +34,10 @@ static const char* to_cstr(script_error_code ec) noexcept
     [[unlikely]] default:
         PAPILIO_SCRIPT_ERR(unknown_error, "unknown error");
     }
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
 }
 
 std::string to_string(script_error_code ec)
@@ -108,3 +122,7 @@ char32_t script_base::get_esc_ch(char32_t ch) noexcept
     }
 }
 } // namespace papilio::script
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

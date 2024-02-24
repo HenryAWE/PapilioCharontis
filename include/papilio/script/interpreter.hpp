@@ -6,6 +6,12 @@
 #include "../core.hpp"
 #include "../access.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
+#endif
+
 namespace papilio::script
 {
 PAPILIO_EXPORT class bad_variable_access : public std::bad_variant_access
@@ -638,6 +644,11 @@ protected:
 
     static bool execute_op(op_id op, const variable_type& lhs, const variable_type& rhs)
     {
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wcovered-switch-default"
+#endif
+
         switch(op)
         {
         case op_id::equal:
@@ -656,6 +667,10 @@ protected:
         default:
             PAPILIO_UNREACHABLE();
         }
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
     }
 
     // Parses integer value
@@ -1309,7 +1324,7 @@ private:
             }
 
             ctx.check_arg_id(idx);
-            return std::make_pair(ctx.get_args()[idx], start);
+            return std::make_pair(ctx.get_args()[static_cast<ssize_t>(idx)], start);
         }
         else if(my_base::is_field_name_ch(first_ch, true))
         {
@@ -1328,7 +1343,7 @@ private:
         {
             std::size_t idx = ctx.current_arg_id();
             ctx.next_arg_id();
-            return std::make_pair(ctx.get_args()[idx], start);
+            return std::make_pair(ctx.get_args()[static_cast<ssize_t>(idx)], start);
         }
 
         my_base::throw_error(script_error_code::invalid_field_name, start);
@@ -1384,3 +1399,7 @@ private:
 
 PAPILIO_EXPORT using interpreter = basic_interpreter<format_context>;
 } // namespace papilio::script
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

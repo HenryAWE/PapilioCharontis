@@ -14,6 +14,13 @@
 #include "locale.hpp"
 #include "access.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#    pragma clang diagnostic ignored "-Wc++20-compat"
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT enum class format_align : std::uint8_t
@@ -772,6 +779,11 @@ namespace detail
         return sizeof...(Ts) - get_named_arg_count<Ts...>();
     }
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#endif
+
     template <typename Context, typename CharT>
     class format_args_base
     {
@@ -869,6 +881,10 @@ namespace detail
         }
     };
 } // namespace detail
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
 
 PAPILIO_EXPORT template <typename T, typename Context = format_context>
 struct is_format_args :
@@ -1732,3 +1748,7 @@ const void* ptr(const T& p) noexcept
 } // namespace papilio
 
 #include "core.inl"
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

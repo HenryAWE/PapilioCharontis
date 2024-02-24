@@ -6,6 +6,13 @@
 #include "../macros.hpp"
 #include "../utility.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wc++98-c++11-compat-binary-literal"
+#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
+#endif
+
 namespace papilio::utf
 {
 PAPILIO_EXPORT constexpr inline std::size_t npos = std::u8string::npos;
@@ -174,7 +181,7 @@ constexpr std::size_t strlen(
             continue;
         }
 
-        char8_t ch = str[i];
+        char8_t ch = static_cast<char8_t>(str[i]);
 
         if(is_leading_byte(ch))
         {
@@ -274,6 +281,11 @@ constexpr std::size_t strlen(const CharT* str)
     return strlen<OnInvalid, CharT>(std::basic_string_view<CharT>(str));
 }
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
 PAPILIO_EXPORT template <char8_like CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_t max_chars) noexcept
@@ -292,7 +304,7 @@ constexpr std::size_t index_offset(std::size_t idx, const CharT* str, std::size_
             return i;
         }
 
-        std::uint8_t ch = str[i];
+        std::uint8_t ch = static_cast<std::uint8_t>(str[i]);
         if(is_trailing_byte(ch))
         {
             return npos;
@@ -313,7 +325,7 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
     for(std::size_t i = max_chars; i != 0; --i)
     {
         std::size_t off = i - 1;
-        if(is_leading_byte(str[off]))
+        if(is_leading_byte(std::uint8_t(str[off])))
         {
             if(ch_count == idx)
                 return off;
@@ -392,6 +404,10 @@ constexpr std::size_t index_offset(reverse_index_t, std::size_t idx, const CharT
     return max_chars - 1 - idx;
 }
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
+
 PAPILIO_EXPORT template <typename CharT>
 [[nodiscard]]
 constexpr std::size_t index_offset(std::size_t idx, std::basic_string_view<CharT> str) noexcept
@@ -433,3 +449,8 @@ inline namespace literals
     using namespace utf::literals;
 }
 } // namespace papilio
+
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

@@ -4,6 +4,11 @@
 #include "core.hpp"
 #include "script.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 // NOTE: This class does not provide any compile-time check.
@@ -515,3 +520,7 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
 
 #include "format/fundamental.hpp"
 #include "format/misc.hpp"
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

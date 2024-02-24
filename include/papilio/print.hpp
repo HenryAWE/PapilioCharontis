@@ -7,6 +7,11 @@
 #include "format.hpp"
 #include "color.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 namespace detail
@@ -97,7 +102,7 @@ namespace detail
         fp_iterator_conv() = delete;
         fp_iterator_conv(const fp_iterator_conv&) noexcept = default;
 
-        fp_iterator_conv(std::FILE* fp, int win_cp = 0) noexcept
+        fp_iterator_conv(std::FILE* fp, unsigned int win_cp = 0) noexcept
             : fp_iterator_conv_base(win_cp), m_underlying(fp) {}
 
         fp_iterator_conv& operator=(const fp_iterator_conv&) noexcept = default;
@@ -259,3 +264,7 @@ void println(std::ostream& os, format_string<Args...> fmt, Args&&... args)
     PAPILIO_NS println(os);
 }
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
