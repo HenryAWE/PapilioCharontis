@@ -8,6 +8,11 @@
 #include "codepoint.hpp"
 #include "../memory.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio::utf
 {
 PAPILIO_EXPORT template <typename CharT>
@@ -357,7 +362,7 @@ namespace detail
         {
             if constexpr(char8_like<CharT>)
             {
-                return utf::byte_count(ch);
+                return utf::byte_count(std::uint8_t(ch));
             }
             else if constexpr(char16_like<CharT>)
             {
@@ -371,6 +376,11 @@ namespace detail
 
         constexpr codepoint cp_from_off(size_type off) const noexcept
         {
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
             string_view_type str = get_view();
             PAPILIO_ASSERT(off < str.size());
 
@@ -388,6 +398,10 @@ namespace detail
             {
                 return decoder<char32_t>::to_codepoint(str[off]).first;
             }
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
         }
 
     private:
@@ -1357,3 +1371,7 @@ inline namespace literals
     }
 } // namespace literals
 } // namespace papilio::utf
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

@@ -1,6 +1,11 @@
 #include <papilio/container.hpp>
 #include <stdexcept>
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 namespace detail
@@ -42,3 +47,7 @@ namespace detail
     }
 } // namespace detail
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

@@ -19,11 +19,17 @@ struct accessor<utf::basic_string_container<typename Context::char_type>, Contex
     static utf::codepoint index(const string_container_type& str, ssize_t i)
     {
         if(i >= 0)
-            return str.index_or(i, utf::codepoint());
+        {
+            return str.index_or(
+                static_cast<std::size_t>(i), utf::codepoint()
+            );
+        }
         else
         {
             i = -(i + 1);
-            return str.index_or(reverse_index, i, utf::codepoint());
+            return str.index_or(
+                reverse_index, static_cast<std::size_t>(i), utf::codepoint()
+            );
         }
     }
 

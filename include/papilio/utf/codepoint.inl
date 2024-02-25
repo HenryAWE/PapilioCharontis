@@ -3,6 +3,11 @@
 #include "codepoint.hpp"
 #include <tuple> // std::tie
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
 namespace papilio::utf
 {
 constexpr std::uint8_t decoder<char32_t>::size_bytes(char32_t ch) noexcept
@@ -131,11 +136,11 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char16_t>::to_char32_t(std::
         else if(!PAPILIO_NS utf::is_low_surrogate(ch[1])) [[unlikely]]
             throw invalid_surrogate(ch[1]);
 
-        char32_t result =
-            ((ch[0] - 0xD800) << 10) +
-            (ch[1] - 0xDC00) +
-            0x10000;
-        return std::make_pair(result, std::uint8_t(2));
+        std::uint32_t result =
+            ((ch[0] - 0xD800u) << 10) +
+            (ch[1] - 0xDC00u) +
+            0x10000u;
+        return std::make_pair(static_cast<char32_t>(result), std::uint8_t(2));
     }
 }
 
@@ -196,7 +201,7 @@ codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noe
 
     if constexpr(char8_like<CharU>)
     {
-        std::uint8_t ch = str[0];
+        std::uint8_t ch = static_cast<std::uint8_t>(str[0]);
         std::uint8_t ch_size = PAPILIO_NS utf::is_leading_byte(ch) ?
                                    PAPILIO_NS utf::byte_count(ch) :
                                    1;
@@ -231,3 +236,7 @@ codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexc
     }
 }
 } // namespace papilio::utf
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

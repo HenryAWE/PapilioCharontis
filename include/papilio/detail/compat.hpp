@@ -3,6 +3,11 @@
 #include <utility>
 #include "../macros.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 // Implement unreachable() of C++ 23 for compatibility.
@@ -11,7 +16,7 @@ inline void unreachable()
 {
 #ifdef __cpp_lib_unreachable
     std::unreachable();
-#elif defined PAPILIO_COMPILER_MSVC
+#elif defined PAPILIO_COMPILER_MSVC || defined PAPILIO_COMPILER_CLANG_CL
     __assume(false);
 #elif defined PAPILIO_COMPILER_GCC || defined PAPILIO_COMPILER_CLANG
     __builtin_unreachable();
@@ -51,3 +56,7 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
     return static_cast<std::underlying_type_t<Enum>>(e);
 }
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

@@ -6,6 +6,11 @@
 #include <iterator>
 #include "macros.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 namespace detail
@@ -31,3 +36,7 @@ PAPILIO_EXPORT using wformat_context = basic_format_context<detail::fmt_iter_for
 PAPILIO_EXPORT using format_arg = basic_format_arg<format_context>;
 PAPILIO_EXPORT using wformat_arg = basic_format_arg<wformat_context>;
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

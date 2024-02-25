@@ -7,6 +7,12 @@
 #include "utf/string.hpp"
 #include "container.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT template <typename CharT>
@@ -380,3 +386,7 @@ public:
 #include "access/tuple.hpp"
 #include "access/range.hpp"
 #include "access/misc.hpp"
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

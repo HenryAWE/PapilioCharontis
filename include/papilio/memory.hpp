@@ -4,6 +4,12 @@
 #include <memory>
 #include "utility.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wc++20-compat"
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT template <
@@ -81,7 +87,7 @@ namespace detail
     consteval bool has_member_pointer_type()
     {
         return requires() { typename Deleter::pointer; };
-    };
+    }
 
     template <typename T, typename Deleter>
     struct deleter_traits
@@ -489,3 +495,7 @@ PAPILIO_EXPORT template <typename T, typename... Args>
 requires(std::is_array_v<T> && std::extent_v<T> != 0)
 optional_unique_ptr<T> make_optional_unique(std::size_t n) = delete;
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

@@ -10,6 +10,13 @@
 #include <iterator>
 #include "stralgo.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#    pragma clang diagnostic ignored "-Wc++98-c++11-compat-binary-literal"
+#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
+#endif
+
 namespace papilio::utf
 {
 // forward declarations
@@ -120,6 +127,11 @@ public:
 #ifdef PAPILIO_COMPILER_GCC
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wstringop-overflow="
+#endif
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #endif
 
 PAPILIO_EXPORT class codepoint
@@ -420,6 +432,10 @@ private:
 #    pragma GCC diagnostic pop
 #endif
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
+
 inline namespace literals
 {
     PAPILIO_EXPORT constexpr codepoint operator""_cp(char32_t ch) noexcept
@@ -437,6 +453,11 @@ namespace detail
     public:
         using iterator_category = std::bidirectional_iterator_tag;
     };
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
 
     template <typename CharT>
     class cp_iter_impl;
@@ -467,7 +488,7 @@ namespace detail
             if(next_offset < m_str.size())
             {
                 m_offset = next_offset;
-                char8_t ch = m_str[next_offset];
+                char8_t ch = static_cast<char8_t>(m_str[next_offset]);
                 if(is_leading_byte(ch))
                     m_len = byte_count(ch);
                 else
@@ -487,7 +508,7 @@ namespace detail
             size_type next_offset = m_offset;
             while(true)
             {
-                char8_t ch = m_str[next_offset];
+                char8_t ch = static_cast<char8_t>(m_str[next_offset]);
 
                 if(m_offset - next_offset > 3) [[unlikely]]
                 {
@@ -702,6 +723,10 @@ namespace detail
     private:
         base_iter_t m_iter;
     };
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
 } // namespace detail
 
 PAPILIO_EXPORT template <typename CharT>
@@ -839,3 +864,7 @@ public:
 } // namespace papilio::utf
 
 #include "codepoint.inl"
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif

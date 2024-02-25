@@ -3,6 +3,11 @@
 #include <locale>
 #include "macros.hpp"
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wc++98-compat"
+#endif
+
 namespace papilio
 {
 // Reference to a locale object
@@ -50,3 +55,7 @@ private:
     const std::locale* m_loc = nullptr;
 };
 } // namespace papilio
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
