@@ -864,22 +864,23 @@ namespace detail
 #    endif
         return std::string_view(name.data() + start, end - start);
 
-#elif defined PAPILIO_COMPILER_MSVC || defined PAPILIO_COMPILER_CLANG_CL
-
-#    ifdef PAPILIO_COMPILER_CLANG_CL
-#        pragma clang diagnostic push
-#        pragma clang diagnostic ignored "-Wlanguage-extension-token"
-#    endif
-
+#elif defined PAPILIO_COMPILER_MSVC
         name = __FUNCSIG__;
         std::size_t start = name.find("static_enum_name_impl<") + 22;
         std::size_t end = name.find_last_of('>');
         return std::string_view(name.data() + start, end - start);
 
-#    ifdef PAPILIO_COMPILER_CLANG_CL
-#        pragma clang diagnostic pop
-#    endif
 
+#elif defined PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wlanguage-extension-token"
+
+        name = __FUNCSIG__;
+        std::size_t start = name.find("[Value = ") + 9;
+        std::size_t end = name.find_last_of(']');
+        return std::string_view(name.data() + start, end - start);
+
+#    pragma clang diagnostic pop
 #else
         static_assert(false, "Unimplemented");
 #endif

@@ -11,6 +11,8 @@ define_papilio_example(custom_formatter)
 
 define_papilio_example(styled_output)
 
+define_papilio_example(magic_enum)
+
 if(${papilio_build_module})
     define_papilio_example(import)
 endif()
