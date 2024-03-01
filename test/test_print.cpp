@@ -14,7 +14,8 @@
 TEST(print, file_descriptor_linux)
 {
     int fd = memfd_create("test_print", MFD_CLOEXEC);
-    ASSERT_NE(fd, -1);
+    if(fd == -1) // Workaround for WSL 1
+        GTEST_SKIP() << "memfd_create() failed";
     FILE* fp = fdopen(fd, "wb+");
     ASSERT_TRUE(fp);
 
