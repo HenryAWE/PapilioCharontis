@@ -90,7 +90,7 @@ void ipapilio::build_cmd()
 
     emplace_cmd("ls", "List arguments and format string", &ipapilio::list_arg);
 
-    emplace_cmd("run", "Ouput format result", &ipapilio::run);
+    emplace_cmd("run", "Output format result", &ipapilio::run);
 }
 
 void ipapilio::quit()
