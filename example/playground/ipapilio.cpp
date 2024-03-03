@@ -139,6 +139,7 @@ void ipapilio::addf()
 {
     std::string str_val = detail::input(std::cin, "addf");
 
+#ifndef PAPILIO_PLATFORM_EMSCRIPTEN
     long double val;
     auto result = std::from_chars(
         std::to_address(str_val.begin()),
@@ -154,6 +155,32 @@ void ipapilio::addf()
         );
         return;
     }
+#else
+    float val;
+    try
+    {
+        val = std::stof(str_val);
+    }
+    catch(const std::invalid_argument& e)
+    {
+        papilio::println(
+            papilio::fg(papilio::color::red) | papilio::style::bold,
+            "Bad value: {}",
+            e.what()
+        );
+        return;
+    }
+    catch(const std::out_of_range& e)
+    {
+        papilio::println(
+            papilio::fg(papilio::color::red) | papilio::style::bold,
+            "Bad value: {}",
+            e.what()
+
+        );
+        return;
+    }
+#endif
 
     m_args.push(val);
     papilio::println(
