@@ -5,6 +5,7 @@
 #include <ranges>
 #include <vector>
 #include <map>
+#include <utility>
 #include "../access.hpp"
 #include "../utility.hpp"
 
@@ -46,9 +47,9 @@ struct contiguous_range_accessor
         std::size_t sz = stdr::size(rng);
         s = s.normalize(sz);
 
-        if(s.first >= sz)
+        if(std::cmp_greater_equal(s.first, sz))
             return format_arg_type();
-        else if(s.second > sz)
+        else if(std::cmp_greater(s.second, sz))
             s.second = sz;
 
         if(s.first >= s.second)

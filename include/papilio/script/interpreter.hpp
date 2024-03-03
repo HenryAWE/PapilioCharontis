@@ -5,6 +5,10 @@
 #include <charconv>
 #include "../core.hpp"
 #include "../access.hpp"
+#ifdef PAPILIO_PLATFORM_EMSCRIPTEN
+// Emscripten does not support from_chars for float, use stringstream as a fallback.
+#    include <sstream>
+#endif
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic push
@@ -27,6 +31,13 @@ namespace detail
 {
     class variable_base
     {
+    public:
+#ifndef PAPILIO_PLATFORM_EMSCRIPTEN
+        using float_type = long double;
+#else
+        using float_type = float;
+#endif
+
     protected:
         [[noreturn]]
         static void throw_invalid_conversion(const char* msg = "invalid conversion")
@@ -45,13 +56,14 @@ namespace detail
     using variable_data_type = std::variant<
         bool,
         std::int64_t,
-        long double,
+        variable_base::float_type,
         utf::basic_string_container<CharT>>;
 } // namespace detail
 
 PAPILIO_EXPORT template <typename CharT>
 class basic_variable : public detail::variable_base
 {
+    using my_base = detail::variable_base;
 public:
     using variant_type = detail::variable_data_type<CharT>;
 
@@ -60,7 +72,7 @@ public:
     using string_view_type = std::basic_string_view<CharT>;
     using string_container_type = utf::basic_string_container<CharT>;
     using int_type = std::int64_t;
-    using float_type = long double;
+    using float_type = my_base::float_type;
 
 private:
     template <typename T>
@@ -710,31 +722,45 @@ protected:
         return std::make_pair(value, start);
     }
 
+    template <std::floating_point T>
+    static T conv_float_impl(const char* start, const char* stop)
+    {
+        T val = static_cast<T>(0);
+
+#ifndef PAPILIO_PLATFORM_EMSCRIPTEN
+        std::from_chars(start, stop, val);
+        return val;
+
+#else
+        // Emscripten does not support from_chars for float, use stringstream as a fallback.
+        std::stringstream ss(std::string(start, stop));
+
+        ss.imbue(std::locale::classic());
+        ss >> val;
+
+        return val;
+#endif
+    }
+
     // Converts [start, stop) to a floating point
     template <std::floating_point T>
     static T conv_float(iterator start, iterator stop)
     {
-        T val = static_cast<T>(0);
-
         if constexpr(char8_like<char_type>)
         {
-            std::from_chars(
-                std::bit_cast<const char_type*>(start.base()),
-                std::bit_cast<const char_type*>(stop.base()),
-                val
+            return conv_float_impl<T>(
+                std::bit_cast<const char*>(start.base()),
+                std::bit_cast<const char*>(stop.base())
             );
         }
         else
         {
             std::string tmp = string_ref_type(start, stop).to_string();
-            std::from_chars(
+            return conv_float_impl<T>(
                 std::to_address(tmp.begin()),
-                std::to_address(tmp.end()),
-                val
+                std::to_address(tmp.end())
             );
         }
-
-        return val;
     }
 
     static iterator skip_string(iterator start, iterator stop) noexcept
@@ -1218,7 +1244,8 @@ private:
                 ++int_end;
                 iterator float_end = std::find_if_not(int_end, stop, utf::is_digit);
 
-                long double val = my_base::template conv_float<long double>(
+                using float_type = typename variable_type::float_type;
+                float_type val = my_base::template conv_float<float_type>(
                     start, float_end
                 );
 

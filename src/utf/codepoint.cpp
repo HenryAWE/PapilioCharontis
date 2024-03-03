@@ -70,19 +70,21 @@ std::wostream& operator<<(std::wostream& os, codepoint cp)
 
 std::basic_ostream<char8_t>& operator<<(std::basic_ostream<char8_t>& os, codepoint cp)
 {
-    os << std::u8string_view(cp);
+    os.write(cp.u8data(), cp.size_bytes());
     return os;
 }
 
 std::basic_ostream<char16_t>& operator<<(std::basic_ostream<char16_t>& os, codepoint cp)
 {
-    os << decoder<char16_t>::from_codepoint(cp).get();
+    auto result = decoder<char16_t>::from_codepoint(cp);
+    os.write(result.chars, result.size);
     return os;
 }
 
 std::basic_ostream<char32_t>& operator<<(std::basic_ostream<char32_t>& os, codepoint cp)
 {
-    os << decoder<char32_t>::from_codepoint(cp).first;
+    char32_t ch = decoder<char32_t>::from_codepoint(cp).first;
+    os.write(&ch, 1);
     return os;
 }
 } // namespace papilio::utf

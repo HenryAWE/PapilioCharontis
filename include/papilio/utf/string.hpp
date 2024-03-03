@@ -1335,35 +1335,35 @@ PAPILIO_EXPORT std::wistream& operator>>(std::wistream& is, wstring_container& s
 
 inline namespace literals
 {
-    PAPILIO_EXPORT constexpr string_container operator""_sc(
+    PAPILIO_EXPORT inline string_container operator""_sc(
         const char* str, std::size_t size
     ) noexcept
     {
         return string_container(str, size);
     }
 
-    PAPILIO_EXPORT constexpr u8string_container operator""_sc(
+    PAPILIO_EXPORT inline u8string_container operator""_sc(
         const char8_t* str, std::size_t size
     ) noexcept
     {
         return u8string_container(str, size);
     }
 
-    PAPILIO_EXPORT constexpr u16string_container operator""_sc(
+    PAPILIO_EXPORT inline u16string_container operator""_sc(
         const char16_t* str, std::size_t size
     ) noexcept
     {
         return u16string_container(str, size);
     }
 
-    PAPILIO_EXPORT constexpr u32string_container operator""_sc(
+    PAPILIO_EXPORT inline u32string_container operator""_sc(
         const char32_t* str, std::size_t size
     ) noexcept
     {
         return u32string_container(str, size);
     }
 
-    PAPILIO_EXPORT constexpr wstring_container operator""_sc(
+    PAPILIO_EXPORT inline wstring_container operator""_sc(
         const wchar_t* str, std::size_t size
     ) noexcept
     {

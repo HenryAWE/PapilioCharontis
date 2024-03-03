@@ -36,6 +36,8 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #    define PAPILIO_PLATFORM_WINDOWS 1
+#elif defined(__EMSCRIPTEN__)
+#    define PAPILIO_PLATFORM_EMSCRIPTEN 1
 #elif defined(__linux__) || defined(__gnu_linux__)
 #    define PAPILIO_PLATFORM_LINUX 1
 #endif
