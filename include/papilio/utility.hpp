@@ -889,7 +889,9 @@ namespace detail
 
 #if defined PAPILIO_COMPILER_CLANG || defined PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
+#    endif
 #endif
 
 PAPILIO_EXPORT template <auto Value>
