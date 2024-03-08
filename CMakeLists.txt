@@ -32,10 +32,7 @@ set(glob_expr "src/*.cpp" "include/*.hpp")
 file(GLOB_RECURSE papilio_src ${glob_expr})
 
 if(${papilio_build_module})
-    file(GLOB_RECURSE papilio_modules "modules/*.ixx")
-    list(APPEND papilio_src ${papilio_modules})
-else()
-    set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+    set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 endif()
 
 add_library(papilio ${papilio_src})
@@ -46,6 +43,15 @@ target_compile_options(papilio PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
+if(${papilio_build_module})
+    file(GLOB_RECURSE papilio_modules_src "modules/*.cppm")
+    target_sources(
+        papilio
+        PUBLIC
+            FILE_SET papilio_modules TYPE CXX_MODULES FILES
+            ${papilio_modules_src}
+    )
+endif()
 
 if(${papilio_build_example})
     add_subdirectory(example)
