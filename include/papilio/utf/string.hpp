@@ -347,7 +347,8 @@ namespace detail
 
         friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const Derived& str)
         {
-            os << static_cast<string_view_type>(str);
+            auto sv = static_cast<string_view_type>(str);
+            os.write(sv.data(), sv.size());
             return os;
         }
 
@@ -476,7 +477,7 @@ public:
         return *this;
     }
 
-    basic_string_ref& operator=(const string_type& str) noexcept
+    constexpr basic_string_ref& operator=(const string_type& str) noexcept
     {
         this->set_view(str);
         return *this;

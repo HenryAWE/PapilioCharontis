@@ -144,11 +144,12 @@ private:
     template <typename Iterator>
     static Iterator set_style(Iterator it, std::uint8_t val)
     {
-        char buf[4] = {
+        char buf[4]{
             '\033',
             '[',
             static_cast<char>('0' + val),
-            'm'};
+            'm'
+        };
 
         return std::copy_n(buf, 4, it);
     }
@@ -200,7 +201,8 @@ requires(formattable<T>)
 struct formatter<detail::styled_arg<T>, char> : public formatter<T>
 {
     template <typename FormatContext>
-    auto format(const detail::styled_arg<T>& arg, FormatContext& ctx) const -> typename FormatContext::iterator
+    auto format(const detail::styled_arg<T>& arg, FormatContext& ctx) const
+        -> typename FormatContext::iterator
     {
         using context_t = format_context_traits<FormatContext>;
 
@@ -209,17 +211,17 @@ struct formatter<detail::styled_arg<T>, char> : public formatter<T>
         bool has_style = st.has_foreground() || st.has_background() || st.has_style();
         if(has_style)
         {
-            context_t::advance_to(ctx, st.set(context_t::out(ctx)));
+            context_t::advance_to(ctx, st.set(ctx.out()));
         }
 
         context_t::advance_to(ctx, formatter<T>::format(arg.get(), ctx));
 
         if(has_style)
         {
-            context_t::advance_to(ctx, st.reset(context_t::out(ctx)));
+            context_t::advance_to(ctx, st.reset(ctx.out()));
         }
 
-        return context_t::out(ctx);
+        return ctx.out();
     }
 };
 
