@@ -1,3 +1,6 @@
+#ifndef PAPILIO_LOCALE_HPP
+#define PAPILIO_LOCALE_HPP
+
 #pragma once
 
 #include <locale>
@@ -58,4 +61,6 @@ private:
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

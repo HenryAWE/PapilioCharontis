@@ -1,3 +1,6 @@
+#ifndef PAPILIO_UTF_CODEPOINT_HPP
+#define PAPILIO_UTF_CODEPOINT_HPP
+
 #pragma once
 
 #include <cstdint>
@@ -867,4 +870,6 @@ public:
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

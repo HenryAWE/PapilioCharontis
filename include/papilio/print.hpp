@@ -1,3 +1,6 @@
+#ifndef PAPILIO_PRINT_HPP
+#define PAPILIO_PRINT_HPP
+
 #pragma once
 
 #include <cstdio> // FILE*
@@ -267,4 +270,6 @@ void println(std::ostream& os, format_string<Args...> fmt, Args&&... args)
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

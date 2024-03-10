@@ -1,3 +1,6 @@
+#ifndef PAPILIO_UTF_STRING
+#define PAPILIO_UTF_STRING
+
 #pragma once
 
 #include <iosfwd>
@@ -1375,4 +1378,6 @@ inline namespace literals
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

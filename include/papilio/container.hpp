@@ -1,3 +1,6 @@
+#ifndef PAPILIO_CONTAINER_HPP
+#define PAPILIO_CONTAINER_HPP
+
 #pragma once
 
 #include <cstddef>
@@ -1471,4 +1474,6 @@ private:
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

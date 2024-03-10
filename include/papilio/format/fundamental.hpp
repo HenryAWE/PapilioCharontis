@@ -1,3 +1,6 @@
+#ifndef PAPILIO_FORMAT_FUNDAMENTAL_HPP
+#define PAPILIO_FORMAT_FUNDAMENTAL_HPP
+
 #pragma once
 
 #include <concepts>
@@ -1152,4 +1155,6 @@ class formatter<T, CharT> : public detail::enum_formatter<T, CharT>
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

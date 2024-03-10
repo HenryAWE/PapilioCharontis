@@ -1,5 +1,6 @@
 // For Visual Studio
 // See https://go.microsoft.com/fwlink/?linkid=865984
 
+#define C_PAPILIO_TEST_PUSH_DECL(type, suffix)
 #define C_PAPILIO_TEST_PUSH_IMPL(type, suffix)
 #define TEST(test_suite_name, test_name)

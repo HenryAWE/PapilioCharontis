@@ -1,3 +1,6 @@
+#ifndef PAPILIO_FORMAT_MISC_HPP
+#define PAPILIO_FORMAT_MISC_HPP
+
 #pragma once
 
 #include <ranges>
@@ -66,3 +69,5 @@ private:
     }
 };
 } // namespace papilio
+
+#endif

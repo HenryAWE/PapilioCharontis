@@ -1,6 +1,3 @@
-#pragma once
-
-#include "codepoint.hpp"
 #include <tuple> // std::tie
 
 #ifdef PAPILIO_COMPILER_CLANG_CL

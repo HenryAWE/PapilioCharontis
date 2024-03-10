@@ -1,3 +1,6 @@
+#ifndef PAPILIO_MEMORY_HPP
+#define PAPILIO_MEMORY_HPP
+
 #pragma once
 
 #include <cstddef>
@@ -498,4 +501,6 @@ optional_unique_ptr<T> make_optional_unique(std::size_t n) = delete;
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

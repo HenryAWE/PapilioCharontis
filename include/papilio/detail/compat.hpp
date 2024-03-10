@@ -1,3 +1,6 @@
+#ifndef PAPILIO_DETAIL_COMPAT_HPP
+#define PAPILIO_DETAIL_COMPAT_HPP
+
 #pragma once
 
 #include <utility>
@@ -59,4 +62,6 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

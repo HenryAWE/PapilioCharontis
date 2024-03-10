@@ -1,9 +1,12 @@
+#ifndef PAPILIO_COLOR_HPP
+#define PAPILIO_COLOR_HPP
+
 #pragma once
 
 #include <cstdint>
 #include "format.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wc++98-compat"
 #endif
@@ -232,6 +235,8 @@ auto styled(text_style st, const T& val)
 }
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
+#endif
+
 #endif

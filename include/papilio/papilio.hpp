@@ -1,9 +1,12 @@
+#ifndef PAPILIO_PAPILIO_HPP
+#define PAPILIO_PAPILIO_HPP
+
 #pragma once
 
 #include <tuple>
 #include "macros.hpp"
 #include "core.hpp"
-#include "script.hpp"
+#include "script/interpreter.hpp"
 #include "format.hpp"
 #include "print.hpp"
 
@@ -24,3 +27,5 @@ constexpr inline std::tuple<int, int, int> get_version() noexcept
     );
 }
 } // namespace papilio
+
+#endif

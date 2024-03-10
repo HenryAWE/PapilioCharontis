@@ -1,3 +1,6 @@
+#ifndef PAPILIO_CORE_HPP
+#define PAPILIO_CORE_HPP
+
 #pragma once
 
 #include <variant>
@@ -14,7 +17,7 @@
 #include "locale.hpp"
 #include "access.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wc++98-compat"
 #    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
@@ -1749,6 +1752,8 @@ const void* ptr(const T& p) noexcept
 
 #include "core.inl"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
+#endif
+
 #endif

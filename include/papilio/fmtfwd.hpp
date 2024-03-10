@@ -1,12 +1,15 @@
-#pragma once
-
 // Forward declarations
+
+#ifndef PAPILIO_FMTFWD_HPP
+#define PAPILIO_FMTFWD_HPP
+
+#pragma once
 
 #include <string>
 #include <iterator>
 #include "macros.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wc++98-compat"
 #endif
@@ -37,6 +40,8 @@ PAPILIO_EXPORT using format_arg = basic_format_arg<format_context>;
 PAPILIO_EXPORT using wformat_arg = basic_format_arg<wformat_context>;
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
+#endif
+
 #endif

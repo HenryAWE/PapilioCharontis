@@ -1,5 +1,3 @@
-#include "core.hpp"
-
 namespace papilio
 {
 template <typename Context>

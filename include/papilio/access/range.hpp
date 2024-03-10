@@ -1,3 +1,6 @@
+#ifndef PAPILIO_ACCESS_RANGE_HPP
+#define PAPILIO_ACCESS_RANGE_HPP
+
 #pragma once
 
 #include <string_view>
@@ -85,7 +88,7 @@ struct accessor<fixed_vector<T, Capacity>, Context> :
 {};
 
 PAPILIO_EXPORT template <typename T, std::size_t Capacity, typename Allocator, typename Context>
-struct accessor<small_vector<T, Capacity, Allocator>, Context> : 
+struct accessor<small_vector<T, Capacity, Allocator>, Context> :
     public contiguous_range_accessor<small_vector_base<T, Allocator>, Context>
 {};
 
@@ -234,3 +237,5 @@ struct accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context> :
     public map_accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context>
 {};
 } // namespace papilio
+
+#endif

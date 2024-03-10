@@ -1,10 +1,13 @@
+#ifndef PAPILIO_FORMAT_HPP
+#define PAPILIO_FORMAT_HPP
+
 #pragma once
 
 #include "macros.hpp"
 #include "core.hpp"
-#include "script.hpp"
+#include "script/interpreter.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wc++98-compat"
 #endif
@@ -521,6 +524,8 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
 #include "format/fundamental.hpp"
 #include "format/misc.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
+#endif
+
 #endif

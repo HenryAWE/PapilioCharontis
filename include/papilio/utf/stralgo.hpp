@@ -1,3 +1,6 @@
+#ifndef PAPILIO_UTF_STRALGO_HPP
+#define PAPILIO_UTF_STRALGO_HPP
+
 #pragma once
 
 #include <cstdint>
@@ -6,7 +9,7 @@
 #include "../macros.hpp"
 #include "../utility.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wc++98-compat"
 #    pragma clang diagnostic ignored "-Wc++98-c++11-compat-binary-literal"
@@ -528,6 +531,8 @@ inline namespace literals
 } // namespace papilio
 
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
+#endif
+
 #endif

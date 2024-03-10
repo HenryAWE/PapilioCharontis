@@ -27,6 +27,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=g++-12
             -Dpapilio_build_unit_test=1
             -Dpapilio_build_example=1
+            -Dpapilio_c_interface=1
 
         - name: Test
           working-directory: ${{github.workspace}}/build
@@ -57,6 +58,7 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++-${{matrix.compiler}}
             -Dpapilio_build_unit_test=1
             -Dpapilio_build_example=1
+            -Dpapilio_c_interface=1
 
         - name: Test
           working-directory: ${{github.workspace}}/build
@@ -91,6 +93,7 @@ jobs:
           -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
           -Dpapilio_build_unit_test=1
           -Dpapilio_build_example=1
+          -Dpapilio_c_interface=1
 
       - name: Test
         working-directory: ${{github.workspace}}/build

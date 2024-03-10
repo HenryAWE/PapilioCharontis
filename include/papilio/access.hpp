@@ -1,3 +1,6 @@
+#ifndef PAPILIO_ACCESS_HPP
+#define PAPILIO_ACCESS_HPP
+
 #pragma once
 
 #include <variant>
@@ -389,4 +392,6 @@ public:
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

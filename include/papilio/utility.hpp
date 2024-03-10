@@ -1,5 +1,8 @@
 // concepts, type traits, tags, auxiliary types
 
+#ifndef PAPILIO_UTILITY_HPP
+#define PAPILIO_UTILITY_HPP
+
 #pragma once
 
 #include <utility>
@@ -851,12 +854,22 @@ namespace detail
     template <auto Value>
     constexpr std::string_view static_enum_name_impl()
     {
-        [[maybe_unused]]
         std::string_view name;
 
 #if defined PAPILIO_COMPILER_GCC || defined PAPILIO_COMPILER_CLANG
+#    ifndef PAPILIO_COMPILER_CLANG_CL
         name = __PRETTY_FUNCTION__;
+#    else
+#        pragma clang diagnostic push
+#        pragma clang diagnostic ignored "-Wlanguage-extension-token"
+
+        name = __FUNCSIG__;
+
+#        pragma clang diagnostic pop
+#    endif
+
         std::size_t start = name.find("Value = ") + 8;
+
 #    ifdef PAPILIO_COMPILER_CLANG
         std::size_t end = name.find_last_of(']');
 #    else
@@ -870,18 +883,8 @@ namespace detail
         std::size_t end = name.find_last_of('>');
         return std::string_view(name.data() + start, end - start);
 
-
-#elif defined PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wlanguage-extension-token"
-
-        name = __FUNCSIG__;
-        std::size_t start = name.find("[Value = ") + 9;
-        std::size_t end = name.find_last_of(']');
-        return std::string_view(name.data() + start, end - start);
-
-#    pragma clang diagnostic pop
 #else
+        (void)name; // Unused
         static_assert(false, "Unimplemented");
 #endif
     }
@@ -919,7 +922,8 @@ constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noe
     auto names = [=]<std::size_t... Is>(std::index_sequence<Is...>)
     {
         return std::array<std::string_view, 256>{
-            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>(remove_qualifier)...};
+            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>(remove_qualifier)...
+        };
     }(std::make_index_sequence<256>());
 
     return names[static_cast<std::size_t>(value) + 128];
@@ -1040,4 +1044,6 @@ struct tuple_size<::papilio::compressed_pair<T1, T2>> :
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

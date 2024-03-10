@@ -1,3 +1,6 @@
+#ifndef PAPILIO_SCRIPT_INTERPRETER_HPP
+#define PAPILIO_SCRIPT_INTERPRETER_HPP
+
 #pragma once
 
 #include <iosfwd>
@@ -1429,4 +1432,6 @@ PAPILIO_EXPORT using interpreter = basic_interpreter<format_context>;
 
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
+#endif
+
 #endif

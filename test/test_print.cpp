@@ -41,7 +41,18 @@ TEST(print, tmpfile)
 {
     using namespace papilio;
 
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
     std::FILE* fp = std::tmpfile();
+    if(!fp)
+        GTEST_SKIP();
+
+#ifdef PAPILIO_COMPILER_CLANG_CL
+#    pragma clang diagnostic pop
+#endif
 
     PAPILIO_NS println(fp, "test");
     PAPILIO_NS print(fp, "test");

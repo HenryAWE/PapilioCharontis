@@ -1,3 +1,6 @@
+#ifndef PAPILIO_ACCESS_STRING_HPP
+#define PAPILIO_ACCESS_STRING_HPP
+
 #pragma once
 
 #include <string_view>
@@ -51,3 +54,5 @@ struct accessor<utf::basic_string_container<typename Context::char_type>, Contex
     }
 };
 } // namespace papilio
+
+#endif
