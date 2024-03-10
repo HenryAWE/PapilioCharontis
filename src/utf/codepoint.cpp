@@ -1,12 +1,6 @@
 #include <papilio/utf/codepoint.hpp>
 #include <iostream>
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
-#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#endif
+#include <papilio/detail/prefix.hpp>
 
 namespace papilio::utf
 {
@@ -32,6 +26,11 @@ std::pair<codepoint, std::uint8_t> decoder<wchar_t>::to_codepoint(std::wstring_v
     return std::make_pair(decoder<char32_t>::to_codepoint(ch32).first, processed_size);
 }
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
 auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
 {
     from_codepoint_result result;
@@ -55,6 +54,10 @@ auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
 
     return result;
 }
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
 std::ostream& operator<<(std::ostream& os, codepoint cp)
 {
@@ -89,6 +92,4 @@ std::basic_ostream<char32_t>& operator<<(std::basic_ostream<char32_t>& os, codep
 }
 } // namespace papilio::utf
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include <papilio/detail/suffix.hpp>

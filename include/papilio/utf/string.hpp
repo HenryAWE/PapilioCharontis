@@ -10,11 +10,7 @@
 #include "stralgo.hpp"
 #include "codepoint.hpp"
 #include "../memory.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include "../detail/prefix.hpp"
 
 namespace papilio::utf
 {
@@ -1376,8 +1372,6 @@ inline namespace literals
 } // namespace literals
 } // namespace papilio::utf
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "../detail/suffix.hpp"
 
 #endif

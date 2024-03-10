@@ -1,4 +1,5 @@
 #include <papilio/format.hpp>
+#include <papilio/detail/prefix.hpp>
 
 namespace papilio
 {
@@ -42,3 +43,5 @@ std::wstring vformat(
     return result;
 }
 } // namespace papilio
+
+#include <papilio/detail/suffix.hpp>

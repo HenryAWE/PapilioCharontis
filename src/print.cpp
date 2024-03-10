@@ -4,11 +4,7 @@
 #    define WIN32_LEAN_AND_MEAN
 #    include <Windows.h>
 #endif
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include <papilio/detail/prefix.hpp>
 
 namespace papilio
 {
@@ -27,7 +23,7 @@ namespace detail
 
     void fp_iterator_conv::write(char ch)
     {
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #endif
@@ -98,7 +94,7 @@ namespace detail
             m_byte_idx = 0;
         }
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
     }
@@ -130,6 +126,4 @@ void println(std::ostream& os)
 }
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include <papilio/detail/suffix.hpp>

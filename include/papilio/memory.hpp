@@ -6,12 +6,7 @@
 #include <cstddef>
 #include <memory>
 #include "utility.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wc++20-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -499,8 +494,6 @@ requires(std::is_array_v<T> && std::extent_v<T> != 0)
 optional_unique_ptr<T> make_optional_unique(std::size_t n) = delete;
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

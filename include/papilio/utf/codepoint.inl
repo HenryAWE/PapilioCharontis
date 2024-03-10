@@ -1,6 +1,6 @@
 #include <tuple> // std::tie
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #endif
@@ -234,6 +234,6 @@ codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexc
 }
 } // namespace papilio::utf
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif

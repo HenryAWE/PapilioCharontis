@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "../detail/prefix.hpp"
 #include <iosfwd>
 #include <optional>
 #include <charconv>
@@ -11,12 +12,6 @@
 #ifdef PAPILIO_PLATFORM_EMSCRIPTEN
 // Emscripten does not support from_chars for float, use stringstream as a fallback.
 #    include <sstream>
-#endif
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
 #endif
 
 namespace papilio::script
@@ -1430,8 +1425,6 @@ private:
 PAPILIO_EXPORT using interpreter = basic_interpreter<format_context>;
 } // namespace papilio::script
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "../detail/suffix.hpp"
 
 #endif

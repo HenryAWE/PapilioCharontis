@@ -9,6 +9,7 @@
 #include "script/interpreter.hpp"
 #include "format.hpp"
 #include "print.hpp"
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -27,5 +28,7 @@ constexpr inline std::tuple<int, int, int> get_version() noexcept
     );
 }
 } // namespace papilio
+
+#include "detail/suffix.hpp"
 
 #endif

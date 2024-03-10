@@ -12,13 +12,7 @@
 #include <array>
 #include <iterator>
 #include "stralgo.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wc++98-c++11-compat-binary-literal"
-#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
-#endif
+#include "../detail/prefix.hpp"
 
 namespace papilio::utf
 {
@@ -132,7 +126,7 @@ public:
 #    pragma GCC diagnostic ignored "-Wstringop-overflow="
 #endif
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #endif
@@ -435,7 +429,7 @@ private:
 #    pragma GCC diagnostic pop
 #endif
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 
@@ -457,7 +451,7 @@ namespace detail
         using iterator_category = std::bidirectional_iterator_tag;
     };
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #endif
@@ -727,7 +721,7 @@ namespace detail
         base_iter_t m_iter;
     };
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 } // namespace detail
@@ -868,8 +862,6 @@ public:
 
 #include "codepoint.inl"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "../detail/suffix.hpp"
 
 #endif

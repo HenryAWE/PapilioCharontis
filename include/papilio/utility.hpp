@@ -16,12 +16,7 @@
 #include <iostream>
 #include "macros.hpp"
 #include "detail/compat.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wc++20-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -1042,8 +1037,6 @@ struct tuple_size<::papilio::compressed_pair<T1, T2>> :
 {};
 } // namespace std
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

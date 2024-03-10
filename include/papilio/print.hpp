@@ -9,11 +9,7 @@
 #include "macros.hpp"
 #include "format.hpp"
 #include "color.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {

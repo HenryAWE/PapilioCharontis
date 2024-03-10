@@ -6,11 +6,7 @@
 #include "macros.hpp"
 #include "core.hpp"
 #include "script/interpreter.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -524,8 +520,6 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
 #include "format/fundamental.hpp"
 #include "format/misc.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

@@ -9,12 +9,7 @@
 #include "utf/codepoint.hpp"
 #include "utf/string.hpp"
 #include "container.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -390,8 +385,6 @@ public:
 #include "access/range.hpp"
 #include "access/misc.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

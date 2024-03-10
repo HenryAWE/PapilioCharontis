@@ -4,12 +4,7 @@
 #pragma once
 
 #include <utility>
-#include "../macros.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include "prefix.hpp"
 
 namespace papilio
 {
@@ -60,8 +55,6 @@ constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
 }
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "suffix.hpp"
 
 #endif

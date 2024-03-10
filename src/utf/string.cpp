@@ -1,10 +1,6 @@
 #include <papilio/utf/string.hpp>
 #include <iostream>
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
-#endif
+#include <papilio/detail/prefix.hpp>
 
 namespace papilio::utf
 {
@@ -27,6 +23,4 @@ std::wistream& operator>>(std::wistream& is, wstring_container& str)
 }
 } // namespace papilio::utf
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include <papilio/detail/suffix.hpp>

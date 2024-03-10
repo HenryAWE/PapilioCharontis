@@ -8,13 +8,7 @@
 #include <stdexcept>
 #include "../macros.hpp"
 #include "../utility.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wc++98-c++11-compat-binary-literal"
-#    pragma clang diagnostic ignored "-Wpre-c++17-compat"
-#endif
+#include "../detail/prefix.hpp"
 
 namespace papilio::utf
 {
@@ -531,8 +525,6 @@ inline namespace literals
 } // namespace papilio
 
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
+#include "../detail/suffix.hpp"
 
 #endif

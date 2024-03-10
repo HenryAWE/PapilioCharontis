@@ -5,11 +5,7 @@
 
 #include <cstdint>
 #include "format.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -235,8 +231,6 @@ auto styled(text_style st, const T& val)
 }
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

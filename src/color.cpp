@@ -1,9 +1,5 @@
 #include <papilio/color.hpp>
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include <papilio/detail/prefix.hpp>
 
 namespace papilio
 {
@@ -22,6 +18,4 @@ text_style bg(color col) noexcept
 }
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include <papilio/detail/suffix.hpp>

@@ -8,11 +8,7 @@
 #include <string>
 #include <iterator>
 #include "macros.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -40,8 +36,6 @@ PAPILIO_EXPORT using format_arg = basic_format_arg<format_context>;
 PAPILIO_EXPORT using wformat_arg = basic_format_arg<wformat_context>;
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

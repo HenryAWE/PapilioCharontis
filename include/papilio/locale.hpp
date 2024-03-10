@@ -5,11 +5,7 @@
 
 #include <locale>
 #include "macros.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -59,8 +55,6 @@ private:
 };
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

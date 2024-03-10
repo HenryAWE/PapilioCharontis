@@ -16,13 +16,7 @@
 #include "utf.hpp"
 #include "locale.hpp"
 #include "access.hpp"
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#    pragma clang diagnostic ignored "-Wc++20-compat"
-#endif
+#include "detail/prefix.hpp"
 
 namespace papilio
 {
@@ -1752,8 +1746,6 @@ const void* ptr(const T& p) noexcept
 
 #include "core.inl"
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif

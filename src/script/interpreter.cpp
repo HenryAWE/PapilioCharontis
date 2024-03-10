@@ -1,9 +1,5 @@
 #include <papilio/script/interpreter.hpp>
-
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
+#include <papilio/detail/prefix.hpp>
 
 namespace papilio::script
 {
@@ -123,6 +119,4 @@ char32_t script_base::get_esc_ch(char32_t ch) noexcept
 }
 } // namespace papilio::script
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include <papilio/detail/suffix.hpp>
