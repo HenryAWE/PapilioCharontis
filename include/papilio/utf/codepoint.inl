@@ -2,7 +2,9 @@
 
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
 #endif
 
 namespace papilio::utf

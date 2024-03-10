@@ -28,7 +28,9 @@ std::pair<codepoint, std::uint8_t> decoder<wchar_t>::to_codepoint(std::wstring_v
 
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
 #endif
 
 auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
