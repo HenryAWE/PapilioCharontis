@@ -33,36 +33,37 @@ jobs:
           working-directory: ${{github.workspace}}/build
           run: ctest
 
-    Clang:
-        runs-on: ubuntu-22.04
-        strategy:
-          fail-fast: false
-          matrix:
-            compiler: [14, 15]
-            cxxstd: [20]
+    # Temporarily disable clang build due to https://github.com/actions/runner-images/issues/8659
+    # Clang:
+    #     runs-on: ubuntu-22.04
+    #     strategy:
+    #       fail-fast: false
+    #       matrix:
+    #         compiler: [14, 15]
+    #         cxxstd: [20]
 
-        steps:
-        - uses: actions/checkout@v4
+    #     steps:
+    #     - uses: actions/checkout@v4
 
-        - name: Install Dependencies
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y cmake ninja-build clang-${{matrix.compiler}}
+    #     - name: Install Dependencies
+    #       run: |
+    #         sudo apt-get update
+    #         sudo apt-get install -y cmake ninja-build clang-${{matrix.compiler}}
 
-        - name: Build
-          run: >
-            ./build.sh
-            -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_C_COMPILER=clang-${{matrix.compiler}}
-            -DCMAKE_CXX_COMPILER=clang++-${{matrix.compiler}}
-            -Dpapilio_build_unit_test=1
-            -Dpapilio_build_example=1
-            -Dpapilio_c_interface=1
+    #     - name: Build
+    #       run: >
+    #         ./build.sh
+    #         -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
+    #         -DCMAKE_BUILD_TYPE=Release
+    #         -DCMAKE_C_COMPILER=clang-${{matrix.compiler}}
+    #         -DCMAKE_CXX_COMPILER=clang++-${{matrix.compiler}}
+    #         -Dpapilio_build_unit_test=1
+    #         -Dpapilio_build_example=1
+    #         -Dpapilio_c_interface=1
 
-        - name: Test
-          working-directory: ${{github.workspace}}/build
-          run: ctest
+    #     - name: Test
+    #       working-directory: ${{github.workspace}}/build
+    #       run: ctest
 
     MSVC:
       runs-on: windows-2022
