@@ -36,7 +36,7 @@ TEST(format, format_to)
         auto loc = test_format::attach_yes_no();
 
         std::vector<char> result;
-        auto it = format_to(std::back_inserter(result), loc, "{:L}", true);
+        auto it = PAPILIO_NS format_to(std::back_inserter(result), loc, "{:L}", true);
         *it = '\0';
         EXPECT_EQ(result.size(), 4);
         EXPECT_STREQ(result.data(), "yes");
@@ -225,7 +225,7 @@ TEST(format, wchar_t)
         auto loc = test_format::attach_yes_no<wchar_t>();
 
         std::vector<wchar_t> result;
-        auto it = format_to(std::back_inserter(result), loc, L"{:L}", true);
+        auto it = PAPILIO_NS format_to(std::back_inserter(result), loc, L"{:L}", true);
         *it = L'\0';
         EXPECT_EQ(result.size(), 4);
         EXPECT_STREQ(result.data(), L"yes");
