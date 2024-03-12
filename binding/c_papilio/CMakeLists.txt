@@ -17,7 +17,6 @@ if(${papilio_c_interface})
     endif()
 
     if(${papilio_build_unit_test})
-        find_package(GTest CONFIG REQUIRED)
         include(GoogleTest)
 
         enable_testing()

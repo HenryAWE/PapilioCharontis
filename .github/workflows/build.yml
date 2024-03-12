@@ -16,7 +16,7 @@ jobs:
         - name: Install Dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build gcc-12 libgtest-dev
+            sudo apt-get install -y cmake ninja-build gcc-12
 
         - name: Build
           run: >
@@ -47,7 +47,7 @@ jobs:
         - name: Install Dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build clang-${{matrix.compiler}} libgtest-dev
+            sudo apt-get install -y cmake ninja-build clang-${{matrix.compiler}}
 
         - name: Build
           run: >
@@ -80,10 +80,6 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: amd64
-
-      - name: Install Dependencies
-        run: |
-          C:\vcpkg\vcpkg.exe install gtest
 
       - name: Build
         run: >

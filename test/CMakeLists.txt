@@ -1,6 +1,5 @@
 enable_testing()
 
-find_package(GTest CONFIG REQUIRED)
 include(GoogleTest)
 
 macro(define_papilio_test test_name)
