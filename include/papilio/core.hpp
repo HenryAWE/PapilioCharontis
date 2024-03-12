@@ -1338,34 +1338,65 @@ private:
 
 namespace detail
 {
-    template <typename T, typename CharT>
-    concept is_formatter_disabled = std::is_base_of_v<
-        disabled_formatter,
-        formatter<T, CharT>>;
+    enum class formatter_tag
+    {
+        disabled = 0,
+        ordinary = 1,
+        adl_func = 2,
+        stream = 3
+    };
 
-    template <typename T, typename Context, typename CharT>
-    struct select_formatter
+    template <
+        typename T,
+        typename Context,
+        typename CharT = typename Context::char_type>
+    consteval formatter_tag get_formatter_tag()
+    {
+        using fmt_t = formatter<T, CharT>;
+        constexpr bool fmt_semiregular = std::semiregular<fmt_t>;
+
+        if constexpr(std::is_base_of_v<disabled_formatter, fmt_t>)
+        {
+            return formatter_tag::disabled;
+        }
+        else if constexpr(!fmt_semiregular)
+        {
+            if constexpr(has_adl_format_v<T, Context>)
+                return formatter_tag::adl_func;
+            else if constexpr(streamable<T, CharT>)
+                return formatter_tag::stream;
+        }
+
+        return formatter_tag::ordinary;
+    }
+
+    // For formatter_tag::ordinary and formatter_tag::disabled.
+    // Because a disabled formatter class is derived from papilio::disabled_formatter,
+    // so we can directly use the ordinary formatter to trigger an error.
+    template <formatter_tag Tag, typename T, typename Context, typename CharT>
+    struct select_formatter_impl
     {
         using type = formatter<T, CharT>;
     };
 
     template <typename T, typename Context, typename CharT>
-    requires(!is_formatter_disabled<T, CharT> && !std::semiregular<formatter<T, CharT>> && has_adl_format_v<T, Context>)
-    struct select_formatter<T, Context, CharT>
+    struct select_formatter_impl<formatter_tag::adl_func, T, Context, CharT>
     {
         using type = adl_format_adaptor<T, Context>;
     };
 
     template <typename T, typename Context, typename CharT>
-    requires(!is_formatter_disabled<T, CharT> && !std::semiregular<formatter<T, CharT>> && !has_adl_format_v<T, Context> && streamable<T, CharT>)
-    struct select_formatter<T, Context, CharT>
+    struct select_formatter_impl<formatter_tag::stream, T, Context, CharT>
     {
         using type = streamable_formatter<T, CharT>;
     };
 
     template <typename T, typename Context>
-    using select_formatter_t =
-        typename select_formatter<T, Context, typename Context::char_type>::type;
+    using select_formatter_t = typename select_formatter_impl<
+        get_formatter_tag<T, Context>(),
+        T,
+        Context,
+        typename Context::char_type>::type;
 } // namespace detail
 
 PAPILIO_EXPORT template <typename OutputIt, typename CharT>
