@@ -9,14 +9,20 @@
 #include "detail/constants.h"
 #include "detail/config.hpp"
 
+// Currently, this macro is just an alias of the assert() macro.
+// It might be changed to a custom implementation for providing more information.
 #define PAPILIO_ASSERT(expr) assert(expr)
 
-#define PAPILIO_NS           ::papilio::
+// Use this macro to avoid errors caused by ADL,
+// especially when mixing this library and the standard <format>.
+#define PAPILIO_NS ::papilio::
 
 #if defined PAPILIO_COMPILER_MSVC
 // [[no_unique_address]] is ignored by MSVC even in C++20 mode.
 // https://devblogs.microsoft.com/cppblog/msvc-cpp20-and-the-std-cpp20-switch/#msvc-extensions-and-abi
 #    define PAPILIO_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+// Clang does not support [[no_unique_address]] on Windows.
+// https://github.com/llvm/llvm-project/issues/49358
 #elif __has_cpp_attribute(no_unique_address)
 #    define PAPILIO_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else

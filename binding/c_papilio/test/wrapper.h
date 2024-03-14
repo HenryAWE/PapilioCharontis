@@ -1,17 +1,17 @@
+#ifndef C_PAPILIO_TEST_WRAPPER_H
+#define C_PAPILIO_TEST_WRAPPER_H
+
 #pragma once
 
-#ifndef C_PAPILIO_TEST_INVOKE_H
-#    define C_PAPILIO_TEST_INVOKE_H
+#include <c_papilio.h>
 
-#    include <c_papilio.h>
-
-#    ifdef __cplusplus
+#ifdef __cplusplus
 extern "C"
 {
-#    endif
+#endif
 
-#    define C_PAPILIO_TEST_PUSH_DECL(type, suffix) \
-        int test_c_papilio_push_##suffix(papilio_context* ctx, type arg)
+#define C_PAPILIO_TEST_PUSH_DECL(type, suffix) \
+    int test_c_papilio_push_##suffix(papilio_context* ctx, type arg)
 
 C_PAPILIO_TEST_PUSH_DECL(int, i);
 C_PAPILIO_TEST_PUSH_DECL(long, l);
@@ -32,8 +32,8 @@ C_PAPILIO_TEST_PUSH_DECL(const void*, ptr);
 
 C_PAPILIO_TEST_PUSH_DECL(const char*, str);
 
-#    ifdef __cplusplus
+#ifdef __cplusplus
 }
-#    endif
+#endif
 
 #endif

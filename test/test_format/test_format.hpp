@@ -1,3 +1,6 @@
+#ifndef PAPILIO_TEST_FORMAT_TEST_FORMAT_HPP
+#define PAPILIO_TEST_FORMAT_TEST_FORMAT_HPP
+
 #pragma once
 
 #include <locale>
@@ -51,3 +54,5 @@ template <typename CharT>
 struct formatter<test_format::format_disabled, CharT> : public disabled_formatter
 {};
 } // namespace papilio
+
+#endif

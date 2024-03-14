@@ -96,6 +96,8 @@ namespace detail
         std::is_same_v<std::remove_cv_t<T>, double> ||
         std::is_same_v<std::remove_cv_t<T>, long double>;
 
+    // Other user-defined types
+    // Use a type-erased handle class
     template <typename T, typename CharT>
     concept use_handle =
         !std::is_same_v<std::remove_cv_t<T>, bool> &&
@@ -107,6 +109,8 @@ namespace detail
         !std::is_bounded_array_v<T> &&
         !basic_string_like<T, CharT>;
 
+    // Check if T satisfies the requirements for small-object optimization.
+    // The implementation still needs to check the sizeof(T).
     template <typename T>
     concept use_soo_handle =
         std::is_nothrow_copy_constructible_v<std::remove_cvref_t<T>> &&
