@@ -10,9 +10,8 @@
 #include <cmath>
 #include "../core.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
 #    pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
 
@@ -345,7 +344,7 @@ namespace detail
         }
     };
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #endif
@@ -816,7 +815,7 @@ namespace detail
         }
     };
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 } // namespace detail
@@ -1153,7 +1152,7 @@ class formatter<T, CharT> : public detail::enum_formatter<T, CharT>
 {};
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 

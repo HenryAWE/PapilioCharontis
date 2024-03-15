@@ -311,7 +311,7 @@ void test_oiterstream()
 }
 } // namespace test_utility
 
-TEST(basic_oiterstream, char)
+TEST(basic_oiterstream, output)
 {
     using test_utility::test_oiterstream;
 
