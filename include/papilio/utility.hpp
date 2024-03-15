@@ -930,6 +930,26 @@ constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noe
 
 namespace detail
 {
+    template <std::size_t Idx, typename Tuple, typename Func>
+    constexpr void tuple_call(Tuple&& tp, Func&& func)
+    {
+        func(get<Idx>(std::forward<Tuple>(tp)));
+    }
+} // namespace detail
+
+template <tuple_like Tuple, typename Func>
+constexpr void tuple_for_each(Tuple&& tp, Func&& func)
+{
+    constexpr std::size_t tp_size = std::tuple_size_v<std::remove_cvref_t<Tuple>>;
+
+    [&]<std::size_t... Is>(std::index_sequence<Is...>)
+    {
+        (detail::tuple_call<Is>(std::forward<Tuple>(tp), func), ...);
+    }(std::make_index_sequence<tp_size>());
+}
+
+namespace detail
+{
     template <typename CharT>
     class joiner_base
     {

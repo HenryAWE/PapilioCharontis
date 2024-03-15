@@ -336,6 +336,39 @@ TEST(enum_name, enum_name)
     EXPECT_EQ(enum_name(second, true), "second");
 }
 
+TEST(tuple_for_each, tuple_for_each)
+{
+    using namespace papilio;
+
+    {
+        std::vector<int> result;
+
+        std::pair<int, int> p{1, 2};
+        tuple_for_each(
+            p,
+            [&](int v)
+            { result.push_back(v); }
+        );
+
+        EXPECT_EQ(result.size(), 2);
+        EXPECT_EQ(result[0], 1);
+        EXPECT_EQ(result[1], 2);
+    }
+
+    {
+        std::tuple<char, int, float> tp{'c', 1, 1.1f};
+
+        std::stringstream ss;
+        tuple_for_each(
+            tp,
+            [&](auto&& v)
+            { ss << v << " "; }
+        );
+
+        EXPECT_EQ(ss.str(), "c 1 1.1 ");
+    }
+}
+
 TEST(join, ostream)
 {
     {
