@@ -1,11 +1,5 @@
-#ifndef PAPILIO_ACCESS_MISC_HPP
-#define PAPILIO_ACCESS_MISC_HPP
-
-#pragma once
-
 #include <string_view>
 #include <typeindex>
-#include "../access.hpp"
 #include "../utility.hpp"
 
 namespace papilio
@@ -40,5 +34,3 @@ struct accessor<std::type_index, Context>
     }
 };
 } // namespace papilio
-
-#endif

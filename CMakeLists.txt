@@ -28,7 +28,7 @@ project(
     LANGUAGES C CXX
 )
 
-set(glob_expr "src/*.cpp" "include/*.hpp")
+set(glob_expr "src/*.cpp" "include/*.hpp" "include/*.inl" "include/*.h")
 file(GLOB_RECURSE papilio_src ${glob_expr})
 
 if(${papilio_build_module})

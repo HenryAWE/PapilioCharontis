@@ -1,19 +1,59 @@
-#ifndef PAPILIO_ACCESS_RANGE_HPP
-#define PAPILIO_ACCESS_RANGE_HPP
-
-#pragma once
-
 #include <string_view>
 #include <span>
 #include <ranges>
 #include <vector>
 #include <map>
 #include <utility>
-#include "../access.hpp"
 #include "../utility.hpp"
+#include "../utf/string.hpp"
 
 namespace papilio
 {
+PAPILIO_EXPORT template <typename Context>
+struct accessor<utf::basic_string_container<typename Context::char_type>, Context>
+{
+    using char_type = typename Context::char_type;
+    using format_arg_type = basic_format_arg<Context>;
+    using string_view_type = std::basic_string_view<char_type>;
+    using string_container_type = utf::basic_string_container<char_type>;
+    using attribute_name_type = basic_attribute_name<char_type>;
+
+    [[nodiscard]]
+    static utf::codepoint index(const string_container_type& str, ssize_t i)
+    {
+        if(i >= 0)
+        {
+            return str.index_or(
+                static_cast<std::size_t>(i), utf::codepoint()
+            );
+        }
+        else
+        {
+            i = -(i + 1);
+            return str.index_or(
+                reverse_index, static_cast<std::size_t>(i), utf::codepoint()
+            );
+        }
+    }
+
+    [[nodiscard]]
+    static string_container_type index(const string_container_type& str, slice s)
+    {
+        return str.template substr<utf::substr_behavior::empty_string>(s);
+    }
+
+    [[nodiscard]]
+    static format_arg_type attribute(const string_container_type& str, const attribute_name_type& attr)
+    {
+        if(attr == PAPILIO_TSTRING_VIEW(char_type, "length"))
+            return str.length();
+        else if(attr == PAPILIO_TSTRING_VIEW(char_type, "size"))
+            return str.size();
+        else
+            throw_invalid_attribute(attr);
+    }
+};
+
 PAPILIO_EXPORT template <std::ranges::contiguous_range Range, typename Context>
 struct contiguous_range_accessor
 {
@@ -129,19 +169,19 @@ struct accessor<std::vector<bool, Allocator>, Context>
 namespace detail
 {
     template <typename Compare>
-    struct cp_is_less : public std::false_type
+    struct cmp_is_less : public std::false_type
     {};
 
     template <typename T>
-    struct cp_is_less<std::less<T>> : public std::true_type
+    struct cmp_is_less<std::less<T>> : public std::true_type
     {};
 
     template <typename Compare>
-    struct cp_is_greater : public std::false_type
+    struct cmp_is_greater : public std::false_type
     {};
 
     template <typename T>
-    struct cp_is_greater<std::greater<T>> : public std::true_type
+    struct cmp_is_greater<std::greater<T>> : public std::true_type
     {};
 } // namespace detail
 
@@ -200,7 +240,9 @@ struct map_accessor
         {
             return m.size();
         }
-        if constexpr(detail::cp_is_less<typename MapType::key_compare>::value)
+
+        using cmp_t = typename MapType::key_compare;
+        if constexpr(detail::cmp_is_less<cmp_t>::value)
         {
             if(attr == PAPILIO_TSTRING_VIEW(char_type, "min"))
             {
@@ -211,7 +253,7 @@ struct map_accessor
                 return !m.empty() ? std::prev(m.end())->second : format_arg_type();
             }
         }
-        if constexpr(detail::cp_is_greater<typename MapType::key_compare>::value)
+        else if constexpr(detail::cmp_is_greater<cmp_t>::value)
         {
             if(attr == PAPILIO_TSTRING_VIEW(char_type, "max"))
             {
@@ -237,5 +279,3 @@ struct accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context> :
     public map_accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context>
 {};
 } // namespace papilio
-
-#endif
