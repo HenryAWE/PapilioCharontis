@@ -14,6 +14,11 @@ namespace papilio::utf
 {
 PAPILIO_EXPORT constexpr inline std::size_t npos = std::u8string::npos;
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
+
 PAPILIO_EXPORT class invalid_byte : public std::invalid_argument
 {
 public:
@@ -45,6 +50,10 @@ public:
 private:
     std::uint16_t m_ch;
 };
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
 PAPILIO_EXPORT [[nodiscard]]
 constexpr inline bool is_leading_byte(std::uint8_t ch) noexcept
@@ -329,9 +338,11 @@ constexpr inline std::size_t strlen(const CharT* str) noexcept(OnInvalid != strl
     return strlen<OnInvalid, CharT>(std::basic_string_view<CharT>(str));
 }
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
 #endif
 
 PAPILIO_EXPORT template <char8_like CharT>
@@ -474,7 +485,7 @@ constexpr inline std::size_t index_offset(
     return max_chars - 1 - idx;
 }
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 

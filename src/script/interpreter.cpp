@@ -10,7 +10,7 @@ static const char* to_cstr(script_error_code ec) noexcept
 #define PAPILIO_SCRIPT_ERR(code, msg) \
     case code: return msg
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
@@ -31,7 +31,7 @@ static const char* to_cstr(script_error_code ec) noexcept
         PAPILIO_SCRIPT_ERR(unknown_error, "unknown error");
     }
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 }

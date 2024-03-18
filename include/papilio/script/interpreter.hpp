@@ -16,6 +16,11 @@
 
 namespace papilio::script
 {
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
+
 PAPILIO_EXPORT class bad_variable_access : public std::bad_variant_access
 {};
 
@@ -24,6 +29,10 @@ PAPILIO_EXPORT class invalid_conversion : public std::invalid_argument
 public:
     using invalid_argument::invalid_argument;
 };
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
 namespace detail
 {
@@ -458,6 +467,11 @@ public:
     static constexpr char32_t script_start = U'$';
     static constexpr char32_t condition_end = U':';
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
+
     class error : public format_error
     {
     public:
@@ -473,6 +487,10 @@ public:
     private:
         script_error_code m_ec;
     };
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
     [[nodiscard]]
     static error make_error(script_error_code ec);
@@ -654,7 +672,7 @@ protected:
 
     static bool execute_op(op_id op, const variable_type& lhs, const variable_type& rhs)
     {
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif
@@ -678,7 +696,7 @@ protected:
             PAPILIO_UNREACHABLE();
         }
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
     }

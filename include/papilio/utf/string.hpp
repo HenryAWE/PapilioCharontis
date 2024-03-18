@@ -376,9 +376,11 @@ namespace detail
 
         constexpr codepoint cp_from_off(size_type off) const noexcept
         {
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
 #endif
 
             string_view_type str = get_view();
@@ -396,10 +398,11 @@ namespace detail
             }
             else // char32_like
             {
-                return decoder<char32_t>::to_codepoint(str[off]).first;
+                char32_t ch = static_cast<char32_t>(str[off]);
+                return decoder<char32_t>::to_codepoint(ch).first;
             }
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
         }

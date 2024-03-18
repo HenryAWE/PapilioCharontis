@@ -10,4 +10,6 @@
 #    pragma clang diagnostic ignored "-Wpre-c++17-compat"
 #    pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
 #    pragma clang diagnostic ignored "-Wc++20-compat"
+
+#    pragma clang diagnostic ignored "-Wpadded"
 #endif

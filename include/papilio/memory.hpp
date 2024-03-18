@@ -451,7 +451,7 @@ public:
 
     explicit operator bool() const noexcept
     {
-        return (bool)m_ptr;
+        return static_cast<bool>(m_ptr);
     }
 
     [[nodiscard]]

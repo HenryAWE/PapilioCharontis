@@ -694,7 +694,8 @@ namespace detail
     public:
         constexpr reference operator*() const
         {
-            return decoder<char32_t>::to_codepoint(*m_iter).first;
+            char32_t ch = static_cast<char32_t>(*m_iter);
+            return decoder<char32_t>::to_codepoint(ch).first;
         }
 
         explicit operator bool() const noexcept

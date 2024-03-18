@@ -42,6 +42,7 @@ target_include_directories(papilio PUBLIC include)
 target_compile_options(papilio PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
+    $<$<CXX_COMPILER_ID:Clang>:-Weverything>
 )
 if(${papilio_build_module})
     file(GLOB_RECURSE papilio_modules_src "modules/*.cppm")

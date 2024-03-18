@@ -93,7 +93,7 @@ struct contiguous_range_accessor
         if(std::cmp_greater_equal(s.first, sz))
             return format_arg_type();
         else if(std::cmp_greater(s.second, sz))
-            s.second = sz;
+            s.second = static_cast<ssize_t>(sz);
 
         if(s.first >= s.second)
             return format_arg_type();

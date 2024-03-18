@@ -36,11 +36,20 @@ PAPILIO_EXPORT enum class format_sign : std::uint8_t
     space
 };
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
+
 PAPILIO_EXPORT class format_error : public std::runtime_error
 {
 public:
     using runtime_error::runtime_error;
 };
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
 PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
 {
@@ -780,7 +789,7 @@ namespace detail
         return sizeof...(Ts) - get_named_arg_count<Ts...>();
     }
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 #endif
@@ -883,7 +892,7 @@ namespace detail
     };
 } // namespace detail
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
+#ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 

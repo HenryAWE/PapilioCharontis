@@ -885,7 +885,7 @@ namespace detail
     }
 } // namespace detail
 
-#if defined PAPILIO_COMPILER_CLANG || defined PAPILIO_COMPILER_CLANG_CL
+#if defined PAPILIO_COMPILER_CLANG 
 #    pragma clang diagnostic push
 #    if __clang_major__ >= 16
 #        pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
@@ -924,7 +924,7 @@ constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noe
     return names[static_cast<std::size_t>(value) + 128];
 }
 
-#if defined PAPILIO_COMPILER_CLANG || defined PAPILIO_COMPILER_CLANG_CL
+#if defined PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 

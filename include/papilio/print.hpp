@@ -264,8 +264,6 @@ void println(std::ostream& os, format_string<Args...> fmt, Args&&... args)
 }
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
+#include "detail/suffix.hpp"
 
 #endif
