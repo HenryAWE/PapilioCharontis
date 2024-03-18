@@ -1,10 +1,4 @@
-#ifndef PAPILIO_FORMAT_MISC_HPP
-#define PAPILIO_FORMAT_MISC_HPP
-
-#pragma once
-
-#include <ranges>
-#include "../core.hpp"
+#include "../utility.hpp"
 
 namespace papilio
 {
@@ -69,5 +63,3 @@ private:
     }
 };
 } // namespace papilio
-
-#endif
