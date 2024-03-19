@@ -14,8 +14,6 @@ define_papilio_test(test_access)
 
 define_papilio_test(test_core)
 
-define_papilio_test(test_container)
-
 define_papilio_test(test_memory)
 
 define_papilio_test(test_locale)
@@ -37,3 +35,5 @@ if(${papilio_build_module})
 endif()
 
 add_subdirectory(test_format)
+
+add_subdirectory(test_container)
