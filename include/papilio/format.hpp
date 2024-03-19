@@ -4,6 +4,7 @@
 #pragma once
 
 #include "macros.hpp"
+#include "fmtfwd.hpp"
 #include "core.hpp"
 #include "script/interpreter.hpp"
 #include "detail/prefix.hpp"
@@ -36,11 +37,6 @@ private:
     string_view_type m_fmt;
 };
 
-PAPILIO_EXPORT template <typename... Args>
-using format_string = basic_format_string<char, std::type_identity_t<Args>...>;
-PAPILIO_EXPORT template <typename... Args>
-using wformat_string = basic_format_string<wchar_t, std::type_identity_t<Args>...>;
-
 namespace detail
 {
     template <typename CharT, typename OutputIt, typename Context>
@@ -61,9 +57,6 @@ namespace detail
 
         return fmt_ctx.out();
     }
-
-    template <typename OutputIt, typename CharT>
-    using vfmt_args = basic_format_args_ref<basic_format_context<OutputIt, CharT>>;
 } // namespace detail
 
 PAPILIO_EXPORT template <typename OutputIt>
@@ -77,7 +70,7 @@ PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::string_view fmt,
-    const detail::vfmt_args<std::type_identity_t<OutputIt>, char>& args
+    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, char>& args
 )
 {
     using context_type = basic_format_context<OutputIt, char>;
@@ -94,7 +87,7 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::string_view fmt,
-    const detail::vfmt_args<std::type_identity_t<OutputIt>, char>& args
+    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, char>& args
 )
 {
     using context_type = basic_format_context<OutputIt, char>;
@@ -110,7 +103,7 @@ PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::wstring_view fmt,
-    const detail::vfmt_args<std::type_identity_t<OutputIt>, wchar_t>& args
+    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, wchar_t>& args
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
@@ -127,7 +120,7 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::wstring_view fmt,
-    const detail::vfmt_args<std::type_identity_t<OutputIt>, wchar_t>& args
+    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, wchar_t>& args
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
@@ -517,8 +510,9 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
 }
 } // namespace papilio
 
-#include "format/fundamental.hpp"
-#include "format/misc.hpp"
+#include "format/fundamental.inl"
+#include "format/tuple.inl"
+#include "format/misc.inl"
 
 #include "detail/suffix.hpp"
 

@@ -1139,7 +1139,7 @@ private:
 };
 
 // Type-erased format arguments.
-PAPILIO_EXPORT template <typename Context, typename CharT = typename Context::char_type>
+PAPILIO_EXPORT template <typename Context, typename CharT>
 class basic_format_args_ref final : public detail::format_args_base<Context, CharT>
 {
     using my_base = detail::format_args_base<Context, CharT>;
@@ -1532,6 +1532,36 @@ public:
         {
             advance_to(ctx, cp.append_to_as<char_type>(out(ctx)));
         }
+    }
+
+    template <typename... Args>
+    static auto make_format_args(Args&&... args)
+    {
+        static_assert(
+            std::conjunction_v<std::negation<is_format_args<Args, Context>>...>,
+            "cannot use format_args as format argument"
+        );
+
+        using result_type = static_format_args<
+            detail::get_indexed_arg_count<Args...>(),
+            detail::get_named_arg_count<Args...>(),
+            Context,
+            char_type>;
+        return result_type(std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    using format_string_type = basic_format_string<char_type, std::type_identity_t<Args>...>;
+
+    template <typename... Args>
+    static void format_to(context_type& ctx, format_string_type<Args...> fmt, Args&&... args)
+    {
+        advance_to(
+            ctx,
+            papilio::vformat_to(
+                out(ctx), fmt.get(), make_format_args(std::forward<Args>(args)...)
+            )
+        );
     }
 };
 
