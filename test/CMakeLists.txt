@@ -12,8 +12,6 @@ endmacro()
 
 define_papilio_test(test_access)
 
-define_papilio_test(test_core)
-
 define_papilio_test(test_memory)
 
 define_papilio_test(test_locale)
@@ -33,6 +31,8 @@ define_papilio_test(test_utf_string)
 if(${papilio_build_module})
     define_papilio_test(test_modules)
 endif()
+
+add_subdirectory(test_core)
 
 add_subdirectory(test_format)
 
