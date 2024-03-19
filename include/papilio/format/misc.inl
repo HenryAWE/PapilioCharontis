@@ -12,12 +12,14 @@ public:
     formatter& operator=(const formatter&) = default;
 
     using joiner_t = joiner<R, CharT>;
+    using range_type = typename joiner_t::range_type;
+    using value_type = std::ranges::range_value_t<range_type>;
 
     template <typename ParseContext, typename FormatContext>
+    requires formattable_with<value_type, FormatContext>
     auto format(const joiner_t& j, ParseContext& parse_ctx, FormatContext& fmt_ctx) const
     {
-        using value_t = std::ranges::range_value_t<typename joiner_t::range_type>;
-        using formatter_t = typename FormatContext::template formatter_type<value_t>;
+        using formatter_t = typename FormatContext::template formatter_type<value_type>;
 
         if constexpr(formatter_traits<formatter_t>::template parsable<FormatContext>())
         {

@@ -518,6 +518,7 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
 } // namespace papilio
 
 #include "format/fundamental.inl"
+#include "format/tuple.inl"
 #include "format/misc.inl"
 
 #include "detail/suffix.hpp"
