@@ -64,7 +64,11 @@ public:
                     context_t::append(ctx, m_sep);
                 first = false;
 
-                ctx.advance_to(format_to(ctx.out(), PAPILIO_TSTRING_VIEW(CharT, "{}"), v));
+                context_t::format_to(
+                    ctx,
+                    PAPILIO_TSTRING_VIEW(CharT, "{}"),
+                    v
+                );
             }
         );
 
