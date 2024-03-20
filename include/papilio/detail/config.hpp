@@ -11,4 +11,8 @@
 #    define PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT __cpp_multidimensional_subscript
 #endif
 
+#if defined(__cpp_lib_stacktrace) && __cpp_lib_stacktrace >= 202011L
+#    define PAPILIO_HAS_STACKTRACE __cpp_lib_stacktrace
+#endif
+
 #endif
