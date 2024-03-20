@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
 
-TEST(formatter, tuple)
+TEST(tuple_formatter, basic)
 {
     using namespace papilio;
 

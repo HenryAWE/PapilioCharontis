@@ -5,6 +5,7 @@
 
 #include <locale>
 #include <papilio/format.hpp>
+#include <gtest/gtest.h>
 
 namespace test_format
 {
@@ -16,18 +17,28 @@ class yes_no_numpunct : public std::numpunct<CharT>
 public:
     using string_type = typename my_base::string_type;
 
+    static constexpr CharT yes_string[] = {'y', 'e', 's', '\0'};
+
+    static constexpr CharT no_string[] = {'n', 'o', '\0'};
+
 protected:
     string_type do_truename() const override
     {
-        const CharT yes_str[] = {'y', 'e', 's'};
-        return string_type(yes_str, std::size(yes_str));
+        return yes_string;
     }
 
     string_type do_falsename() const override
     {
-        const CharT no_str[] = {'n', 'o'};
-        return string_type(no_str, std::size(no_str));
+        return no_string;
     }
+};
+
+class stream_only
+{
+public:
+    friend std::ostream& operator<<(std::ostream& os, const stream_only&);
+
+    friend std::wostream& operator<<(std::wostream& os, const stream_only&);
 };
 
 class format_disabled
@@ -54,5 +65,16 @@ template <typename CharT>
 struct formatter<test_format::format_disabled, CharT> : public disabled_formatter
 {};
 } // namespace papilio
+
+template <typename CharT>
+class format_suite : public ::testing::Test
+{
+public:
+    using string_type = std::basic_string<CharT>;
+    using string_view_type = std::basic_string_view<CharT>;
+};
+
+using char_types = ::testing::Types<char, wchar_t>;
+TYPED_TEST_SUITE(format_suite, char_types);
 
 #endif

@@ -1,6 +1,51 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
 
+TEST(misc_formatter, join)
+{
+    using namespace papilio;
+
+    {
+        int arr[4] = {1, 2, 3, 4};
+        EXPECT_EQ(
+            PAPILIO_NS format("{}", PAPILIO_NS join(arr)),
+            "1, 2, 3, 4"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{}", PAPILIO_NS join<wchar_t>(arr)),
+            L"1, 2, 3, 4"
+        );
+    }
+
+    {
+        int arr[4] = {1, 2, 3, 4};
+        EXPECT_EQ(
+            PAPILIO_NS format("{}", PAPILIO_NS join(arr, " | ")),
+            "1 | 2 | 3 | 4"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{}", PAPILIO_NS join(arr, L" | ")),
+            L"1 | 2 | 3 | 4"
+        );
+    }
+
+    {
+        int arr[4] = {1, 2, 3, 4};
+
+        static_assert(formattable<decltype(join(arr, "|"))>);
+        static_assert(formattable<decltype(join(arr, L"|")), wchar_t>);
+
+        EXPECT_EQ(
+            PAPILIO_NS format("{:02}", PAPILIO_NS join(arr, " | ")),
+            "01 | 02 | 03 | 04"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{:02}", PAPILIO_NS join(arr, L" | ")),
+            L"01 | 02 | 03 | 04"
+        );
+    }
+}
+
 TEST(misc_formatter, thread_id)
 {
     using namespace papilio;
@@ -17,7 +62,7 @@ TEST(misc_formatter, thread_id)
 
         EXPECT_EQ(PAPILIO_NS format("{}", id), expected_str);
     }
-    
+
     {
         const std::wstring wexpected_str = [&]()
         {
