@@ -12,4 +12,5 @@
 #    pragma clang diagnostic ignored "-Wc++20-compat"
 
 #    pragma clang diagnostic ignored "-Wpadded"
+#    pragma clang diagnostic ignored "-Wcovered-switch-default"
 #endif

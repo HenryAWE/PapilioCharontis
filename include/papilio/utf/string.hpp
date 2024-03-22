@@ -485,6 +485,12 @@ public:
         return *this;
     }
 
+    constexpr basic_string_ref& assign(const_iterator start, const_iterator stop) noexcept
+    {
+        this->set_view(start, stop);
+        return *this;
+    }
+
     using my_base::find;
 
     [[nodiscard]]
@@ -661,6 +667,7 @@ private:
 
     constexpr void set_view(const_iterator start, const_iterator stop) noexcept
     {
+        PAPILIO_ASSERT(start <= stop);
         set_view(string_view_type(start.base(), stop.base()));
     }
 

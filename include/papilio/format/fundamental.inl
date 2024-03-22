@@ -5,11 +5,6 @@
 #include <cmath>
 #include "helper.hpp"
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wcovered-switch-default"
-#endif
-
 namespace papilio
 {
 namespace detail
@@ -44,7 +39,7 @@ namespace detail
             using context_t = format_context_traits<FormatContext>;
 
             PAPILIO_ASSERT(m_data.fill != U'\0');
-            context_t::append(ctx, utf::codepoint(m_data.fill), count);
+            context_t::append(ctx, m_data.fill, count);
         }
     };
 
@@ -469,6 +464,7 @@ namespace detail
     class string_formatter : public std_formatter_base
     {
     public:
+        using string_ref_type = utf::basic_string_ref<CharT>;
         using string_container_type = utf::basic_string_container<CharT>;
 
         void set_data(const std_formatter_data& data)
@@ -483,15 +479,13 @@ namespace detail
         }
 
         template <typename FormatContext>
-        auto format(string_container_type str, FormatContext& ctx)
+        auto format(string_ref_type str, FormatContext& ctx)
         {
-            PAPILIO_ASSERT(!str.has_ownership());
-
             using context_t = format_context_traits<FormatContext>;
 
-            std::size_t used = 0;
+            std::size_t used = 0; // Used width
 
-
+            // The "precision" for a string means the max width can be used.
             if(m_data.precision != 0)
             {
                 for(auto it = str.begin(); it != str.end(); ++it)
@@ -857,7 +851,3 @@ requires std::is_enum_v<T>
 class formatter<T, CharT> : public detail::enum_formatter<T, CharT>
 {};
 } // namespace papilio
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif

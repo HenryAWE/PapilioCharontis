@@ -672,11 +672,6 @@ protected:
 
     static bool execute_op(op_id op, const variable_type& lhs, const variable_type& rhs)
     {
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wcovered-switch-default"
-#endif
-
         switch(op)
         {
         case op_id::equal:
@@ -695,10 +690,6 @@ protected:
         default:
             PAPILIO_UNREACHABLE();
         }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
     }
 
     // Parses integer value
