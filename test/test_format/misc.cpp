@@ -75,14 +75,12 @@ TEST(misc_formatter, thread_id)
     }
 }
 
+#ifdef PAPILIO_HAS_STACKTRACE
+
 TEST(misc_formatter, stacktrace)
 {
     using namespace papilio;
 
-#ifndef PAPILIO_HAS_STACKTRACE
-    GTEST_SKIP() << "No <stacktrace> support";
-
-#else
     auto cur = std::stacktrace::current();
 
     {
@@ -113,5 +111,6 @@ TEST(misc_formatter, stacktrace)
             utf::string_ref(expected_str).to_wstring()
         );
     }
-#endif
 }
+
+#endif
