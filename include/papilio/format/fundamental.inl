@@ -11,25 +11,45 @@ namespace detail
 {
     class std_formatter_base
     {
-    protected:
+    private:
         std_formatter_data m_data;
 
-        std::pair<std::size_t, std::size_t> calc_fill(std::size_t used) const noexcept
+    protected:
+        std_formatter_data& data() noexcept
         {
-            std::size_t n = m_data.width > used ? m_data.width - used : 0;
+            return m_data;
+        }
 
+        const std_formatter_data& data() const noexcept
+        {
+            return m_data;
+        }
+
+        // Returns the left and right size for filling
+        std::pair<std::size_t, std::size_t> fill_size(std::size_t used) const noexcept
+        {
+            if(m_data.width <= used)
+                return std::make_pair(0, 0);
+
+            std::size_t remain = m_data.width - used;
             switch(m_data.align)
             {
-            default:
-            case format_align::default_align:
+
             case format_align::right:
-                return std::make_pair(n, 0);
+                return std::make_pair(remain, 0);
 
             case format_align::left:
-                return std::make_pair(0, n);
+                return std::make_pair(0, remain);
 
             case format_align::middle:
-                return std::make_pair(n / 2, n / 2 + n % 2);
+                return std::make_pair(
+                    remain / 2,
+                    remain / 2 + remain % 2 // ceil(remain / 2)
+                );
+
+            default:
+            case format_align::default_align:
+                PAPILIO_UNREACHABLE();
             }
         }
 
@@ -54,15 +74,17 @@ namespace detail
     class int_formatter : public std_formatter_base
     {
     public:
-        constexpr void set_data(const std_formatter_data& data) noexcept
+        constexpr void set_data(const std_formatter_data& dt) noexcept
         {
-            PAPILIO_ASSERT(data.contains_type(U"BbXxod"));
+            PAPILIO_ASSERT(dt.contains_type(U"BbXxod"));
 
-            m_data = data;
-            m_data.fill = data.fill_or(U' ');
-            m_data.type = data.type_or(U'd');
-            if(m_data.align != format_align::default_align)
-                m_data.fill_zero = false;
+            data() = dt;
+            data().fill = dt.fill_or(U' ');
+            data().type = dt.type_or(U'd');
+            if(data().align != format_align::default_align)
+                data().fill_zero = false;
+            else
+                data().align = format_align::right;
         }
 
         template <typename FormatContext>
@@ -71,7 +93,7 @@ namespace detail
             CharT buf[sizeof(T) * 8];
             std::size_t buf_size = 0;
 
-            auto [base, uppercase] = apply_type_ch(m_data.type);
+            auto [base, uppercase] = parse_type_ch(data().type);
 
             // clang-format off
 
@@ -105,9 +127,9 @@ namespace detail
             using context_t = format_context_traits<FormatContext>;
 
             std::size_t used = buf_size;
-            if(m_data.alternate_form)
-                used += alt_prefix_size(base);
-            switch(m_data.sign)
+            if(data().alternate_form)
+                used += alt_prefix_width(base);
+            switch(data().sign)
             {
             case format_sign::negative:
             case format_sign::default_sign:
@@ -124,13 +146,13 @@ namespace detail
                 PAPILIO_UNREACHABLE();
             }
 
-            auto [left, right] = m_data.fill_zero ?
+            auto [left, right] = data().fill_zero ?
                                      std::make_pair<std::size_t, std::size_t>(0, 0) :
-                                     calc_fill(used);
+                                     fill_size(used);
 
             fill(ctx, left);
 
-            switch(m_data.sign)
+            switch(data().sign)
             {
             case format_sign::negative:
             case format_sign::default_sign:
@@ -150,7 +172,7 @@ namespace detail
                 PAPILIO_UNREACHABLE();
             }
 
-            if(m_data.alternate_form && base != 10)
+            if(data().alternate_form && base != 10)
             {
                 context_t::append(ctx, '0');
                 switch(base)
@@ -164,11 +186,15 @@ namespace detail
                 }
             }
 
-            if(m_data.fill_zero)
+            if(data().fill_zero)
             {
-                if(used < m_data.width)
+                if(used < data().width)
                 {
-                    context_t::append(ctx, static_cast<CharT>('0'), m_data.width - used);
+                    context_t::append(
+                        ctx,
+                        static_cast<CharT>('0'),
+                        data().width - used
+                    );
                 }
             }
 
@@ -181,7 +207,8 @@ namespace detail
         }
 
     private:
-        static std::pair<int, bool> apply_type_ch(char32_t ch) noexcept
+        // Returns the number base and whether to use uppercase.
+        static std::pair<int, bool> parse_type_ch(char32_t ch) noexcept
         {
             int base = 10;
             bool uppercase = false;
@@ -223,7 +250,8 @@ namespace detail
             return std::make_pair(base, uppercase);
         }
 
-        static std::size_t alt_prefix_size(int base) noexcept
+        // Get width of the prefix of alternate form
+        static std::size_t alt_prefix_width(int base) noexcept
         {
             switch(base)
             {
@@ -233,10 +261,10 @@ namespace detail
 
             case 2:
             case 16:
-                return 2;
+                return 2; // "0b", "0B", "0x" and "0X"
 
             case 8:
-                return 1;
+                return 1; // "o"
             }
         }
     };
@@ -245,14 +273,14 @@ namespace detail
     class float_formatter : public std_formatter_base
     {
     public:
-        void set_data(const std_formatter_data& data)
+        void set_data(const std_formatter_data& dt)
         {
-            PAPILIO_ASSERT(data.contains_type(U"fFgGeEaA"));
+            PAPILIO_ASSERT(dt.contains_type(U"fFgGeEaA"));
 
-            m_data = data;
-            m_data.fill = data.fill_or(U' ');
-            if(m_data.align == format_align::default_align)
-                m_data.align = format_align::right;
+            data() = dt;
+            data().fill = dt.fill_or(U' ');
+            if(data().align == format_align::default_align)
+                data().align = format_align::right;
         }
 
         template <typename FormatContext>
@@ -288,7 +316,7 @@ namespace detail
 
             std::size_t used = fp_size;
 
-            switch(m_data.sign)
+            switch(data().sign)
             {
             case format_sign::default_sign:
             case format_sign::negative:
@@ -305,11 +333,11 @@ namespace detail
                 PAPILIO_UNREACHABLE();
             }
 
-            auto [left, right] = calc_fill(used);
+            auto [left, right] = fill_size(used);
 
             fill(ctx, left);
 
-            switch(m_data.sign)
+            switch(data().sign)
             {
             case format_sign::default_sign:
             case format_sign::negative:
@@ -341,7 +369,7 @@ namespace detail
             std::chars_format ch_fmt{};
             bool uppercase = false;
 
-            switch(m_data.type)
+            switch(data().type)
             {
             case U'G':
                 uppercase = true;
@@ -382,9 +410,9 @@ namespace detail
             std::to_chars_result result;
             auto [ch_fmt, uppercase] = get_chars_fmt();
 
-            int precision = static_cast<int>(m_data.precision);
+            int precision = static_cast<int>(data().precision);
             if(precision == 0 &&
-               U"fFeEgG"sv.find(m_data.type) != std::u32string::npos)
+               U"fFeEgG"sv.find(data().type) != std::u32string::npos)
             {
                 precision = 6;
             }
@@ -436,13 +464,13 @@ namespace detail
     class codepoint_formatter : public std_formatter_base
     {
     public:
-        void set_data(const std_formatter_data& data)
+        void set_data(const std_formatter_data& dt)
         {
-            PAPILIO_ASSERT(data.contains_type(U"c"));
+            PAPILIO_ASSERT(dt.contains_type(U"c"));
 
-            m_data = data;
-            m_data.type = data.type_or(U'c');
-            m_data.fill = data.fill_or(U' ');
+            data() = dt;
+            data().type = dt.type_or(U'c');
+            data().fill = dt.fill_or(U' ');
         }
 
         template <typename FormatContext>
@@ -450,7 +478,7 @@ namespace detail
         {
             using context_t = format_context_traits<FormatContext>;
 
-            auto [left, right] = calc_fill(cp.estimate_width());
+            auto [left, right] = fill_size(cp.estimate_width());
 
             fill(ctx, left);
             context_t::append(ctx, cp);
@@ -467,15 +495,15 @@ namespace detail
         using string_ref_type = utf::basic_string_ref<CharT>;
         using string_container_type = utf::basic_string_container<CharT>;
 
-        void set_data(const std_formatter_data& data)
+        void set_data(const std_formatter_data& dt)
         {
-            PAPILIO_ASSERT(data.contains_type(U"s"));
+            PAPILIO_ASSERT(dt.contains_type(U"s"));
 
-            m_data = data;
-            m_data.type = data.type_or(U's');
-            m_data.fill = data.fill_or(U' ');
-            if(m_data.align == format_align::default_align)
-                m_data.align = format_align::left;
+            data() = dt;
+            data().type = dt.type_or(U's');
+            data().fill = dt.fill_or(U' ');
+            if(data().align == format_align::default_align)
+                data().align = format_align::left;
         }
 
         template <typename FormatContext>
@@ -486,12 +514,12 @@ namespace detail
             std::size_t used = 0; // Used width
 
             // The "precision" for a string means the max width can be used.
-            if(m_data.precision != 0)
+            if(data().precision != 0)
             {
                 for(auto it = str.begin(); it != str.end(); ++it)
                 {
                     std::size_t w = (*it).estimate_width();
-                    if(used + w > m_data.precision)
+                    if(used + w > data().precision)
                     {
                         str.assign(str.begin(), it);
                         break;
@@ -505,7 +533,7 @@ namespace detail
                     used += cp.estimate_width();
             }
 
-            auto [left, right] = calc_fill(used);
+            auto [left, right] = fill_size(used);
 
             fill(ctx, left);
             context_t::append(ctx, str);
