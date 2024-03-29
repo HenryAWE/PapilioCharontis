@@ -30,6 +30,7 @@ public:
     static constexpr std::uint8_t size_bytes(char32_t ch) noexcept;
 
     static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(char32_t ch) noexcept;
+    static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(std::u32string_view ch) noexcept;
 
     static constexpr std::pair<char32_t, std::uint8_t> from_codepoint(codepoint cp) noexcept;
 };
@@ -77,6 +78,15 @@ public:
     };
 
     static constexpr auto from_codepoint(codepoint cp) -> from_codepoint_result;
+};
+
+PAPILIO_EXPORT template <>
+class decoder<char>
+{
+public:
+    static std::uint8_t size_bytes(char8_t ch) noexcept;
+
+    static std::pair<codepoint, std::uint8_t> to_codepoint(std::string_view ch);
 };
 
 PAPILIO_EXPORT template <>
@@ -206,7 +216,7 @@ public:
 
     template <std::integral T>
     requires(sizeof(T) == 1)
-    constexpr codepoint& assign(std::span<T, 4> bytes) noexcept
+    constexpr codepoint& assign(std::span<const T, 4> bytes) noexcept
     {
         return assign(
             static_cast<value_type>(bytes[0]),
@@ -292,7 +302,8 @@ public:
             static_cast<To>(m_data[0]),
             static_cast<To>(m_data[1]),
             static_cast<To>(m_data[2]),
-            static_cast<To>(m_data[3])};
+            static_cast<To>(m_data[3])
+        };
 
         return std::make_pair(arr, size_bytes());
     }
@@ -400,7 +411,17 @@ public:
     template <typename CharT>
     std::basic_string<CharT>& append_to(std::basic_string<CharT>& out) const
     {
-        append_to_as<CharT>(std::back_inserter(out));
+        if constexpr(char8_like<CharT>)
+        {
+            std::uint8_t sz = size_bytes();
+            out.reserve(out.size() + sz);
+            for(std::uint8_t i = 0; i < sz; ++i)
+                out.push_back(static_cast<CharT>(m_data[i]));
+        }
+        else
+        {
+            append_to_as<CharT>(std::back_inserter(out));
+        }
         return out;
     }
 

@@ -56,6 +56,13 @@ constexpr std::pair<codepoint, std::uint8_t> decoder<char32_t>::to_codepoint(cha
     return std::make_pair(codepoint(bytes, len), std::uint8_t(1));
 }
 
+constexpr std::pair<codepoint, std::uint8_t> decoder<char32_t>::to_codepoint(std::u32string_view ch) noexcept
+{
+    if(ch.empty()) [[unlikely]]
+        return std::make_pair(codepoint(), std::uint8_t(0));
+    return to_codepoint(ch[0]);
+}
+
 constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(codepoint cp) noexcept
 {
     const char8_t* bytes = cp.u8data();

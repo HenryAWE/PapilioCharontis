@@ -1080,7 +1080,7 @@ public:
 
         for(; it != sentinel; ++it)
         {
-            if(create_ref(it, sentinel).starts_with(str))
+            if(string_ref_type(it, sentinel).starts_with(str))
                 break;
         }
 
@@ -1206,11 +1206,6 @@ private:
     T& emplace_data(Args&&... args) const noexcept(std::is_nothrow_constructible_v<T, Args...>)
     {
         return m_data.template emplace<T>(std::forward<Args>(args)...);
-    }
-
-    static constexpr string_ref_type create_ref(const_iterator start, const_iterator stop) noexcept
-    {
-        return string_view_type(start.base(), stop.base());
     }
 
     template <typename U>

@@ -4,6 +4,21 @@
 
 namespace papilio::utf
 {
+std::uint8_t decoder<char>::size_bytes(char8_t ch) noexcept
+{
+    return PAPILIO_NS utf::byte_count(ch);
+}
+
+std::pair<codepoint, std::uint8_t> decoder<char>::to_codepoint(std::string_view ch)
+{
+    std::u8string_view u8_ch(
+        reinterpret_cast<const char8_t*>(ch.data()),
+        ch.size()
+    );
+
+    return decoder<char8_t>::to_codepoint(u8_ch);
+}
+
 auto decoder<wchar_t>::to_char32_t(std::wstring_view ch) -> std::pair<char32_t, std::uint8_t>
 {
     if(ch.empty()) [[unlikely]]
@@ -37,7 +52,7 @@ auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
 {
     from_codepoint_result result;
 
-    if constexpr(sizeof(wchar_t) == sizeof(char16_t))
+    if constexpr(sizeof(wchar_t) == 2)
     {
         auto ch16_result = decoder<char16_t>::from_codepoint(cp);
         result.chars[0] = ch16_result.chars[0];
@@ -46,7 +61,7 @@ auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
         result.size = ch16_result.size;
         result.processed_size = ch16_result.processed_size;
     }
-    else
+    else // sizeof(wchar_t) == 4
     {
         auto ch32_result = decoder<char32_t>::from_codepoint(cp);
         result.chars[0] = static_cast<wchar_t>(ch32_result.first);
@@ -63,13 +78,14 @@ auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
 
 std::ostream& operator<<(std::ostream& os, codepoint cp)
 {
-    os << std::string_view(cp);
+    os.write(cp.data(), cp.size_bytes());
     return os;
 }
 
 std::wostream& operator<<(std::wostream& os, codepoint cp)
 {
-    os << decoder<wchar_t>::from_codepoint(cp).get();
+    auto result = decoder<wchar_t>::from_codepoint(cp);
+    os.write(result.chars, result.size);
     return os;
 }
 
