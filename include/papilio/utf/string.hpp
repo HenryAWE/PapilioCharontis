@@ -347,7 +347,7 @@ namespace detail
         friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const Derived& str)
         {
             auto sv = static_cast<string_view_type>(str);
-            os.write(sv.data(), sv.size());
+            os.write(sv.data(), static_cast<std::streamsize>(sv.size()));
             return os;
         }
 
