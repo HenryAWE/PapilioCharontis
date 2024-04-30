@@ -1,6 +1,6 @@
 # Building
 ## Prerequisites
-1. Compiler that supports C++20. Recommended compilers: `MSVC 19.3` (`Visual Studio 2022`) or higher, `GCC 12` or higher, `Clang 14` or higher.
+1. Compiler that supports C++20. Recommended compilers: `MSVC 19.3` (`Visual Studio 2022`) or higher, `GCC 12` or higher, `Clang 15` or higher.
 2. `CMake`: `3.20` or higher.
 
 ## Build the Project

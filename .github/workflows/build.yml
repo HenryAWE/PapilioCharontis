@@ -40,10 +40,10 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            clang: [14, 15]
+            clang: [15]
             cxxstd: [20]
 
-        name: Clang-${{matrix.clang}} C++${{matrix.cxxstd}} libc++-${{matrix.clang}}
+        name: Clang-${{matrix.clang}} C++${{matrix.cxxstd}}
 
         steps:
         - uses: actions/checkout@v4
@@ -51,12 +51,10 @@ jobs:
         - name: Install Dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build clang-${{matrix.clang}} libc++-${{matrix.clang}}-dev
+            sudo apt-get install -y cmake ninja-build clang-${{matrix.clang}}
 
         - name: Build
           run: >
-            export CXXFLAGS="-stdlib=libc++" &&
-            export LDFLAGS="-stdlib=libc++" &&
             ./build.sh
             -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
             -DCMAKE_BUILD_TYPE=Release
