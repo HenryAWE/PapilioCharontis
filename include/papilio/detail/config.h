@@ -13,6 +13,11 @@
 #    define PAPILIO_PLATFORM_LINUX 1
 #endif
 
+#ifdef _LIBCPP_VERSION
+// libc++
+#    define PAPILIO_STDLIB_LIBCPP _LIBCPP_VERSION
+#endif
+
 #ifdef _MSC_VER
 #    ifdef __clang__
 #        define PAPILIO_COMPILER_CLANG    __clang_major__

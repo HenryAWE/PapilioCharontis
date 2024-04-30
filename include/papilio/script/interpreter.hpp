@@ -9,8 +9,8 @@
 #include <charconv>
 #include "../core.hpp"
 #include "../access.hpp"
-#ifdef PAPILIO_PLATFORM_EMSCRIPTEN
-// Emscripten does not support from_chars for float, use stringstream as a fallback.
+#ifdef PAPILIO_STDLIB_LIBCPP
+// from_chars of libc++ is broken, use stringstream as a fallback.
 #    include <sstream>
 #endif
 
@@ -734,12 +734,12 @@ protected:
     {
         T val = static_cast<T>(0);
 
-#ifndef PAPILIO_PLATFORM_EMSCRIPTEN
+#ifndef PAPILIO_STDLIB_LIBCPP
         std::from_chars(start, stop, val);
         return val;
 
 #else
-        // Emscripten does not support from_chars for float, use stringstream as a fallback.
+        // from_chars of libc++ is broken, use stringstream as a fallback.
         std::stringstream ss(std::string(start, stop));
 
         ss.imbue(std::locale::classic());

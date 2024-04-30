@@ -10,6 +10,8 @@ jobs:
           matrix:
             cxxstd: [20, 23]
 
+        name: GCC-12 C++${{matrix.cxxstd}}
+
         steps:
         - uses: actions/checkout@v4
 
@@ -38,8 +40,10 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            compiler: [14, 15]
+            clang: [14, 15]
             cxxstd: [20]
+
+        name: Clang-${{matrix.clang}} C++${{matrix.cxxstd}} libc++-${{matrix.clang}}
 
         steps:
         - uses: actions/checkout@v4
@@ -47,15 +51,17 @@ jobs:
         - name: Install Dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build clang-${{matrix.compiler}}
+            sudo apt-get install -y cmake ninja-build clang-${{matrix.clang}} libc++-${{matrix.clang}}-dev
 
         - name: Build
           run: >
+            export CXXFLAGS="-stdlib=libc++" &&
+            export LDFLAGS="-stdlib=libc++" &&
             ./build.sh
             -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
             -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_C_COMPILER=clang-${{matrix.compiler}}
-            -DCMAKE_CXX_COMPILER=clang++-${{matrix.compiler}}
+            -DCMAKE_C_COMPILER=clang-${{matrix.clang}}
+            -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang}}
             -Dpapilio_build_unit_test=1
             -Dpapilio_build_example=1
             -Dpapilio_c_interface=1
@@ -70,6 +76,8 @@ jobs:
         fail-fast: false
         matrix:
           cxxstd: [20, 23]
+
+      name: MSVC C++${{matrix.cxxstd}} 
 
       env:
         VCPKG_BUILD_TYPE: release
