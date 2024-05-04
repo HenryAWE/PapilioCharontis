@@ -53,9 +53,74 @@ PAPILIO_EXPORT struct std_formatter_data
     }
 };
 
-PAPILIO_EXPORT template <typename ParseContext, bool EnablePrecision = false>
-class std_formatter_parser
+namespace detail
 {
+    class std_fmt_parser_base
+    {
+    protected:
+        static bool is_align_ch(char32_t ch) noexcept
+        {
+            return ch == U'<' || ch == U'>' || ch == U'^';
+        }
+
+        static format_align get_align(char32_t ch) noexcept
+        {
+            PAPILIO_ASSERT(is_align_ch(ch));
+
+            switch(ch)
+            {
+            case U'<': return format_align::left;
+            case U'>': return format_align::right;
+            case U'^': return format_align::middle;
+
+            default: PAPILIO_UNREACHABLE();
+            }
+        }
+
+        static bool is_sign_ch(char32_t ch) noexcept
+        {
+            return ch == U'+' || ch == U' ' || ch == U'-';
+        }
+
+        static format_sign get_sign(char32_t ch) noexcept
+        {
+            PAPILIO_ASSERT(is_sign_ch(ch));
+
+            switch(ch)
+            {
+            case U'+': return format_sign::positive;
+            case U' ': return format_sign::space;
+            case U'-': return format_sign::negative;
+
+            default: PAPILIO_UNREACHABLE();
+            }
+        }
+
+        static bool is_spec_ch(char32_t ch, std::u32string_view types) noexcept
+        {
+            return is_sign_ch(ch) ||
+                   is_align_ch(ch) ||
+                   utf::is_digit(ch) ||
+                   ch == U'{' ||
+                   ch == U'.' ||
+                   ch == U'#' ||
+                   ch == U'L' ||
+                   types.find(ch) != types.npos;
+        }
+    };
+} // namespace detail
+
+/**
+ * @brief Parser for the standard format specification.
+ *
+ * @tparam ParseContext The parsing context.
+ * @tparam EnablePrecision Enable parsing of precision.
+*/
+PAPILIO_EXPORT template <typename ParseContext, bool EnablePrecision = false>
+class std_formatter_parser : detail::std_fmt_parser_base
+{
+    using my_base = detail::std_fmt_parser_base;
+
 public:
     using char_type = typename ParseContext::char_type;
     using iterator = typename ParseContext::iterator;
@@ -172,56 +237,6 @@ parse_end:
     }
 
 private:
-    static bool is_align_ch(char32_t ch) noexcept
-    {
-        return ch == U'<' || ch == U'>' || ch == U'^';
-    }
-
-    static format_align get_align(char32_t ch) noexcept
-    {
-        PAPILIO_ASSERT(is_align_ch(ch));
-
-        switch(ch)
-        {
-        case U'<': return format_align::left;
-        case U'>': return format_align::right;
-        case U'^': return format_align::middle;
-
-        default: PAPILIO_UNREACHABLE();
-        }
-    }
-
-    static bool is_sign_ch(char32_t ch) noexcept
-    {
-        return ch == U'+' || ch == U' ' || ch == U'-';
-    }
-
-    static format_sign get_sign(char32_t ch) noexcept
-    {
-        PAPILIO_ASSERT(is_sign_ch(ch));
-
-        switch(ch)
-        {
-        case U'+': return format_sign::positive;
-        case U' ': return format_sign::space;
-        case U'-': return format_sign::negative;
-
-        default: PAPILIO_UNREACHABLE();
-        }
-    }
-
-    static bool is_spec_ch(char32_t ch, std::u32string_view types) noexcept
-    {
-        return is_sign_ch(ch) ||
-               is_align_ch(ch) ||
-               utf::is_digit(ch) ||
-               ch == U'{' ||
-               ch == U'.' ||
-               ch == U'#' ||
-               ch == U'L' ||
-               types.find(ch) != types.npos;
-    }
-
     static bool check_stop(iterator start, iterator stop) noexcept
     {
         return start == stop || *start == U'}';
@@ -237,7 +252,7 @@ private:
 
         char32_t first_ch = *start;
 
-        if(!IsPrecision)
+        if constexpr(!IsPrecision)
         {
             if(first_ch == U'0')
             {
