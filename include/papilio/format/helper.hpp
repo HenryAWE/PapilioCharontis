@@ -25,6 +25,14 @@ PAPILIO_EXPORT struct std_formatter_data
     bool use_locale = false;
 
     [[nodiscard]]
+    constexpr bool contains_type(char32_t type_ch) const noexcept
+    {
+        if(type == U'\0')
+            return true;
+        return type == type_ch;
+    }
+
+    [[nodiscard]]
     constexpr bool contains_type(std::u32string_view types) const noexcept
     {
         if(type == U'\0')

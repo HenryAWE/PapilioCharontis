@@ -34,7 +34,6 @@ namespace detail
             std::size_t remain = m_data.width - used;
             switch(m_data.align)
             {
-
             case format_align::right:
                 return std::make_pair(remain, 0);
 
@@ -63,6 +62,11 @@ namespace detail
         }
     };
 
+    inline constexpr char digit_map_lower[16] =
+        {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    inline constexpr char digit_map_upper[16] =
+        {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    if __clang_major__ >= 16
@@ -71,6 +75,7 @@ namespace detail
 #endif
 
     template <std::integral T, typename CharT>
+    requires(!char_like<T>)
     class int_formatter : public std_formatter_base
     {
     public:
@@ -95,19 +100,7 @@ namespace detail
 
             auto [base, uppercase] = parse_type_ch(data().type);
 
-            // clang-format off
-
-            const CharT digits[16] = {
-                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                static_cast<CharT>(uppercase ? 'A' : 'a'),
-                static_cast<CharT>(uppercase ? 'B' : 'b'),
-                static_cast<CharT>(uppercase ? 'C' : 'c'),
-                static_cast<CharT>(uppercase ? 'D' : 'd'),
-                static_cast<CharT>(uppercase ? 'E' : 'e'),
-                static_cast<CharT>(uppercase ? 'F' : 'f')
-            };
-
-            // clang-format on
+            const auto& digits = uppercase ? digit_map_upper : digit_map_lower;
 
             const bool neg = val < 0;
             if constexpr(std::is_signed_v<T>)
@@ -240,7 +233,7 @@ namespace detail
                 uppercase = true;
                 [[fallthrough]];
             case U'd':
-                // base is already 10
+                PAPILIO_ASSERT(base == 10);
                 break;
 
             default:
@@ -255,8 +248,7 @@ namespace detail
         {
             switch(base)
             {
-            default:
-                PAPILIO_ASSERT(base != 10);
+            case 10:
                 return 0;
 
             case 2:
@@ -265,6 +257,9 @@ namespace detail
 
             case 8:
                 return 1; // "o"
+
+            default:
+                PAPILIO_UNREACHABLE();
             }
         }
     };
@@ -648,7 +643,7 @@ public:
     template <typename FormatContext>
     auto format(utf::codepoint cp, FormatContext& ctx) const -> typename FormatContext::iterator
     {
-        if(!m_data.contains_type(U"c"))
+        if(!m_data.contains_type(U'c'))
         {
             detail::int_formatter<std::uint32_t, CharT> fmt;
             fmt.set_data(m_data);
@@ -689,7 +684,7 @@ public:
     template <typename FormatContext>
     auto format(bool val, FormatContext& ctx) const -> typename FormatContext::iterator
     {
-        if(!m_data.contains_type(U"s"))
+        if(!m_data.contains_type(U's'))
         {
             detail::int_formatter<std::uint8_t, CharT> fmt;
             fmt.set_data(m_data);
