@@ -25,6 +25,8 @@ public:
         : m_fmt(fmt)
     {}
 
+    constexpr basic_format_string(const basic_format_string&) noexcept = default;
+
     constexpr basic_format_string& operator=(const basic_format_string&) noexcept = default;
 
     [[nodiscard]]

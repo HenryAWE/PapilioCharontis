@@ -201,8 +201,9 @@ TEST(variable, access)
     {
         variable var = 10.0f;
         ASSERT_TRUE(var.get_if<variable::float_type>());
-        EXPECT_DOUBLE_EQ(*var.get_if<variable::float_type>(), 10.0f);
-        EXPECT_DOUBLE_EQ(var.get<variable::float_type>(), 10.0f);
+
+        EXPECT_DOUBLE_EQ((double)*var.get_if<variable::float_type>(), 10.0);
+        EXPECT_DOUBLE_EQ((double)var.get<variable::float_type>(), 10.0);
 
         EXPECT_THROW((void)var.get<bool>(), bad_variable_access);
 

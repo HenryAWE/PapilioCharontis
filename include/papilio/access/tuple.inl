@@ -37,7 +37,7 @@ struct tuple_accessor
                     return format_arg_type();
             }
 
-            if(i >= std::tuple_size_v<Tuple>) [[unlikely]]
+            if(static_cast<std::size_t>(i) >= std::tuple_size_v<Tuple>) [[unlikely]]
                 return format_arg_type();
 
             return [&]<std::size_t... Is>(std::index_sequence<Is...>)

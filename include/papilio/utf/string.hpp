@@ -89,7 +89,6 @@ namespace detail
             return crend();
         }
 
-
         constexpr codepoint operator[](size_type i) const noexcept
         {
             return index(i);
@@ -705,8 +704,6 @@ private:
             ++it;
         }
 
-        auto v_begin = v.cbegin();
-        auto v_end = v.cend();
         for(; it != this->cend(); ++it)
         {
             if(basic_string_ref(it, sentinel).starts_with(v))
@@ -918,7 +915,7 @@ public:
     }
 
     template <typename Iterator, std::sentinel_for<Iterator> Sentinel>
-    requires (std::is_same_v<std::iter_value_t<Iterator>, CharT>)
+    requires(std::is_same_v<std::iter_value_t<Iterator>, CharT>)
     basic_string_container(Iterator start, Sentinel stop)
         : m_data(std::in_place_type<string_type>, start, stop)
     {}

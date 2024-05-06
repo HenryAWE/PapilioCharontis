@@ -22,19 +22,19 @@ struct decoder_test_data;
     static constexpr char_t A = prefix##'A';                      \
     static constexpr char_t A_diaeresis[] = prefix##"\u00c4";     \
     static constexpr char_t cjk_4e00[] = prefix##"\u4e00";        \
-    static constexpr char_t peach_emoji[] = prefix##"\U0001f351";
+    static constexpr char_t peach_emoji[] = prefix##"\U0001f351"
 
 #define TEST_UTF_CODEPOINT_DEFINE_TEST_DATA_CHAR16(char_t, prefix) \
     static constexpr char_t A = prefix##'A';                       \
     static constexpr char_t A_diaeresis = prefix##'\u00c4';        \
     static constexpr char_t cjk_4e00 = prefix##'\u4e00';           \
-    static constexpr char_t peach_emoji[] = prefix##"\U0001f351";
+    static constexpr char_t peach_emoji[] = prefix##"\U0001f351"
 
 #define TEST_UTF_CODEPOINT_DEFINE_TEST_DATA_CHAR32(char_t, prefix) \
     static constexpr char_t A = prefix##'A';                       \
     static constexpr char_t A_diaeresis = prefix##'\u00c4';        \
     static constexpr char_t cjk_4e00 = prefix##'\u4e00';           \
-    static constexpr char_t peach_emoji = prefix##'\U0001f351';
+    static constexpr char_t peach_emoji = prefix##'\U0001f351'
 
 template <>
 struct decoder_test_data<char>

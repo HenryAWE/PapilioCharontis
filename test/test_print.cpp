@@ -41,8 +41,13 @@ TEST(print, tmpfile)
 {
     using namespace papilio;
 
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(push)
+#    pragma warning(disable : 4996)
+#endif
 // The std::tmpfile in the STL shipped with MSVC is marked as deprecated.
-// This workaround is clang-cl specific.
+// This workaround is clang-cl specific,
+// which means it should not be applied to clang on other platforms.
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -52,6 +57,9 @@ TEST(print, tmpfile)
     if(!fp)
         GTEST_SKIP();
 
+#ifdef PAPILIO_COMPILER_MSVC
+#    pragma warning(pop)
+#endif
 #ifdef PAPILIO_COMPILER_CLANG_CL
 #    pragma clang diagnostic pop
 #endif

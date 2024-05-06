@@ -48,13 +48,13 @@ void test_string_ref_index(papilio::utf::basic_string_ref<CharT> ref)
 
     EXPECT_THROW((void)ref.at(4), std::out_of_range);
     EXPECT_THROW((void)ref.at(reverse_index, 4), std::out_of_range);
-    EXPECT_THROW((void)ref.at(-1), std::out_of_range);
-    EXPECT_THROW((void)ref.at(reverse_index, -1), std::out_of_range);
+    EXPECT_THROW((void)ref.at(std::size_t(-1)), std::out_of_range);
+    EXPECT_THROW((void)ref.at(reverse_index, std::size_t(-1)), std::out_of_range);
 
     EXPECT_EQ(ref.index_or(4, utf::codepoint(U'?')), U'?');
     EXPECT_EQ(ref.index_or(reverse_index, 4, utf::codepoint(U'?')), U'?');
-    EXPECT_EQ(ref.index_or(-1, utf::codepoint(U'?')), U'?');
-    EXPECT_EQ(ref.index_or(reverse_index, -1, utf::codepoint(U'?')), U'?');
+    EXPECT_EQ(ref.index_or(std::size_t(-1), utf::codepoint(U'?')), U'?');
+    EXPECT_EQ(ref.index_or(reverse_index, std::size_t(-1), utf::codepoint(U'?')), U'?');
 }
 
 template <typename CharT>

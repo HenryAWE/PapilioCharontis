@@ -69,6 +69,8 @@ namespace detail
         fp_iterator_conv_base() noexcept = default;
         fp_iterator_conv_base(const fp_iterator_conv_base&) noexcept = default;
 
+        fp_iterator_conv_base& operator=(const fp_iterator_conv_base&) noexcept = default;
+
 #ifdef PAPILIO_PLATFORM_WINDOWS
 
     protected:

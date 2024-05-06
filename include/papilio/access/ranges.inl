@@ -151,7 +151,7 @@ struct accessor<std::vector<bool, Allocator>, Context>
                 return format_arg_type();
         }
 
-        if(i >= vec.size())
+        if(static_cast<std::size_t>(i) >= vec.size())
             return format_arg_type();
 
         return format_arg_type(std::in_place_type<bool>, vec[i]);
