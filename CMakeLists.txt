@@ -60,21 +60,18 @@ if(${papilio_build_example})
     add_subdirectory(example)
 endif()
 if(${papilio_build_unit_test})
-    find_package(GTest 1.14.0 CONFIG QUIET)
-    if(NOT ${GTest_FOUND})
-        message(STATUS "A suitable version of GoogleTest was not found, fetching v1.14.0 from GitHub")
+    message(STATUS "Fetching GoogleTest v1.14.0 from GitHub")
 
-        include(FetchContent)
+    include(FetchContent)
 
-        FetchContent_Declare(
-            googletest
-            GIT_REPOSITORY https://github.com/google/googletest.git
-            GIT_TAG v1.14.0
-        )
-        set(BUILD_GMOCK OFF)
-        set(INSTALL_GTEST OFF)
-        FetchContent_MakeAvailable(googletest)
-    endif()
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.14.0
+    )
+    set(BUILD_GMOCK OFF)
+    set(INSTALL_GTEST OFF)
+    FetchContent_MakeAvailable(googletest)
 
     enable_testing()
     add_subdirectory(test)
