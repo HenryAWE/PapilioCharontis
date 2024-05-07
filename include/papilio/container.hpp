@@ -830,7 +830,7 @@ private:
             Iterator>;
         if constexpr(sized)
         {
-            reserve(std::ranges::distance(first, last));
+            reserve(last - first);
             for(auto it = first; it != last; ++it)
             {
                 emplace_back_impl(*it);

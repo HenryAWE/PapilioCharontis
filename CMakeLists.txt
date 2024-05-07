@@ -23,6 +23,14 @@ project(
     LANGUAGES CXX
 )
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    option(papilio_use_libcpp "Use libc++ for Clang" OFF)
+    if(${papilio_use_libcpp})
+        add_compile_options("-stdlib=libc++")
+        add_link_options("-stdlib=libc++")
+    endif()
+endif()
+
 set(glob_expr "src/*.cpp" "include/*.hpp" "include/*.inl")
 file(GLOB_RECURSE papilio_src ${glob_expr})
 

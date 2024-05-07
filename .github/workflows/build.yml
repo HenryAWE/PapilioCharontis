@@ -41,8 +41,9 @@ jobs:
           matrix:
             clang: [15]
             cxxstd: [20]
+            stdlib: ["libstdc++", "libc++"]
 
-        name: Clang-${{matrix.clang}} C++${{matrix.cxxstd}}
+        name: Clang-${{matrix.clang}} C++${{matrix.cxxstd}} ${{matrix.stdlib}}
 
         steps:
         - uses: actions/checkout@v4
@@ -52,7 +53,13 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y cmake ninja-build clang-${{matrix.clang}}
 
+        - name: Install libc++
+          if: ${{matrix.stdlib == 'libc++'}}
+          run: |
+            sudo apt-get install -y libc++-${{matrix.clang}}-dev libc++abi-${{matrix.clang}}-dev
+
         - name: Build
+          if: ${{matrix.stdlib == 'libstdc++'}}
           run: >
             ./build.sh
             -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
@@ -61,6 +68,17 @@ jobs:
             -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang}}
             -Dpapilio_build_unit_test=1
             -Dpapilio_build_example=1
+        - name: Build
+          if: ${{matrix.stdlib == 'libc++'}}
+          run: >
+            ./build.sh
+            -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_C_COMPILER=clang-${{matrix.clang}}
+            -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang}}
+            -Dpapilio_build_unit_test=1
+            -Dpapilio_build_example=1
+            -Dpapilio_use_libcpp=1
 
         - name: Test
           working-directory: ${{github.workspace}}/build

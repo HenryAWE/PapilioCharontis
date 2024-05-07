@@ -139,7 +139,7 @@ void ipapilio::addf()
 {
     std::string str_val = detail::input(std::cin, "addf");
 
-#ifndef PAPILIO_PLATFORM_EMSCRIPTEN
+#ifndef PAPILIO_STDLIB_LIBCPP
     long double val;
     auto result = std::from_chars(
         std::to_address(str_val.begin()),
