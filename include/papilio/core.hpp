@@ -1201,38 +1201,6 @@ private:
 PAPILIO_EXPORT using format_args_ref = basic_format_args_ref<format_context, char>;
 PAPILIO_EXPORT using wformat_args_ref = basic_format_args_ref<wformat_context, wchar_t>;
 
-PAPILIO_EXPORT template <typename Context = format_context, typename... Args>
-auto make_format_args(Args&&... args)
-{
-    static_assert(
-        std::conjunction_v<std::negation<is_format_args<Args, Context>>...>,
-        "cannot use format_args as format argument"
-    );
-
-    using result_type = static_format_args<
-        detail::get_indexed_arg_count<Args...>(),
-        detail::get_named_arg_count<Args...>(),
-        Context,
-        char>;
-    return result_type(std::forward<Args>(args)...);
-}
-
-PAPILIO_EXPORT template <typename Context = wformat_context, typename... Args>
-auto make_wformat_args(Args&&... args)
-{
-    static_assert(
-        std::conjunction_v<std::negation<is_format_args<Args, Context>>...>,
-        "cannot use format_args as format argument"
-    );
-
-    using result_type = static_format_args<
-        detail::get_indexed_arg_count<Args...>(),
-        detail::get_named_arg_count<Args...>(),
-        Context,
-        wchar_t>;
-    return result_type(std::forward<Args>(args)...);
-}
-
 namespace detail
 {
     template <typename T, typename FormatContext>
@@ -1564,6 +1532,22 @@ public:
         );
     }
 };
+
+PAPILIO_EXPORT template <typename Context = format_context, typename... Args>
+requires(std::is_same_v<char, typename Context::char_type>)
+auto make_format_args(Args&&... args)
+{
+    using context_t = format_context_traits<Context>;
+    return context_t::make_format_args(std::forward<Args>(args)...);
+}
+
+PAPILIO_EXPORT template <typename Context = wformat_context, typename... Args>
+requires(std::is_same_v<wchar_t, typename Context::char_type>)
+auto make_wformat_args(Args&&... args)
+{
+    using context_t = format_context_traits<Context>;
+    return context_t::make_format_args(std::forward<Args>(args)...);
+}
 
 PAPILIO_EXPORT template <typename FormatContext>
 class basic_format_parse_context
