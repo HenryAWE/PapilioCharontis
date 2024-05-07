@@ -15,22 +15,15 @@ mark_as_advanced(papilio_build_unit_test)
 option(papilio_build_example "build examples" OFF)
 option(papilio_build_module "build module (experimental)" OFF)
 
-file(STRINGS "include/papilio/detail/constants.h" papilio_version_major_line REGEX "^#define PAPILIO_VERSION_MAJOR [0-9]+$")
-file(STRINGS "include/papilio/detail/constants.h" papilio_version_minor_line REGEX "^#define PAPILIO_VERSION_MINOR [0-9]+$")
-file(STRINGS "include/papilio/detail/constants.h" papilio_version_patch_line REGEX "^#define PAPILIO_VERSION_PATCH [0-9]+$")
-string(REGEX REPLACE "^#define PAPILIO_VERSION_MAJOR ([0-9]+)$" "\\1" papilio_version_major "${papilio_version_major_line}")
-string(REGEX REPLACE "^#define PAPILIO_VERSION_MINOR ([0-9]+)$" "\\1" papilio_version_minor "${papilio_version_minor_line}")
-string(REGEX REPLACE "^#define PAPILIO_VERSION_PATCH ([0-9]+)$" "\\1" papilio_version_patch "${papilio_version_patch_line}")
-
 message("Papilio Charontis v${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}")
 
 project(
     "Papilio Charontis"
-    VERSION ${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}
-    LANGUAGES C CXX
+    VERSION 0.3.0
+    LANGUAGES CXX
 )
 
-set(glob_expr "src/*.cpp" "include/*.hpp" "include/*.inl" "include/*.h")
+set(glob_expr "src/*.cpp" "include/*.hpp" "include/*.inl")
 file(GLOB_RECURSE papilio_src ${glob_expr})
 
 if(${papilio_build_module})
@@ -76,4 +69,3 @@ if(${papilio_build_unit_test})
     enable_testing()
     add_subdirectory(test)
 endif()
-add_subdirectory(binding)

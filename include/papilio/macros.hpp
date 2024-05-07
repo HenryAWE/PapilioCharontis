@@ -6,8 +6,11 @@
 #include <cassert>
 #include <version>
 #include <type_traits> // std::is_same_v
-#include "detail/constants.h"
 #include "detail/config.hpp"
+
+#define PAPILIO_VERSION_MAJOR 0
+#define PAPILIO_VERSION_MINOR 3
+#define PAPILIO_VERSION_PATCH 0
 
 // Currently, this macro is just an alias of the assert() macro.
 // It might be changed to a custom implementation for providing more information.

@@ -1,4 +1,0 @@
-// For Visual Studio
-// See https://go.microsoft.com/fwlink/?linkid=865984
-
-#define C_PAPILIO_PUSH_IMPL(type, suffix)
