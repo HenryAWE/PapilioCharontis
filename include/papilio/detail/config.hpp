@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <version>
+
 #if defined(_WIN32) || defined(_WIN64)
 #    define PAPILIO_PLATFORM_WINDOWS 1
 #elif defined(__EMSCRIPTEN__)
@@ -13,9 +15,17 @@
 #    define PAPILIO_PLATFORM_LINUX 1
 #endif
 
+#ifdef __GLIBCXX__
+// libstdc++
+#    define PAPILIO_STDLIB_LIBSTDCPP __GLIBCXX__
+#endif
 #ifdef _LIBCPP_VERSION
 // libc++
 #    define PAPILIO_STDLIB_LIBCPP _LIBCPP_VERSION
+#endif
+#ifdef _CPPLIB_VER
+// MSVC STL
+#    define PAPILIO_STDLIB_MSVC_STL _CPPLIB_VER
 #endif
 
 #ifdef _MSC_VER
