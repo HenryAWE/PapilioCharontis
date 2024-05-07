@@ -20,6 +20,9 @@
 
 namespace papilio
 {
+/**
+ * @brief Format alignment
+ */
 PAPILIO_EXPORT enum class format_align : std::uint8_t
 {
     default_align = 0,
@@ -28,6 +31,9 @@ PAPILIO_EXPORT enum class format_align : std::uint8_t
     right
 };
 
+/**
+ * @brief Format sign for numeric values.
+ */
 PAPILIO_EXPORT enum class format_sign : std::uint8_t
 {
     default_sign = 0,
@@ -36,24 +42,19 @@ PAPILIO_EXPORT enum class format_sign : std::uint8_t
     space
 };
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wweak-vtables"
-#endif
-
 PAPILIO_EXPORT class format_error : public std::runtime_error
 {
 public:
     using runtime_error::runtime_error;
-};
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
+    ~format_error();
+};
 
 PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
 {
 public:
+    using bad_cast::bad_cast;
+
     const char* what() const noexcept override
     {
         return "bad handle cast";

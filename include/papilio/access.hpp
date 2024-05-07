@@ -187,24 +187,18 @@ private:
 PAPILIO_EXPORT using attribute_name = basic_attribute_name<char>;
 PAPILIO_EXPORT using wattribute_name = basic_attribute_name<wchar_t>;
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wweak-vtables"
-#endif
-
 PAPILIO_EXPORT class invalid_attribute_base : public std::invalid_argument
 {
 public:
     invalid_attribute_base(const invalid_attribute_base&) = default;
+
+    ~invalid_attribute_base();
 
 protected:
     invalid_attribute_base()
         : invalid_argument("invalid attribute") {}
 };
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
 PAPILIO_EXPORT template <typename CharT>
 class basic_invalid_attribute : public invalid_attribute_base

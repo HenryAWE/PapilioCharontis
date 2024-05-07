@@ -3,6 +3,10 @@
 
 namespace papilio::script
 {
+bad_variable_access::~bad_variable_access() = default;
+
+invalid_conversion::~invalid_conversion() = default;
+
 static const char* to_cstr(script_error_code ec) noexcept
 {
     using enum script_error_code;
@@ -40,6 +44,8 @@ std::ostream& operator<<(std::ostream& os, script_error_code ec)
 
 script_base::error::error(script_error_code ec)
     : format_error(to_string(ec)), m_ec(ec) {}
+
+script_base::error::~error() = default;
 
 script_base::error script_base::make_error(script_error_code ec)
 {

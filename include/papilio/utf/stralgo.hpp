@@ -14,16 +14,13 @@ namespace papilio::utf
 {
 PAPILIO_EXPORT constexpr inline std::size_t npos = std::u8string::npos;
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wweak-vtables"
-#endif
-
 PAPILIO_EXPORT class invalid_byte : public std::invalid_argument
 {
 public:
     explicit invalid_byte(std::uint8_t ch)
         : invalid_argument("invalid byte"), m_byte(ch) {}
+
+    ~invalid_byte();
 
     [[nodiscard]]
     std::uint8_t get() const noexcept
@@ -41,6 +38,8 @@ public:
     explicit invalid_surrogate(std::uint16_t ch)
         : invalid_argument("invalid surrogate"), m_ch(ch) {}
 
+    ~invalid_surrogate();
+
     [[nodiscard]]
     std::uint16_t get() const noexcept
     {
@@ -50,10 +49,6 @@ public:
 private:
     std::uint16_t m_ch;
 };
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
 PAPILIO_EXPORT [[nodiscard]]
 constexpr inline bool is_leading_byte(std::uint8_t ch) noexcept
