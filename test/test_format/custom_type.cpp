@@ -221,3 +221,80 @@ TEST(format, adl_format)
     EXPECT_EQ(PAPILIO_NS format("{:S}", test_format::use_adl_ex{}), "ADL (EX)");
     EXPECT_EQ(PAPILIO_NS format(L"{:S}", test_format::use_adl_ex{}), L"ADL (EX)");
 }
+
+namespace test_format
+{
+class complex_spec
+{
+public:
+};
+} // namespace test_format
+
+namespace papilio
+{
+template <>
+class formatter<test_format::complex_spec>
+{
+public:
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx)
+    {
+        simple_formatter_parser<ParseContext, true> parser;
+        auto [data, it] = parser.parse(ctx);
+        m_data = data;
+
+        return it;
+    }
+
+    template <typename Context>
+    auto format(const test_format::complex_spec& val, Context& ctx) const
+    {
+        using context_t = format_context_traits<Context>;
+
+        const char* align_sign = "";
+        switch(m_data.align)
+        {
+            using enum format_align;
+
+        case left:
+            align_sign = "<";
+            break;
+        case middle:
+            align_sign = "^";
+            break;
+        case right:
+            align_sign = ">";
+            break;
+
+        default:
+            // align_sign should be empty string
+            break;
+        }
+
+        context_t::format_to(
+            ctx,
+            "{},{},{},{}",
+            m_data.width,
+            align_sign,
+            m_data.fill_or(U' '),
+            m_data.use_locale
+        );
+
+        return ctx.out();
+    }
+
+private:
+    simple_formatter_data m_data;
+};
+} // namespace papilio
+
+TEST(format, complex_spec)
+{
+    using test_format::complex_spec;
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{:<}", complex_spec{}), "0,<, ,false");
+    EXPECT_EQ(PAPILIO_NS format("{:*<}", complex_spec{}), "0,<,*,false");
+    EXPECT_EQ(PAPILIO_NS format("{:*<8}", complex_spec{}), "8,<,*,false");
+    EXPECT_EQ(PAPILIO_NS format("{:*<8L}", complex_spec{}), "8,<,*,true");
+}
