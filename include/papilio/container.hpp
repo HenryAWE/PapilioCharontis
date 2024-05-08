@@ -14,6 +14,12 @@
 #include "memory.hpp"
 
 #include "detail/prefix.hpp"
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
+#endif
 
 namespace papilio
 {
@@ -193,7 +199,7 @@ public:
     [[nodiscard]]
     size_type size() const noexcept
     {
-        return m_p_end - m_p_begin;
+        return static_cast<size_type>(m_p_end - m_p_begin);
     }
 
     [[nodiscard]]
@@ -205,7 +211,7 @@ public:
     [[nodiscard]]
     size_type capacity() const noexcept
     {
-        return m_p_capacity - m_p_begin;
+        return static_cast<size_type>(m_p_capacity - m_p_begin);
     }
 
 protected:
@@ -438,7 +444,7 @@ public:
     iterator emplace(const_iterator where, Args&&... args)
     {
         return emplace_impl(
-            where - this->cbegin(),
+            static_cast<size_type>(where - this->cbegin()),
             std::forward<Args>(args)...
         );
     }
@@ -830,7 +836,7 @@ private:
             Iterator>;
         if constexpr(sized)
         {
-            reserve(last - first);
+            reserve(static_cast<size_type>(last - first));
             for(auto it = first; it != last; ++it)
             {
                 emplace_back_impl(*it);
@@ -1469,6 +1475,9 @@ private:
 };
 } // namespace papilio
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 #include "detail/suffix.hpp"
 
 #endif

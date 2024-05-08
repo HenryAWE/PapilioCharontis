@@ -20,6 +20,8 @@ public:
     explicit invalid_byte(std::uint8_t ch)
         : invalid_argument("invalid byte"), m_byte(ch) {}
 
+    invalid_byte(const invalid_byte&) = default;
+
     ~invalid_byte();
 
     [[nodiscard]]
@@ -37,6 +39,8 @@ PAPILIO_EXPORT class invalid_surrogate : public std::invalid_argument
 public:
     explicit invalid_surrogate(std::uint16_t ch)
         : invalid_argument("invalid surrogate"), m_ch(ch) {}
+
+    invalid_surrogate(const invalid_surrogate&) = default;
 
     ~invalid_surrogate();
 

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/utf/string.hpp>
 #include <sstream>
+#include <papilio_test/setup.hpp>
 
 // Peach Emoji, CJK Unified Ideographs 4E00, Capital A with Diaeresis, A
 // "🍑一ÄA"

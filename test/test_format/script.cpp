@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
 #include "test_format.hpp"
+#include <papilio_test/setup.hpp>
 
 TYPED_TEST(format_suite, script_bool_op)
 {

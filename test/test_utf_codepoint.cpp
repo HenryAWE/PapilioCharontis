@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/utf/codepoint.hpp>
 #include <sstream>
+#include <papilio_test/setup.hpp>
 
 // codepoint should be POD
 static_assert(std::is_trivial_v<papilio::utf::codepoint>);

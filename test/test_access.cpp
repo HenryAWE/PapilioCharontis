@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/access.hpp>
 #include <papilio/format.hpp>
+#include <papilio_test/setup.hpp>
 
 TEST(indexing_value, constructor)
 {

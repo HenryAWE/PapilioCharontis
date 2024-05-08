@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/utf/stralgo.hpp>
+#include <papilio_test/setup.hpp>
 
 #define PAPILIO_TEST_TMP "temp"
 
@@ -46,7 +47,7 @@ TEST(strlen, char8_t)
     catch(const utf::invalid_byte& e)
     {
         EXPECT_STREQ(e.what(), "invalid byte");
-        EXPECT_EQ((int)e.get(), 0x80);
+        EXPECT_EQ(static_cast<int>(e.get()), 0x80);
     }
 }
 

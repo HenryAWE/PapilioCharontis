@@ -1046,8 +1046,19 @@ public:
 
     bool null_terminated() const noexcept
     {
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
+#endif
+
         auto v = this->get_view();
         return *(v.data() + v.size()) == static_cast<CharT>(0);
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
     }
 
     [[nodiscard]]

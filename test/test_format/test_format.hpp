@@ -6,6 +6,7 @@
 #include <locale>
 #include <papilio/format.hpp>
 #include <gtest/gtest.h>
+#include <papilio_test/prefix.hpp>
 
 namespace test_format
 {
@@ -76,5 +77,7 @@ public:
 
 using char_types = ::testing::Types<char, wchar_t>;
 TYPED_TEST_SUITE(format_suite, char_types);
+
+#include <papilio_test/suffix.hpp>
 
 #endif

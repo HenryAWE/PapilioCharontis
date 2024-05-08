@@ -47,6 +47,8 @@ PAPILIO_EXPORT class format_error : public std::runtime_error
 public:
     using runtime_error::runtime_error;
 
+    format_error(const format_error&) = default;
+
     ~format_error();
 };
 

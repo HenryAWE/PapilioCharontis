@@ -3,6 +3,7 @@
 #    include <format> // Test ADL-proof
 #endif
 #include <papilio/format.hpp>
+#include <papilio_test/setup.hpp>
 
 namespace test_format
 {
@@ -158,7 +159,7 @@ class use_adl
 private:
     // Hidden friend
     template <typename Context>
-    friend auto format(const use_adl& val, Context& ctx)
+    friend auto format(const use_adl&, Context& ctx)
     {
         using namespace papilio;
 
@@ -176,7 +177,7 @@ class use_adl_ex
 private:
     // Hidden friend
     template <typename ParseContext, typename FormatContext>
-    friend auto format(const use_adl_ex& val, ParseContext& parse_ctx, FormatContext& fmt_ctx)
+    friend auto format(const use_adl_ex&, ParseContext& parse_ctx, FormatContext& fmt_ctx)
     {
         using namespace papilio;
 
@@ -247,7 +248,7 @@ public:
     }
 
     template <typename Context>
-    auto format(const test_format::complex_spec& val, Context& ctx) const
+    auto format(const test_format::complex_spec&, Context& ctx) const
     {
         using context_t = format_context_traits<Context>;
 
@@ -267,6 +268,7 @@ public:
             break;
 
         default:
+        case default_align:
             // align_sign should be empty string
             break;
         }

@@ -84,7 +84,7 @@ PAPILIO_EXPORT template <>
 class decoder<char>
 {
 public:
-    static std::uint8_t size_bytes(char8_t ch) noexcept;
+    static std::uint8_t size_bytes(char ch) noexcept;
 
     static std::pair<codepoint, std::uint8_t> to_codepoint(std::string_view ch);
 };

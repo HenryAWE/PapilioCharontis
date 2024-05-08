@@ -32,7 +32,7 @@ struct tuple_accessor
         {
             if(i < 0)
             { // reverse index
-                i = size() + i;
+                i = static_cast<ssize_t>(size()) + i;
                 if(i < 0) [[unlikely]]
                     return format_arg_type();
             }
@@ -40,14 +40,25 @@ struct tuple_accessor
             if(static_cast<std::size_t>(i) >= std::tuple_size_v<Tuple>) [[unlikely]]
                 return format_arg_type();
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
+#endif
+
             return [&]<std::size_t... Is>(std::index_sequence<Is...>)
             {
                 using func_t = format_arg_type (*)(const Tuple&);
 
                 static const func_t table[] = {&index_helper<Is>...};
 
-                return table[i](tp);
+                return table[static_cast<std::size_t>(i)](tp);
             }(std::make_index_sequence<std::tuple_size_v<Tuple>>());
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿#include <gtest/gtest.h>
 #include <papilio/core.hpp>
 #include <papilio/script/interpreter.hpp>
+#include <papilio_test/setup.hpp>
 
 TEST(format_arg, constructor)
 {

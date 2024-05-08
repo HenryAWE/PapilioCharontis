@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/container.hpp>
+#include <papilio_test/setup.hpp>
 
 TEST(fixed_vector, push_back_int)
 {

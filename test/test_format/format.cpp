@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include "test_format.hpp"
+#include <papilio_test/setup.hpp>
 
 TYPED_TEST(format_suite, plain_text)
 {
@@ -111,7 +112,6 @@ TYPED_TEST(format_suite, format_to_n)
     using namespace papilio;
 
     using string_type = typename TestFixture::string_type;
-    using string_view_type = typename TestFixture::string_view_type;
 
     {
         string_type str{};

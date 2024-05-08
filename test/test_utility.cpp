@@ -2,6 +2,7 @@
 #include <papilio/utility.hpp>
 #include <map>
 #include <papilio/container.hpp>
+#include <papilio_test/setup.hpp>
 
 static_assert(papilio::tuple_like<std::tuple<>>);
 static_assert(papilio::tuple_like<std::tuple<int>>);

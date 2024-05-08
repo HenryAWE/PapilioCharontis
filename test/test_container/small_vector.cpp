@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/container.hpp>
 #include <list>
+#include <papilio_test/setup.hpp>
 
 TEST(small_vector, emplace)
 {

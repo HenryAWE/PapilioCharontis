@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/core.hpp>
 #include <papilio/format.hpp>
+#include <papilio_test/setup.hpp>
 
 template <typename CharT>
 class format_context_suite : public ::testing::Test

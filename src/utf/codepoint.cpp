@@ -4,9 +4,9 @@
 
 namespace papilio::utf
 {
-std::uint8_t decoder<char>::size_bytes(char8_t ch) noexcept
+std::uint8_t decoder<char>::size_bytes(char ch) noexcept
 {
-    return PAPILIO_NS utf::byte_count(ch);
+    return PAPILIO_NS utf::byte_count(static_cast<std::uint8_t>(ch));
 }
 
 std::pair<codepoint, std::uint8_t> decoder<char>::to_codepoint(std::string_view ch)

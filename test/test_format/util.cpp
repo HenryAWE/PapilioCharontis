@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "test_format.hpp"
+#include <papilio_test/setup.hpp>
 
 TEST(disabled_formatter, disable_format)
 {

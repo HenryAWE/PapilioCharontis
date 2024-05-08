@@ -801,11 +801,22 @@ private:
 
     void intput_setg()
     {
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
+#endif
+
         if constexpr(std::input_iterator<Iterator>)
         {
             CharT* ptr = this->gbuf_ptr();
             this->setg(ptr, ptr, ptr + 1);
         }
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
     }
 };
 
@@ -852,16 +863,7 @@ namespace detail
         std::string_view name;
 
 #if defined PAPILIO_COMPILER_GCC || defined PAPILIO_COMPILER_CLANG
-#    ifndef PAPILIO_COMPILER_CLANG_CL
         name = __PRETTY_FUNCTION__;
-#    else
-#        pragma clang diagnostic push
-#        pragma clang diagnostic ignored "-Wlanguage-extension-token"
-
-        name = __FUNCSIG__;
-
-#        pragma clang diagnostic pop
-#    endif
 
         std::size_t start = name.find("Value = ") + 8;
 
@@ -870,7 +872,19 @@ namespace detail
 #    else
         std::size_t end = std::min(name.find(';', start), name.find_last_of(']'));
 #    endif
+
+#    ifdef PAPILIO_COMPILER_CLANG
+#        pragma clang diagnostic push
+#        if __clang_major__ >= 16
+#            pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#        endif
+#    endif
+
         return std::string_view(name.data() + start, end - start);
+
+#    ifdef PAPILIO_COMPILER_CLANG
+#        pragma clang diagnostic pop
+#    endif
 
 #elif defined PAPILIO_COMPILER_MSVC
         name = __FUNCSIG__;

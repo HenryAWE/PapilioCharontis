@@ -113,7 +113,7 @@ namespace detail
             {
                 const T t_base = static_cast<T>(base);
                 const T digit = val % t_base;
-                buf[buf_size++] = digits[digit];
+                buf[buf_size++] = static_cast<CharT>(digits[digit]);
                 val /= static_cast<T>(t_base);
             } while(val);
 

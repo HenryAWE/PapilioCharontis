@@ -21,6 +21,8 @@ PAPILIO_EXPORT class bad_variable_access : public std::bad_variant_access
 public:
     using bad_variant_access::bad_variant_access;
 
+    bad_variable_access(const bad_variable_access&) = default;
+
     ~bad_variable_access();
 };
 
@@ -28,6 +30,8 @@ PAPILIO_EXPORT class invalid_conversion : public std::invalid_argument
 {
 public:
     using invalid_argument::invalid_argument;
+
+    invalid_conversion(const invalid_conversion&) = default;
 
     ~invalid_conversion();
 };

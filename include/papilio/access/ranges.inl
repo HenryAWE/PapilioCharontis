@@ -61,6 +61,13 @@ struct contiguous_range_accessor
     using format_arg_type = basic_format_arg<Context>;
     using attribute_name_type = basic_attribute_name<char_type>;
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    if __clang_major__ >= 16
+#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#    endif
+#endif
+
     [[nodiscard]]
     static format_arg_type index(const Range& rng, ssize_t i)
     {
@@ -100,6 +107,10 @@ struct contiguous_range_accessor
 
         return span_t(ptr + s.first, s.length());
     }
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
     [[nodiscard]]
     static format_arg_type attribute(const Range& rng, const attribute_name_type& attr)
@@ -146,7 +157,7 @@ struct accessor<std::vector<bool, Allocator>, Context>
     {
         if(i < 0)
         {
-            i = vec.size() + i;
+            i = static_cast<ssize_t>(vec.size()) + i;
             if(i < 0)
                 return format_arg_type();
         }
@@ -154,7 +165,7 @@ struct accessor<std::vector<bool, Allocator>, Context>
         if(static_cast<std::size_t>(i) >= vec.size())
             return format_arg_type();
 
-        return format_arg_type(std::in_place_type<bool>, vec[i]);
+        return format_arg_type(std::in_place_type<bool>, vec[static_cast<std::size_t>(i)]);
     }
 
     static format_arg_type attribute(const vector_type& vec, const attribute_name_type& attr)

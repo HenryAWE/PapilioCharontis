@@ -2,7 +2,7 @@
 #include <cstring>
 #include <papilio/memory.hpp>
 #include <papilio/utility.hpp>
-
+#include <papilio_test/setup.hpp>
 
 static_assert(std::is_trivial_v<papilio::static_storage<4>>);
 static_assert(std::is_standard_layout_v<papilio::static_storage<4>>);

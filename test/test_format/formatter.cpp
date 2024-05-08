@@ -4,6 +4,7 @@
 #endif
 #include <papilio/format.hpp>
 #include "test_format.hpp"
+#include <papilio_test/setup.hpp>
 
 template <typename T>
 class int_formatter_suite : public ::testing::Test
@@ -20,19 +21,21 @@ TYPED_TEST(int_formatter_suite, basic)
 {
     using namespace papilio;
 
-    for(TypeParam i : {0, 1, 2, 7, 8, 15, 16})
+    for(int i : {0, 1, 2, 7, 8, 15, 16})
     {
-        EXPECT_EQ(
-            PAPILIO_NS format("{}", i),
-            std::to_string(i)
-        ) << "i = "
-          << i;
+        TypeParam val = static_cast<TypeParam>(i);
 
         EXPECT_EQ(
-            PAPILIO_NS format(L"{}", i),
-            std::to_wstring(i)
-        ) << "i = "
-          << i;
+            PAPILIO_NS format("{}", val),
+            std::to_string(i)
+        ) << "val = "
+          << val;
+
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{}", val),
+            std::to_wstring(val)
+        ) << "val = "
+          << val;
     }
 }
 

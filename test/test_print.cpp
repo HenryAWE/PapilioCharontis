@@ -8,6 +8,7 @@
 #    endif
 #    include <sys/mman.h>
 #endif
+#include <papilio_test/setup.hpp>
 
 #if defined PAPILIO_PLATFORM_LINUX
 

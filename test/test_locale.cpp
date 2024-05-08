@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/locale.hpp>
+#include <papilio_test/setup.hpp>
 
 namespace test_locale
 {
