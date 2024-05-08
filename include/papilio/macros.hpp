@@ -6,7 +6,9 @@
 #include <cassert>
 #include <version>
 #include <type_traits> // std::is_same_v
+#include <string_view>
 #include "detail/config.hpp"
+#include "detail/compat.hpp"
 
 #define PAPILIO_VERSION_MAJOR 0
 #define PAPILIO_VERSION_MINOR 3
@@ -30,12 +32,6 @@
 #    define PAPILIO_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
 #    define PAPILIO_NO_UNIQUE_ADDRESS
-#endif
-
-#ifdef PAPILIO_BUILD_MODULES
-#    define PAPILIO_EXPORT export
-#else
-#    define PAPILIO_EXPORT
 #endif
 
 #if __has_cpp_attribute(assume)
@@ -73,12 +69,10 @@
 
 #define PAPILIO_TSTRING(char_t, str) PAPILIO_TSTRING_EX(char_t, str, , )
 
-// NOTE: #include <string_view> first
 #define PAPILIO_TSTRING_VIEW(char_t, str) PAPILIO_TSTRING_EX( \
     char_t, str, sv, using namespace ::std                    \
 )
 
-// NOTE: #include <papilio/detail/compat.hpp> first
 #define PAPILIO_UNREACHABLE() (PAPILIO_NS unreachable())
 
 #endif

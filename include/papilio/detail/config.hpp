@@ -7,6 +7,12 @@
 
 #include <version>
 
+#ifdef PAPILIO_BUILD_MODULES
+#    define PAPILIO_EXPORT export
+#else
+#    define PAPILIO_EXPORT
+#endif
+
 #if defined(_WIN32) || defined(_WIN64)
 #    define PAPILIO_PLATFORM_WINDOWS 1
 #elif defined(__EMSCRIPTEN__)
@@ -42,6 +48,12 @@
 #    else
 #        define PAPILIO_COMPILER_CLANG __clang_major__
 #    endif
+#endif
+
+#ifdef PAPILIO_COMPILER_MSVC
+#    define PAPILIO_CPLUSPLUS _MSVC_LANG
+#else
+#    define PAPILIO_CPLUSPLUS __cplusplus
 #endif
 
 #ifdef PAPILIO_COMPILER_CLANG
