@@ -825,7 +825,7 @@ namespace detail
                 fmt.set_data(m_data);
                 if constexpr(char8_like<CharT>)
                 {
-                    std::string_view name = enum_name<Enum>(e, true);
+                    std::string_view name = enum_name<Enum>(e);
                     auto name_conv = std::basic_string_view<CharT>(
                         std::bit_cast<const CharT*>(name.data()),
                         name.size()
@@ -837,7 +837,7 @@ namespace detail
                 }
                 else
                 {
-                    utf::string_ref name = enum_name<Enum>(e, true);
+                    utf::string_ref name = enum_name<Enum>(e);
                     auto name_conv = name.to_string_as<CharT>();
                     return fmt.format(
                         name_conv,

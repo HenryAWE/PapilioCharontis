@@ -1,5 +1,3 @@
-// For only C++
-
 #ifndef PAPILIO_DETAIL_CONFIG_HPP
 #define PAPILIO_DETAIL_CONFIG_HPP
 
@@ -37,7 +35,7 @@
 #ifdef _MSC_VER
 #    ifdef __clang__
 #        define PAPILIO_COMPILER_CLANG    __clang_major__
-#        define PAPILIO_COMPILER_CLANG_CL __clang_major__
+#        define PAPILIO_COMPILER_CLANG_CL __clang__
 #    else
 #        define PAPILIO_COMPILER_MSVC _MSC_VER
 #    endif
@@ -46,7 +44,7 @@
 #    ifndef __clang__
 #        define PAPILIO_COMPILER_GCC __GNUC__
 #    else
-#        define PAPILIO_COMPILER_CLANG __clang_major__
+#        define PAPILIO_COMPILER_CLANG __clang_version__
 #    endif
 #endif
 
@@ -69,6 +67,9 @@
 #    define PAPILIO_HAS_VA_OPT 1
 #endif
 
+#undef PAPILIO_HAS_VA_OPT_HELPER
+#undef PAPILIO_HAS_VA_OPT_IMPL
+
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
@@ -78,7 +79,7 @@
 #endif
 
 #if defined(__cpp_lib_stacktrace) && __cpp_lib_stacktrace >= 202011L
-#    define PAPILIO_HAS_STACKTRACE __cpp_lib_stacktrace
+#    define PAPILIO_HAS_LIB_STACKTRACE __cpp_lib_stacktrace
 #endif
 
 #endif

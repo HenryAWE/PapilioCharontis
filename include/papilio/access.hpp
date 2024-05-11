@@ -199,7 +199,6 @@ protected:
         : invalid_argument("invalid attribute") {}
 };
 
-
 PAPILIO_EXPORT template <typename CharT>
 class basic_invalid_attribute : public invalid_attribute_base
 {

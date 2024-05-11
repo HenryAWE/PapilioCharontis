@@ -1,6 +1,6 @@
 #include <thread>
 #include <sstream>
-#ifdef PAPILIO_HAS_STACKTRACE
+#ifdef PAPILIO_HAS_LIB_STACKTRACE
 #    include <stacktrace>
 #endif
 #include "../utility.hpp"
@@ -94,7 +94,7 @@ public:
     }
 };
 
-#ifdef PAPILIO_HAS_STACKTRACE
+#ifdef PAPILIO_HAS_LIB_STACKTRACE
 
 namespace detail
 {

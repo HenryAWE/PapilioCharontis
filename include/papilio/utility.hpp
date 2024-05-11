@@ -857,22 +857,29 @@ namespace detail
         std::size_t start = name.find("Value = ") + 8;
 
 #    ifdef PAPILIO_COMPILER_CLANG
+#        define PAPILIO_HAS_ENUM_NAME "__PRETTY_FUNCTION__ (Clang)"
+
         std::size_t end = name.find_last_of(']');
 #    else // GCC
+#        define PAPILIO_HAS_ENUM_NAME "__PRETTY_FUNCTION__ (GCC)"
+
         std::size_t end = std::min(name.find(';', start), name.find_last_of(']'));
 #    endif
 
         return std::string_view(name.data() + start, end - start);
 
 #elif defined PAPILIO_COMPILER_MSVC
+#    define PAPILIO_HAS_ENUM_NAME "__FUNCSIG__"
+
         name = __FUNCSIG__;
         std::size_t start = name.find("static_enum_name_impl<") + 22;
         std::size_t end = name.find_last_of('>');
         return std::string_view(name.data() + start, end - start);
 
 #else
-        (void)name; // Unused
-        static_assert(false, "Unimplemented");
+        static_assert(false, "unsupported compiler");
+
+        return name; // placeholder
 #endif
     }
 } // namespace detail
@@ -885,18 +892,16 @@ namespace detail
 #endif
 
 PAPILIO_EXPORT template <auto Value>
-constexpr std::string_view static_enum_name(bool remove_qualifier = false)
+constexpr std::string_view static_enum_name()
 {
     constexpr std::string_view name = detail::static_enum_name_impl<Value>();
 
-    if(remove_qualifier)
+    // Remove qualifier
+    std::size_t qual_end = name.rfind("::");
+    if(qual_end != std::string_view::npos)
     {
-        std::size_t start = name.rfind("::");
-        if(start != std::string_view::npos)
-        {
-            start += 2; // skip "::"
-            return name.substr(start);
-        }
+        qual_end += 2; // skip "::"
+        return name.substr(qual_end);
     }
 
     return name;
@@ -904,12 +909,12 @@ constexpr std::string_view static_enum_name(bool remove_qualifier = false)
 
 PAPILIO_EXPORT template <typename T>
 requires std::is_enum_v<T>
-constexpr std::string_view enum_name(T value, bool remove_qualifier = false) noexcept
+constexpr std::string_view enum_name(T value) noexcept
 {
     auto names = [=]<std::size_t... Is>(std::index_sequence<Is...>)
     {
         return std::array<std::string_view, 256>{
-            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>(remove_qualifier)...
+            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>()...
         };
     }(std::make_index_sequence<256>());
 

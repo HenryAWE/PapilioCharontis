@@ -329,12 +329,21 @@ TEST(enum_name, enum_name)
         first = 1,
         second = 2
     };
+    enum class my_enum_class
+    {
+        one = 1,
+        two = 2
+    };
 
-    static_assert(static_enum_name<first>(true) == "first");
-    static_assert(static_enum_name<second>(true) == "second");
+    static_assert(static_enum_name<first>() == "first");
+    static_assert(static_enum_name<second>() == "second");
+    static_assert(static_enum_name<my_enum_class::one>() == "one");
+    static_assert(static_enum_name<my_enum_class::two>() == "two");
 
-    EXPECT_EQ(enum_name(first, true), "first");
-    EXPECT_EQ(enum_name(second, true), "second");
+    EXPECT_EQ(enum_name(first), "first");
+    EXPECT_EQ(enum_name(second), "second");
+    EXPECT_EQ(enum_name(my_enum_class::one), "one");
+    EXPECT_EQ(enum_name(my_enum_class::two), "two");
 }
 
 TEST(tuple_for_each, tuple_for_each)

@@ -76,7 +76,7 @@ TEST(misc_formatter, thread_id)
     }
 }
 
-#ifdef PAPILIO_HAS_STACKTRACE
+#ifdef PAPILIO_HAS_LIB_STACKTRACE
 
 TEST(misc_formatter, stacktrace)
 {
