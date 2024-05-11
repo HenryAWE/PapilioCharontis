@@ -96,19 +96,10 @@ namespace detail
 
 #ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
 
-#    ifdef PAPILIO_COMPILER_CLANG
-#        pragma clang diagnostic push
-#        pragma clang diagnostic ignored "-Wpre-c++2b-compat"
-#    endif
-
         constexpr codepoint operator[](reverse_index_t, size_type i) const noexcept
         {
             return index(reverse_index, i);
         }
-
-#    ifdef PAPILIO_COMPILER_CLANG
-#        pragma clang diagnostic pop
-#    endif
 
 #endif
 
@@ -345,7 +336,7 @@ namespace detail
 
         friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const Derived& str)
         {
-            auto sv = static_cast<string_view_type>(str);
+            auto sv = str.to_string_view();
             os.write(sv.data(), static_cast<std::streamsize>(sv.size()));
             return os;
         }
@@ -353,7 +344,7 @@ namespace detail
     protected:
         constexpr string_view_type get_view() const noexcept
         {
-            return string_view_type(as_derived());
+            return as_derived().to_string_view();
         }
 
         // Calculates how many characters are required by a codepoint.
@@ -611,6 +602,11 @@ public:
         return to_string_as<wchar_t>();
     }
 
+    constexpr string_view_type to_string_view() const noexcept
+    {
+        return m_str;
+    }
+
     constexpr operator string_view_type() const noexcept
     {
         return m_str;
@@ -861,7 +857,7 @@ public:
         : m_data(std::in_place_type<string_view_type>, other.get_view()) {}
 
     basic_string_container(independent_t, const basic_string_container& str)
-        : m_data(std::in_place_type<string_type>, string_view_type(str)) {}
+        : m_data(std::in_place_type<string_type>, str.to_string_view()) {}
 
     basic_string_container(basic_string_container&&) noexcept = default;
 
@@ -1110,7 +1106,7 @@ public:
         swap(m_data, other.m_data);
     }
 
-    constexpr operator string_view_type() const noexcept
+    constexpr string_view_type to_string_view() const noexcept
     {
         return std::visit(
             [](auto&& v)
@@ -1119,9 +1115,14 @@ public:
         );
     }
 
+    constexpr operator string_view_type() const noexcept
+    {
+        return to_string_view();
+    }
+
     constexpr operator string_ref_type() const noexcept
     {
-        return static_cast<string_view_type>(*this);
+        return string_ref_type(to_string_view());
     }
 
     template <char_like U>
