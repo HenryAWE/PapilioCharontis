@@ -127,3 +127,36 @@ jobs:
       - name: Display Infomation
         working-directory: ${{github.workspace}}/build/example
         run: .\info.exe
+
+    ClangCl:
+      runs-on: windows-2022
+      strategy:
+        fail-fast: false
+        matrix:
+          cxxstd: [20, 23]
+
+      name: ClangCl C++${{matrix.cxxstd}} 
+
+      steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: amd64
+
+      - name: Build
+        run: >
+          ./build.ps1
+          -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=clang-cl
+          -DCMAKE_CXX_COMPILER=clang-cl
+          -Dpapilio_build_unit_test=1
+          -Dpapilio_build_example=1
+
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest
+
+      - name: Display Infomation
+        working-directory: ${{github.workspace}}/build/example
+        run: .\info.exe
