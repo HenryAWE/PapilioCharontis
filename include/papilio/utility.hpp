@@ -801,22 +801,11 @@ private:
 
     void intput_setg()
     {
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
         if constexpr(std::input_iterator<Iterator>)
         {
             CharT* ptr = this->gbuf_ptr();
             this->setg(ptr, ptr, ptr + 1);
         }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
     }
 };
 
@@ -869,22 +858,11 @@ namespace detail
 
 #    ifdef PAPILIO_COMPILER_CLANG
         std::size_t end = name.find_last_of(']');
-#    else
+#    else // GCC
         std::size_t end = std::min(name.find(';', start), name.find_last_of(']'));
 #    endif
 
-#    ifdef PAPILIO_COMPILER_CLANG
-#        pragma clang diagnostic push
-#        if __clang_major__ >= 16
-#            pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#        endif
-#    endif
-
         return std::string_view(name.data() + start, end - start);
-
-#    ifdef PAPILIO_COMPILER_CLANG
-#        pragma clang diagnostic pop
-#    endif
 
 #elif defined PAPILIO_COMPILER_MSVC
         name = __FUNCSIG__;

@@ -1,12 +1,5 @@
 #include <tuple> // std::tie
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
 namespace papilio::utf
 {
 constexpr std::uint8_t decoder<char32_t>::size_bytes(char32_t ch) noexcept
@@ -242,7 +235,3 @@ codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexc
     }
 }
 } // namespace papilio::utf
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif

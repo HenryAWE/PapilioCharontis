@@ -23,13 +23,6 @@ namespace detail
 
     void fp_iterator_conv::write(char ch)
     {
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
         if(m_byte_len == 0)
         {
             if(!utf::is_leading_byte(std::uint8_t(ch)))
@@ -95,10 +88,6 @@ namespace detail
             m_byte_len = 0;
             m_byte_idx = 0;
         }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
     }
 
     unsigned int get_output_cp_win() noexcept

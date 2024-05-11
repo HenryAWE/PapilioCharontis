@@ -337,13 +337,6 @@ constexpr inline std::size_t strlen(const CharT* str) noexcept(OnInvalid != strl
     return strlen<OnInvalid, CharT>(std::basic_string_view<CharT>(str));
 }
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
 PAPILIO_EXPORT template <char8_like CharT>
 [[nodiscard]]
 constexpr inline std::size_t index_offset(
@@ -483,10 +476,6 @@ constexpr inline std::size_t index_offset(
         return npos;
     return max_chars - 1 - idx;
 }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
 PAPILIO_EXPORT template <typename CharT>
 [[nodiscard]]

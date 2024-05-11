@@ -41,13 +41,6 @@ std::pair<codepoint, std::uint8_t> decoder<wchar_t>::to_codepoint(std::wstring_v
     return std::make_pair(decoder<char32_t>::to_codepoint(ch32).first, processed_size);
 }
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
 auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
 {
     from_codepoint_result result;
@@ -71,10 +64,6 @@ auto decoder<wchar_t>::from_codepoint(codepoint cp) -> from_codepoint_result
 
     return result;
 }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
 std::ostream& operator<<(std::ostream& os, codepoint cp)
 {

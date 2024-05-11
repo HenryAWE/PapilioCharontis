@@ -375,13 +375,6 @@ namespace detail
 
         constexpr codepoint cp_from_off(size_type off) const noexcept
         {
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
             string_view_type str = get_view();
             PAPILIO_ASSERT(off < str.size());
 
@@ -400,10 +393,6 @@ namespace detail
                 char32_t ch = static_cast<char32_t>(str[off]);
                 return decoder<char32_t>::to_codepoint(ch).first;
             }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
         }
 
     private:
@@ -1046,19 +1035,8 @@ public:
 
     bool null_terminated() const noexcept
     {
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
         auto v = this->get_view();
         return *(v.data() + v.size()) == static_cast<CharT>(0);
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
     }
 
     [[nodiscard]]

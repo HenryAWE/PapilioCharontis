@@ -67,13 +67,6 @@ namespace detail
     inline constexpr char digit_map_upper[16] =
         {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
     template <std::integral T, typename CharT>
     requires(!char_like<T>)
     class int_formatter : public std_formatter_base
@@ -537,10 +530,6 @@ namespace detail
             return context_t::out(ctx);
         }
     };
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 } // namespace detail
 
 PAPILIO_EXPORT template <std::integral T, typename CharT>

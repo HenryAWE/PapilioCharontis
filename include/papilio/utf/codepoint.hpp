@@ -136,13 +136,6 @@ public:
 #    pragma GCC diagnostic ignored "-Wstringop-overflow="
 #endif
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
 PAPILIO_EXPORT class codepoint
 {
 public:
@@ -452,10 +445,6 @@ private:
 #    pragma GCC diagnostic pop
 #endif
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
-
 inline namespace literals
 {
     PAPILIO_EXPORT constexpr codepoint operator""_cp(char32_t ch) noexcept
@@ -473,13 +462,6 @@ namespace detail
     public:
         using iterator_category = std::bidirectional_iterator_tag;
     };
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
 
     template <typename CharT>
     class cp_iter_impl;
@@ -746,10 +728,6 @@ namespace detail
     private:
         base_iter_t m_iter;
     };
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 } // namespace detail
 
 PAPILIO_EXPORT template <typename CharT>

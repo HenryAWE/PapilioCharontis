@@ -12,14 +12,7 @@
 #include <ranges>
 #include "macros.hpp"
 #include "memory.hpp"
-
 #include "detail/prefix.hpp"
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
 
 namespace papilio
 {
@@ -1475,9 +1468,6 @@ private:
 };
 } // namespace papilio
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 #include "detail/suffix.hpp"
 
 #endif

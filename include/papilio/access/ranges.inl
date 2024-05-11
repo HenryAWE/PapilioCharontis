@@ -61,13 +61,6 @@ struct contiguous_range_accessor
     using format_arg_type = basic_format_arg<Context>;
     using attribute_name_type = basic_attribute_name<char_type>;
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
     [[nodiscard]]
     static format_arg_type index(const Range& rng, ssize_t i)
     {
@@ -107,10 +100,6 @@ struct contiguous_range_accessor
 
         return span_t(ptr + s.first, s.length());
     }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
     [[nodiscard]]
     static format_arg_type attribute(const Range& rng, const attribute_name_type& attr)

@@ -460,21 +460,10 @@ public:
         return m_has_ownership;
     }
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#    endif
-#endif
-
     T& operator[](std::size_t i) const
     {
         return get()[i];
     }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
 private:
     pointer m_ptr;
