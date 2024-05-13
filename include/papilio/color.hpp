@@ -73,13 +73,13 @@ public:
         return *this;
     }
 
-    friend text_style operator|(text_style lhs, style rhs)
+    friend text_style operator|(text_style lhs, style rhs) noexcept
     {
         lhs |= rhs;
         return lhs;
     }
 
-    friend text_style operator|(text_style lhs, text_style rhs)
+    friend text_style operator|(text_style lhs, text_style rhs) noexcept
     {
         lhs |= rhs;
         return lhs;
@@ -131,8 +131,8 @@ public:
     template <typename Iterator>
     static Iterator reset(Iterator it)
     {
-        std::string_view esc = "\033[0m";
-        return std::copy(esc.begin(), esc.end(), it);
+        constexpr char esc[] = "\033[0m";
+        return std::copy_n(esc, 4, it);
     }
 
 private:
@@ -197,8 +197,9 @@ namespace detail
 
 PAPILIO_EXPORT template <typename T>
 requires(formattable<T>)
-struct formatter<detail::styled_arg<T>, char> : public formatter<T>
+class formatter<detail::styled_arg<T>, char> : public formatter<T>
 {
+public:
     template <typename FormatContext>
     auto format(const detail::styled_arg<T>& arg, FormatContext& ctx) const
         -> typename FormatContext::iterator

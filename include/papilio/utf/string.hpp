@@ -54,7 +54,7 @@ namespace detail
             return PAPILIO_NS utf::codepoint_begin(get_view());
         }
 
-        const_iterator cend() const noexcept
+        constexpr const_iterator cend() const noexcept
         {
             return PAPILIO_NS utf::codepoint_end(get_view());
         }

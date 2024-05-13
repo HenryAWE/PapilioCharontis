@@ -188,7 +188,7 @@ constexpr auto decoder<char16_t>::from_codepoint(codepoint cp) -> from_codepoint
 }
 
 template <typename CharU>
-codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noexcept
+constexpr codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noexcept
 {
     using result_t = codepoint_iterator<CharU>;
 
@@ -221,7 +221,7 @@ codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noe
 }
 
 template <typename CharU>
-codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexcept
+constexpr codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexcept
 {
     using result_t = codepoint_iterator<CharU>;
 

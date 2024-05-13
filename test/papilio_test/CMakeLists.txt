@@ -8,3 +8,7 @@ target_compile_options(papilio_test INTERFACE
     # Workaround for GCC and GoogleTest, see https://github.com/google/googletest/issues/4232
     $<$<CXX_COMPILER_ID:GNU>:-Wno-error=restrict>
 )
+# Force UTF-8 on MSVC
+target_compile_options(papilio_test INTERFACE
+    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+)

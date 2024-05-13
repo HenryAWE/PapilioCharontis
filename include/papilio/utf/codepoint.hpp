@@ -857,10 +857,10 @@ public:
     }
 
     template <typename CharU>
-    friend codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noexcept;
+    friend constexpr codepoint_iterator<CharU> codepoint_begin(std::basic_string_view<CharU> str) noexcept;
 
     template <typename CharU>
-    friend codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexcept;
+    friend constexpr codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> str) noexcept;
 };
 } // namespace papilio::utf
 
