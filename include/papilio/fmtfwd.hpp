@@ -18,6 +18,18 @@ namespace detail
     using fmt_iter_for = std::back_insert_iterator<std::basic_string<CharT>>;
 }
 
+namespace utf
+{
+    PAPILIO_EXPORT template <typename CharT>
+    class decoder;
+    PAPILIO_EXPORT class codepoint;
+
+    PAPILIO_EXPORT template <typename CharT>
+    class basic_string_ref;
+    PAPILIO_EXPORT template <typename CharT>
+    class basic_string_container;
+} // namespace utf
+
 PAPILIO_EXPORT template <typename Context>
 class basic_format_arg;
 

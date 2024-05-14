@@ -1,5 +1,5 @@
-#ifndef PAPILIO_UTF_STRING
-#define PAPILIO_UTF_STRING
+#ifndef PAPILIO_UTF_STRING_HPP
+#define PAPILIO_UTF_STRING_HPP
 
 #pragma once
 
@@ -7,6 +7,7 @@
 #include <string>
 #include <algorithm>
 #include <variant>
+#include "../fmtfwd.hpp"
 #include "stralgo.hpp"
 #include "codepoint.hpp"
 #include "../memory.hpp"
@@ -14,11 +15,6 @@
 
 namespace papilio::utf
 {
-PAPILIO_EXPORT template <typename CharT>
-class basic_string_ref;
-PAPILIO_EXPORT template <typename CharT>
-class basic_string_container;
-
 namespace detail
 {
     class str_impl_base
@@ -1163,6 +1159,14 @@ public:
     void push_back(codepoint cp)
     {
         cp.append_to(to_str());
+    }
+
+    void clear() noexcept
+    {
+        if(string_type* p = std::get_if<string_type>(&m_data); p)
+            p->clear();
+        else
+            emplace_data<string_view_type>();
     }
 
     using my_base::begin;

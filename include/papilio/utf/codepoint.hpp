@@ -11,16 +11,12 @@
 #include <string>
 #include <array>
 #include <iterator>
+#include "../fmtfwd.hpp"
 #include "stralgo.hpp"
 #include "../detail/prefix.hpp"
 
 namespace papilio::utf
 {
-// forward declarations
-PAPILIO_EXPORT template <char_like Char>
-class decoder;
-PAPILIO_EXPORT class codepoint;
-
 // vvv decoders vvv
 
 PAPILIO_EXPORT template <>
@@ -457,24 +453,15 @@ inline namespace literals
 
 namespace detail
 {
-    class cp_iter_impl_base
-    {
-    public:
-        using iterator_category = std::bidirectional_iterator_tag;
-    };
-
     template <typename CharT>
     class cp_iter_impl;
 
     template <char8_like CharT>
-    class cp_iter_impl<CharT> : public cp_iter_impl_base
+    class cp_iter_impl<CharT>
     {
     public:
         using char_type = CharT;
         using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
-        using value_type = codepoint;
-        using reference = codepoint;
         using string_view_type = std::basic_string_view<CharT>;
 
         constexpr cp_iter_impl() noexcept = default;
@@ -486,7 +473,7 @@ namespace detail
             : m_str(str), m_offset(offset), m_len(len) {}
 
     protected:
-        constexpr void next() noexcept
+        constexpr void next_pos() noexcept
         {
             size_type next_offset = m_offset + m_len;
             if(next_offset < m_str.size())
@@ -505,7 +492,7 @@ namespace detail
             }
         }
 
-        constexpr void prev() noexcept
+        constexpr void prev_pos() noexcept
         {
             PAPILIO_ASSUME(m_offset != 0);
             --m_offset;
@@ -535,25 +522,21 @@ namespace detail
             }
         }
 
-    public:
-        constexpr reference operator*() const noexcept
+        constexpr codepoint deref() const noexcept
         {
-            return codepoint(base(), m_len);
+            return codepoint(to_ptr(), m_len);
         }
 
-        explicit constexpr operator bool() const noexcept
+        constexpr bool to_bool() const noexcept
         {
             return !m_str.empty();
         }
 
-        [[nodiscard]]
-        constexpr const CharT* base() const noexcept
+        constexpr const CharT* to_ptr() const noexcept
         {
             return m_str.data() + m_offset;
         }
 
-        // byte count
-        [[nodiscard]]
         constexpr std::uint8_t size() const noexcept
         {
             return m_len;
@@ -574,14 +557,11 @@ namespace detail
     };
 
     template <char16_like CharT>
-    class cp_iter_impl<CharT> : public cp_iter_impl_base
+    class cp_iter_impl<CharT>
     {
     public:
         using char_type = CharT;
         using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
-        using value_type = codepoint;
-        using reference = codepoint;
         using string_view_type = std::basic_string_view<CharT>;
 
         constexpr cp_iter_impl() noexcept = default;
@@ -593,7 +573,7 @@ namespace detail
             : m_str(str), m_offset(offset), m_len(len) {}
 
     protected:
-        constexpr void next() noexcept
+        constexpr void next_pos() noexcept
         {
             size_type next_offset = m_offset + m_len;
             if(next_offset < m_str.size())
@@ -612,7 +592,7 @@ namespace detail
             }
         }
 
-        constexpr void prev() noexcept
+        constexpr void prev_pos() noexcept
         {
             PAPILIO_ASSUME(m_offset != 0);
             --m_offset;
@@ -622,25 +602,21 @@ namespace detail
             m_len = utf::is_high_surrogate(m_str[m_offset]) ? 2 : 1;
         }
 
-    public:
-        constexpr reference operator*() const
+        constexpr codepoint deref() const
         {
             return decoder<CharT>::to_codepoint(m_str.substr(m_offset, m_len)).first;
         }
 
-        explicit constexpr operator bool() const noexcept
+        constexpr bool to_bool() const noexcept
         {
             return !m_str.empty();
         }
 
-        [[nodiscard]]
-        constexpr const CharT* base() const noexcept
+        constexpr const CharT* to_ptr() const noexcept
         {
             return m_str.data() + m_offset;
         }
 
-        // byte count
-        [[nodiscard]]
         constexpr std::uint8_t size() const noexcept
         {
             return m_len;
@@ -661,14 +637,11 @@ namespace detail
     };
 
     template <char32_like CharT>
-    class cp_iter_impl<CharT> : public cp_iter_impl_base
+    class cp_iter_impl<CharT>
     {
     public:
         using char_type = CharT;
         using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
-        using value_type = codepoint;
-        using reference = codepoint;
         using string_view_type = std::basic_string_view<CharT>;
 
     private:
@@ -684,36 +657,32 @@ namespace detail
             : m_iter(iter) {}
 
     protected:
-        constexpr void next() noexcept
+        constexpr void next_pos() noexcept
         {
             ++m_iter;
         }
 
-        constexpr void prev() noexcept
+        constexpr void prev_pos() noexcept
         {
             --m_iter;
         }
 
-    public:
-        constexpr reference operator*() const
+        constexpr codepoint deref() const noexcept
         {
             char32_t ch = static_cast<char32_t>(*m_iter);
             return decoder<char32_t>::to_codepoint(ch).first;
         }
 
-        explicit operator bool() const noexcept
+        constexpr bool to_bool() const noexcept
         {
-            return base() != nullptr;
+            return to_ptr() != nullptr;
         }
 
-        [[nodiscard]]
-        constexpr const CharT* base() const noexcept
+        constexpr const CharT* to_ptr() const noexcept
         {
             return std::to_address(m_iter);
         }
 
-        // byte count
-        [[nodiscard]]
         constexpr std::uint8_t size() const noexcept
         {
             return 1;
@@ -733,15 +702,17 @@ namespace detail
 PAPILIO_EXPORT template <typename CharT>
 class codepoint_iterator : public detail::cp_iter_impl<CharT>
 {
-public:
+private:
     using my_base = detail::cp_iter_impl<CharT>;
 
 public:
+    using iterator_category = std::bidirectional_iterator_tag;
+
     using char_type = CharT;
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using value_type = codepoint;
-    using reference = codepoint;
+    using const_reference = codepoint;
     using string_view_type = std::basic_string_view<CharT>;
 
     constexpr codepoint_iterator() noexcept = default;
@@ -753,19 +724,40 @@ private:
 public:
     constexpr codepoint_iterator& operator=(const codepoint_iterator&) noexcept = default;
 
+    const CharT* base() const noexcept
+    {
+        return my_base::to_ptr();
+    }
+
     constexpr bool operator==(const codepoint_iterator& rhs) const noexcept
     {
-        return this->base() == rhs.base();
+        return base() == rhs.base();
     }
 
     constexpr std::strong_ordering operator<=>(const codepoint_iterator& rhs) const noexcept
     {
-        return this->base() <=> rhs.base();
+        return base() <=> rhs.base();
+    }
+
+    [[nodiscard]]
+    constexpr std::uint8_t size() const noexcept
+    {
+        return my_base::size();
+    }
+
+    constexpr const_reference operator*() const
+    {
+        return my_base::deref();
+    }
+
+    constexpr explicit operator bool() const noexcept
+    {
+        return my_base::to_bool();
     }
 
     constexpr codepoint_iterator& operator++() noexcept
     {
-        this->next();
+        this->next_pos();
         return *this;
     }
 
@@ -778,7 +770,7 @@ public:
 
     constexpr codepoint_iterator& operator--() noexcept
     {
-        this->prev();
+        this->prev_pos();
         return *this;
     }
 
@@ -849,6 +841,11 @@ public:
 
             return diff;
         }
+    }
+
+    constexpr void swap(codepoint_iterator& other) noexcept
+    {
+        my_base::swap(other);
     }
 
     friend constexpr void swap(codepoint_iterator& lhs, codepoint_iterator& rhs) noexcept
