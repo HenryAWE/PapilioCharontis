@@ -494,7 +494,7 @@ namespace detail
 
         constexpr void prev_pos() noexcept
         {
-            PAPILIO_ASSUME(m_offset != 0);
+            PAPILIO_ASSERT(m_offset != 0);
             --m_offset;
             size_type next_offset = m_offset;
             while(true)
@@ -594,7 +594,7 @@ namespace detail
 
         constexpr void prev_pos() noexcept
         {
-            PAPILIO_ASSUME(m_offset != 0);
+            PAPILIO_ASSERT(m_offset != 0);
             --m_offset;
             while(PAPILIO_NS utf::is_low_surrogate(m_str[m_offset]))
                 --m_offset;

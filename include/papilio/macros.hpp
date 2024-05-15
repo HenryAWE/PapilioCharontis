@@ -25,27 +25,16 @@
 #if defined PAPILIO_COMPILER_MSVC
 // [[no_unique_address]] is ignored by MSVC even in C++20 mode.
 // https://devblogs.microsoft.com/cppblog/msvc-cpp20-and-the-std-cpp20-switch/#msvc-extensions-and-abi
-#    define PAPILIO_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#    define PAPILIO_NO_UNIQUE_ADDRESS          [[msvc::no_unique_address]]
+#    define PAPILIO_HAS_ATTR_NO_UNIQUE_ADDRESS "[[msvc::no_unique_address]]"
 // Clang does not support [[no_unique_address]] on Windows.
 // https://github.com/llvm/llvm-project/issues/49358
 #elif __has_cpp_attribute(no_unique_address)
-#    define PAPILIO_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#    define PAPILIO_NO_UNIQUE_ADDRESS          [[no_unique_address]]
+#    define PAPILIO_HAS_ATTR_NO_UNIQUE_ADDRESS "[[no_unique_address]]"
 #else
+// Placeholder
 #    define PAPILIO_NO_UNIQUE_ADDRESS
-#endif
-
-#if __has_cpp_attribute(assume)
-#    define PAPILIO_ASSUME(expr) [[assume(expr)]]
-#elif defined PAPILIO_COMPILER_MSVC
-#    define PAPILIO_ASSUME(expr) __assume(expr)
-#elif defined PAPILIO_COMPILER_GCC
-#    if PAPILIO_COMPILER_GCC >= 13
-#        define PAPILIO_ASSUME(expr) __attribute__((assume(expr)))
-#    else
-#        define PAPILIO_ASSUME(expr) PAPILIO_ASSERT(expr)
-#    endif
-#else
-#    define PAPILIO_ASSUME(expr)
 #endif
 
 #define PAPILIO_STRINGIZE(text)    #text
@@ -67,7 +56,7 @@
             return u##str##suffix;                            \
     }()
 
-#define PAPILIO_TSTRING(char_t, str) PAPILIO_TSTRING_EX(char_t, str, , )
+#define PAPILIO_TSTRING(char_t, str)      PAPILIO_TSTRING_EX(char_t, str, , )
 
 #define PAPILIO_TSTRING_VIEW(char_t, str) PAPILIO_TSTRING_EX( \
     char_t, str, sv, using namespace ::std                    \

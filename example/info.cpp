@@ -7,6 +7,7 @@ int main()
     println("Papilio Charontis version {0[0]}.{0[1]}.{0[2]}", get_version());
     println();
 
+    println("Library and compiler information:");
     println("PAPILIO_CPLUSPLUS = {:d}L", PAPILIO_CPLUSPLUS);
 
 #ifdef PAPILIO_COMPILER_MSVC
@@ -32,6 +33,10 @@ int main()
     println("PAPILIO_STDLIB_MSVC_STL = {}", PAPILIO_STDLIB_MSVC_STL);
 #endif
 
+#ifdef PAPILIO_HAS_ATTR_NO_UNIQUE_ADDRESS
+    println("PAPILIO_HAS_ATTR_NO_UNIQUE_ADDRESS = {}", PAPILIO_HAS_ATTR_NO_UNIQUE_ADDRESS);
+#endif
+
 #ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
     println("PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT = {:d}L", PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT);
 #endif
@@ -39,10 +44,11 @@ int main()
     println("PAPILIO_HAS_LIB_STACKTRACE = {:d}L", PAPILIO_HAS_LIB_STACKTRACE);
 #endif
 
-#    ifdef PAPILIO_HAS_VA_OPT
+#ifdef PAPILIO_HAS_VA_OPT
     println("PAPILIO_HAS_VA_OPT defined");
 #endif
 
+    println("PAPILIO_HAS_UNREACHABLE = {}", PAPILIO_HAS_UNREACHABLE);
 #ifdef PAPILIO_HAS_ENUM_NAME
     println("PAPILIO_HAS_ENUM_NAME = {}", PAPILIO_HAS_ENUM_NAME);
 #endif
