@@ -35,10 +35,17 @@ if(${papilio_build_module})
     set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 endif()
 
+include(GNUInstallDirs)
+
 add_library(papilio ${papilio_src})
-target_sources(papilio PUBLIC "natvis/papilio.natvis")
-target_sources(papilio PUBLIC "cpp.hint")
-target_include_directories(papilio PUBLIC include)
+target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/natvis/papilio.natvis>")
+target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/cpp.hint>")
+target_include_directories(papilio PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+# Enable warnings for development
 target_compile_options(papilio PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
@@ -53,6 +60,41 @@ if(${papilio_build_module})
             ${papilio_modules_src}
     )
 endif()
+
+install(
+    TARGETS papilio
+    EXPORT PapilioTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.inl"
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "PapilioConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+configure_package_config_file(
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/PapilioConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/PapilioConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/papilio
+)
+install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/PapilioConfig.cmake"
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/papilio
+)
+install(
+    EXPORT PapilioTargets
+    FILE PapilioTargets.cmake
+    NAMESPACE papilio::
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/papilio
+)
 
 if(${papilio_build_example})
     add_subdirectory(example)
