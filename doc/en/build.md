@@ -1,22 +1,18 @@
-# Building
+# Building and Installing
 ## Prerequisites
 1. Compiler that supports C++20. Recommended compilers: `MSVC 19.3` (`Visual Studio 2022`) or higher, `GCC 12` or higher, `Clang 15` or higher.
 2. `CMake`: `3.20` or higher.
+3. `Ninja`
 
 ## Build the Project
-### Configure
-```bash
-mkdir build
-cd build
-cmake ..
+Run `build.sh` from the project root directory. For Windows, run `build.ps1` instead.
+```sh
+./build.sh -DCMAKE_BUILD_TYPE=Release
 ```
-If you need to build examples or unit tests, add the parameter `-Dpapilio_build_example=1` or `-Dpapilio_build_unit_test=1`.  
-Document for more build options are in the [Custom Build](custom_build.md).
-### Compile
-```bash
-cmake --build .
+```ps1
+# Windows
+./build.ps1 -DCMAKE_BUILD_TYPE=Release
 ```
-### Run Unit Tests
-```bash
-ctest .
-```
+
+## Install the Library
+Run `cmake --install` in the `build/` directory.
