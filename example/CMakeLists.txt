@@ -1,6 +1,10 @@
 macro(define_papilio_example example_name)
     add_executable(${example_name} ${example_name}.cpp)
     target_link_libraries(${example_name} PRIVATE papilio)
+    # Force UTF-8 on MSVC
+    target_compile_options(${example_name} PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+    )
 endmacro()
 
 define_papilio_example(info)
