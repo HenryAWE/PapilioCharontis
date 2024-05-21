@@ -1,4 +1,4 @@
 @PACKAGE_INIT@
 
 include("${CMAKE_CURRENT_LIST_DIR}/PapilioTargets.cmake")
-check_required_components(papilio::papilio)
+check_required_components(papilio)
