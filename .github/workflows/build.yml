@@ -48,6 +48,12 @@ jobs:
             cmake --build build/papilio_test_install
             build/papilio_test_install/papilio_test_install
 
+        - name: Test add_subdirectory
+          run: |
+            cmake -GNinja -S test/test_subdir/ -B build/papilio_test_subdir -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-12
+            cmake --build build/papilio_test_subdir
+            build/papilio_test_subdir/papilio_test_subdir
+
     Clang:
         runs-on: ubuntu-22.04
         strategy:

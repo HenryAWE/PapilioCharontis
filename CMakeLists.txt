@@ -38,12 +38,15 @@ endif()
 include(GNUInstallDirs)
 
 add_library(papilio ${papilio_src})
-target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/natvis/papilio.natvis>")
-target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/cpp.hint>")
+target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/natvis/papilio.natvis>")
+target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp.hint>")
 target_include_directories(papilio PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+
+# Add an ALIAS target for using the library by add_subdirectory()
+add_library(papilio::papilio ALIAS papilio)
 
 # Enable warnings for development
 target_compile_options(papilio PRIVATE
