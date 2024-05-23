@@ -54,6 +54,10 @@
 #    define PAPILIO_CPLUSPLUS __cplusplus
 #endif
 
+#if PAPILIO_CPLUSPLUS < 202002L
+#    error "C++20 or later is required."
+#endif
+
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
