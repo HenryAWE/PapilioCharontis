@@ -1,5 +1,10 @@
 #include <papilio/script/interpreter.hpp>
 #include <papilio/detail/prefix.hpp>
+#ifdef PAPILIO_STDLIB_LIBCPP
+// from_chars of libc++ is broken, use stringstream as a fallback.
+#    include <sstream>
+#    define PAPILIO_ENABLE_LIBCPP_CHARCONV_WORKAROUND 1
+#endif
 
 namespace papilio::script
 {
@@ -7,12 +12,13 @@ bad_variable_access::~bad_variable_access() = default;
 
 invalid_conversion::~invalid_conversion() = default;
 
-static const char* to_cstr(script_error_code ec) noexcept
+static std::string_view script_ec_to_sv(script_error_code ec) noexcept
 {
+    using namespace std::literals;
     using enum script_error_code;
 
 #define PAPILIO_SCRIPT_ERR(code, msg) \
-    case code: return msg
+    case code: return msg##sv
 
     switch(ec)
     {
@@ -33,12 +39,12 @@ static const char* to_cstr(script_error_code ec) noexcept
 
 std::string to_string(script_error_code ec)
 {
-    return to_cstr(ec);
+    return std::string(script_ec_to_sv(ec));
 }
 
 std::ostream& operator<<(std::ostream& os, script_error_code ec)
 {
-    os << to_cstr(ec);
+    os << script_ec_to_sv(ec);
     return os;
 }
 
@@ -113,6 +119,43 @@ char32_t script_base::get_esc_ch(char32_t ch) noexcept
     default:
         return ch;
     }
+}
+
+float script_base::chars_to_float(const char* start, const char* stop)
+{
+#ifndef PAPILIO_ENABLE_LIBCPP_CHARCONV_WORKAROUND
+    // Ordinary implementation using <charconv>
+
+    float val;
+    auto result = std::from_chars(
+        start, stop, val, std::chars_format::fixed
+    );
+    if(result.ec != std::errc())
+    {
+        throw std::runtime_error("invalid float");
+    }
+
+    return val;
+
+#else
+    // PAPILIO_ENABLE_LIBCPP_CHARCONV_WORKAROUND is defined
+    // Workaround for libc++ using <sstream>
+
+    std::stringstream ss;
+    ss.imbue(std::locale::classic());
+    ss.write(start, stop - start);
+
+    float val;
+    ss >> val;
+
+    if(!ss.good())
+    {
+        throw std::runtime_error("invalid float");
+    }
+
+    return val;
+
+#endif
 }
 } // namespace papilio::script
 

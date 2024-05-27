@@ -141,7 +141,7 @@ TEST(variable, equal)
     {
         variable var1 = 1.0f;
         variable var2 = 1.1f;
-        EXPECT_TRUE(var1.equal(var2, 0.11L));
+        EXPECT_TRUE(var1.equal(var2, 0.11f));
     }
 
     {
@@ -203,8 +203,8 @@ TEST(variable, access)
         variable var = 10.0f;
         ASSERT_TRUE(var.get_if<variable::float_type>());
 
-        EXPECT_DOUBLE_EQ(static_cast<double>(*var.get_if<variable::float_type>()), 10.0);
-        EXPECT_DOUBLE_EQ(static_cast<double>(var.get<variable::float_type>()), 10.0);
+        EXPECT_FLOAT_EQ(*var.get_if<float>(), 10.0f);
+        EXPECT_FLOAT_EQ(var.get<float>(), 10.0f);
 
         EXPECT_THROW((void)var.get<bool>(), bad_variable_access);
 
