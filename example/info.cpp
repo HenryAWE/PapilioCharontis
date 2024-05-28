@@ -7,6 +7,8 @@ int main()
     println("Papilio Charontis version {0[0]}.{0[1]}.{0[2]}", get_version());
     println();
 
+    println("Is terminal: {}", os::is_terminal(stdout));
+
     println("Library and compiler information:");
     println("PAPILIO_CPLUSPLUS = {:d}L", PAPILIO_CPLUSPLUS);
 

@@ -129,10 +129,12 @@ public:
     }
 
     template <typename Iterator>
-    static Iterator reset(Iterator it)
+    Iterator reset(Iterator it) const
     {
         constexpr char esc[] = "\033[0m";
-        return std::copy_n(esc, 4, it);
+        if(has_style() || has_foreground())
+            it = std::copy_n(esc, 4, it);
+        return it;
     }
 
 private:

@@ -1,109 +1,50 @@
 #include <papilio/print.hpp>
-#include <system_error>
-#ifdef PAPILIO_PLATFORM_WINDOWS
-#    define WIN32_LEAN_AND_MEAN
-#    include <Windows.h>
-#endif
+#include <papilio/os/os.hpp>
 #include <papilio/detail/prefix.hpp>
 
 namespace papilio
 {
 namespace detail
 {
-    void fp_iterator::write(char ch)
+    static void output_impl(
+        std::FILE* file,
+        std::string_view out,
+        bool conv_unicode
+    )
     {
-        int result = std::fputc(ch, m_fp);
-        if(result == EOF)
-        {
-            throw std::system_error(
-                std::make_error_code(std::errc::io_error)
-            );
-        }
+        if(conv_unicode)
+            os::output_conv(file, out);
+        else
+            os::output_nonconv(file, out);
     }
 
-    void fp_iterator_conv::write(char ch)
+    void vprint_impl(
+        std::FILE* file,
+        std::string_view fmt,
+        format_args_ref args,
+        bool conv_unicode,
+        bool newline,
+        text_style st
+    )
     {
-        if(m_byte_len == 0)
+        std::string out;
         {
-            if(!utf::is_leading_byte(std::uint8_t(ch)))
-            {
-                throw std::system_error(
-                    std::make_error_code(std::errc::io_error)
-                );
-            }
-            m_byte_len = utf::byte_count(std::uint8_t(ch));
+            auto it = std::back_inserter(out);
+
+            st.set(it);
+            out += PAPILIO_NS vformat(fmt, args);
+            st.reset(it);
         }
+        if(newline)
+            out.push_back('\n');
 
-        m_buf[m_byte_idx] = static_cast<char8_t>(ch);
-        ++m_byte_idx;
-
-        if(m_byte_idx == m_byte_len)
-        {
-#ifndef PAPILIO_PLATFORM_WINDOWS
-            m_underlying = std::copy(
-                m_buf, m_buf + m_byte_len, m_underlying
-            );
-#else
-            wchar_t wbuf[2];
-            int wconv_result = ::MultiByteToWideChar(
-                CP_UTF8,
-                MB_ERR_INVALID_CHARS,
-                reinterpret_cast<::LPSTR>(m_buf),
-                m_byte_len,
-                wbuf,
-                2
-            );
-            if(wconv_result == 0)
-            {
-                throw std::system_error(
-                    std::make_error_code(std::errc::io_error)
-                );
-            }
-
-            char mbbuf[8];
-            int mbconv_result = ::WideCharToMultiByte(
-                get_cp(),
-                0,
-                wbuf,
-                wconv_result,
-                mbbuf,
-                static_cast<int>(std::size(mbbuf)),
-                nullptr,
-                nullptr
-            );
-            if(mbconv_result == 0)
-            {
-                throw std::system_error(
-                    std::make_error_code(std::errc::io_error)
-                );
-            }
-
-            m_underlying = std::copy_n(
-                mbbuf,
-                mbconv_result,
-                m_underlying
-            );
-#endif
-
-            m_byte_len = 0;
-            m_byte_idx = 0;
-        }
-    }
-
-    unsigned int get_output_cp_win() noexcept
-    {
-#ifdef PAPILIO_PLATFORM_WINDOWS
-        return ::GetConsoleCP();
-#else
-        return 0;
-#endif
+        output_impl(file, out, conv_unicode);
     }
 } // namespace detail
 
 void println(std::FILE* file)
 {
-    detail::fp_iterator it(file);
-    *it = '\n';
+    detail::output_impl(file, "\n", os::is_terminal(file));
 }
 
 void println()
