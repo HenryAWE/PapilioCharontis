@@ -16,6 +16,8 @@ public:
 
     void mainloop();
 
+    void print_info();
+
 private:
     bool m_quit = false;
 

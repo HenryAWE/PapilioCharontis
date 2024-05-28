@@ -31,7 +31,7 @@ ipapilio::ipapilio()
 
 void ipapilio::mainloop()
 {
-    papilio::println("Papilio Charontis {0[0]}.{0[1]}.{0[2]}", papilio::get_version());
+    print_info();
     papilio::println("Type \"help\" for more information.");
 
     while(!m_quit)
@@ -60,6 +60,11 @@ void ipapilio::mainloop()
             papilio::println("Invalid command: {}", cmd_id);
         }
     }
+}
+
+void ipapilio::print_info()
+{
+    papilio::println("Papilio Charontis {0[0]}.{0[1]}.{0[2]}", papilio::get_version());
 }
 
 void ipapilio::build_cmd()
