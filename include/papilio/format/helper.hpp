@@ -4,7 +4,7 @@
 #pragma once
 
 #include "../core.hpp"
-#include "../utf.hpp"
+#include "../utf/utf.hpp"
 #include "../script/interpreter.hpp"
 #include "../detail/prefix.hpp"
 

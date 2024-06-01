@@ -13,7 +13,7 @@
 #include "fmtfwd.hpp"
 #include "utility.hpp"
 #include "container.hpp"
-#include "utf.hpp"
+#include "utf/utf.hpp"
 #include "locale.hpp"
 #include "access.hpp"
 #include "detail/prefix.hpp"
@@ -791,109 +791,109 @@ namespace detail
     {
         return sizeof...(Ts) - get_named_arg_count<Ts...>();
     }
+} // namespace detail
 
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 #endif
 
-    template <typename Context, typename CharT>
-    class format_args_base
+template <typename Context, typename CharT = typename Context::char_type>
+class format_args_base
+{
+public:
+    using char_type = CharT;
+    using string_type = std::basic_string<CharT>;
+    using string_view_type = std::basic_string_view<CharT>;
+    using string_container_type = utf::basic_string_container<CharT>;
+    using format_arg_type = basic_format_arg<Context>;
+    using indexing_value_type = basic_indexing_value<CharT>;
+    using size_type = std::size_t;
+
+    [[nodiscard]]
+    virtual const format_arg_type& get(size_type i) const = 0;
+    [[nodiscard]]
+    virtual const format_arg_type& get(string_view_type key) const = 0;
+
+    [[nodiscard]]
+    virtual const format_arg_type& get(const indexing_value_type& idx) const
     {
-    public:
-        using char_type = CharT;
-        using string_type = std::basic_string<CharT>;
-        using string_view_type = std::basic_string_view<CharT>;
-        using string_container_type = utf::basic_string_container<CharT>;
-        using format_arg_type = basic_format_arg<Context>;
-        using indexing_value_type = basic_indexing_value<CharT>;
-        using size_type = std::size_t;
-
-        [[nodiscard]]
-        virtual const format_arg_type& get(size_type i) const = 0;
-        [[nodiscard]]
-        virtual const format_arg_type& get(string_view_type key) const = 0;
-
-        [[nodiscard]]
-        virtual const format_arg_type& get(const indexing_value_type& idx) const
-        {
-            return idx.visit(
-                [&]<typename T>(const T& v) -> const format_arg_type&
+        return idx.visit(
+            [&]<typename T>(const T& v) -> const format_arg_type&
+            {
+                if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
                 {
-                    if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
-                    {
-                        if(v < 0)
-                            throw_index_out_of_range();
-                        size_type i = static_cast<size_type>(v);
-                        return get(i);
-                    }
-                    else if constexpr(std::is_same_v<T, string_container_type>)
-                    {
-                        return get(string_view_type(v));
-                    }
-                    else
-                    {
-                        throw std::invalid_argument("invalid indexing value");
-                    }
+                    if(v < 0)
+                        throw_index_out_of_range();
+                    size_type i = static_cast<size_type>(v);
+                    return get(i);
                 }
-            );
-        }
-
-        [[nodiscard]]
-        bool check(size_type i) const noexcept
-        {
-            return i < indexed_size();
-        }
-
-        [[nodiscard]]
-        virtual bool check(string_view_type key) const noexcept = 0;
-
-        [[nodiscard]]
-        bool check(const indexing_value_type& idx) const noexcept
-        {
-            return idx.visit(
-                [this]<typename T>(const T& v) -> bool
+                else if constexpr(std::is_same_v<T, string_container_type>)
                 {
-                    if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
-                    {
-                        if(v < 0)
-                            return false;
-                        return check(static_cast<size_type>(v));
-                    }
-                    else if constexpr(std::is_same_v<T, string_container_type>)
-                    {
-                        return check(string_view_type(v));
-                    }
-                    else
-                    {
+                    return get(string_view_type(v));
+                }
+                else
+                {
+                    throw std::invalid_argument("invalid indexing value");
+                }
+            }
+        );
+    }
+
+    [[nodiscard]]
+    bool check(size_type i) const noexcept
+    {
+        return i < indexed_size();
+    }
+
+    [[nodiscard]]
+    virtual bool check(string_view_type key) const noexcept = 0;
+
+    [[nodiscard]]
+    bool check(const indexing_value_type& idx) const noexcept
+    {
+        return idx.visit(
+            [this]<typename T>(const T& v) -> bool
+            {
+                if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
+                {
+                    if(v < 0)
                         return false;
-                    }
+                    return check(static_cast<size_type>(v));
                 }
-            );
-        }
+                else if constexpr(std::is_same_v<T, string_container_type>)
+                {
+                    return check(string_view_type(v));
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        );
+    }
 
-        virtual size_type indexed_size() const noexcept = 0;
-        virtual size_type named_size() const noexcept = 0;
+    virtual size_type indexed_size() const noexcept = 0;
+    virtual size_type named_size() const noexcept = 0;
 
-        const format_arg_type& operator[](const indexing_value_type& idx) const
-        {
-            return get(idx);
-        }
+    const format_arg_type& operator[](const indexing_value_type& idx) const
+    {
+        return get(idx);
+    }
 
-    protected:
-        [[noreturn]]
-        static void throw_index_out_of_range()
-        {
-            throw std::out_of_range("index out of range");
-        }
+protected:
+    [[noreturn]]
+    static void throw_index_out_of_range()
+    {
+        throw std::out_of_range("index out of range");
+    }
 
-        [[noreturn]]
-        static void throw_invalid_named_argument()
-        {
-            throw std::out_of_range("invalid named argument");
-        }
-    };
-} // namespace detail
+    [[noreturn]]
+    static void throw_invalid_named_argument()
+    {
+        throw std::out_of_range("invalid named argument");
+    }
+};
 
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
@@ -901,7 +901,7 @@ namespace detail
 
 PAPILIO_EXPORT template <typename T, typename Context = format_context>
 struct is_format_args :
-    std::bool_constant<std::is_base_of_v<detail::format_args_base<Context, typename Context::char_type>, T>>
+    std::bool_constant<std::is_base_of_v<format_args_base<Context>, T>>
 {};
 
 PAPILIO_EXPORT template <typename T, typename Context = format_context>
@@ -912,9 +912,9 @@ PAPILIO_EXPORT template <
     std::size_t NamedArgumentCount,
     typename Context = format_context,
     typename CharT = typename Context::char_type>
-class static_format_args final : public detail::format_args_base<Context, CharT>
+class static_format_args final : public format_args_base<Context, CharT>
 {
-    using my_base = detail::format_args_base<Context, CharT>;
+    using my_base = format_args_base<Context, CharT>;
 
 public:
     static_assert(std::is_same_v<typename Context::char_type, CharT>);
@@ -1017,10 +1017,10 @@ private:
     }
 };
 
-PAPILIO_EXPORT template <typename Context, typename CharT = typename Context::char_type>
-class basic_dynamic_format_args final : public detail::format_args_base<Context, CharT>
+PAPILIO_EXPORT template <typename Context, typename CharT>
+class basic_dynamic_format_args final : public format_args_base<Context, CharT>
 {
-    using my_base = detail::format_args_base<Context, CharT>;
+    using my_base = format_args_base<Context, CharT>;
 
 public:
     static_assert(std::is_same_v<typename Context::char_type, CharT>);
@@ -1031,8 +1031,9 @@ public:
     using size_type = std::size_t;
     using format_arg_type = basic_format_arg<Context>;
 
-    using vector_type = std::vector<
-        format_arg_type>;
+    using vector_type = small_vector<
+        format_arg_type,
+        6>;
     using map_type = std::map<
         string_type,
         format_arg_type,
@@ -1143,9 +1144,9 @@ private:
 
 // Type-erased format arguments.
 PAPILIO_EXPORT template <typename Context, typename CharT>
-class basic_format_args_ref final : public detail::format_args_base<Context, CharT>
+class basic_format_args_ref final : public format_args_base<Context, CharT>
 {
-    using my_base = detail::format_args_base<Context, CharT>;
+    using my_base = format_args_base<Context, CharT>;
 
 public:
     using char_type = CharT;
@@ -1200,9 +1201,6 @@ public:
 private:
     const my_base* m_ptr;
 };
-
-PAPILIO_EXPORT using format_args_ref = basic_format_args_ref<format_context, char>;
-PAPILIO_EXPORT using wformat_args_ref = basic_format_args_ref<wformat_context, wchar_t>;
 
 namespace detail
 {
@@ -1521,34 +1519,44 @@ public:
         return result_type(std::forward<Args>(args)...);
     }
 
+    using format_args_ref_type = format_args_ref_for<iterator, char_type>;
     template <typename... Args>
     using format_string_type = basic_format_string<char_type, std::type_identity_t<Args>...>;
 
-    template <typename... Args>
-    static void format_to(context_type& ctx, format_string_type<Args...> fmt, Args&&... args)
+    static void vformat_to(
+        context_type& ctx,
+        string_view_type fmt,
+        const format_args_ref_type& args
+    )
     {
         advance_to(
             ctx,
-            papilio::vformat_to(
-                out(ctx), fmt.get(), make_format_args(std::forward<Args>(args)...)
-            )
+            papilio::vformat_to(out(ctx), fmt, args)
         );
+    }
+
+    template <typename... Args>
+    static void format_to(
+        context_type& ctx,
+        format_string_type<Args...> fmt,
+        Args&&... args
+    )
+    {
+        vformat_to(ctx, fmt.get(), make_format_args(std::forward<Args>(args)...));
     }
 };
 
 PAPILIO_EXPORT template <typename Context = format_context, typename... Args>
-requires(std::is_same_v<char, typename Context::char_type>)
 auto make_format_args(Args&&... args)
 {
     using context_t = format_context_traits<Context>;
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
 
-PAPILIO_EXPORT template <typename Context = wformat_context, typename... Args>
-requires(std::is_same_v<wchar_t, typename Context::char_type>)
+PAPILIO_EXPORT template <typename... Args>
 auto make_wformat_args(Args&&... args)
 {
-    using context_t = format_context_traits<Context>;
+    using context_t = format_context_traits<wformat_context>;
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
 
@@ -1678,12 +1686,6 @@ private:
     }
 };
 
-PAPILIO_EXPORT using format_parse_context = basic_format_parse_context<format_context>;
-PAPILIO_EXPORT using wformat_parse_context = basic_format_parse_context<wformat_context>;
-
-PAPILIO_EXPORT using dynamic_format_args = basic_dynamic_format_args<format_context>;
-PAPILIO_EXPORT using wdynamic_format_args = basic_dynamic_format_args<wformat_context>;
-
 namespace detail
 {
     template <typename Formatter, typename ParseContext>
@@ -1796,13 +1798,7 @@ concept formattable_with = detail::formattable_with_impl<
 PAPILIO_EXPORT template <typename T, typename CharT = char>
 concept formattable = formattable_with<
     std::remove_const_t<T>,
-    basic_format_context<detail::fmt_iter_for<CharT>, CharT>>;
-
-PAPILIO_EXPORT template <pointer_like T>
-const void* ptr(const T& p) noexcept
-{
-    return std::to_address(p);
-}
+    basic_format_context<format_iterator_for<CharT>, CharT>>;
 } // namespace papilio
 
 #include "core.inl"

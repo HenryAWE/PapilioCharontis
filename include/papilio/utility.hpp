@@ -55,12 +55,20 @@ PAPILIO_EXPORT template <typename T>
 concept wstring_like = basic_string_like<T, wchar_t>;
 
 PAPILIO_EXPORT template <typename T>
-concept pointer_like =
-    (
-        requires(T ptr) { *ptr; ptr.operator->(); } ||
-        requires(T ptr, std::size_t i) { ptr[i]; }
-    ) &&
-    requires(T ptr) { static_cast<bool>(ptr); };
+concept pointer_like = requires(T ptr) { static_cast<bool>(ptr); } &&
+                       (requires(T ptr) { *ptr; ptr.operator->(); } || requires(T ptr, std::size_t i) { ptr[i]; });
+
+/**
+ * @brief Get the raw pointer from a pointer-like object, e.g. shared_ptr.
+ * 
+ * @param p The pointer-like object
+ * @return The raw pointer
+ */
+PAPILIO_EXPORT template <pointer_like T>
+constexpr const void* ptr(const T& p) noexcept
+{
+    return std::to_address(p);
+}
 
 namespace detail
 {
@@ -239,7 +247,7 @@ namespace detail
 {
     template <typename T>
     concept is_named_arg_helper = requires() { typename T::named_arg_tag; };
-}
+} // namespace detail
 
 PAPILIO_EXPORT template <typename T>
 struct is_named_arg : public std::bool_constant<detail::is_named_arg_helper<T>>
@@ -884,7 +892,7 @@ namespace detail
     }
 } // namespace detail
 
-#if defined PAPILIO_COMPILER_CLANG 
+#if defined PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push
 #    if __clang_major__ >= 16
 #        pragma clang diagnostic ignored "-Wenum-constexpr-conversion"

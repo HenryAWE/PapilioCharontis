@@ -106,9 +106,6 @@ private:
     variant_type m_val;
 };
 
-PAPILIO_EXPORT using indexing_value = basic_indexing_value<char>;
-PAPILIO_EXPORT using windexing_value = basic_indexing_value<wchar_t>;
-
 PAPILIO_EXPORT template <typename CharT>
 class basic_attribute_name
 {
@@ -184,9 +181,6 @@ private:
     string_container_type m_name;
 };
 
-PAPILIO_EXPORT using attribute_name = basic_attribute_name<char>;
-PAPILIO_EXPORT using wattribute_name = basic_attribute_name<wchar_t>;
-
 PAPILIO_EXPORT class invalid_attribute_base : public std::invalid_argument
 {
 public:
@@ -218,8 +212,6 @@ public:
 private:
     attribute_name_type m_attr;
 };
-
-using invalid_attribute = basic_invalid_attribute<char>;
 
 PAPILIO_EXPORT template <typename CharT>
 [[noreturn]]

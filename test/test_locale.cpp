@@ -35,6 +35,8 @@ TEST(locale, locale_ref)
     // fallback to C locale
     {
         locale_ref c_loc;
+        EXPECT_TRUE(c_loc.empty());
+
         EXPECT_TRUE(std::isalpha('A', c_loc));
         EXPECT_FALSE(std::isalpha('1', c_loc));
 
@@ -46,6 +48,7 @@ TEST(locale, locale_ref)
     {
         std::locale custom(std::locale("C"), new my_numpunct);
         locale_ref custom_ref = custom;
+        EXPECT_FALSE(custom_ref.empty());
 
         EXPECT_EQ(bool_to_string(true, custom_ref), "T");
         EXPECT_EQ(bool_to_string(false, custom_ref), "F");

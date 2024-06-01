@@ -11,7 +11,12 @@
 
 namespace papilio
 {
-// NOTE: This class does not provide any compile-time check.
+/**
+ * @brief Format string
+ *
+ * @note Currently, this class does not provide any compile-time checking.
+ *       It is provided only for consistency with the STL.
+ */
 PAPILIO_EXPORT template <typename CharT, typename... Args>
 class basic_format_string
 {
@@ -72,7 +77,7 @@ PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::string_view fmt,
-    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, char>& args
+    const format_args_ref_for<OutputIt, char>& args
 )
 {
     using context_type = basic_format_context<OutputIt, char>;
@@ -89,7 +94,7 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::string_view fmt,
-    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, char>& args
+    const format_args_ref_for<OutputIt, char>& args
 )
 {
     using context_type = basic_format_context<OutputIt, char>;
@@ -105,7 +110,7 @@ PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::wstring_view fmt,
-    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, wchar_t>& args
+    const format_args_ref_for<OutputIt, wchar_t>& args
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
@@ -122,7 +127,7 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::wstring_view fmt,
-    const detail::vfmt_args_ref<std::type_identity_t<OutputIt>, wchar_t>& args
+    const format_args_ref_for<OutputIt, wchar_t>& args
 )
 {
     using context_type = basic_format_context<OutputIt, wchar_t>;
@@ -298,7 +303,7 @@ OutputIt format_to(
     return PAPILIO_NS vformat_to(
         out,
         fmt.get(),
-        PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     );
 }
 
@@ -315,7 +320,7 @@ OutputIt format_to(
         out,
         loc,
         fmt.get(),
-        PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     );
 }
 
@@ -373,7 +378,7 @@ format_to_n_result<OutputIt> format_to_n(
     return PAPILIO_NS vformat_to(
                wrapper(out, n),
                fmt.get(),
-               PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
+               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     )
         .get_result();
 }
@@ -394,7 +399,7 @@ format_to_n_result<OutputIt> format_to_n(
                wrapper(out, n),
                loc,
                fmt.get(),
-               PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
+               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     )
         .get_result();
 }
@@ -450,7 +455,7 @@ std::size_t formatted_size(
     return PAPILIO_NS vformat_to(
                iter_t(),
                fmt.get(),
-               PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
+               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     )
         .get_result();
 }
@@ -470,7 +475,7 @@ std::size_t formatted_size(
                iter_t(),
                loc,
                fmt.get(),
-               PAPILIO_NS make_wformat_args<context_type>(std::forward<Args>(args)...)
+               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
     )
         .get_result();
 }

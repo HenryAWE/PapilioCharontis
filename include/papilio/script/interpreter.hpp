@@ -32,49 +32,44 @@ public:
     ~invalid_conversion();
 };
 
-namespace detail
+PAPILIO_EXPORT class variable_base
 {
-    class variable_base
+public:
+    using int_type = std::int64_t;
+    using float_type = float;
+
+protected:
+    [[noreturn]]
+    static void throw_invalid_conversion(const char* msg = "invalid conversion")
     {
-    public:
-        using float_type = float;
+        throw invalid_conversion(msg);
+    }
 
-    protected:
-        [[noreturn]]
-        static void throw_invalid_conversion(const char* msg = "invalid conversion")
-        {
-            throw invalid_conversion(msg);
-        }
-
-        [[noreturn]]
-        static void throw_bad_access()
-        {
-            throw bad_variable_access();
-        }
-    };
-
-    template <typename CharT>
-    using variable_data_type = std::variant<
-        bool,
-        std::int64_t,
-        variable_base::float_type,
-        utf::basic_string_container<CharT>>;
-} // namespace detail
+    [[noreturn]]
+    static void throw_bad_access()
+    {
+        throw bad_variable_access();
+    }
+};
 
 PAPILIO_EXPORT template <typename CharT>
-class basic_variable : public detail::variable_base
+class basic_variable : public variable_base
 {
-    using my_base = detail::variable_base;
+    using my_base = variable_base;
 
 public:
-    using variant_type = detail::variable_data_type<CharT>;
-
     using char_type = CharT;
     using string_type = std::basic_string<CharT>;
     using string_view_type = std::basic_string_view<CharT>;
     using string_container_type = utf::basic_string_container<CharT>;
-    using int_type = std::int64_t;
+    using int_type = my_base::int_type;
     using float_type = my_base::float_type;
+
+    using variant_type = std::variant<
+        bool,
+        int_type,
+        float_type,
+        string_container_type>;
 
 private:
     template <typename T>
@@ -406,9 +401,6 @@ private:
     }
 };
 
-PAPILIO_EXPORT using variable = basic_variable<char>;
-PAPILIO_EXPORT using wvariable = basic_variable<wchar_t>;
-
 PAPILIO_EXPORT template <typename T, typename CharT>
 concept basic_variable_storable =
     std::is_same_v<T, bool> ||
@@ -449,8 +441,11 @@ PAPILIO_EXPORT enum class script_error_code : int
 
 [[nodiscard]]
 std::string to_string(script_error_code ec);
+[[nodiscard]]
+std::wstring to_wstring(script_error_code ec);
 
 std::ostream& operator<<(std::ostream& os, script_error_code ec);
+std::wostream& operator<<(std::wostream& os, script_error_code ec);
 
 PAPILIO_EXPORT class script_base
 {
@@ -513,7 +508,7 @@ protected:
     static float chars_to_float(const char* start, const char* stop);
 };
 
-PAPILIO_EXPORT template <typename CharT, bool Debug = false>
+PAPILIO_EXPORT template <typename CharT, bool Debug>
 class basic_interpreter_base : public script_base
 {
     using my_base = script_base;
@@ -886,7 +881,7 @@ protected:
     }
 };
 
-PAPILIO_EXPORT template <typename FormatContext, bool Debug = false>
+PAPILIO_EXPORT template <typename FormatContext, bool Debug>
 class basic_interpreter :
     public basic_interpreter_base<typename FormatContext::char_type, Debug>
 {
@@ -1395,8 +1390,6 @@ private:
         return std::make_pair(std::move(current), start);
     }
 };
-
-PAPILIO_EXPORT using interpreter = basic_interpreter<format_context>;
 } // namespace papilio::script
 
 #include "../detail/suffix.hpp"

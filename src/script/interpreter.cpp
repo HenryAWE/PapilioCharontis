@@ -35,6 +35,35 @@ static std::string_view script_ec_to_sv(script_error_code ec) noexcept
     [[unlikely]] default:
         PAPILIO_SCRIPT_ERR(unknown_error, "unknown error");
     }
+
+#undef PAPILIO_SCRIPT_ERR
+}
+
+static std::wstring_view script_ec_to_wsv(script_error_code ec) noexcept
+{
+    using namespace std::literals;
+    using enum script_error_code;
+
+#define PAPILIO_SCRIPT_ERR(code, msg) \
+    case code: return L##msg##sv
+
+    switch(ec)
+    {
+        PAPILIO_SCRIPT_ERR(no_error, "no error");
+        PAPILIO_SCRIPT_ERR(end_of_string, "end of string");
+        PAPILIO_SCRIPT_ERR(invalid_field_name, "invalid field name");
+        PAPILIO_SCRIPT_ERR(invalid_condition, "invalid condition");
+        PAPILIO_SCRIPT_ERR(invalid_index, "invalid index");
+        PAPILIO_SCRIPT_ERR(invalid_attribute, "invalid attribute");
+        PAPILIO_SCRIPT_ERR(invalid_operator, "invalid operator");
+        PAPILIO_SCRIPT_ERR(invalid_string, "invalid string");
+        PAPILIO_SCRIPT_ERR(unclosed_brace, "unclosed brace");
+
+    [[unlikely]] default:
+        PAPILIO_SCRIPT_ERR(unknown_error, "unknown error");
+    }
+
+#undef PAPILIO_SCRIPT_ERR
 }
 
 std::string to_string(script_error_code ec)
@@ -42,9 +71,20 @@ std::string to_string(script_error_code ec)
     return std::string(script_ec_to_sv(ec));
 }
 
+std::wstring to_wstring(script_error_code ec)
+{
+    return std::wstring(script_ec_to_wsv(ec));
+}
+
 std::ostream& operator<<(std::ostream& os, script_error_code ec)
 {
     os << script_ec_to_sv(ec);
+    return os;
+}
+
+std::wostream& operator<<(std::wostream& os, script_error_code ec)
+{
+    os << script_ec_to_wsv(ec);
     return os;
 }
 
