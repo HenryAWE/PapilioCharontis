@@ -1,12 +1,11 @@
 #include <gtest/gtest.h>
-#include <papilio/script/interpreter.hpp>
+#include <papilio/core.hpp>
 #include <papilio/format.hpp>
 #include <papilio_test/setup.hpp>
 
 TEST(variable, constructor)
 {
     using namespace papilio;
-    using namespace script;
 
     using namespace std::literals;
 
@@ -100,7 +99,6 @@ TEST(variable, constructor)
 TEST(variable, compare)
 {
     using namespace papilio;
-    using script::variable;
 
     {
         variable var1 = 2;
@@ -124,7 +122,6 @@ TEST(variable, compare)
 TEST(variable, equal)
 {
     using namespace papilio;
-    using script::variable;
 
     {
         variable var1 = 1;
@@ -172,7 +169,6 @@ TEST(variable, equal)
 TEST(variable, access)
 {
     using namespace papilio;
-    using namespace script;
 
     using namespace std::literals;
 
@@ -234,7 +230,6 @@ TEST(variable, access)
 TEST(variable, wchar_t)
 {
     using namespace papilio;
-    using namespace script;
 
     {
         wvariable var = L"test";
@@ -254,7 +249,7 @@ auto test_access(std::string_view fmt, Args&&... args)
     format_parse_context parse_ctx(fmt, fmt_args);
     parse_ctx.advance_to(parse_ctx.begin() + 1); // skip '{'
 
-    script::basic_interpreter<format_context> intp;
+    basic_interpreter<format_context> intp;
     auto [result, it] = intp.access(parse_ctx);
 
     EXPECT_NE(it, parse_ctx.end());
@@ -267,7 +262,6 @@ auto test_access(std::string_view fmt, Args&&... args)
 TEST(interpreter, access)
 {
     using namespace papilio;
-    using namespace script;
     using namespace test_script_interpreter;
 
     {
@@ -332,7 +326,6 @@ TEST(interpreter, access)
 TEST(interpreter, format)
 {
     using namespace papilio;
-    using namespace script;
 
     {
         interpreter intp{};
@@ -354,7 +347,6 @@ template <typename... Args>
 auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
 {
     using namespace papilio;
-    using namespace script;
 
     try
     {
@@ -372,7 +364,7 @@ auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
 TEST(interpreter, exception)
 {
     using namespace papilio;
-    using enum script::script_error_code;
+    using enum script_error_code;
     using test_script_interpreter::get_err;
 
     EXPECT_EQ(get_err("{").error_code(), end_of_string);
@@ -385,7 +377,6 @@ TEST(interpreter, exception)
 TEST(interpreter, debug)
 {
     using namespace papilio;
-    using namespace script;
     using enum script_error_code;
 
     using intp_t = basic_interpreter<format_context, true>;
@@ -421,10 +412,4 @@ TEST(interpreter, debug)
 
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'}", invalid_condition, 8);
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str':}", invalid_string, 9);
-}
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

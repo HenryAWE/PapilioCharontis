@@ -6,7 +6,6 @@
 #include <tuple>
 #include "macros.hpp"
 #include "core.hpp"
-#include "script/interpreter.hpp"
 #include "format.hpp"
 #include "print.hpp"
 #include "detail/prefix.hpp"

@@ -3,7 +3,6 @@
 #include <limits>
 #include <charconv>
 #include <cmath>
-#include "helper.hpp"
 
 namespace papilio
 {

@@ -91,22 +91,19 @@ class basic_format_args_ref;
 PAPILIO_EXPORT using format_args_ref = basic_format_args_ref<format_context, char>;
 PAPILIO_EXPORT using wformat_args_ref = basic_format_args_ref<wformat_context, wchar_t>;
 
-namespace script
-{
-    PAPILIO_EXPORT template <typename CharT>
-    class basic_variable;
+PAPILIO_EXPORT template <typename CharT>
+class basic_variable;
 
-    PAPILIO_EXPORT using variable = basic_variable<char>;
-    PAPILIO_EXPORT using wvariable = basic_variable<wchar_t>;
+PAPILIO_EXPORT using variable = basic_variable<char>;
+PAPILIO_EXPORT using wvariable = basic_variable<wchar_t>;
 
-    PAPILIO_EXPORT template <typename CharT, bool Debug = false>
-    class basic_interpreter_base;
+PAPILIO_EXPORT template <typename CharT, bool Debug = false>
+class basic_interpreter_base;
 
-    PAPILIO_EXPORT template <typename FormatContext, bool Debug = false>
-    class basic_interpreter;
+PAPILIO_EXPORT template <typename FormatContext, bool Debug = false>
+class basic_interpreter;
 
-    PAPILIO_EXPORT using interpreter = basic_interpreter<format_context>;
-} // namespace script
+PAPILIO_EXPORT using interpreter = basic_interpreter<format_context>;
 
 PAPILIO_EXPORT class locale_ref;
 

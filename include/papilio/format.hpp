@@ -6,7 +6,6 @@
 #include "macros.hpp"
 #include "fmtfwd.hpp"
 #include "core.hpp"
-#include "script/interpreter.hpp"
 #include "detail/prefix.hpp"
 
 namespace papilio
@@ -59,7 +58,7 @@ namespace detail
         basic_format_parse_context<Context> parse_ctx(fmt, args);
         Context fmt_ctx(loc, out, args);
 
-        script::basic_interpreter<Context> intp;
+        basic_interpreter<Context> intp;
         intp.format(parse_ctx, fmt_ctx);
 
         return fmt_ctx.out();

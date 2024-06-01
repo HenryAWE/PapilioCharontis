@@ -217,7 +217,7 @@ void ipapilio::clear_arg()
 void ipapilio::run()
 {
     using namespace papilio;
-    using intp_t = script::basic_interpreter<format_context, true>;
+    using intp_t = basic_interpreter<format_context, true>;
 
     utf::string_ref fmt = m_fmt;
     std::string result;
@@ -235,7 +235,7 @@ void ipapilio::run()
     {
         utf::string_ref parsed(fmt.begin(), e.get_iter());
 
-        script::script_error_code ec = e.error_code();
+        script_error_code ec = e.error_code();
         std::size_t pos = parsed.length() + 1;
         papilio::println(fg(color::yellow), "{}", fmt);
         papilio::println(
@@ -251,9 +251,9 @@ void ipapilio::run()
     }
     catch(const intp_t::error& e)
     {
-        if(e.error_code() == script::script_error_code::end_of_string)
+        if(e.error_code() == script_error_code::end_of_string)
         {
-            const script::script_error_code ec = script::script_error_code::end_of_string;
+            const script_error_code ec = script_error_code::end_of_string;
             std::size_t pos = fmt.length() + 1;
             papilio::println(fg(color::yellow), "{}", fmt);
             papilio::println(
@@ -271,7 +271,7 @@ void ipapilio::run()
             papilio::println(
                 "Script error: {} (0x{:X})",
                 e.what(),
-                static_cast<std::underlying_type_t<script::script_error_code>>(e.error_code())
+                static_cast<std::underlying_type_t<script_error_code>>(e.error_code())
             );
         }
         return;

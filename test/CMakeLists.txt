@@ -18,8 +18,6 @@ define_papilio_test(test_locale)
 
 define_papilio_test(test_print)
 
-define_papilio_test(test_script_interpreter)
-
 define_papilio_test(test_utility)
 
 define_papilio_test(test_utf_stralgo)

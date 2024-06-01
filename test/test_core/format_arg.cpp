@@ -1,6 +1,5 @@
 ﻿#include <gtest/gtest.h>
 #include <papilio/core.hpp>
-#include <papilio/script/interpreter.hpp>
 #include <papilio_test/setup.hpp>
 
 TEST(format_arg, constructor)
@@ -208,7 +207,7 @@ TEST(format_arg, access)
     {
         format_arg fmt_arg("test");
 
-        auto var = script::variable(fmt_arg.to_variant());
+        auto var = variable(fmt_arg.to_variant());
         EXPECT_EQ(var.as<utf::string_container>(), "test");
     }
 
