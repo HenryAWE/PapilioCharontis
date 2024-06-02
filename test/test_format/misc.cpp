@@ -1,6 +1,35 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
+#include "test_format.hpp"
 #include <papilio_test/setup.hpp>
+
+TEST(misc_formatter, stream_adaptor)
+{
+    using namespace papilio;
+    using test_format::stream_only;
+
+    {
+        EXPECT_EQ(
+            PAPILIO_NS format("{}", stream_only{}),
+            "stream only"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{}", stream_only{}),
+            L"stream only"
+        );
+    }
+
+    {
+        EXPECT_EQ(
+            PAPILIO_NS format("{:>15}", stream_only{}),
+            "    stream only"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{:>15}", stream_only{}),
+            L"    stream only"
+        );
+    }
+}
 
 TEST(misc_formatter, join)
 {

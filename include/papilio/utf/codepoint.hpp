@@ -327,9 +327,14 @@ public:
         return lhs <=> static_cast<char32_t>(rhs);
     }
 
+    constexpr bool empty() const noexcept
+    {
+        return *this == U'\0';
+    }
+
     explicit constexpr operator bool() const noexcept
     {
-        return *this != U'\0';
+        return !empty();
     }
 
     friend std::ostream& operator<<(std::ostream& os, codepoint cp);

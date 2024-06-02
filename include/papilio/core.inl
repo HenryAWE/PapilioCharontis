@@ -1,3 +1,5 @@
+#include <sstream>
+
 namespace papilio
 {
 template <typename Context>
@@ -120,5 +122,57 @@ void basic_format_arg<Context>::skip_spec(parse_context& parse_ctx)
             }
         }
     );
+}
+
+template <typename T, typename CharT>
+requires streamable<T, CharT>
+template <typename ParseContext>
+auto streamable_formatter<T, CharT>::parse(ParseContext& ctx)
+{
+    simple_formatter_parser<ParseContext, true> parser;
+    auto [result, it] = parser.parse(ctx);
+
+    m_data = result;
+
+    return it;
+}
+
+template <typename T, typename CharT>
+requires streamable<T, CharT>
+template <typename Context>
+auto streamable_formatter<T, CharT>::format(const T& val, Context& ctx) const
+{
+    using os_t = basic_oiterstream<
+        CharT,
+        typename Context::iterator>;
+
+    const bool use_iter_stream =
+        m_data.align == format_align::default_align &&
+        m_data.width == 0 &&
+        m_data.has_fill();
+
+    if(use_iter_stream)
+    {
+        os_t os(ctx.out());
+
+        setup_locale(os, ctx);
+
+        os << val;
+
+        return os.base();
+    }
+    else
+    {
+        std::basic_stringstream<CharT> ss;
+
+        setup_locale(ss, ctx);
+
+        ss << val;
+
+        string_formatter<CharT> fmt;
+        fmt.set_data(m_data);
+
+        return fmt.format(std::move(ss).str(), ctx);
+    }
 }
 } // namespace papilio
