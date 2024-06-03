@@ -175,4 +175,17 @@ auto streamable_formatter<T, CharT>::format(const T& val, Context& ctx) const
         return fmt.format(std::move(ss).str(), ctx);
     }
 }
+
+template <typename Context>
+void format_context_traits<Context>::vformat_to(
+    context_type& ctx,
+    string_view_type fmt,
+    const format_args_ref_type& args
+)
+{
+    advance_to(
+        ctx,
+        papilio::vformat_to(out(ctx), fmt, args)
+    );
+}
 } // namespace papilio

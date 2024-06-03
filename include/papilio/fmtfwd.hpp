@@ -110,20 +110,6 @@ PAPILIO_EXPORT class locale_ref;
 PAPILIO_EXPORT template <typename OutputIt, typename CharT = char>
 using format_args_ref_for = basic_format_args_ref<
     basic_format_context<std::type_identity_t<OutputIt>, CharT>>;
-
-PAPILIO_EXPORT template <typename OutputIt>
-OutputIt vformat_to(
-    OutputIt out,
-    std::string_view fmt,
-    const format_args_ref_for<OutputIt, char>& args
-);
-
-PAPILIO_EXPORT template <typename OutputIt>
-OutputIt vformat_to(
-    OutputIt out,
-    std::wstring_view fmt,
-    const format_args_ref_for<OutputIt, wchar_t>& args
-);
 } // namespace papilio
 
 #include "detail/suffix.hpp"
