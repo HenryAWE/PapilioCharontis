@@ -4254,11 +4254,7 @@ namespace detail
 } // namespace detail
 
 PAPILIO_EXPORT template <typename OutputIt>
-struct format_to_n_result
-{
-    OutputIt out;
-    std::iter_difference_t<OutputIt> size;
-};
+struct format_to_n_result;
 
 PAPILIO_EXPORT template <typename OutputIt>
 OutputIt vformat_to(

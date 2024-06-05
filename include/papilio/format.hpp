@@ -195,6 +195,13 @@ OutputIt format_to(
     );
 }
 
+PAPILIO_EXPORT template <typename OutputIt>
+struct format_to_n_result
+{
+    OutputIt out;
+    std::iter_difference_t<OutputIt> size;
+};
+
 PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
