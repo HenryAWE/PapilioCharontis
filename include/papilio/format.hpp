@@ -10,115 +10,6 @@
 
 namespace papilio
 {
-namespace detail
-{
-    template <typename OutputIt>
-    class format_to_n_wrapper
-    {
-    public:
-        using iterator_category = std::output_iterator_tag;
-        using value_type = std::iter_value_t<OutputIt>;
-        using difference_type = std::iter_difference_t<OutputIt>;
-        using pointer = void;
-        using reference = void;
-
-        format_to_n_wrapper(const format_to_n_wrapper&) noexcept(std::is_nothrow_copy_constructible_v<OutputIt>) = default;
-        format_to_n_wrapper(format_to_n_wrapper&&) noexcept(std::is_nothrow_move_constructible_v<OutputIt>) = default;
-
-        format_to_n_wrapper(OutputIt it, difference_type n) noexcept(std::is_nothrow_move_constructible_v<OutputIt>)
-            : m_out(std::move(it)), m_max_count(n), m_counter(0) {}
-
-        format_to_n_wrapper& operator*() noexcept
-        {
-            return *this;
-        }
-
-        template <typename T>
-        requires(!std::is_same_v<std::remove_cvref_t<T>, format_to_n_wrapper>)
-        format_to_n_wrapper& operator=(T&& val)
-        {
-            if(m_counter == m_max_count)
-                return *this;
-            *m_out = std::forward<T>(val);
-            ++m_out;
-            ++m_counter;
-            return *this;
-        }
-
-        format_to_n_wrapper& operator=(const format_to_n_wrapper&) noexcept(std::is_nothrow_copy_assignable_v<OutputIt>) = default;
-        format_to_n_wrapper& operator=(format_to_n_wrapper&&) noexcept(std::is_nothrow_move_assignable_v<OutputIt>) = default;
-
-        format_to_n_wrapper& operator++() noexcept
-        {
-            return *this;
-        }
-
-        format_to_n_wrapper operator++(int) noexcept
-        {
-            return *this;
-        }
-
-        [[nodiscard]]
-        format_to_n_result<OutputIt> get_result() const noexcept(std::is_nothrow_copy_constructible_v<OutputIt>)
-        {
-            return format_to_n_result<OutputIt>{.out = m_out, .size = m_counter};
-        }
-
-    private:
-        OutputIt m_out;
-        difference_type m_max_count;
-        difference_type m_counter;
-    };
-
-    template <typename CharT>
-    class formatted_size_counter
-    {
-    public:
-        using iterator_category = std::output_iterator_tag;
-        using value_type = CharT;
-        using difference_type = std::ptrdiff_t;
-        using pointer = void;
-        using reference = void;
-
-        constexpr formatted_size_counter() noexcept = default;
-        constexpr formatted_size_counter(const formatted_size_counter&) noexcept = default;
-
-        constexpr formatted_size_counter& operator=(const formatted_size_counter&) noexcept = default;
-
-        constexpr formatted_size_counter& operator=(const value_type&) noexcept
-        {
-            return *this;
-        }
-
-        constexpr formatted_size_counter& operator*() noexcept
-        {
-            return *this;
-        }
-
-        constexpr formatted_size_counter& operator++() noexcept
-        {
-            ++m_counter;
-            return *this;
-        }
-
-        constexpr formatted_size_counter operator++(int) noexcept
-        {
-            formatted_size_counter tmp(*this);
-            ++(*this);
-            return tmp;
-        }
-
-        [[nodiscard]]
-        constexpr std::size_t get_result() const noexcept
-        {
-            return m_counter;
-        }
-
-    private:
-        std::size_t m_counter;
-    };
-} // namespace detail
-
 PAPILIO_EXPORT
 [[nodiscard]]
 std::string vformat(std::string_view fmt, const format_args_ref& args);
@@ -202,6 +93,88 @@ struct format_to_n_result
     std::iter_difference_t<OutputIt> size;
 };
 
+namespace detail
+{
+    template <typename OutputIt, typename CharT>
+    class format_to_n_wrapper
+    {
+    public:
+        using iterator_category = std::output_iterator_tag;
+        using value_type = std::iter_value_t<OutputIt>;
+        using difference_type = std::iter_difference_t<OutputIt>;
+        using pointer = void;
+        using reference = void;
+
+        format_to_n_wrapper(const format_to_n_wrapper&) noexcept(std::is_nothrow_copy_constructible_v<OutputIt>) = default;
+        format_to_n_wrapper(format_to_n_wrapper&&) noexcept(std::is_nothrow_move_constructible_v<OutputIt>) = default;
+
+        format_to_n_wrapper(OutputIt it, difference_type n) noexcept(std::is_nothrow_move_constructible_v<OutputIt>)
+            : m_out(std::move(it)), m_max_count(n), m_counter(0) {}
+
+        format_to_n_wrapper& operator*() noexcept
+        {
+            return *this;
+        }
+
+        format_to_n_wrapper& operator=(const CharT& ch)
+        {
+            PAPILIO_ASSERT(m_counter <= m_max_count);
+
+            if(m_counter == m_max_count)
+                return *this;
+            *m_out = ch;
+            ++m_out;
+            ++m_counter;
+            return *this;
+        }
+
+        format_to_n_wrapper& operator=(const format_to_n_wrapper&) noexcept(std::is_nothrow_copy_assignable_v<OutputIt>) = default;
+        format_to_n_wrapper& operator=(format_to_n_wrapper&&) noexcept(std::is_nothrow_move_assignable_v<OutputIt>) = default;
+
+        format_to_n_wrapper& operator++() noexcept
+        {
+            return *this;
+        }
+
+        format_to_n_wrapper operator++(int) noexcept
+        {
+            return *this;
+        }
+
+        [[nodiscard]]
+        format_to_n_result<OutputIt> get_result() const noexcept(std::is_nothrow_copy_constructible_v<OutputIt>)
+        {
+            return format_to_n_result<OutputIt>{.out = m_out, .size = m_counter};
+        }
+
+    private:
+        OutputIt m_out;
+        difference_type m_max_count;
+        difference_type m_counter;
+    };
+
+    template <typename CharT, typename OutputIt, typename... Args>
+    format_to_n_result<OutputIt> format_to_n_impl(
+        OutputIt out,
+        std::iter_difference_t<OutputIt> n,
+        locale_ref loc,
+        std::basic_string_view<CharT> fmt,
+        Args&&... args
+    )
+    {
+        using iter_t = detail::format_to_n_wrapper<OutputIt, CharT>;
+        using context_type = basic_format_context<iter_t, CharT>;
+
+        return PAPILIO_NS vformat_to(
+                   iter_t(out, n),
+                   loc,
+                   fmt,
+                   PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        )
+            .get_result();
+    }
+} // namespace detail
+
 PAPILIO_EXPORT template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
@@ -210,15 +183,13 @@ format_to_n_result<OutputIt> format_to_n(
     Args&&... args
 )
 {
-    using wrapper = detail::format_to_n_wrapper<OutputIt>;
-    using context_type = basic_format_context<wrapper, char>;
-
-    return PAPILIO_NS vformat_to(
-               wrapper(out, n),
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::format_to_n_impl<char, OutputIt>(
+        std::move(out),
+        n,
+        nullptr,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
 
 PAPILIO_EXPORT template <typename OutputIt, typename... Args>
@@ -230,16 +201,13 @@ format_to_n_result<OutputIt> format_to_n(
     Args&&... args
 )
 {
-    using wrapper = detail::format_to_n_wrapper<OutputIt>;
-    using context_type = basic_format_context<wrapper, char>;
-
-    return PAPILIO_NS vformat_to(
-               wrapper(out, n),
-               loc,
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::format_to_n_impl<char, OutputIt>(
+        std::move(out),
+        n,
+        loc,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
 
 PAPILIO_EXPORT template <typename OutputIt, typename... Args>
@@ -250,15 +218,13 @@ format_to_n_result<OutputIt> format_to_n(
     Args&&... args
 )
 {
-    using wrapper = detail::format_to_n_wrapper<OutputIt>;
-    using context_type = basic_format_context<wrapper, wchar_t>;
-
-    return PAPILIO_NS vformat_to(
-               wrapper(out, n),
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::format_to_n_impl<wchar_t, OutputIt>(
+        std::move(out),
+        n,
+        nullptr,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
 
 PAPILIO_EXPORT template <typename OutputIt, typename... Args>
@@ -270,17 +236,106 @@ format_to_n_result<OutputIt> format_to_n(
     Args&&... args
 )
 {
-    using wrapper = detail::format_to_n_wrapper<OutputIt>;
-    using context_type = basic_format_context<wrapper, wchar_t>;
-
-    return PAPILIO_NS vformat_to(
-               wrapper(out, n),
-               loc,
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::format_to_n_impl<wchar_t, OutputIt>(
+        std::move(out),
+        n,
+        loc,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
+
+namespace detail
+{
+    class formatted_size_counter_base
+    {
+    public:
+        [[nodiscard]]
+        constexpr std::size_t get_result() const noexcept
+        {
+            return m_counter;
+        }
+
+    protected:
+        constexpr void count() noexcept
+        {
+            ++m_counter;
+        }
+
+    private:
+        std::size_t m_counter = 0;
+    };
+
+    template <typename CharT>
+    class formatted_size_counter : public formatted_size_counter_base
+    {
+    public:
+        using iterator_category = std::output_iterator_tag;
+        using value_type = CharT;
+        using difference_type = std::ptrdiff_t;
+        using pointer = void;
+        using reference = void;
+
+        constexpr formatted_size_counter() noexcept = default;
+        constexpr formatted_size_counter(const formatted_size_counter&) noexcept = default;
+
+        constexpr formatted_size_counter& operator=(const formatted_size_counter&) noexcept = default;
+
+        constexpr formatted_size_counter& operator=(const value_type&) noexcept
+        {
+            count();
+            return *this;
+        }
+
+        constexpr formatted_size_counter& operator*() noexcept
+        {
+            return *this;
+        }
+
+        constexpr formatted_size_counter& operator++() noexcept
+        {
+            return *this;
+        }
+
+        constexpr formatted_size_counter operator++(int) noexcept
+        {
+            formatted_size_counter tmp(*this);
+            ++(*this);
+            return tmp;
+        }
+    };
+
+    template <typename CharT>
+    using fmt_size_ctx_type = basic_format_context<formatted_size_counter<CharT>, CharT>;
+
+    std::size_t formatted_size_impl(
+        locale_ref loc,
+        std::string_view fmt,
+        const basic_format_args_ref<fmt_size_ctx_type<char>>& args
+    );
+    std::size_t formatted_size_impl(
+        locale_ref loc,
+        std::wstring_view fmt,
+        const basic_format_args_ref<fmt_size_ctx_type<wchar_t>>& args
+    );
+
+    template <typename CharT, typename... Args>
+    std::size_t formatted_size_helper(
+        locale_ref loc,
+        std::basic_string_view<CharT> fmt,
+        Args&&... args
+    )
+    {
+        using iter_t = detail::formatted_size_counter<CharT>;
+        using context_type = basic_format_context<iter_t, CharT>;
+
+        return formatted_size_impl(
+            loc,
+            fmt,
+            PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        );
+    }
+} // namespace detail
 
 PAPILIO_EXPORT template <typename... Args>
 [[nodiscard]]
@@ -289,15 +344,11 @@ std::size_t formatted_size(
     Args&&... args
 )
 {
-    using iter_t = detail::formatted_size_counter<char>;
-    using context_type = basic_format_context<iter_t, char>;
-
-    return PAPILIO_NS vformat_to(
-               iter_t(),
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::formatted_size_helper<char>(
+        nullptr,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
 
 PAPILIO_EXPORT template <typename... Args>
@@ -308,16 +359,11 @@ std::size_t formatted_size(
     Args&&... args
 )
 {
-    using iter_t = detail::formatted_size_counter<char>;
-    using context_type = basic_format_context<iter_t, char>;
-
-    return PAPILIO_NS vformat_to(
-               iter_t(),
-               loc,
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::formatted_size_helper<char>(
+        loc,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
 
 PAPILIO_EXPORT template <typename... Args>
@@ -327,15 +373,11 @@ std::size_t formatted_size(
     Args&&... args
 )
 {
-    using iter_t = detail::formatted_size_counter<wchar_t>;
-    using context_type = basic_format_context<iter_t, wchar_t>;
-
-    return PAPILIO_NS vformat_to(
-               iter_t(),
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::formatted_size_helper<wchar_t>(
+        nullptr,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
 
 PAPILIO_EXPORT template <typename... Args>
@@ -346,16 +388,11 @@ std::size_t formatted_size(
     Args&&... args
 )
 {
-    using iter_t = detail::formatted_size_counter<wchar_t>;
-    using context_type = basic_format_context<iter_t, wchar_t>;
-
-    return PAPILIO_NS vformat_to(
-               iter_t(),
-               loc,
-               fmt.get(),
-               PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
-    )
-        .get_result();
+    return detail::formatted_size_helper<wchar_t>(
+        loc,
+        fmt.get(),
+        std::forward<Args>(args)...
+    );
 }
 
 PAPILIO_EXPORT template <typename... Args>

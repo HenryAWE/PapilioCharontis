@@ -42,6 +42,45 @@ std::wstring vformat(
 
     return result;
 }
+
+namespace detail
+{
+    std::size_t formatted_size_impl(
+        locale_ref loc,
+        std::string_view fmt,
+        const basic_format_args_ref<fmt_size_ctx_type<char>>& args
+    )
+    {
+        using iter_t = detail::formatted_size_counter<char>;
+        using context_type = basic_format_context<iter_t, char>;
+
+        return vformat_to_impl<char, iter_t, context_type>(
+                   iter_t(),
+                   loc,
+                   fmt,
+                   args
+        )
+            .get_result();
+    }
+
+    std::size_t formatted_size_impl(
+        locale_ref loc,
+        std::wstring_view fmt,
+        const basic_format_args_ref<fmt_size_ctx_type<wchar_t>>& args
+    )
+    {
+        using iter_t = detail::formatted_size_counter<wchar_t>;
+        using context_type = basic_format_context<iter_t, wchar_t>;
+
+        return vformat_to_impl<wchar_t, iter_t, context_type>(
+                   iter_t(),
+                   loc,
+                   fmt,
+                   args
+        )
+            .get_result();
+    }
+} // namespace detail
 } // namespace papilio
 
 #include <papilio/detail/suffix.hpp>
