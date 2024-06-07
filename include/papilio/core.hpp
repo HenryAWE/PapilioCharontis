@@ -3811,6 +3811,10 @@ public:
 
             case 2:
                 context_t::append(ctx, uppercase ? 'B' : 'b');
+                break;
+
+            default:
+                break;
             }
         }
 
@@ -3982,6 +3986,9 @@ public:
         case format_sign::space:
             context_t::append(ctx, static_cast<CharT>(neg ? '-' : ' '));
             break;
+
+        default:
+            PAPILIO_UNREACHABLE();
         }
 
         context_t::append(ctx, buf, buf + fp_size);
@@ -4004,6 +4011,7 @@ private:
         case U'G':
             uppercase = true;
             [[fallthrough]];
+        default:
         case U'\0':
         case U'g':
             ch_fmt = std::chars_format::general;
