@@ -430,12 +430,77 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
         loc, fmt.get(), PAPILIO_NS make_wformat_args(std::forward<Args>(args)...)
     );
 }
-} // namespace papilio
 
-#include "format/fundamental.inl"
-#include "format/tuple.inl"
-#include "format/misc.inl"
+// ^^^ format APIs ^^^ / vvv formatters vvv
+
+PAPILIO_EXPORT template <typename R, typename CharT>
+class formatter<joiner<R, CharT>, CharT>
+{
+public:
+    formatter() = default;
+    formatter(const formatter&) = default;
+
+    formatter& operator=(const formatter&) = default;
+
+    using joiner_t = joiner<R, CharT>;
+    using range_type = typename joiner_t::range_type;
+    using value_type = std::ranges::range_value_t<range_type>;
+
+    template <typename ParseContext, typename FormatContext>
+    requires formattable_with<value_type, FormatContext>
+    auto format(const joiner_t& j, ParseContext& parse_ctx, FormatContext& fmt_ctx) const
+    {
+        using formatter_t = typename FormatContext::template formatter_type<value_type>;
+
+        if constexpr(formatter_traits<formatter_t>::template parsable<FormatContext>())
+        {
+            formatter_t fmt;
+            parse_ctx.advance_to(fmt.parse(parse_ctx));
+
+            bool first = true;
+            for(auto&& i : j)
+            {
+                if(!first)
+                    append_sep(fmt_ctx, j);
+                first = false;
+
+                fmt_ctx.advance_to(
+                    fmt.format(i, fmt_ctx)
+                );
+            }
+        }
+        else
+        {
+            bool first = true;
+            for(auto&& i : j)
+            {
+                if(!first)
+                    append_sep(fmt_ctx, j);
+                first = false;
+
+                fmt_ctx.advance_to(
+                    PAPILIO_NS format_to(fmt_ctx.out(), "{}", i)
+                );
+            }
+        }
+
+        return fmt_ctx.out();
+    }
+
+private:
+    template <typename FormatContext>
+    static void append_sep(FormatContext& fmt_ctx, const joiner_t& j)
+    {
+        using context_t = format_context_traits<FormatContext>;
+        context_t::append(fmt_ctx, j.separator());
+    }
+};
+} // namespace papilio
 
 #include "detail/suffix.hpp"
 
+#include "formatter/tuple.hpp"
+#include "formatter/misc.hpp"
+
 #endif
+

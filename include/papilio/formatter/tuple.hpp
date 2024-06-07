@@ -1,5 +1,12 @@
+#ifndef PAPILIO_FORMATTER_TUPLE_HPP
+#define PAPILIO_FORMATTER_TUPLE_HPP
+
+#pragma once
+
 #include <tuple>
-#include "../utility.hpp"
+#include "../core.hpp"
+#include "../format.hpp"
+#include "../detail/prefix.hpp"
 
 namespace papilio
 {
@@ -82,3 +89,7 @@ private:
     string_view_type m_closing = PAPILIO_TSTRING_VIEW(CharT, ")");
 };
 } // namespace papilio
+
+#include "../detail/suffix.hpp"
+
+#endif

@@ -1,74 +1,19 @@
+#ifndef PAPILIO_FORMATTER_MISC_HPP
+#define PAPILIO_FORMATTER_MISC_HPP
+
+#pragma once
+
 #include <thread>
 #include <sstream>
 #ifdef PAPILIO_HAS_LIB_STACKTRACE
 #    include <stacktrace>
 #endif
-#include "../utility.hpp"
+#include "../core.hpp"
+#include "../format.hpp"
+#include "../detail/prefix.hpp"
 
 namespace papilio
 {
-PAPILIO_EXPORT template <typename R, typename CharT>
-class formatter<joiner<R, CharT>, CharT>
-{
-public:
-    formatter() = default;
-    formatter(const formatter&) = default;
-
-    formatter& operator=(const formatter&) = default;
-
-    using joiner_t = joiner<R, CharT>;
-    using range_type = typename joiner_t::range_type;
-    using value_type = std::ranges::range_value_t<range_type>;
-
-    template <typename ParseContext, typename FormatContext>
-    requires formattable_with<value_type, FormatContext>
-    auto format(const joiner_t& j, ParseContext& parse_ctx, FormatContext& fmt_ctx) const
-    {
-        using formatter_t = typename FormatContext::template formatter_type<value_type>;
-
-        if constexpr(formatter_traits<formatter_t>::template parsable<FormatContext>())
-        {
-            formatter_t fmt;
-            parse_ctx.advance_to(fmt.parse(parse_ctx));
-
-            bool first = true;
-            for(auto&& i : j)
-            {
-                if(!first)
-                    append_sep(fmt_ctx, j);
-                first = false;
-
-                fmt_ctx.advance_to(
-                    fmt.format(i, fmt_ctx)
-                );
-            }
-        }
-        else
-        {
-            bool first = true;
-            for(auto&& i : j)
-            {
-                if(!first)
-                    append_sep(fmt_ctx, j);
-                first = false;
-
-                fmt_ctx.advance_to(
-                    PAPILIO_NS format_to(fmt_ctx.out(), "{}", i)
-                );
-            }
-        }
-
-        return fmt_ctx.out();
-    }
-
-private:
-    template <typename FormatContext>
-    static void append_sep(FormatContext& fmt_ctx, const joiner_t& j)
-    {
-        using context_t = format_context_traits<FormatContext>;
-        context_t::append(fmt_ctx, j.separator());
-    }
-};
 
 PAPILIO_EXPORT template <typename CharT>
 class formatter<std::thread::id, CharT>
@@ -173,3 +118,7 @@ public:
 
 #endif
 } // namespace papilio
+
+#include "../detail/suffix.hpp"
+
+#endif
