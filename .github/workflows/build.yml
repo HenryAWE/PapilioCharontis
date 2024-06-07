@@ -159,6 +159,11 @@ jobs:
         with:
           arch: amd64
 
+      # Workaround
+      # See https://github.com/actions/runner-images/issues/10001
+      - name: Workaround
+        run: choco upgrade llvm
+
       - name: Build
         run: >
           ./build.ps1
