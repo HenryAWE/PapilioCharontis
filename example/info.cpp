@@ -1,4 +1,5 @@
 #include <papilio/papilio.hpp>
+#include <papilio/formatter/chrono.hpp>
 
 int main()
 {
@@ -8,6 +9,14 @@ int main()
     println();
 
     println("Is terminal: {}", os::is_terminal(stdout));
+
+    {
+        std::time_t t = std::time(nullptr);
+        std::tm* tm = std::localtime(&t);
+
+        static_assert(formattable<std::tm>);
+        println("Local time: {:=^32%c}", *tm);
+    }
 
     println("Library and compiler information:");
     println("PAPILIO_CPLUSPLUS = {:d}L", PAPILIO_CPLUSPLUS);
