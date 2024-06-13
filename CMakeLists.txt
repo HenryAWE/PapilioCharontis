@@ -13,10 +13,22 @@ mark_as_advanced(papilio_build_unit_test)
 
 option(papilio_build_example "build examples" OFF)
 option(papilio_build_module "build module (experimental)" OFF)
+option(papilio_build_doc "build documents" OFF)
 
+file(STRINGS "include/papilio/macros.hpp" papilio_version_major_line REGEX "^#define PAPILIO_VERSION_MAJOR [0-9]+$")
+file(STRINGS "include/papilio/macros.hpp" papilio_version_minor_line REGEX "^#define PAPILIO_VERSION_MINOR [0-9]+$")
+file(STRINGS "include/papilio/macros.hpp" papilio_version_patch_line REGEX "^#define PAPILIO_VERSION_PATCH [0-9]+$")
+string(REGEX REPLACE "^#define PAPILIO_VERSION_MAJOR ([0-9]+)$" "\\1" papilio_version_major "${papilio_version_major_line}")
+string(REGEX REPLACE "^#define PAPILIO_VERSION_MINOR ([0-9]+)$" "\\1" papilio_version_minor "${papilio_version_minor_line}")
+string(REGEX REPLACE "^#define PAPILIO_VERSION_PATCH ([0-9]+)$" "\\1" papilio_version_patch "${papilio_version_patch_line}")
+unset(papilio_version_major_line)
+unset(papilio_version_minor_line)
+unset(papilio_version_patch_line)
+
+message("Papilio Charontis v${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}")
 project(
     "Papilio Charontis"
-    VERSION 0.3.0
+    VERSION ${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}
     LANGUAGES CXX
 )
 
@@ -98,6 +110,22 @@ install(
     NAMESPACE papilio::
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/papilio
 )
+
+if(${papilio_build_doc})
+    find_package(Doxygen REQUIRED)
+    if(${DOXYGEN_VERSION} VERSION_LESS 1.9.2)
+        # C++ concepts need Doxygen 1.9.2 or letter
+        message(FATAL_ERROR "Doxygen 1.9.2 or later is required")
+    endif()
+
+    configure_file(script/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+
+    add_custom_target(
+        papilio_doc
+        COMMAND ${DOXYGEN_EXECUTABLE} Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+endif()
 
 if(${papilio_build_example})
     add_subdirectory(example)
