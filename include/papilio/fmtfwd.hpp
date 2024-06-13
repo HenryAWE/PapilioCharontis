@@ -1,4 +1,8 @@
-// Forward declarations
+/**
+ * @file fmtfwd.hpp
+ * @author HenryAWE
+ * @brief Forward declarations
+ */
 
 #ifndef PAPILIO_FMTFWD_HPP
 #define PAPILIO_FMTFWD_HPP

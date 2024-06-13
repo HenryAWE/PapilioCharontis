@@ -1,3 +1,9 @@
+/**
+ * @file memory.hpp
+ * @author HenryAWE
+ * @brief Memory management utilities.
+ */
+
 #ifndef PAPILIO_MEMORY_HPP
 #define PAPILIO_MEMORY_HPP
 
@@ -10,6 +16,12 @@
 
 namespace papilio
 {
+/**
+ * @brief Aligned static storage
+ *
+ * @tparam Capacity Maximum size of storage in bytes
+ * @tparam Align Alignment of storage
+ */
 PAPILIO_EXPORT template <
     std::size_t Capacity,
     std::size_t Align = alignof(std::max_align_t)>
@@ -41,6 +53,9 @@ private:
     alignas(Align) std::byte m_data[Capacity];
 };
 
+/**
+ * @brief Specialization of `static_storage` for zero capacity.
+ */
 PAPILIO_EXPORT template <std::size_t Align>
 class static_storage<0, Align>
 {
@@ -126,8 +141,14 @@ namespace detail
     };
 } // namespace detail
 
-// Smart pointer that owns an optional ownership of another object.
-// It can acts like a unique_ptr or a raw pointer.
+/**
+ * @brief Smart pointer that owns an optional ownership of another object.
+ * 
+ * The `optional_unique_ptr` acts like a `unique_ptr` or a raw pointer depending on its ownership state.
+ * 
+ * @tparam T Element type
+ * @tparam Deleter Deleter
+ */
 PAPILIO_EXPORT template <
     typename T,
     typename Deleter = std::default_delete<T>>

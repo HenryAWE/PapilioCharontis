@@ -1,3 +1,9 @@
+/**
+ * @file core.hpp
+ * @author HenryAWE
+ * @brief The core module of library.
+ */
+
 #ifndef PAPILIO_CORE_HPP
 #define PAPILIO_CORE_HPP
 
@@ -23,6 +29,9 @@
 
 namespace papilio
 {
+/**
+* @brief Format error
+*/
 PAPILIO_EXPORT class format_error : public std::runtime_error
 {
 public:
@@ -78,6 +87,11 @@ public:
 
     constexpr basic_format_string& operator=(const basic_format_string&) noexcept = default;
 
+    /**
+     * @brief Get the format string.
+     *
+     * @return string_view_type The format string.
+     */
     [[nodiscard]]
     constexpr string_view_type get() const noexcept
     {
@@ -88,6 +102,9 @@ private:
     string_view_type m_fmt;
 };
 
+/**
+ * @brief The script error code
+ */
 PAPILIO_EXPORT enum class script_error_code : int
 {
     no_error = 0,
@@ -111,6 +128,9 @@ std::wstring to_wstring(script_error_code ec);
 std::ostream& operator<<(std::ostream& os, script_error_code ec);
 std::wostream& operator<<(std::wostream& os, script_error_code ec);
 
+/**
+ * @brief Formatter data for standard format specification
+ */
 PAPILIO_EXPORT struct std_formatter_data
 {
     using size_type = std::size_t;
@@ -162,6 +182,11 @@ PAPILIO_EXPORT struct std_formatter_data
     }
 };
 
+/**
+ * @brief Formatter data for simple formatter data.
+ *
+ * Simple formatter data only contains width, filling character, alignment, and locale.
+ */
 PAPILIO_EXPORT struct simple_formatter_data
 {
     using size_type = std::size_t;
@@ -183,6 +208,11 @@ PAPILIO_EXPORT struct simple_formatter_data
         return has_fill() ? fill : val;
     }
 
+    /**
+     * @brief Convert the simple formatter data to standard formatter data.
+     * 
+     * @return std_formatter_data The data for standard format specification.
+     */
     constexpr std_formatter_data to_std_data() const noexcept
     {
         return std_formatter_data{
@@ -209,6 +239,9 @@ public:
     ~bad_variable_access();
 };
 
+/**
+ * @brief Invalid conversion error
+ */
 PAPILIO_EXPORT class invalid_conversion : public std::invalid_argument
 {
 public:
@@ -347,6 +380,11 @@ public:
     basic_variable& operator=(const basic_variable&) = default;
     basic_variable& operator=(basic_variable&&) noexcept = default;
 
+    /**
+     * @brief Checks if the variable holds a value of the given type.
+     *
+     * @tparam T Type to check against.
+     */
     template <typename T>
     [[nodiscard]]
     bool holds() const noexcept
@@ -431,6 +469,14 @@ public:
         return m_var;
     }
 
+    /**
+     * @brief Compares two variables.
+     * 
+     * This function compares two variables and returns a value indicating their relationship.
+     * 
+     * @param var Another variable to compare with.
+     * @return std::partial_ordering The relationship between two variables.
+     */
     [[nodiscard]]
     std::partial_ordering compare(const basic_variable& var) const noexcept
     {
@@ -449,6 +495,15 @@ public:
         return compare(rhs);
     }
 
+    /**
+     * @brief Checks if two variables are equal.
+     * 
+     * This function checks if two variables are equal within the specified epsilon.
+     * 
+     * @param var Another variable to compare with.
+     * @param epsilon The maximum difference allowed between two variables.
+     *                This parameter is only used when one variable holds a float value.
+     */
     [[nodiscard]]
     bool equal(
         const basic_variable& var,
@@ -609,6 +664,9 @@ using is_variable_storable = is_basic_variable_storable<T, char>;
 PAPILIO_EXPORT template <typename T>
 inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 
+/**
+ * @brief Bad handle cast
+ */
 PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
 {
 public:
@@ -620,6 +678,9 @@ public:
     }
 };
 
+/**
+ * @brief Default formatter. It does nothing.
+ */
 PAPILIO_EXPORT template <typename T, typename CharT>
 class formatter
 {
@@ -632,7 +693,11 @@ public:
     formatter& operator=(formatter&&) = delete;
 };
 
-// Derive your formatter from this class to explicitly prevent a type from being formatted.
+/**
+ * @brief Explicitly disabled formatter
+ *
+ * Derive your formatter from this class to explicitly prevent a type from being formatted
+ */
 PAPILIO_EXPORT class disabled_formatter
 {
     disabled_formatter() = delete;
@@ -884,6 +949,9 @@ private:
     };
 
 public:
+    /**
+     * @brief Type-erased handle to a value to be formatted.
+     */
     class handle
     {
     public:
@@ -1923,6 +1991,12 @@ namespace detail
         typename Context::char_type>::type;
 } // namespace detail
 
+/**
+ * @brief Format context
+ *
+ * @tparam OutputIt Output iterator
+ * @tparam CharT Char type
+ */
 PAPILIO_EXPORT template <typename OutputIt, typename CharT>
 class basic_format_context
 {
@@ -1978,6 +2052,9 @@ private:
     locale_ref m_loc;
 };
 
+/**
+ * @brief Traits for the format context.
+ */
 PAPILIO_EXPORT template <typename Context>
 class format_context_traits
 {
@@ -1992,6 +2069,12 @@ public:
 
     format_context_traits() = delete;
 
+    /**
+     * @brief Get the output iterator from the context.
+     *
+     * @param ctx The context
+     * @return iterator The output iterator
+     */
     [[nodiscard]]
     static iterator out(context_type& ctx)
     {

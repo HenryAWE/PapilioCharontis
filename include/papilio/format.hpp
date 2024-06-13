@@ -1,3 +1,9 @@
+/**
+ * @file format.hpp
+ * @author HenryAWE
+ * @brief Format APIs
+ */
+
 #ifndef PAPILIO_FORMAT_HPP
 #define PAPILIO_FORMAT_HPP
 
@@ -503,4 +509,3 @@ private:
 #include "formatter/misc.hpp"
 
 #endif
-

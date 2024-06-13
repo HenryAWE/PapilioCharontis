@@ -1,3 +1,9 @@
+/**
+ * @file color.hpp
+ * @author HenryAWE
+ * @brief Styled terminal output support.
+ */
+
 #ifndef PAPILIO_COLOR_HPP
 #define PAPILIO_COLOR_HPP
 
@@ -11,6 +17,9 @@ namespace papilio
 {
 PAPILIO_EXPORT class text_style;
 
+/**
+ * @brief Terminal output color
+ */
 PAPILIO_EXPORT enum class color : std::uint8_t
 {
     none = 0,
@@ -24,6 +33,9 @@ PAPILIO_EXPORT enum class color : std::uint8_t
     white = 37
 };
 
+/**
+ * @brief Terminal output style 
+ */
 PAPILIO_EXPORT enum class style : std::uint8_t
 {
     none = 0,
@@ -33,10 +45,25 @@ PAPILIO_EXPORT enum class style : std::uint8_t
     underline = 1 << 3
 };
 
+/**
+ * @brief Set the foreground color.
+ *
+ * @param col Color
+ * @return text_style Text style data
+ */
 PAPILIO_EXPORT text_style fg(color col) noexcept;
 
+/**
+ * @brief Set the background color.
+ *
+ * @param col Color
+ * @return text_style Text style data
+ */
 PAPILIO_EXPORT text_style bg(color col) noexcept;
 
+/**
+ * @brief Terminal output text style
+ */
 PAPILIO_EXPORT class text_style
 {
 public:
@@ -227,6 +254,12 @@ public:
     }
 };
 
+/**
+ * @brief Wrap a value with styling information.
+ * 
+ * @param st Test style data
+ * @param val Value to output
+ */
 PAPILIO_EXPORT template <typename T>
 auto styled(text_style st, const T& val)
 {

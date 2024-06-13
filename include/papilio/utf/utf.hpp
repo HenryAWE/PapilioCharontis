@@ -7,4 +7,13 @@
 #include "codepoint.hpp"
 #include "string.hpp"
 
+namespace papilio
+{
+/**
+ * @brief Utilities for Unicode processing
+ */
+namespace utf
+{}
+} // namespace papilio
+
 #endif

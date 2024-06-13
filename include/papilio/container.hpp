@@ -1,3 +1,9 @@
+/**
+ * @file container.hpp
+ * @author HenryAWE
+ * @brief Some useful non-STL containers.
+ */
+
 #ifndef PAPILIO_CONTAINER_HPP
 #define PAPILIO_CONTAINER_HPP
 
@@ -36,6 +42,14 @@ namespace detail
     };
 } // namespace detail
 
+/**
+ * @brief The base class of a `small_vector`.
+ * 
+ * This class can be used if the user code does not need to know the size of the static capacity.
+ *
+ * @tparam T Type of the elements
+ * @tparam Allocator The allocator for dynamically allocating memory
+ */
 PAPILIO_EXPORT template <typename T, typename Allocator = std::allocator<T>>
 class small_vector_base : public detail::small_vector_impl
 {
@@ -226,6 +240,16 @@ protected:
     }
 };
 
+/**
+ * @brief Small vector that acts like a `std::vector`.
+ *
+ * The small_vector will store elements in a pre-allocated memory block.
+ * If the size exceeds the static capacity, it will dynamically allocate memory to store the elements.
+ *
+ * @tparam T Type of the elements
+ * @tparam StaticCapacity Static capacity of the small vector
+ * @tparam Allocator The allocator for dynamically allocating memory
+ */
 PAPILIO_EXPORT template <
     typename T,
     std::size_t StaticCapacity,
@@ -1173,6 +1197,9 @@ namespace detail
     };
 } // namespace detail
 
+/**
+ * @brief Check if a comparator is transparent, i.e. supporting heterogeneous compare.
+ */
 PAPILIO_EXPORT template <typename Compare>
 struct is_transparent :
     public std::bool_constant<detail::is_transparent_helper<Compare>>

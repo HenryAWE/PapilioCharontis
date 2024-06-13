@@ -1,3 +1,9 @@
+/**
+ * @file macros.hpp
+ * @author HenryAWE
+ * @brief Header of macro definitions.
+ */
+
 #ifndef PAPILIO_MACROS_HPP
 #define PAPILIO_MACROS_HPP
 
@@ -14,12 +20,16 @@
 #define PAPILIO_VERSION_MINOR 3
 #define PAPILIO_VERSION_PATCH 0
 
-// Currently, this macro is just an alias of the assert() macro.
-// It might be changed to a custom implementation for providing more information.
+/**
+ * Currently, this macro is just an alias of the `assert()` macro.
+ * It might be changed to a custom implementation for providing more information.
+ */
 #define PAPILIO_ASSERT(expr) assert(expr)
 
-// Use this macro to avoid errors caused by ADL,
-// especially when mixing this library and the standard <format>.
+/** 
+ * Use this macro to avoid errors caused by ADL,
+ * especially when mixing this library and the standard <format>.
+*/
 #define PAPILIO_NS ::papilio::
 
 #if defined PAPILIO_COMPILER_MSVC
@@ -37,7 +47,13 @@
 #    define PAPILIO_NO_UNIQUE_ADDRESS
 #endif
 
-#define PAPILIO_STRINGIZE(text)    #text
+/**
+ * @brief Stringize given text.
+ */
+#define PAPILIO_STRINGIZE(text) #text
+/**
+ * @brief Stringize given text without expanding any macros in it.
+ */
 #define PAPILIO_STRINGIZE_EX(text) PAPILIO_STRINGIZE(text)
 
 #define PAPILIO_TSTRING_EX(char_t, str, suffix, decl)         \

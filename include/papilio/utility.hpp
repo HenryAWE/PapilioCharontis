@@ -1,4 +1,8 @@
-// concepts, type traits, tags, auxiliary types
+/**
+ * @file utility.hpp
+ * @author HenryAWE
+ * @brief Header of concepts, type traits, tags, and auxiliary types.
+ */
 
 #ifndef PAPILIO_UTILITY_HPP
 #define PAPILIO_UTILITY_HPP

@@ -1,3 +1,9 @@
+/**
+ * @file core.inl
+ * @author HenryAWE
+ * @brief Implementation of the core module.
+ */
+
 #include <sstream>
 
 namespace papilio

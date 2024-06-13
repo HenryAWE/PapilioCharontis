@@ -1,3 +1,9 @@
+/**
+ * @file locale.hpp
+ * @author HenryAWE
+ * @brief Locale support.
+ */
+
 #ifndef PAPILIO_LOCALE_HPP
 #define PAPILIO_LOCALE_HPP
 
@@ -11,8 +17,6 @@ namespace papilio
 {
 /**
  * @brief Reference to a locale object.
- *
- * The member function `get()` will return `std::locale::classic()` if the reference is empty.
  */
 PAPILIO_EXPORT class locale_ref
 {
@@ -40,15 +44,33 @@ public:
         return *this;
     }
 
+    /**
+     * @brief Check if the reference is empty.
+     *
+     * @return true If the reference is empty.
+     * @return false If the reference is not empty.
+     */
     [[nodiscard]]
     bool empty() const noexcept
     {
         return m_loc == nullptr;
     }
 
+    /**
+     * @brief Get the referenced locale object.
+     *
+     * If the reference is empty, `std::locale::classic()` will be returned.
+     *
+     * @return std::locale The locale object. 
+     */
     [[nodiscard]]
     std::locale get() const;
 
+    /**
+     * @brief A shortcut for `get()`.
+     *
+     * @return std::locale The locale object.
+     */
     operator std::locale() const
     {
         return get();

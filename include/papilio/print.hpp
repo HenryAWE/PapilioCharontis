@@ -1,3 +1,9 @@
+/**
+ * @file print.hpp
+ * @author HenryAWE
+ * @brief Functions for printing to terminal.
+ */
+
 #ifndef PAPILIO_PRINT_HPP
 #define PAPILIO_PRINT_HPP
 
