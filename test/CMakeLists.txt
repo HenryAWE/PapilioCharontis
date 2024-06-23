@@ -7,7 +7,7 @@ macro(define_papilio_test test_name)
     add_executable(${test_name} ${test_name}.cpp)
     target_link_libraries(${test_name} PRIVATE papilio_test)
     target_sources(${test_name} PRIVATE "cpp.hint")
-    gtest_discover_tests(${test_name})
+    gtest_discover_tests(${test_name} DISCOVERY_TIMEOUT 300)
 endmacro()
 
 define_papilio_test(test_access)
