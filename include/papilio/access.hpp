@@ -374,10 +374,10 @@ public:
 };
 } // namespace papilio
 
-#include "access/tuple.inl"
-#include "access/ranges.inl"
-#include "access/misc.inl"
-
 #include "detail/suffix.hpp"
+
+#include "accessor/tuple.hpp"
+#include "accessor/ranges.hpp"
+#include "accessor/misc.hpp"
 
 #endif

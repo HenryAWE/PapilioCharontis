@@ -1,11 +1,15 @@
-#include <string_view>
+#ifndef PAPILIO_ACCESSOR_RANGES_HPP
+#define PAPILIO_ACCESSOR_RANGES_HPP
+
+#pragma once
+
 #include <span>
 #include <ranges>
 #include <vector>
 #include <map>
 #include <utility>
-#include "../utility.hpp"
-#include "../utf/string.hpp"
+#include "../access.hpp"
+#include "../detail/prefix.hpp"
 
 namespace papilio
 {
@@ -279,3 +283,7 @@ struct accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context> :
     public map_accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context>
 {};
 } // namespace papilio
+
+#include "../detail/suffix.hpp"
+
+#endif

@@ -1,6 +1,11 @@
-#include <string_view>
+#ifndef PAPILIO_ACCESSOR_TUPLE_HPP
+#define PAPILIO_ACCESSOR_TUPLE_HPP
+
+#pragma once
+
 #include <tuple>
 #include "../utility.hpp"
+#include "../detail/prefix.hpp"
 
 namespace papilio
 {
@@ -91,3 +96,7 @@ struct accessor<compressed_pair<T1, T2>, Context> :
     public tuple_accessor<compressed_pair<T1, T2>, Context, true>
 {};
 } // namespace papilio
+
+#include "../detail/suffix.hpp"
+
+#endif
