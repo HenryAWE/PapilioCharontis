@@ -17,7 +17,7 @@
 #include "detail/compat.hpp"
 
 #define PAPILIO_VERSION_MAJOR 0
-#define PAPILIO_VERSION_MINOR 3
+#define PAPILIO_VERSION_MINOR 4
 #define PAPILIO_VERSION_PATCH 0
 
 /**
