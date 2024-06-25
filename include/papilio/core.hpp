@@ -210,7 +210,7 @@ PAPILIO_EXPORT struct simple_formatter_data
 
     /**
      * @brief Convert the simple formatter data to standard formatter data.
-     * 
+     *
      * @return std_formatter_data The data for standard format specification.
      */
     constexpr std_formatter_data to_std_data() const noexcept
@@ -471,9 +471,9 @@ public:
 
     /**
      * @brief Compares two variables.
-     * 
+     *
      * This function compares two variables and returns a value indicating their relationship.
-     * 
+     *
      * @param var Another variable to compare with.
      * @return std::partial_ordering The relationship between two variables.
      */
@@ -497,9 +497,9 @@ public:
 
     /**
      * @brief Checks if two variables are equal.
-     * 
+     *
      * This function checks if two variables are equal within the specified epsilon.
-     * 
+     *
      * @param var Another variable to compare with.
      * @param epsilon The maximum difference allowed between two variables.
      *                This parameter is only used when one variable holds a float value.

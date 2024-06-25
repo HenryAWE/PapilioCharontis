@@ -115,7 +115,7 @@ jobs:
         matrix:
           cxxstd: [20, 23]
 
-      name: MSVC C++${{matrix.cxxstd}} 
+      name: MSVC C++${{matrix.cxxstd}}
 
       env:
         VCPKG_BUILD_TYPE: release
@@ -151,7 +151,7 @@ jobs:
         matrix:
           cxxstd: [20, 23]
 
-      name: ClangCl C++${{matrix.cxxstd}} 
+      name: ClangCl C++${{matrix.cxxstd}}
 
       steps:
       - uses: actions/checkout@v4
@@ -192,7 +192,7 @@ jobs:
       # Install newer version using PPA
       - name: Install Dependencies
         run: |
-          sudo add-apt-repository ppa:savoury1/build-tools 
+          sudo add-apt-repository ppa:savoury1/build-tools
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build doxygen graphviz
 

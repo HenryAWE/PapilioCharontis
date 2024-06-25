@@ -143,9 +143,9 @@ namespace detail
 
 /**
  * @brief Smart pointer that owns an optional ownership of another object.
- * 
+ *
  * The `optional_unique_ptr` acts like a `unique_ptr` or a raw pointer depending on its ownership state.
- * 
+ *
  * @tparam T Element type
  * @tparam Deleter Deleter
  */

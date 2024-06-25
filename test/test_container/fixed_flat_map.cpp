@@ -10,7 +10,6 @@ static_assert(papilio::is_transparent_v<ffm_t::value_compare>);
 static_assert(std::is_empty_v<ffm_t::value_compare>);
 } // namespace test_container
 
-
 TEST(fixed_flat_map, emplace)
 {
     using papilio::fixed_flat_map;

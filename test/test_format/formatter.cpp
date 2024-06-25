@@ -98,13 +98,13 @@ TYPED_TEST(float_formatter_suite, basic)
 
     EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(0.0L)), "0");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(0.0L)), L"0");
-    
+
     EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(-0.0L)), "-0");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(-0.0L)), L"-0");
 
     EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(3.14L)), "3.14");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(3.14L)), L"3.14");
-    
+
     EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(-3.14L)), "-3.14");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(-3.14L)), L"-3.14");
 }

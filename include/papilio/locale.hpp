@@ -61,7 +61,7 @@ public:
      *
      * If the reference is empty, `std::locale::classic()` will be returned.
      *
-     * @return std::locale The locale object. 
+     * @return std::locale The locale object.
      */
     [[nodiscard]]
     std::locale get() const;

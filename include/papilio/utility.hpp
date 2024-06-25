@@ -64,7 +64,7 @@ concept pointer_like = requires(T ptr) { static_cast<bool>(ptr); } &&
 
 /**
  * @brief Get the raw pointer from a pointer-like object, e.g. shared_ptr.
- * 
+ *
  * @param p The pointer-like object
  * @return The raw pointer
  */

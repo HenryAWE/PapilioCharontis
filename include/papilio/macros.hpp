@@ -26,7 +26,7 @@
  */
 #define PAPILIO_ASSERT(expr) assert(expr)
 
-/** 
+/**
  * Use this macro to avoid errors caused by ADL,
  * especially when mixing this library and the standard <format>.
 */

@@ -34,7 +34,7 @@ PAPILIO_EXPORT enum class color : std::uint8_t
 };
 
 /**
- * @brief Terminal output style 
+ * @brief Terminal output style
  */
 PAPILIO_EXPORT enum class style : std::uint8_t
 {
@@ -256,7 +256,7 @@ public:
 
 /**
  * @brief Wrap a value with styling information.
- * 
+ *
  * @param st Test style data
  * @param val Value to output
  */

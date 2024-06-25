@@ -44,7 +44,7 @@ namespace detail
 
 /**
  * @brief The base class of a `small_vector`.
- * 
+ *
  * This class can be used if the user code does not need to know the size of the static capacity.
  *
  * @tparam T Type of the elements

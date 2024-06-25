@@ -523,7 +523,6 @@ inline namespace literals
 }
 } // namespace papilio
 
-
 #include "../detail/suffix.hpp"
 
 #endif
