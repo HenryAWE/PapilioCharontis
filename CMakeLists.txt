@@ -56,7 +56,6 @@ if(${papilio_build_lib})
 
     add_library(papilio ${papilio_src})
     target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/natvis/papilio.natvis>")
-    target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/cpp.hint>")
     target_include_directories(papilio PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>

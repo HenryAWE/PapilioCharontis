@@ -1,5 +1,0 @@
-// For Visual Studio
-// See https://go.microsoft.com/fwlink/?linkid=865984
-
-#define PAPILIO_EXPORT
-#define PAPILIO_ASSERT(expr)
