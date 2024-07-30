@@ -12,6 +12,45 @@
 
 namespace papilio
 {
+PAPILIO_EXPORT template <typename CharT>
+struct chrono_formatter_data
+{
+    using string_container_type = utf::basic_string_container<CharT>;
+
+    simple_formatter_data basic;
+    string_container_type chrono_spec;
+};
+
+template <typename ParseContext>
+PAPILIO_EXPORT class chrono_formatter_parser
+{
+public:
+    using char_type = typename ParseContext::char_type;
+    using iterator = typename ParseContext::iterator;
+
+    using result_type = chrono_formatter_data<char_type>;
+    using interpreter_type = basic_interpreter<typename ParseContext::format_context_type>;
+
+    static std::pair<result_type, iterator> parse(ParseContext& ctx)
+    {
+        result_type result;
+
+        simple_formatter_parser<ParseContext, true> basic_parser;
+        auto [basic_result, it] = basic_parser.parse(ctx);
+        result.basic = basic_result;
+
+        auto spec_end = std::find_if(
+            it,
+            ctx.end(),
+            [](char32_t v)
+            { return v == U'}'; }
+        );
+        result.chrono_spec.assign(it, spec_end);
+
+        return std::make_pair(std::move(result), spec_end);
+    }
+};
+
 template <typename CharT>
 class formatter<std::tm, CharT>
 {
@@ -20,50 +59,44 @@ public:
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
     {
-        simple_formatter_parser<ParseContext> parser;
+        chrono_formatter_parser<ParseContext> parser;
         auto [result, it] = parser.parse(ctx);
 
         m_data = result;
-        auto end = std::find_if(
-            it,
-            ctx.end(),
-            [](char32_t v)
-            { return v == U'}'; }
-        );
 
-        m_fmt.assign(it, end);
-
-        return end;
+        return it;
     }
 
     template <typename Context>
     auto format(const std::tm& val, Context& ctx) const
         -> typename Context::iterator
     {
-        if(m_fmt.empty())
+        if(m_data.chrono_spec.empty())
         {
             CharT buf[24];
             default_tm_fmt_impl(val, buf);
 
             string_formatter<CharT> fmt;
-            fmt.set_data(m_data);
+            fmt.set_data(m_data.basic);
             return fmt.format(std::basic_string_view<CharT>(buf, 24), ctx);
         }
         else
         {
             std::basic_stringstream<CharT> ss;
-            ss.imbue(ctx.getloc());
-            ss << std::put_time(&val, m_fmt.c_str());
+            if(m_data.basic.use_locale)
+                ss.imbue(ctx.getloc());
+            else
+                ss.imbue(std::locale::classic());
+            ss << std::put_time(&val, m_data.chrono_spec.c_str());
 
             string_formatter<CharT> fmt;
-            fmt.set_data(m_data);
+            fmt.set_data(m_data.basic);
             return fmt.format(std::move(ss).str(), ctx);
         }
     }
 
 private:
-    simple_formatter_data m_data;
-    utf::basic_string_container<CharT> m_fmt;
+    chrono_formatter_data<CharT> m_data;
 
     // Simulating `asctime()` but without the trailing newline
     static void default_tm_fmt_impl(const std::tm& val, std::span<CharT, 24> buf)

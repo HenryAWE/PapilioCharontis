@@ -10,9 +10,50 @@
 
 namespace papilio
 {
-template <tuple_like Tuple, typename CharT>
-class formatter<Tuple, CharT>
+namespace detail
 {
+    template <typename CharT>
+    class tuple_fmt_base
+    {
+    public:
+        using string_view_type = std::basic_string_view<CharT>;
+
+    protected:
+        // ", "
+        static string_view_type default_sep() noexcept
+        {
+            static constexpr CharT str[2] = {',', ' '};
+            return string_view_type(str, 2);
+        }
+
+        // "("
+        static string_view_type default_opening() noexcept
+        {
+            static constexpr CharT ch = '(';
+            return string_view_type(&ch, 1);
+        }
+
+        // ")"
+        static string_view_type default_closing() noexcept
+        {
+            static constexpr CharT ch = ')';
+            return string_view_type(&ch, 1);
+        }
+
+        // ": "
+        static string_view_type pair_sep() noexcept
+        {
+            static constexpr CharT str[2] = {':', ' '};
+            return string_view_type(str, 2);
+        }
+    };
+} // namespace detail
+
+PAPILIO_EXPORT template <tuple_like Tuple, typename CharT>
+class formatter<Tuple, CharT> : public detail::tuple_fmt_base<CharT>
+{
+    using my_base = detail::tuple_fmt_base<CharT>;
+
 public:
     using string_view_type = std::basic_string_view<CharT>;
 
@@ -40,14 +81,14 @@ public:
         { // Pair-like only
             if(type == U'm')
             {
-                set_separator(PAPILIO_TSTRING_VIEW(CharT, ": "));
-                set_brackets(string_view_type(), string_view_type());
+                set_separator(my_base::pair_sep());
+                clear_brackets();
                 ++it;
             }
         }
         if(type == U'n')
         {
-            set_brackets(string_view_type(), string_view_type());
+            clear_brackets();
             ++it;
         }
 
@@ -84,9 +125,14 @@ public:
     }
 
 private:
-    string_view_type m_sep = PAPILIO_TSTRING_VIEW(CharT, ", ");
-    string_view_type m_opening = PAPILIO_TSTRING_VIEW(CharT, "(");
-    string_view_type m_closing = PAPILIO_TSTRING_VIEW(CharT, ")");
+    string_view_type m_sep = my_base::default_sep();
+    string_view_type m_opening = my_base::default_opening();
+    string_view_type m_closing = my_base::default_closing();
+
+    void clear_brackets() noexcept
+    {
+        set_brackets(string_view_type(), string_view_type());
+    }
 };
 } // namespace papilio
 

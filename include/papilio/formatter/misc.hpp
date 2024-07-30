@@ -14,7 +14,6 @@
 
 namespace papilio
 {
-
 PAPILIO_EXPORT template <typename CharT>
 class formatter<std::thread::id, CharT>
 {
