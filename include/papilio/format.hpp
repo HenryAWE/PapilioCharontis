@@ -506,6 +506,6 @@ private:
 #include "detail/suffix.hpp"
 
 #include "formatter/tuple.hpp"
-#include "formatter/misc.hpp"
+#include "formatter/vocabulary.hpp"
 
 #endif
