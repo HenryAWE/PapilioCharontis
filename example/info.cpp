@@ -54,6 +54,9 @@ int main()
 #ifdef PAPILIO_HAS_LIB_STACKTRACE
     println("PAPILIO_HAS_LIB_STACKTRACE = {:d}L", PAPILIO_HAS_LIB_STACKTRACE);
 #endif
+#ifdef PAPILIO_HAS_LIB_EXPECTED
+    println("PAPILIO_HAS_LIB_EXPECTED = {:d}L", PAPILIO_HAS_LIB_EXPECTED);
+#endif
 
 #ifdef PAPILIO_HAS_VA_OPT
     println("PAPILIO_HAS_VA_OPT defined");

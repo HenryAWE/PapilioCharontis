@@ -86,4 +86,8 @@
 #    define PAPILIO_HAS_LIB_STACKTRACE __cpp_lib_stacktrace
 #endif
 
+#if defined(__cpp_lib_expected) && __cpp_lib_expected >= 202202L
+#    define PAPILIO_HAS_LIB_EXPECTED __cpp_lib_expected
+#endif
+
 #endif

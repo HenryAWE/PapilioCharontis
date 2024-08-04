@@ -50,3 +50,34 @@ TEST(vocabulary_formatter, variant)
         EXPECT_EQ(PAPILIO_NS format(L"{}", var), L"hello");
     }
 }
+
+#ifdef PAPILIO_HAS_LIB_EXPECTED
+
+TEST(vocabulary_formatter, expected)
+{
+    using namespace papilio;
+
+    {
+        std::expected<std::string, int> ex = "hello";
+
+        EXPECT_EQ(PAPILIO_NS format("{}", ex), "hello");
+    }
+    {
+        std::expected<std::string, int> ex = std::unexpected(42);
+
+        EXPECT_EQ(PAPILIO_NS format("{}", ex), "42");
+    }
+
+    {
+        std::expected<std::wstring, int> ex = L"hello";
+
+        EXPECT_EQ(PAPILIO_NS format(L"{}", ex), L"hello");
+    }
+    {
+        std::expected<std::wstring, int> ex = std::unexpected(42);
+
+        EXPECT_EQ(PAPILIO_NS format(L"{}", ex), L"42");
+    }
+}
+
+#endif
