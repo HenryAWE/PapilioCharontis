@@ -68,6 +68,15 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
         </Expand>
     </Type>
 
+    <Type Name="papilio::locale_ref">
+        <SmartPointer Usage="Minimal">m_loc</SmartPointer>
+        <DisplayString Condition="m_loc == 0">empty</DisplayString>
+        <DisplayString Condition="m_loc != 0">locale_ref {*m_loc}</DisplayString>
+        <Expand>
+            <Item Condition="m_loc != 0" Name="[loc]">m_loc</Item>
+        </Expand>
+    </Type>
+
     <Type Name="papilio::optional_unique_ptr&lt;void,*&gt;">
         <SmartPointer Usage="Minimal">m_ptr</SmartPointer>
         <DisplayString Condition="m_ptr == 0">empty</DisplayString>
@@ -231,7 +240,7 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
         </Expand>
     </Type>
 
-    <Type Name="papilio::script::basic_variable&lt;*&gt;">
+    <Type Name="papilio::basic_variable&lt;*&gt;">
         <Intrinsic Name="index" Expression="m_var.index()" />
         <DisplayString Condition="index() &lt; 0">[invalid]</DisplayString>
         <DisplayString Condition="index() == 0" Optional="true">{m_var._Head}</DisplayString>
@@ -258,6 +267,42 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
         <DisplayString>{m_val}</DisplayString>
         <Expand>
             <Item Name="[value]">m_val</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="papilio::static_format_args&lt;*&gt;">
+        <DisplayString>{{ indexed size={m_indexed_args.size()} }} (static)</DisplayString>
+        <Expand>
+            <Item Name="[indexed]">m_indexed_args</Item>
+            <Item Name="[named]">m_named_args</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::basic_dynamic_format_args&lt;*&gt;">
+        <DisplayString>{{ indexed size={m_indexed_args.size()} }} (dynamic)</DisplayString>
+        <Expand>
+            <Item Name="[indexed]">m_indexed_args</Item>
+            <Item Name="[named]">m_named_args</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::basic_format_args_ref&lt;*&gt;">
+        <DisplayString>{*m_ptr}</DisplayString>
+        <Expand>
+            <Item Name="[ref]">*m_ptr</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="papilio::basic_format_parse_context&lt;*&gt;">
+        <DisplayString>{m_ref}</DisplayString>
+        <Expand>
+            <Item Name="Arguments">m_args</Item>
+            <Item Name="Current default arg id">m_default_arg_idx</Item>
+        </Expand>
+    </Type>
+    <Type Name="papilio::basic_format_context&lt;*&gt;">
+        <DisplayString>{m_args}</DisplayString>
+        <Expand>
+            <Item Name="Iterator">m_out</Item>
+            <Item Name="Locale">m_loc</Item>
         </Expand>
     </Type>
 </AutoVisualizer>
