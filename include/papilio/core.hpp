@@ -751,6 +751,9 @@ namespace detail
         std::is_nothrow_move_constructible_v<std::remove_cvref_t<T>>;
 } // namespace detail
 
+/**
+ * @brief Format argument
+ */
 PAPILIO_EXPORT template <typename Context>
 class basic_format_arg
 {
@@ -2103,6 +2106,15 @@ public:
         append(ctx, str.begin(), str.end());
     }
 
+    /**
+     * @brief Append characters to the format context.
+     *
+     * @param ctx Format context
+     * @param ch The character
+     * @param count Number of times to append the character
+     *
+     * @note  This function will automatically convert the encoding if necessary.
+     */
     template <char_like Char>
     static void append(context_type& ctx, Char ch, std::size_t count = 1)
     {
@@ -2120,6 +2132,13 @@ public:
         }
     }
 
+    /**
+     * @brief Append a Unicode code point to the format context.
+     *
+     * @param ctx Format context
+     * @param cp The code point
+     * @param count Number of times to append the code point
+     */
     static void append(context_type& ctx, utf::codepoint cp, std::size_t count = 1)
     {
         for(std::size_t i = 0; i < count; ++i)
@@ -2179,6 +2198,9 @@ auto make_wformat_args(Args&&... args)
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
 
+/**
+ * @brief Format parse context
+ */
 PAPILIO_EXPORT template <typename FormatContext>
 class basic_format_parse_context
 {
@@ -2196,6 +2218,12 @@ public:
     basic_format_parse_context() = delete;
     basic_format_parse_context(const basic_format_parse_context&) = delete;
 
+    /**
+     * @brief Construct a format parse context
+     *
+     * @param str The format string @ref basic_format_string
+     * @param args Format arguments @ref basic_format_arg
+     */
     basic_format_parse_context(string_ref_type str, format_args_type args) noexcept
         : m_ref(str), m_args(args)
     {
@@ -2269,8 +2297,11 @@ public:
         throw format_error("no default argument after an explicit argument");
     }
 
-    // Default implementation of skipping unused format specification.
-    // WARNING: This function cannot skip specification that contains unbalanced braces ("{" and "}")!
+    /**
+     * @brief Default implementation of skipping unused format specification.
+     *
+     * @warning This function cannot skip specification that contains unbalanced braces (`{` and `}`)!
+     */
     void skip_spec()
     {
         auto it = begin();
@@ -2315,16 +2346,28 @@ namespace detail
     };
 } // namespace detail
 
+/**
+ * @brief Traits for formatters
+ */
 PAPILIO_EXPORT template <typename Formatter>
 struct formatter_traits
 {
-    // Returns true if the formatter has a standalone parse function
+    /**
+     * @brief Returns true if the formatter has a @b standalone parse function
+     */
     template <typename ParseContext = format_parse_context>
     static constexpr bool parsable() noexcept
     {
         return detail::check_parse_method<Formatter, ParseContext>;
     }
 
+    /**
+     * @brief Parse the format specification and format the value
+     *
+     * @param val The value
+     * @param parse_ctx Parse context
+     * @param fmt_ctx Format context
+     */
     template <typename T, typename ParseContext, typename FormatContext>
     static void format(T&& val, ParseContext& parse_ctx, FormatContext& fmt_ctx)
     {
@@ -2350,6 +2393,11 @@ struct formatter_traits
         }
     }
 
+    /**
+     * @brief Skip the format specification of the current replacement field
+     *
+     * @param parse_ctx Parse context
+     */
     template <typename ParseContext>
     static void skip_spec(ParseContext& parse_ctx) noexcept
     {
@@ -2853,6 +2901,12 @@ protected:
     }
 };
 
+/**
+ * @brief The interpreter of format specification and embedded script
+ *
+ * @tparam FormatContext Format context @ref basic_format_context
+ * @tparam Debug Enable debug options which can produce more precise error information.
+ */
 PAPILIO_EXPORT template <typename FormatContext, bool Debug>
 class basic_interpreter :
     public basic_interpreter_base<typename FormatContext::char_type, Debug>
@@ -2875,11 +2929,23 @@ public:
 
     basic_interpreter() = default;
 
+    /**
+     * @brief Access the format argument
+     *
+     * @param ctx Parse context
+     * @return std::pair<format_arg_type, iterator> The result and the new position of the iterator
+     */
     static std::pair<format_arg_type, iterator> access(parse_context& ctx)
     {
         return access_impl(ctx, ctx.begin(), ctx.end());
     }
 
+    /**
+     * @brief Parse and format
+     *
+     * @param parse_ctx Parse context
+     * @param fmt_ctx Format context
+     */
     void format(
         parse_context& parse_ctx,
         FormatContext& fmt_ctx
@@ -2979,8 +3045,12 @@ private:
         arg.skip_spec(parse_ctx);
     }
 
-    // NOTE: Call "skip_ws" before calling this function.
-    // This function assumes start != stop.
+    /**
+     * @brief Skip the current branch in script
+     *
+     * @note Call `skip_ws()` before calling this function.
+     * @warning This function assumes `start != stop`
+     */
     static iterator skip_branch(parse_context& parse_ctx)
     {
         auto start = parse_ctx.begin();
@@ -3076,7 +3146,9 @@ private:
         return my_base::skip_ws(start, stop);
     }
 
-    // execute scripted field
+    /**
+     * @brief Execute the scripted field
+     */
     static void exec_script(parse_context& parse_ctx, FormatContext& fmt_ctx)
     {
         iterator start = parse_ctx.begin();
@@ -3129,7 +3201,9 @@ private:
         parse_ctx.advance_to(start);
     }
 
-    // execute replacement field
+    /**
+     * @brief Execute the replacement field
+     */
     static void exec_repl(parse_context& parse_ctx, FormatContext& fmt_ctx)
     {
         auto [arg, next_it] = access(parse_ctx);
