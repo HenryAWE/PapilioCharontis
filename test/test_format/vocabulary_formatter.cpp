@@ -1,10 +1,14 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
+#include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
 TEST(vocabulary_formatter, optional)
 {
     using namespace papilio;
+
+    static_assert(formattable<std::optional<std::string>>);
+    static_assert(!formattable<std::optional<test_format::format_disabled>>);
 
     {
         std::optional<std::string> opt = "hello";
@@ -28,6 +32,12 @@ TEST(vocabulary_formatter, optional)
 TEST(vocabulary_formatter, variant)
 {
     using namespace papilio;
+
+    static_assert(formattable<std::variant<int, std::string>>);
+    static_assert(formattable<std::variant<std::monostate, std::string>>);
+    static_assert(!formattable<std::variant<test_format::format_disabled>>);
+    static_assert(!formattable<std::variant<int, test_format::format_disabled>>);
+
     {
         std::variant<std::monostate, int, std::string> var;
         EXPECT_EQ(PAPILIO_NS format("{}", var), "monostate");
@@ -56,6 +66,10 @@ TEST(vocabulary_formatter, variant)
 TEST(vocabulary_formatter, expected)
 {
     using namespace papilio;
+
+    static_assert(formattable<std::expected<std::string, int>>);
+    static_assert(!formattable<std::expected<test_format::format_disabled, int>>);
+    static_assert(!formattable<std::expected<std::string, test_format::format_disabled>>);
 
     {
         std::expected<std::string, int> ex = "hello";
