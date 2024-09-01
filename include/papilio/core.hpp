@@ -18,6 +18,7 @@
 #include <span>
 #include <array>
 #include <charconv>
+#include <typeindex>
 #include "macros.hpp"
 #include "fmtfwd.hpp"
 #include "utility.hpp"

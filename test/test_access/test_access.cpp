@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/access.hpp>
+#include <papilio/accessor/misc.hpp>
 #include <papilio/format.hpp>
 #include <papilio_test/setup.hpp>
 
@@ -255,6 +256,10 @@ TEST(accessor, map)
 TEST(accessor, type_info)
 {
     using namespace papilio;
+
+    // The actual stored type is std::type_index
+    static_assert(attribute_accessible<std::type_index>);
+    static_assert(attribute_accessible_with<std::type_index, wformat_context>);
 
     {
         const std::type_info& info = typeid(int);

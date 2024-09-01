@@ -9,8 +9,6 @@ macro(define_papilio_test test_name)
     gtest_discover_tests(${test_name} DISCOVERY_TIMEOUT 300)
 endmacro()
 
-define_papilio_test(test_access)
-
 define_papilio_test(test_memory)
 
 define_papilio_test(test_locale)
@@ -30,6 +28,8 @@ if(${papilio_build_module})
 endif()
 
 add_subdirectory(test_core)
+
+add_subdirectory(test_access)
 
 add_subdirectory(test_format)
 

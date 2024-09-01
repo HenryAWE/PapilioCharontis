@@ -372,12 +372,39 @@ public:
         return attribute(std::forward<U>(object), attr);
     }
 };
+
+template <typename T, typename Context>
+concept integer_accessible_with =
+    accessor_traits<T, Context>::has_integer_index();
+
+template <typename T, typename Context>
+concept string_accessible_with =
+    accessor_traits<T, Context>::has_string_index();
+
+template <typename T, typename Context>
+concept slice_accessible_with =
+    accessor_traits<T, Context>::has_slice_index();
+
+template <typename T, typename Context>
+concept attribute_accessible_with =
+    accessor_traits<T, Context>::has_attribute();
+
+template <typename T>
+concept integer_accessible = integer_accessible_with<T, format_context>;
+
+template <typename T>
+concept string_accessible = string_accessible_with<T, format_context>;
+
+template <typename T>
+concept slice_accessible = slice_accessible_with<T, format_context>;
+
+template <typename T>
+concept attribute_accessible = attribute_accessible_with<T, format_context>;
 } // namespace papilio
 
 #include "detail/suffix.hpp"
 
 #include "accessor/tuple.hpp"
 #include "accessor/ranges.hpp"
-#include "accessor/misc.hpp"
 
 #endif
