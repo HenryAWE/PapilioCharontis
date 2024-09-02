@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/accessor/chrono.hpp>
 #include <papilio/format.hpp>
+#include <papilio_test/setup.hpp>
 
 namespace test_access
 {
