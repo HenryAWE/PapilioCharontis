@@ -17,6 +17,23 @@ TEST(modules, format)
     EXPECT_EQ(papilio::format(L"{}", 182376), L"182376");
 }
 
+TEST(modules, print)
+{
+    ::testing::internal::CaptureStdout();
+
+    std::string_view fmt = "{} warning{${0}>1:'s'}";
+
+    papilio::println(fmt, 1);
+    papilio::print(fmt, 2);
+
+    auto stdout_result = ::testing::internal::GetCapturedStdout();
+    EXPECT_EQ(
+        stdout_result,
+        "1 warning\n"
+        "2 warnings"
+    );
+}
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

@@ -78,15 +78,25 @@ if(${papilio_build_lib})
                 FILE_SET papilio_modules TYPE CXX_MODULES FILES
                 ${papilio_modules_src}
         )
+
+        install(
+            TARGETS papilio
+            EXPORT PapilioTargets
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            FILE_SET papilio_modules DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        )
+    else()
+        install(
+            TARGETS papilio
+            EXPORT PapilioTargets
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        )
     endif()
 
-    install(
-        TARGETS papilio
-        EXPORT PapilioTargets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
     install(
         DIRECTORY ${PROJECT_SOURCE_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

@@ -25,6 +25,7 @@ define_papilio_test(test_utf_string)
 
 if(${papilio_build_module})
     define_papilio_test(test_modules)
+    target_compile_options(test_modules PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/wd5050>)
 endif()
 
 add_subdirectory(test_core)

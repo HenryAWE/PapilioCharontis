@@ -19,6 +19,7 @@ define_papilio_example(magic_enum)
 
 if(${papilio_build_module})
     define_papilio_example(import)
+    target_compile_options(import PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/wd5050>)
 endif()
 
 add_subdirectory(playground)
