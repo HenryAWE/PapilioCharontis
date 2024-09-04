@@ -342,12 +342,16 @@ TEST(accessor, variant)
         EXPECT_EQ(PAPILIO_NS format("{[0]}", var), "42");
         EXPECT_THROW((void)PAPILIO_NS format("{[1]}", var), format_error);
         EXPECT_EQ(PAPILIO_NS format("{[-2]}", var), "42");
+        EXPECT_THROW((void)PAPILIO_NS format("{[2]}", var), format_error);
+        EXPECT_THROW((void)PAPILIO_NS format("{[-3]}", var), format_error);
 
         EXPECT_EQ(PAPILIO_NS format(L"{.index}", var), L"0");
         EXPECT_EQ(PAPILIO_NS format(L"{.value:*>4}", var), L"**42");
         EXPECT_EQ(PAPILIO_NS format(L"{[0]}", var), L"42");
         EXPECT_THROW((void)PAPILIO_NS format(L"{[1]}", var), format_error);
         EXPECT_EQ(PAPILIO_NS format(L"{[-2]}", var), L"42");
+        EXPECT_THROW((void)PAPILIO_NS format(L"{[2]}", var), format_error);
+        EXPECT_THROW((void)PAPILIO_NS format(L"{[-3]}", var), format_error);
 
         var.emplace<float>(3.14f);
 

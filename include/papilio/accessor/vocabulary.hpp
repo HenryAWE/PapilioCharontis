@@ -52,10 +52,11 @@ struct accessor<std::variant<Ts...>, Context>
 
         if(i < 0)
             i = static_cast<ssize_t>(var_size) + i;
+        if(i < 0) [[unlikely]]
+            return format_arg_type();
 
         std::size_t idx = static_cast<std::size_t>(i);
-
-        if(idx < 0 || idx >= var_size)
+        if(idx >= var_size) [[unlikely]]
             return format_arg_type();
 
         return [idx, &var]<std::size_t... Is>(std::index_sequence<Is...>)
