@@ -287,6 +287,123 @@ TEST(accessor, vector_bool)
     EXPECT_EQ(PAPILIO_NS format(L"{0[0]} {0[-2]}", vec), L"true false");
 }
 
+TEST(accessor, optional)
+{
+    using namespace papilio;
+
+    {
+        std::optional<int> empty = std::nullopt;
+
+        EXPECT_EQ(PAPILIO_NS format("{.has_value}", empty), "false");
+        EXPECT_EQ(PAPILIO_NS format(L"{.has_value}", empty), L"false");
+
+        EXPECT_THROW(
+            (void)PAPILIO_NS format("{.value}", empty),
+            format_error
+        );
+        EXPECT_THROW(
+            (void)PAPILIO_NS format(L"{.value}", empty),
+            format_error
+        );
+
+        EXPECT_EQ(
+            PAPILIO_NS format("{$ !{0.has_value} : 'empty'}", empty),
+            "empty"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{$ !{0.has_value} : 'empty'}", empty),
+            L"empty"
+        );
+    }
+
+    {
+        std::optional<int> val = 42;
+
+        EXPECT_EQ(PAPILIO_NS format("{.has_value}", val), "true");
+        EXPECT_EQ(PAPILIO_NS format(L"{.has_value}", val), L"true");
+
+        EXPECT_EQ(PAPILIO_NS format("{.value}", val), "42");
+        EXPECT_EQ(PAPILIO_NS format(L"{.value}", val), L"42");
+
+        EXPECT_EQ(PAPILIO_NS format("{.value:*>4}", val), "**42");
+        EXPECT_EQ(PAPILIO_NS format(L"{.value:*>4}", val), L"**42");
+    }
+}
+
+TEST(accessor, variant)
+{
+    using namespace papilio;
+
+    {
+        std::variant<int, float> var = 42;
+
+        EXPECT_EQ(PAPILIO_NS format("{.index}", var), "0");
+        EXPECT_EQ(PAPILIO_NS format("{.value:*>4}", var), "**42");
+        EXPECT_EQ(PAPILIO_NS format("{[0]}", var), "42");
+        EXPECT_THROW((void)PAPILIO_NS format("{[1]}", var), format_error);
+        EXPECT_EQ(PAPILIO_NS format("{[-2]}", var), "42");
+
+        EXPECT_EQ(PAPILIO_NS format(L"{.index}", var), L"0");
+        EXPECT_EQ(PAPILIO_NS format(L"{.value:*>4}", var), L"**42");
+        EXPECT_EQ(PAPILIO_NS format(L"{[0]}", var), L"42");
+        EXPECT_THROW((void)PAPILIO_NS format(L"{[1]}", var), format_error);
+        EXPECT_EQ(PAPILIO_NS format(L"{[-2]}", var), L"42");
+
+        var.emplace<float>(3.14f);
+
+        EXPECT_EQ(PAPILIO_NS format("{.index}", var), "1");
+        EXPECT_THROW((void)PAPILIO_NS format("{[0]}", var), format_error);
+        EXPECT_EQ(PAPILIO_NS format("{[1]}", var), "3.14");
+        EXPECT_EQ(PAPILIO_NS format("{[-1]}", var), "3.14");
+
+        EXPECT_EQ(PAPILIO_NS format(L"{.index}", var), L"1");
+        EXPECT_THROW((void)PAPILIO_NS format(L"{[0]}", var), format_error);
+        EXPECT_EQ(PAPILIO_NS format(L"{[1]}", var), L"3.14");
+        EXPECT_EQ(PAPILIO_NS format(L"{[-1]}", var), L"3.14");
+    }
+}
+
+#ifdef PAPILIO_HAS_LIB_EXPECTED
+
+TEST(accessor, expected)
+{
+    using namespace papilio;
+
+    {
+        std::expected<std::string, int> ex = "hello";
+
+        EXPECT_EQ(PAPILIO_NS format("{.has_value}", ex), "true");
+        EXPECT_EQ(PAPILIO_NS format("{.value}", ex), "hello");
+        EXPECT_EQ(PAPILIO_NS format("{.value:*^9}", ex), "**hello**");
+        EXPECT_THROW((void)PAPILIO_NS format("{.error}", ex), format_error);
+
+        ex = std::unexpected(-1);
+
+        EXPECT_EQ(PAPILIO_NS format("{.has_value}", ex), "false");
+        EXPECT_THROW((void)PAPILIO_NS format("{.value}", ex), format_error);
+        EXPECT_EQ(PAPILIO_NS format("{.error}", ex), "-1");
+        EXPECT_EQ(PAPILIO_NS format("{.error:>5}", ex), "   -1");
+    }
+
+    {
+        std::expected<std::wstring, int> ex = L"hello";
+
+        EXPECT_EQ(PAPILIO_NS format(L"{.has_value}", ex), L"true");
+        EXPECT_EQ(PAPILIO_NS format(L"{.value}", ex), L"hello");
+        EXPECT_EQ(PAPILIO_NS format(L"{.value:*^9}", ex), L"**hello**");
+        EXPECT_THROW((void)PAPILIO_NS format(L"{.error}", ex), format_error);
+
+        ex = std::unexpected(-1);
+
+        EXPECT_EQ(PAPILIO_NS format(L"{.has_value}", ex), L"false");
+        EXPECT_THROW((void)PAPILIO_NS format(L"{.value}", ex), format_error);
+        EXPECT_EQ(PAPILIO_NS format(L"{.error}", ex), L"-1");
+        EXPECT_EQ(PAPILIO_NS format(L"{.error:>5}", ex), L"   -1");
+    }
+}
+
+#endif
+
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);

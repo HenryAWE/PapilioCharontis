@@ -405,6 +405,7 @@ concept attribute_accessible = attribute_accessible_with<T, format_context>;
 #include "detail/suffix.hpp"
 
 #include "accessor/tuple.hpp"
+#include "accessor/vocabulary.hpp"
 #include "accessor/ranges.hpp"
 
 #endif
