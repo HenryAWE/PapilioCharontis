@@ -78,6 +78,9 @@ if(${papilio_build_lib})
                 FILE_SET papilio_modules TYPE CXX_MODULES FILES
                 ${papilio_modules_src}
         )
+        target_compile_options(papilio PRIVATE
+            $<$<CXX_COMPILER_ID:Clang>:-Wno-unsafe-buffer-usage -Wno-padded>
+        )
 
         install(
             TARGETS papilio
