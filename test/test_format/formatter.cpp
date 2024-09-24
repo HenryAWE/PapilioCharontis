@@ -170,6 +170,9 @@ TEST(fundamental_formatter, codepoint)
 
     EXPECT_EQ(PAPILIO_NS format("{:d}", 'a'), "97");
     EXPECT_EQ(PAPILIO_NS format(L"{:d}", L'a'), L"97");
+
+    EXPECT_EQ(PAPILIO_NS format("{:?} {:?}", '\'', '"'), "\\' \"");
+    EXPECT_EQ(PAPILIO_NS format(L"{:?} {:?}", '\'', '"'), L"\\' \"");
 }
 
 TEST(fundamental_formatter, string)
@@ -178,6 +181,9 @@ TEST(fundamental_formatter, string)
 
     EXPECT_EQ(PAPILIO_NS format("{}", "hello"), "hello");
     EXPECT_EQ(PAPILIO_NS format(L"{}", L"hello"), L"hello");
+
+    EXPECT_EQ(PAPILIO_NS format("{:?}", "hello\n\t\r"), "hello\\n\\t\\r");
+    EXPECT_EQ(PAPILIO_NS format(L"{:?}", L"hello\n\t\r"), L"hello\\n\\t\\r");
 
     EXPECT_EQ(PAPILIO_NS format("{:s}", "hello"), "hello");
     EXPECT_EQ(PAPILIO_NS format(L"{:s}", L"hello"), L"hello");

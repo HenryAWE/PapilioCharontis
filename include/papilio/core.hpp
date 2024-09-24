@@ -2064,6 +2064,7 @@ class format_context_traits
 {
 public:
     using char_type = typename Context::char_type;
+    using int_type = std::uint32_t;
     using string_type = std::basic_string<char_type>;
     using string_view_type = std::basic_string_view<char_type>;
     using context_type = Context;
@@ -2073,6 +2074,76 @@ public:
 
     format_context_traits() = delete;
 
+private:
+    static void append_hex_digits(context_type& ctx, int_type val)
+    {
+        format_to(
+            ctx,
+            PAPILIO_TSTRING_VIEW(char_type, "\\u{{{:x}}}"),
+            val
+        );
+    }
+
+    template <bool DoubleQuote, bool SingleQuote>
+    static void append_as_esc_seq(context_type& ctx, int_type val)
+    {
+        switch(val)
+        {
+        default:
+other_ch:
+            append_hex_digits(ctx, val);
+            break;
+
+        case '\t':
+            append(ctx, PAPILIO_TSTRING_VIEW(char_type, "\\t"));
+            break;
+
+        case '\n':
+            append(ctx, PAPILIO_TSTRING_VIEW(char_type, "\\n"));
+            break;
+
+        case '\r':
+            append(ctx, PAPILIO_TSTRING_VIEW(char_type, "\\r"));
+            break;
+
+        case '\\':
+            append(ctx, PAPILIO_TSTRING_VIEW(char_type, "\\\\"));
+            break;
+
+        case '"':
+            if constexpr(DoubleQuote)
+            {
+                append(ctx, PAPILIO_TSTRING_VIEW(char_type, "\\\""));
+                break;
+            }
+            else
+                goto other_ch;
+
+
+        case '\'':
+            if constexpr(SingleQuote)
+            {
+                append(ctx, PAPILIO_TSTRING_VIEW(char_type, "\\'"));
+                break;
+            }
+            else
+                goto other_ch;
+        }
+    }
+
+    template <bool DoubleQuote, bool SingleQuote>
+    static bool has_esc_seq(int_type val) noexcept
+    {
+        return val < ' ' ||
+               val == '\t' ||
+               val == '\n' ||
+               val == '\r' ||
+               val == '\\' ||
+               (DoubleQuote && val == '"') ||
+               (SingleQuote && val == '\'');
+    }
+
+public:
     /**
      * @brief Get the output iterator from the context.
      *
@@ -2145,6 +2216,147 @@ public:
         for(std::size_t i = 0; i < count; ++i)
         {
             advance_to(ctx, cp.append_to_as<char_type>(out(ctx)));
+        }
+    }
+
+    static void append_escaped(context_type& ctx, utf::codepoint cp, std::size_t count = 1)
+    {
+        for(std::size_t i = 0; i < count; ++i)
+        {
+            std::uint32_t ch = static_cast<char32_t>(cp);
+            if(has_esc_seq<false, true>(ch))
+            {
+                append_as_esc_seq<false, true>(ctx, ch);
+            }
+            else
+            {
+                advance_to(ctx, cp.append_to_as<char_type>(out(ctx)));
+            }
+        }
+    }
+
+    static void append_escaped(context_type& ctx, string_view_type str)
+        requires(char8_like<char_type>)
+    {
+        std::size_t i = 0;
+        while(i < str.size())
+        {
+            if(PAPILIO_NS utf::is_leading_byte(str[i]))
+            {
+                std::uint8_t size_bytes = utf::byte_count(str[i]);
+                if(i + size_bytes > str.size())
+                {
+                    for(std::size_t j = i; j < str.size(); ++j)
+                    {
+                        append_hex_digits(ctx, static_cast<std::uint8_t>(str[j]));
+                    }
+                    return;
+                }
+
+                if(has_esc_seq<true, false>(str[i]))
+                {
+                    append_as_esc_seq<true, false>(ctx, str[i]);
+                }
+                else if(std::all_of(
+                            str.begin() + i + 1,
+                            str.begin() + i + size_bytes,
+                            &utf::is_trailing_byte
+                        ))
+                {
+                    append(
+                        ctx,
+                        string_view_type(
+                            str.begin() + i,
+                            str.begin() + i + size_bytes
+                        )
+                    );
+                }
+                else
+                {
+                    auto stop = std::find_if_not(
+                        str.begin() + i + 1,
+                        str.begin() + i + size_bytes,
+                        &utf::is_trailing_byte
+                    );
+
+                    for(auto it = str.begin() + i; it != stop; ++it)
+                    {
+                        append_hex_digits(ctx, static_cast<std::uint8_t>(*it));
+                    }
+
+                    i += std::distance(str.begin() + i, stop);
+                    continue;
+                }
+
+                i += size_bytes;
+            }
+            else
+            {
+                append_hex_digits(ctx, str[i]);
+                ++i;
+            }
+        }
+    }
+
+    static void append_escaped(context_type& ctx, string_view_type str)
+        requires(char16_like<char_type>)
+    {
+        std::size_t i = 0;
+        while(i < str.size())
+        {
+            std::uint16_t ch = str[i];
+            if(has_esc_seq<true, false>(ch))
+            {
+                append_as_esc_seq<true, false>(ctx, ch);
+                ++i;
+            }
+            else if(utf::is_high_surrogate(ch))
+            {
+                if(i + 1 >= str.size())
+                {
+                    append_hex_digits(ctx, ch);
+                    return;
+                }
+                else if(!utf::is_low_surrogate(str[i + 1]))
+                {
+                    append_hex_digits(ctx, ch);
+                }
+                else
+                {
+                    append(ctx, str.begin() + i, str.begin() + i + 2);
+                }
+
+                i += 2;
+            }
+            else
+            {
+                if(utf::is_low_surrogate(ch))
+                {
+                    append_hex_digits(ctx, ch);
+                }
+                else
+                {
+                    append(ctx, ch, 1);
+                }
+
+                ++i;
+            }
+        }
+    }
+
+    static void append_escaped(context_type& ctx, string_view_type str)
+        requires(char32_like<char_type>)
+    {
+        for(char_type ch : str)
+        {
+            if(has_esc_seq<true, false>(ch))
+            {
+                append_as_esc_seq<true, false>(ctx, ch);
+            }
+            else
+            {
+                append(ctx, ch, 1);
+            }
         }
     }
 
@@ -4230,7 +4442,9 @@ private:
             PAPILIO_UNREACHABLE();
         }
 
-        std::size_t size = static_cast<std::size_t>(result.ptr - buf.data());
+        std::size_t size = static_cast<std::size_t>(
+            result.ptr - std::bit_cast<char*>(buf.data())
+        );
 
         if(uppercase)
         {
@@ -4293,7 +4507,7 @@ public:
 
     void set_data(const std_formatter_data& dt)
     {
-        PAPILIO_ASSERT(dt.contains_type(U"s"));
+        PAPILIO_ASSERT(dt.contains_type(U"s?"));
 
         data() = dt;
         data().type = dt.type_or(U's');
@@ -4306,6 +4520,12 @@ public:
     auto format(string_ref_type str, FormatContext& ctx)
     {
         using context_t = format_context_traits<FormatContext>;
+
+        if(data().type == '?')
+        {
+            context_t::append_escaped(ctx, str);
+            return context_t::out(ctx);
+        }
 
         std::size_t used = 0; // Used width
 
@@ -4488,7 +4708,7 @@ public:
         parser_t parser;
 
         typename ParseContext::iterator it{};
-        std::tie(m_data, it) = parser.parse(ctx, U"XxBbodc"sv);
+        std::tie(m_data, it) = parser.parse(ctx, U"XxBbodc?"sv);
 
         ctx.advance_to(it);
         return it;
@@ -4497,7 +4717,13 @@ public:
     template <typename FormatContext>
     auto format(utf::codepoint cp, FormatContext& ctx) const -> typename FormatContext::iterator
     {
-        if(!m_data.contains_type(U'c'))
+        if(m_data.type == '?')
+        {
+            using context_t = format_context_traits<FormatContext>;
+            context_t::append_escaped(ctx, cp, 1);
+            return context_t::out(ctx);
+        }
+        else if(!m_data.contains_type(U'c'))
         {
             int_formatter<std::uint32_t, CharT> fmt;
             fmt.set_data(m_data);
@@ -4591,7 +4817,7 @@ public:
         parser_t parser;
 
         typename ParseContext::iterator it{};
-        std::tie(m_data, it) = parser.parse(ctx, U"s"sv);
+        std::tie(m_data, it) = parser.parse(ctx, U"s?"sv);
 
         ctx.advance_to(it);
         return it;

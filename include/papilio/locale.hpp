@@ -81,6 +81,224 @@ private:
 };
 } // namespace papilio
 
+#ifdef PAPILIO_STDLIB_MSVC_STL
+
+// Add char8_t, char16_t, and char32_t specialization for std::numpunct,
+// in order to avoid C2491 error.
+// See: https://stackoverflow.com/questions/48716223/compile-error-for-char-based-stl-stream-containers-in-visual-studio
+
+namespace std
+{
+template <>
+class numpunct<char8_t> : public locale::facet
+{
+public:
+    using char_type = char8_t;
+    using string_type = u8string;
+
+    static inline locale::id id;
+
+    explicit numpunct(size_t refs = 0)
+        : locale::facet(refs) {}
+
+    char_type decimal_point() const
+    {
+        return do_decimal_point();
+    }
+
+    char_type thousands_sep() const
+    {
+        return do_thousands_sep();
+    }
+
+    string grouping() const
+    {
+        return do_grouping();
+    }
+
+    string_type truename() const
+    {
+        return do_truename();
+    }
+
+    string_type falsename() const
+    {
+        return do_falsename();
+    }
+
+protected:
+    ~numpunct()
+    {
+        // empty
+    }
+
+    virtual char_type do_decimal_point() const
+    {
+        return U'.';
+    }
+
+    virtual char_type do_thousands_sep() const
+    {
+        return U',';
+    }
+
+    virtual string do_grouping() const
+    {
+        return "";
+    }
+
+    virtual string_type do_truename() const
+    {
+        return u8"true";
+    }
+
+    virtual string_type do_falsename() const
+    {
+        return u8"false";
+    }
+};
+
+template <>
+class numpunct<char16_t> : public locale::facet
+{
+public:
+    using char_type = char16_t;
+    using string_type = u16string;
+
+    static inline locale::id id;
+
+    explicit numpunct(size_t refs = 0)
+        : locale::facet(refs) {}
+
+    char_type decimal_point() const
+    {
+        return do_decimal_point();
+    }
+
+    char_type thousands_sep() const
+    {
+        return do_thousands_sep();
+    }
+
+    string grouping() const
+    {
+        return do_grouping();
+    }
+
+    string_type truename() const
+    {
+        return do_truename();
+    }
+
+    string_type falsename() const
+    {
+        return do_falsename();
+    }
+
+protected:
+    ~numpunct()
+    {
+        // empty
+    }
+
+    virtual char_type do_decimal_point() const
+    {
+        return U'.';
+    }
+
+    virtual char_type do_thousands_sep() const
+    {
+        return U',';
+    }
+
+    virtual string do_grouping() const
+    {
+        return "";
+    }
+
+    virtual string_type do_truename() const
+    {
+        return u"true";
+    }
+
+    virtual string_type do_falsename() const
+    {
+        return u"false";
+    }
+};
+
+template <>
+class numpunct<char32_t> : public locale::facet
+{
+public:
+    using char_type = char32_t;
+    using string_type = u32string;
+
+    static inline locale::id id;
+
+    explicit numpunct(size_t refs = 0)
+        : locale::facet(refs) {}
+
+    char_type decimal_point() const
+    {
+        return do_decimal_point();
+    }
+
+    char_type thousands_sep() const
+    {
+        return do_thousands_sep();
+    }
+
+    string grouping() const
+    {
+        return do_grouping();
+    }
+
+    string_type truename() const
+    {
+        return do_truename();
+    }
+
+    string_type falsename() const
+    {
+        return do_falsename();
+    }
+
+protected:
+    ~numpunct()
+    {
+        // empty
+    }
+
+    virtual char_type do_decimal_point() const
+    {
+        return U'.';
+    }
+
+    virtual char_type do_thousands_sep() const
+    {
+        return U',';
+    }
+
+    virtual string do_grouping() const
+    {
+        return "";
+    }
+
+    virtual string_type do_truename() const
+    {
+        return U"true";
+    }
+
+    virtual string_type do_falsename() const
+    {
+        return U"false";
+    }
+};
+} // namespace std
+
+#endif
+
 #include "detail/suffix.hpp"
 
 #endif

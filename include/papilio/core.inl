@@ -191,7 +191,12 @@ void format_context_traits<Context>::vformat_to(
 {
     advance_to(
         ctx,
-        papilio::vformat_to(out(ctx), fmt, args)
+        PAPILIO_NS detail::vformat_to_impl<char_type, iterator, context_type>(
+            ctx.out(),
+            ctx.getloc_ref(),
+            fmt,
+            args
+        )
     );
 }
 } // namespace papilio
