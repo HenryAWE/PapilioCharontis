@@ -2235,6 +2235,11 @@ public:
         }
     }
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wsign-conversion"
+#endif
+
     static void append_escaped(context_type& ctx, string_view_type str)
         requires(char8_like<char_type>)
     {
@@ -2304,7 +2309,7 @@ public:
         std::size_t i = 0;
         while(i < str.size())
         {
-            std::uint16_t ch = str[i];
+            std::uint16_t ch = static_cast<std::uint16_t>(str[i]);
             if(has_esc_seq<true, false>(ch))
             {
                 append_as_esc_seq<true, false>(ctx, ch);
@@ -2349,9 +2354,9 @@ public:
     {
         for(char_type ch : str)
         {
-            if(has_esc_seq<true, false>(ch))
+            if(has_esc_seq<true, false>(static_cast<std::uint32_t>(ch)))
             {
-                append_as_esc_seq<true, false>(ctx, ch);
+                append_as_esc_seq<true, false>(ctx, static_cast<std::uint32_t>(ch));
             }
             else
             {
@@ -2359,6 +2364,10 @@ public:
             }
         }
     }
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
     template <typename... Args>
     static auto make_format_args(Args&&... args)

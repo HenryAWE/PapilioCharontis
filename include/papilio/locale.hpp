@@ -87,6 +87,11 @@ private:
 // in order to avoid C2491 error.
 // See: https://stackoverflow.com/questions/48716223/compile-error-for-char-based-stl-stream-containers-in-visual-studio
 
+#    ifdef PAPILIO_COMPILER_CLANG
+#        pragma clang diagnostic push
+#        pragma clang diagnostic ignored "-Wglobal-constructors"
+#    endif
+
 namespace std
 {
 template <>
@@ -296,6 +301,10 @@ protected:
     }
 };
 } // namespace std
+
+#    ifdef PAPILIO_COMPILER_CLANG
+#        pragma clang diagnostic pop
+#    endif
 
 #endif
 
