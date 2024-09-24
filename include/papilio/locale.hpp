@@ -81,15 +81,19 @@ private:
 };
 } // namespace papilio
 
-#ifdef PAPILIO_STDLIB_MSVC_STL
-
-// Add char8_t, char16_t, and char32_t specialization for std::numpunct,
-// in order to avoid C2491 error.
+#if defined(PAPILIO_STDLIB_MSVC_STL) || defined(PAPILIO_STDLIB_LIBCPP)
+// Add explicit char8_t, char16_t, and char32_t specializations for std::numpunct,
+// in order to avoid C2491 error with MSVC STL and undefined symbols with libc++.
 // See: https://stackoverflow.com/questions/48716223/compile-error-for-char-based-stl-stream-containers-in-visual-studio
+#    define PAPILIO_WORKAROUND_STD_NUMPUNCT 1
+#endif
+
+#ifdef PAPILIO_WORKAROUND_STD_NUMPUNCT
 
 #    ifdef PAPILIO_COMPILER_CLANG
 #        pragma clang diagnostic push
 #        pragma clang diagnostic ignored "-Wglobal-constructors"
+#        pragma clang diagnostic ignored "-Wweak-vtables"
 #    endif
 
 namespace std
