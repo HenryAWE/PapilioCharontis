@@ -98,6 +98,7 @@ TEST(optional_unique_ptr, compatibility)
 
         static_assert(std::is_same_v<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
 
+        ASSERT_TRUE(opt_int.has_ownership());
         EXPECT_EQ(*opt_int, 42);
     }
 
@@ -106,6 +107,7 @@ TEST(optional_unique_ptr, compatibility)
 
         static_assert(std::is_same_v<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
 
+        ASSERT_TRUE(opt_int.has_ownership());
         EXPECT_EQ(*opt_int, 42);
     }
 

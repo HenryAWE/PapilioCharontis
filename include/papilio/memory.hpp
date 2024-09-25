@@ -195,7 +195,7 @@ public:
     optional_unique_ptr(std::unique_ptr<T, D>&& ptr) noexcept
         : m_ptr(ptr.release())
     {
-        m_has_ownership = !m_ptr;
+        m_has_ownership = m_ptr;
     }
 
     ~optional_unique_ptr()

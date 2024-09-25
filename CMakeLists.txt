@@ -45,6 +45,13 @@ if(${papilio_build_lib})
         endif()
     endif()
 
+    option(papilio_asan "enable address sanitizer" OFF)
+    mark_as_advanced(papilio_asan)
+    if(${papilio_asan})
+        add_compile_options(-fno-omit-frame-pointer -fsanitize=address)
+        add_link_options(-fno-omit-frame-pointer -fsanitize=address)
+    endif()
+
     set(glob_expr "src/*.cpp" "include/*.hpp" "include/*.inl")
     file(GLOB_RECURSE papilio_src ${glob_expr})
 
