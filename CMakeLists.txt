@@ -52,6 +52,13 @@ if(${papilio_build_lib})
         add_link_options(-fno-omit-frame-pointer -fsanitize=address)
     endif()
 
+    option(papilio_usan "enable undefined behavior sanitizer" OFF)
+    mark_as_advanced(papilio_asan)
+    if(${papilio_usan})
+        add_compile_options(-fsanitize=undefined)
+        add_link_options(-fsanitize=undefined)
+    endif()
+
     set(glob_expr "src/*.cpp" "include/*.hpp" "include/*.inl")
     file(GLOB_RECURSE papilio_src ${glob_expr})
 
