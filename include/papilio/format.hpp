@@ -171,7 +171,7 @@ namespace detail
         using iter_t = detail::format_to_n_wrapper<OutputIt, CharT>;
         using context_type = basic_format_context<iter_t, CharT>;
 
-        return PAPILIO_NS vformat_to(
+        return PAPILIO_NS detail::vformat_to_impl<CharT, iter_t, context_type>(
                    iter_t(out, n),
                    loc,
                    fmt,

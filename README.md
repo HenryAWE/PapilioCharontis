@@ -112,6 +112,15 @@ papilio::format("Length: {0.length}; Size: {0.size}", "你好，世界");
 ```
 NOTE: In order to run the above code, you need to make sure your code is saved in UTF-8 encoding and the correct compiler flags is set (like `/utf-8` of MSVC). You can use the `u8` prefix to force the string to use UTF-8 encoding.
 
+### Formatting Support for `wchar_t`, `char8_t`, `char16_t`, and `char32_t`
+```c++
+papilio::format(L"{}", true);  // Returns L"true"
+papilio::format(u8"{}", true); // Returns u8"true"
+papilio::format(u"{}", true);  // Returns u"true"
+papilio::format(U"{}", true);  // Returns U"true"
+```
+NOTE: Support for `char8_t`, `char16_t`, and `char32_t` added by newer C++ standard needs to include `<papilio/xchar.hpp>`.
+
 ### C++ 20 Modules Support
 ```c++
 import papilio;

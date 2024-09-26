@@ -112,6 +112,15 @@ papilio::format("长度：{0.length}；大小：{0.size}", "你好，世界");
 ```
 注意：要运行上文的代码，需要保证代码使用了 UTF-8 编码保存，并且设置了正确的编译器选项（如 MSVC 的 `/utf-8` 选项）。你可以使用 `u8` 前缀以强制字符串使用 UTF-8 编码。
 
+### 对于 `wchar_t`、`char8_t`、`char16_t` 与 `char32_t` 的格式化支持
+```c++
+papilio::format(L"{}", true);  // 返回 L"true"
+papilio::format(u8"{}", true); // 返回 u8"true"
+papilio::format(u"{}", true);  // 返回 u"true"
+papilio::format(U"{}", true);  // 返回 U"true"
+```
+注意：C++ 新标准添加的 `char8_t`、`char16_t`、`char32_t` 的支持需要包含头文件 `<papilio/xchar.hpp>`。
+
 ### C++ 20 模块（Modules）支持
 ```c++
 import papilio;
