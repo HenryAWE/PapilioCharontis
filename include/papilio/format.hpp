@@ -16,6 +16,9 @@
 
 namespace papilio
 {
+/// @defgroup Format Format APIs
+/// @{
+
 PAPILIO_EXPORT
 [[nodiscard]]
 std::string vformat(std::string_view fmt, const format_args_ref& args);
@@ -437,7 +440,10 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
     );
 }
 
-// ^^^ format APIs ^^^ / vvv formatters vvv
+/// @}
+
+/// @addtogroup Formatter
+/// @{
 
 PAPILIO_EXPORT template <typename R, typename CharT>
 class formatter<joiner<R, CharT>, CharT>
@@ -501,6 +507,8 @@ private:
         context_t::append(fmt_ctx, j.separator());
     }
 };
+
+/// @}
 } // namespace papilio
 
 #include "detail/suffix.hpp"

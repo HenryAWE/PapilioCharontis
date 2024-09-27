@@ -1,3 +1,11 @@
+/**
+ * @file xchar.hpp
+ * @author HenryAWE
+ * @brief Format support for external character types.
+ *
+ * @note This header will not be included by the main header `<papilio/papilio.hpp>`.
+ */
+
 #ifndef PAPILIO_XCHAR_HPP
 #define PAPILIO_XCHAR_HPP
 
@@ -9,6 +17,10 @@
 
 namespace papilio
 {
+/// @defgroup XChar Format support for external character types
+/// @brief Support for `char8_t`, `char16_t`, and `char32_t`.
+/// @{
+
 PAPILIO_EXPORT template <typename... Args>
 using u8format_string = basic_format_string<char8_t, std::type_identity_t<Args>...>;
 PAPILIO_EXPORT using u8format_context = basic_format_context<format_iterator_for<char8_t>, char8_t>;
@@ -300,6 +312,8 @@ std::size_t formatted_size(
         std::forward<Args>(args)...
     );
 }
+
+// @}
 } // namespace papilio
 
 #include "detail/suffix.hpp"

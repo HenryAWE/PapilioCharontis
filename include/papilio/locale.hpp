@@ -1,7 +1,7 @@
 /**
  * @file locale.hpp
  * @author HenryAWE
- * @brief Locale support.
+ * @brief Locale support and workaround.
  */
 
 #ifndef PAPILIO_LOCALE_HPP
@@ -46,9 +46,6 @@ public:
 
     /**
      * @brief Check if the reference is empty.
-     *
-     * @return true If the reference is empty.
-     * @return false If the reference is not empty.
      */
     [[nodiscard]]
     bool empty() const noexcept

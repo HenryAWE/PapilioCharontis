@@ -1,3 +1,9 @@
+/**
+ * @file compat.hpp
+ * @author HenryAWE
+ * @brief Implement post-C++20 standard library functions for compatibility
+ */
+
 #ifndef PAPILIO_DETAIL_COMPAT_HPP
 #define PAPILIO_DETAIL_COMPAT_HPP
 
@@ -8,7 +14,15 @@
 
 namespace papilio
 {
-// Implement unreachable() of C++ 23 for compatibility.
+/// @defgroup Compatibility
+/// @brief Implement post-C++20 library functions for compatibility
+/// @{
+
+/**
+ * @brief C++23 `std::unreachable()`
+ *
+ * The marco `PAPILIO_HAS_UNREACHABLE` contains how this function is implemented.
+ */
 PAPILIO_EXPORT [[noreturn]]
 inline void unreachable()
 {
@@ -27,12 +41,15 @@ inline void unreachable()
 #endif
 }
 
-// forward_like<T, U> of C++ 23
-// Use implementation from cppreference.com
+/**
+ * @brief C++23 `forward_like()`
+ */
 PAPILIO_EXPORT template <class T, class U>
 [[nodiscard]]
 constexpr auto&& forward_like(U&& x) noexcept
 {
+    // Use implementation from cppreference.com
+
     constexpr bool is_adding_const = std::is_const_v<std::remove_reference_t<T>>;
     if constexpr(std::is_lvalue_reference_v<T&&>)
     {
@@ -50,13 +67,17 @@ constexpr auto&& forward_like(U&& x) noexcept
     }
 }
 
-// to_underlying<Enum> of C++ 23
+/**
+ * @brief C++23 `std::to_underlying()`
+ */
 PAPILIO_EXPORT template <typename Enum>
 [[nodiscard]]
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
 {
     return static_cast<std::underlying_type_t<Enum>>(e);
 }
+
+/// @}
 } // namespace papilio
 
 #include "suffix.hpp"

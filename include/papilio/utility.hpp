@@ -24,6 +24,9 @@
 
 namespace papilio
 {
+/// @defgroup Utility Utilities
+/// @{
+
 PAPILIO_EXPORT template <typename T>
 concept char_like =
     std::is_same_v<std::remove_cv_t<T>, char> ||
@@ -63,7 +66,7 @@ concept pointer_like = requires(T ptr) { static_cast<bool>(ptr); } &&
                        (requires(T ptr) { *ptr; ptr.operator->(); } || requires(T ptr, std::size_t i) { ptr[i]; });
 
 /**
- * @brief Get the raw pointer from a pointer-like object, e.g. shared_ptr.
+ * @brief Get the raw pointer from a pointer-like object, e.g., `std::shared_ptr`.
  *
  * @param p The pointer-like object
  * @return The raw pointer
@@ -137,7 +140,9 @@ PAPILIO_EXPORT constexpr reverse_index_t reverse_index = {};
 
 // ^^^ tags ^^^ / vvv auxiliary types vvv
 
-// Signed size type
+/**
+ * @brief Signed size type
+ */
 PAPILIO_EXPORT using ssize_t = std::make_signed_t<std::size_t>;
 
 // [begin, end) range
@@ -658,6 +663,12 @@ namespace detail
 #endif
 } // namespace detail
 
+/**
+ * @brief Compressed pair optimized for empty types.
+ *
+ * @tparam T1 First type
+ * @tparam T2 Second type
+ */
 PAPILIO_EXPORT template <typename T1, typename T2>
 class compressed_pair :
     public detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>
@@ -723,6 +734,9 @@ public:
     // The specializations of tuple_element and tuple_size are at the end of this file.
 };
 
+/// @defgroup IterStream I/O stream wrapper for input/output iterator
+/// @{
+
 namespace detail
 {
     template <bool EnableBuf, typename CharT>
@@ -745,7 +759,12 @@ namespace detail
     };
 } // namespace detail
 
-// output iterator stream buffer
+/**
+ * @brief Stream buffer wrapper for input/output iterator.
+ *
+ * @tparam CharT Character type
+ * @tparam Iterator Input or output iterator
+ */
 PAPILIO_EXPORT template <
     typename CharT,
     std::input_or_output_iterator Iterator>
@@ -856,6 +875,19 @@ using oiterstream = basic_oiterstream<char, Iterator>;
 PAPILIO_EXPORT template <std::output_iterator<wchar_t> Iterator>
 using woiterstream = basic_oiterstream<wchar_t, Iterator>;
 
+/// @}
+
+/// @defgroup MagicEnum Utilities for enumerations
+/// @brief If the macro `PAPILIO_HAS_ENUM_NAME` is defined, it means current compiler has sufficient extension to
+///        obtain the string representation of static enum value.
+///
+/// These functions have limitations due to C++ lacking of reflection.
+/// The content of macro `PAPILIO_HAS_ENUM_NAME` is how the string representation is obtained.
+/// - For MSVC, it is `__FUNCSIG__`.
+/// - For GCC / Clang, it is `__PRETTY_FUNCTION__` of corresponding format.
+/// - Otherwise, this macro is not defined, which means current compiler does not have required extensions.
+/// @{
+
 namespace detail
 {
     template <auto Value>
@@ -903,6 +935,15 @@ namespace detail
 #    endif
 #endif
 
+/**
+ * @brief Convert an enum value to string at compile time.
+ *
+ * @tparam Value The enum value
+ *
+ * @warning This function has some limitations.
+ * - For multiple enum with same value, the result will be one of them, depending on the compiler.
+ * - For invalid enum value, the result is undefined.
+ */
 PAPILIO_EXPORT template <auto Value>
 constexpr std::string_view static_enum_name()
 {
@@ -919,6 +960,16 @@ constexpr std::string_view static_enum_name()
     return name;
 }
 
+/**
+ * @brief Convert an enum value to string at runtime.
+ *
+ * @param value The enum value.
+ *
+ * @warning This function has some limitations.
+ * - It can only convert valid enum values ranging from -128 to 128.
+ *
+ * @sa static_enum_name
+ */
 PAPILIO_EXPORT template <typename T>
 requires std::is_enum_v<T>
 constexpr std::string_view enum_name(T value) noexcept
@@ -937,6 +988,8 @@ constexpr std::string_view enum_name(T value) noexcept
 #    pragma clang diagnostic pop
 #endif
 
+/// @}
+
 namespace detail
 {
     template <std::size_t Idx, typename Tuple, typename Func>
@@ -946,7 +999,25 @@ namespace detail
     }
 } // namespace detail
 
-template <tuple_like Tuple, typename Func>
+/**
+ * @brief `for_each` for tuple-like types.
+ *
+ * @param tp Tuple-like object
+ * @param func Function to apply on each element
+ *
+ * @code{.cpp}
+ * std::tuple<char, int, float> tp{'c', 1, 1.1f};
+ * std::stringstream ss;
+ *
+ * tuple_for_each(
+ *     tp,
+ *     [&](auto&& v)
+ *     { ss << v << " "; }
+ * );
+ * // ss.str() == "c 1 1.1 "
+ * @endcode
+ */
+PAPILIO_EXPORT template <tuple_like Tuple, typename Func>
 constexpr void tuple_for_each(Tuple&& tp, Func&& func)
 {
     constexpr std::size_t tp_size = std::tuple_size_v<std::remove_cvref_t<Tuple>>;
@@ -970,6 +1041,9 @@ namespace detail
             PAPILIO_TSTRING_VIEW(CharT, ", ");
     };
 } // namespace detail
+
+/// @defgroup Join String joiner
+/// @{
 
 PAPILIO_EXPORT template <std::ranges::range R, typename CharT = char>
 class joiner : public detail::joiner_base<CharT>
@@ -1044,6 +1118,10 @@ auto join(R& rng, const CharT* sep)
 {
     return joiner<R, CharT>(rng, sep);
 }
+
+/// @}
+
+/// @}
 } // namespace papilio
 
 namespace std

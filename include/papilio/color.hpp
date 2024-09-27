@@ -15,6 +15,10 @@
 
 namespace papilio
 {
+/// @defgroup TextStyle Styled terminal output
+/// @ingroup PrintTerminal
+/// @{
+
 PAPILIO_EXPORT class text_style;
 
 /**
@@ -265,6 +269,8 @@ auto styled(text_style st, const T& val)
 {
     return detail::styled_arg<std::remove_const_t<T>>(st, val);
 }
+
+/// @}
 } // namespace papilio
 
 #include "detail/suffix.hpp"

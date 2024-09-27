@@ -150,6 +150,20 @@ if(${papilio_build_doc})
         message(FATAL_ERROR "Doxygen 1.9.2 or later is required")
     endif()
 
+    find_package(Git QUIET)
+    if(${Git_FOUND})
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+            OUTPUT_VARIABLE papilio_git_hash
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        )
+
+        set(papilio_version_suffix "-${papilio_git_hash}")
+        unset(papilio_git_hash)
+    endif()
+
     configure_file(script/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
     add_custom_target(

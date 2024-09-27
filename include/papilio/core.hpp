@@ -1932,6 +1932,11 @@ private:
     }
 };
 
+/// @defgroup FormatContext Format context
+/// @brief APIs for implementing formatting output.
+/// @ingroup Format
+/// @{
+
 namespace detail
 {
     enum class formatter_tag
@@ -1998,6 +2003,8 @@ namespace detail
 /**
  * @brief Format context
  *
+ * @sa format_context_traits
+ *
  * @tparam OutputIt Output iterator
  * @tparam CharT Char type
  */
@@ -2058,6 +2065,12 @@ private:
 
 /**
  * @brief Traits for the format context.
+ *
+ * It is useful to implement formatters for user-defined types.
+ *
+ * @sa basic_format_context
+ *
+ * @tparam Context Context type
  */
 PAPILIO_EXPORT template <typename Context>
 class format_context_traits
@@ -2147,7 +2160,7 @@ public:
     /**
      * @brief Get the output iterator from the context.
      *
-     * @param ctx The context
+     * @param ctx Format context
      * @return iterator The output iterator
      */
     [[nodiscard]]
@@ -2156,6 +2169,12 @@ public:
         return ctx.out();
     }
 
+    /**
+     * @brief Advance the output iterator to a new position
+     *
+     * @param ctx Format context
+     * @param it New iterator position
+     */
     static void advance_to(context_type& ctx, iterator it)
     {
         ctx.advance_to(std::move(it));
@@ -2167,12 +2186,25 @@ public:
         return ctx.get_args();
     }
 
+    /**
+     * @brief Append content from an iterator range `[begin, end)`.
+     *
+     * @param ctx Format context
+     * @param begin Begin iterator
+     * @param end End iterator
+     */
     template <typename InputIt>
     static void append(context_type& ctx, InputIt begin, InputIt end)
     {
         advance_to(ctx, std::copy(begin, end, out(ctx)));
     }
 
+    /**
+     * @brief Append content from a string.
+     *
+     * @param ctx Format context
+     * @param str Content
+     */
     static void append(context_type& ctx, string_view_type str)
     {
         append(ctx, str.begin(), str.end());
@@ -2186,6 +2218,8 @@ public:
      * @param count Number of times to append the character
      *
      * @note  This function will automatically convert the encoding if necessary.
+     *
+     * @sa utf::codepoint
      */
     template <char_like Char>
     static void append(context_type& ctx, Char ch, std::size_t count = 1)
@@ -2219,6 +2253,19 @@ public:
         }
     }
 
+    /**
+     * @brief Append a Unicode code point to the format context, using escaped sequences if possible.
+     *
+     * @param ctx Format context
+     * @param cp The code point
+     * @param count Number of times to append the code point
+     *
+     * @code{.cpp}
+     * append_escaped(ctx, U'\''); // Appends ['\\', '\'']
+     * append_escaped(ctx, U' ');  // Appends [' ']
+     * append_escaped(ctx, U'"');  // Appends ['"']
+     * @endcode
+     */
     static void append_escaped(context_type& ctx, utf::codepoint cp, std::size_t count = 1)
     {
         for(std::size_t i = 0; i < count; ++i)
@@ -2240,7 +2287,8 @@ public:
 #    pragma clang diagnostic ignored "-Wsign-conversion"
 #endif
 
-    static void append_escaped(context_type& ctx, string_view_type str)
+private:
+    static void append_escaped_impl(context_type& ctx, string_view_type str)
         requires(char8_like<char_type>)
     {
         std::size_t i = 0;
@@ -2303,7 +2351,7 @@ public:
         }
     }
 
-    static void append_escaped(context_type& ctx, string_view_type str)
+    static void append_escaped_impl(context_type& ctx, string_view_type str)
         requires(char16_like<char_type>)
     {
         std::size_t i = 0;
@@ -2349,7 +2397,7 @@ public:
         }
     }
 
-    static void append_escaped(context_type& ctx, string_view_type str)
+    static void append_escaped_impl(context_type& ctx, string_view_type str)
         requires(char32_like<char_type>)
     {
         for(char_type ch : str)
@@ -2365,10 +2413,42 @@ public:
         }
     }
 
+public:
+    /**
+     * @brief Append content from a string, using escaped sequences if possible.
+     *
+     * @param ctx Format context
+     * @param str Content
+     *
+     * @code{.cpp}
+     * append_escaped(ctx, "hello\t");  // Appends "hello\\t"
+     * // Invalid UTF-8
+     * append_escaped(ctx, "\xc3\x28"); // Appends "\u{c3}("
+     * @endcode
+     */
+    static void append_escaped(context_type& ctx, string_view_type str)
+    {
+        append_escaped_impl(ctx, str);
+    }
+
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
 
+    /**
+     * @brief Pack format arguments into a `format_args`-like object.
+     *
+     * @param args Format arguments
+     * @return @ref static_format_args "Packed arguments"
+     *
+     * @note `format_args`-like objects cannot be nested, i.e., there cannot be
+     *       another `format_args`-like object in the arguments. This is to prevent accidental
+     *       nesting when using format arguments.
+     *
+     * @sa static_format_args
+     * @sa basic_dynamic_format_args
+     * @sa basic_format_args_ref
+     */
     template <typename... Args>
     static auto make_format_args(Args&&... args)
     {
@@ -2406,6 +2486,11 @@ public:
     }
 };
 
+/// @}
+
+/// @addtogroup Format
+///@{
+
 PAPILIO_EXPORT template <typename Context = format_context, typename... Args>
 auto make_format_args(Args&&... args)
 {
@@ -2419,6 +2504,13 @@ auto make_wformat_args(Args&&... args)
     using context_t = format_context_traits<wformat_context>;
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
+
+/// @}
+
+/// @defgroup Parse
+/// @brief APIs for parsing the format string
+/// @ingroup Format
+/// @{
 
 /**
  * @brief Format parse context
@@ -2568,6 +2660,11 @@ namespace detail
     };
 } // namespace detail
 
+/// @}
+
+/// @defgroup Formatter Formatters for various types
+/// @{
+
 /**
  * @brief Traits for formatters
  */
@@ -2637,6 +2734,8 @@ struct formatter_traits
     }
 };
 
+/// @}
+
 namespace detail
 {
     template <
@@ -2689,20 +2788,41 @@ concept formattable = formattable_with<
     std::remove_const_t<T>,
     basic_format_context<format_iterator_for<CharT>, CharT>>;
 
+/// @defgroup Script The embedded script
+/// @ingroup Format
+/// @{
+
+/**
+ * @brief Base class containing script interpreter APIs that are not related to a specific character type.
+ */
 PAPILIO_EXPORT class script_base
 {
 public:
     static constexpr char32_t script_start = U'$';
     static constexpr char32_t condition_end = U':';
 
+    /**
+     * @brief Script error.
+     *
+     * @sa script_error_code
+     */
     class error : public format_error
     {
     public:
         error(const error&) = default;
+
+        /**
+         * @brief Construct a script error object from an error code.
+         *
+         * @param ec The error code
+         */
         explicit error(script_error_code ec);
 
         ~error();
 
+        /**
+         * @brief Get the error code.
+         */
         [[nodiscard]]
         script_error_code error_code() const noexcept
         {
@@ -2713,8 +2833,17 @@ public:
         script_error_code m_ec;
     };
 
+    /**
+     * @brief Construct a script error object from an error code.
+     *
+     * @param ec The error code
+     *
+     * @sa script_error_code
+     */
     [[nodiscard]]
     static error make_error(script_error_code ec);
+
+#ifndef PAPILIO_DOXYGEN // Don't generate documentation for internal APIs
 
 protected:
     [[noreturn]]
@@ -2748,6 +2877,8 @@ protected:
     static char32_t get_esc_ch(char32_t ch) noexcept;
 
     static float chars_to_float(const char* start, const char* stop);
+
+#endif
 };
 
 PAPILIO_EXPORT template <typename CharT, bool Debug>
@@ -2765,6 +2896,9 @@ public:
 
     using iterator = typename string_ref_type::const_iterator;
 
+    /**
+     * @brief Check if the interpreter is in debug mode.
+     */
     [[nodiscard]]
     static constexpr bool debug() noexcept
     {
@@ -2804,6 +2938,8 @@ public:
         else
             return make_error(ec);
     }
+
+#ifndef PAPILIO_DOXYGEN // Don't generate documentation for internal APIs
 
 protected:
     using my_base::throw_error;
@@ -3121,6 +3257,8 @@ protected:
 
         throw_error(script_error_code::invalid_index, start);
     }
+
+#endif
 };
 
 /**
@@ -3659,6 +3797,11 @@ private:
     }
 };
 
+/// @}
+
+/// @addtogroup Parse
+/// @{
+
 namespace detail
 {
     class fmt_parser_base
@@ -4030,6 +4173,11 @@ parse_end:
     }
 };
 
+/// @}
+
+/// @addtogroup Formatter
+/// @{
+
 class std_formatter_base
 {
 private:
@@ -4046,7 +4194,12 @@ protected:
         return m_data;
     }
 
-    // Returns the left and right size for filling
+    /**
+     * @brief Returns the left and right size for filling
+     *
+     * @param used Used length
+     * @return std::pair<std::size_t, std::size_t> Left and right size to fill
+     */
     std::pair<std::size_t, std::size_t> fill_size(std::size_t used) const noexcept
     {
         if(m_data.width <= used)
@@ -4083,11 +4236,35 @@ protected:
     }
 };
 
+/// @defgroup DigitMap Digit maps for implementing formatters
+/// @{
+
 inline constexpr char digit_map_lower[16] =
     {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 inline constexpr char digit_map_upper[16] =
     {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
+/// @}
+
+/// @defgroup BaseFormatter Formatter bases
+/// @brief Base classes for formatters, providing formatting support for common types.
+/// @{
+
+/**
+ * @brief Base formatter for integral types.
+ *
+ * @tparam T Integral type except the character types
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `b`,`B`,`x`,`X`,`o`,`d`.
+ * - `b`: Binary format.
+ * - `B`: Same as `b`, but the base prefix is `0B`.
+ * - `x`: Hexadecimal format.
+ * - `X`: Same as `x`, but the base prefix is `0X`.
+ * - `o`: Octal format.
+ * - `d`: Decimal format.
+ * - none: Same as `d`.
+ */
 template <std::integral T, typename CharT>
 requires(!char_like<T>)
 class int_formatter : public std_formatter_base
@@ -4107,7 +4284,8 @@ public:
     }
 
     template <typename FormatContext>
-    auto format(T val, FormatContext& ctx) const -> typename FormatContext::iterator
+    auto format(T val, FormatContext& ctx) const
+        -> typename FormatContext::iterator
     {
         CharT buf[sizeof(T) * 8];
         std::size_t buf_size = 0;
@@ -4282,6 +4460,25 @@ private:
     }
 };
 
+/**
+ * @brief Base formatter for floating points.
+ *
+ * @tparam T Floating point type
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `f`, `F`, `g`, `G`, `e`, `E`, `a`, and `A`.
+ *
+ * - `f`, `F`: Fixed format. The precision will be 6 if not specified.
+ * - `g`, `G`: General format. The precision will be 6 if not specified.
+ * - `e`, `E`: Scientific format. The precision will be 6 if not specified.
+ * - `a`, `A`: Hexadecimal format.
+ * - none: Same as the general (`g`) format.
+ *
+ * The uppercase types will replace all letters with their uppercase version.
+ * For example, `E` format will use the letter E to indicate the exponent.
+ *
+ * The infinity and NaN will be formatted as `inf` and `nan`, respectively.
+ */
 template <std::floating_point T, typename CharT>
 class float_formatter : public std_formatter_base
 {
@@ -4298,6 +4495,7 @@ public:
 
     template <typename FormatContext>
     auto format(T val, FormatContext& ctx) const
+        -> typename FormatContext::iterator
     {
         using context_t = format_context_traits<FormatContext>;
 
@@ -4480,12 +4678,22 @@ private:
     }
 };
 
+/**
+ * @brief Base formatter for Unicode code point.
+ *
+ * @sa utf::codepoint
+ *
+ * Accepted format types are: none, `c`, `?`.
+ * - `c`: Output as a character.
+ * - none: Same as `c`.
+ * - `?`: Debug output, using escaped sequences if possible.
+ */
 class codepoint_formatter : public std_formatter_base
 {
 public:
     void set_data(const std_formatter_data& dt)
     {
-        PAPILIO_ASSERT(dt.contains_type(U"c"));
+        PAPILIO_ASSERT(dt.contains_type(U"c?"));
 
         data() = dt;
         data().type = dt.type_or(U'c');
@@ -4497,6 +4705,12 @@ public:
     {
         using context_t = format_context_traits<FormatContext>;
 
+        if(data().type == U'?')
+        {
+            context_t::append_escaped(ctx, cp, 1);
+            return context_t::out(ctx);
+        }
+
         auto [left, right] = fill_size(cp.estimate_width());
 
         fill(ctx, left);
@@ -4507,6 +4721,18 @@ public:
     }
 };
 
+/**
+ * @brief Base formatter for Unicode string.
+ *
+ * @sa utf::basic_string_ref
+ *
+ * @tparam CharT Charater type
+ *
+ * Accepted format types are: none, `s`, `?`.
+ * - `s`: Copies the string to the output.
+ * - none: Same as `s`.
+ * - `?`: Debug output, using escaped sequences if possible.
+ */
 template <typename CharT>
 class string_formatter : public std_formatter_base
 {
@@ -4527,6 +4753,7 @@ public:
 
     template <typename FormatContext>
     auto format(string_ref_type str, FormatContext& ctx)
+        -> typename FormatContext::iterator
     {
         using context_t = format_context_traits<FormatContext>;
 
@@ -4568,13 +4795,28 @@ public:
     }
 };
 
+/**
+ * @brief Base formatter for enumerations.
+ *
+ * @tparam Enum The enumeration type
+ * @tparam CharT Character type
+ *
+ * Accepted format types: none, `s`, `b`, `B`, `x`, `X`, `o`, `d`.
+ * - none, `s`: Format as string. @sa string_formatter
+ * - `b`, `B`, `x`, `X`, `o`, `d`: Format as integer. @sa int_formatter
+ *
+ * @warning The "enum-to-string" implementation has some limitations due to C++ lacking of reflection.
+ *          It will fallback to integer representation on this occasion.
+ * @sa enum_name
+ */
 template <typename Enum, typename CharT = char>
 requires std::is_enum_v<Enum>
 class enum_formatter
 {
 public:
     template <typename ParseContext>
-    auto parse(ParseContext& ctx) -> typename ParseContext::iterator
+    auto parse(ParseContext& ctx)
+        -> typename ParseContext::iterator
     {
         std_formatter_parser<ParseContext, true> parser;
 
@@ -4582,13 +4824,26 @@ public:
 
         m_data = result;
 
+#ifndef PAPILIO_HAS_ENUM_NAME
+        // No "enum-to-string" support, fallback to integer representation
+        m_data.type = m_data.type_or(U'd');
+#endif
+
         return it;
     }
 
     template <typename FormatContext>
-    auto format(Enum e, FormatContext& ctx) const -> typename FormatContext::iterator
+    auto format(Enum e, FormatContext& ctx) const
+        -> typename FormatContext::iterator
     {
-        if(m_data.type_or(U's') == U's')
+        if(m_data.type_or(U's') != U's')
+        {
+            int_formatter<std::underlying_type_t<Enum>, CharT> fmt;
+            fmt.set_data(m_data);
+            return fmt.format(PAPILIO_NS to_underlying(e), ctx);
+        }
+#ifdef PAPILIO_HAS_ENUM_NAME
+        else
         {
             string_formatter<CharT> fmt;
             fmt.set_data(m_data);
@@ -4614,18 +4869,29 @@ public:
                 );
             }
         }
-        else
-        {
-            int_formatter<std::underlying_type_t<Enum>, CharT> fmt;
-            fmt.set_data(m_data);
-            return fmt.format(PAPILIO_NS to_underlying(e), ctx);
-        }
+#else
+        PAPILIO_UNREACHABLE();
+#endif
     }
 
 private:
     std_formatter_data m_data{.type = U's'};
 };
 
+/// @}
+
+/**
+ * @brief Formatter for integral types.
+ *
+ * @tparam T Integral type except Boolean type and character types
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `b`, `B`, `x`, `X`, `o`, `d`, `c`.
+ * -  none, `b`, `B`, `x`, `X`, `o`, `d`: Format as integer. @sa int_formatter
+ * - `c`: Format as a Unicode code point. @sa codepoint_formatter
+ *
+ * @throw format_error If the integer value is to big for a Unicode code point for `c` type.
+ */
 PAPILIO_EXPORT template <std::integral T, typename CharT>
 requires(!std::is_same_v<T, bool> && !char_like<T>)
 class formatter<T, CharT>
@@ -4671,6 +4937,15 @@ private:
     std_formatter_data m_data;
 };
 
+/**
+ * @brief Formatter for floating points.
+ *
+ * @tparam T Floating point type
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `f`, `F`, `g`, `G`, `e`, `E`, `a`, and `A`.
+ * @sa float_formatter
+ */
 PAPILIO_EXPORT template <std::floating_point T, typename CharT>
 class formatter<T, CharT>
 {
@@ -4703,6 +4978,17 @@ private:
     std_formatter_data m_data;
 };
 
+/**
+ * @brief Formatter for Unicode code point.
+ *
+ * @sa utf::codepoint
+ *
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `c`, `?`, `b`,`B`,`x`,`X`,`o`,`d`.
+ * - none, `c`, `?`: Format as a Unicode code point. @sa codepoint_formatter
+ * - `b`,`B`,`x`,`X`,`o`,`d`: Format as integer. @sa int_formatter
+ */
 PAPILIO_EXPORT template <typename CharT>
 class formatter<utf::codepoint, CharT>
 {
@@ -4726,13 +5012,7 @@ public:
     template <typename FormatContext>
     auto format(utf::codepoint cp, FormatContext& ctx) const -> typename FormatContext::iterator
     {
-        if(m_data.type == '?')
-        {
-            using context_t = format_context_traits<FormatContext>;
-            context_t::append_escaped(ctx, cp, 1);
-            return context_t::out(ctx);
-        }
-        else if(!m_data.contains_type(U'c'))
+        if(!m_data.contains_type(U"c?"))
         {
             int_formatter<std::uint32_t, CharT> fmt;
             fmt.set_data(m_data);
@@ -4750,6 +5030,19 @@ private:
     std_formatter_data m_data;
 };
 
+/**
+ * @brief Formatter for the Boolean type.
+ *
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `s`, `b`,`B`,`x`,`X`,`o`,`d`.
+ * - none, `s`: Format as string representing the Boolean value. @sa string_formatter
+ * - `b`,`B`,`x`,`X`,`o`,`d`: Format as integer. @sa int_formatter
+ *
+ * The default string representation is "true" and "false".
+ * If the locale flag (`L`) is set, `truename()` and `falsename()` of `std::numpunct` will be used.
+ * @sa locale_ref
+ */
 PAPILIO_EXPORT template <typename CharT>
 class formatter<bool, CharT>
 {
@@ -4810,6 +5103,16 @@ private:
     }
 };
 
+/**
+ * @brief Formatter for Unicode string.
+ *
+ * @sa utf::basic_string_container
+ *
+ * @tparam CharT Charater type
+ *
+ * Accepted format types are: none, `s`, `?`.
+ * @sa string_formatter
+ */
 PAPILIO_EXPORT template <typename CharT>
 class formatter<utf::basic_string_container<CharT>, CharT>
 {
@@ -4844,6 +5147,16 @@ private:
     std_formatter_data m_data;
 };
 
+/**
+ * @brief Formatter for pointers.
+ *
+ * @tparam CharT Character type
+ *
+ * Accepted format types: none, `p`, `P`.
+ * - none, `p`: Format as if casted to `std::uintptr_t`,
+ *   then format as integer in hexadecimal format with alternate form enabled. @sa int_formatter
+ * - `P`: Same as `p`, but with `0X` prefix.
+ */
 PAPILIO_EXPORT template <typename CharT>
 class formatter<const void*, CharT>
 {
@@ -4896,10 +5209,28 @@ private:
     std_formatter_data m_data{.type = U'x', .alternate_form = true};
 };
 
+/**
+ * @brief Formatter for enum values.
+ *
+ * @tparam T The enum type
+ * @tparam CharT Character type
+ *
+ * Accepted format types: none, `s`, `b`, `B`, `x`, `X`, `o`, `d`.
+ * @sa enum_formatter
+ *
+ * @warning The "enum-to-string" implementation has some limitations due to C++ lacking of reflection.
+ *          It will fallback to integer representation on this occasion.
+ * @sa enum_name
+ */
 template <typename T, typename CharT>
 requires std::is_enum_v<T>
 class formatter<T, CharT> : public enum_formatter<T, CharT>
 {};
+
+/// @}
+
+/// @addtogroup Format
+/// @{
 
 namespace detail
 {
@@ -4988,6 +5319,8 @@ OutputIt vformat_to(
         args
     );
 }
+
+/// @}
 } // namespace papilio
 
 #include "core.inl"

@@ -7,6 +7,11 @@
  *       some format support for seldom used types still need to be included separately.
  */
 
+/**
+ * @mainpage Papilio Charontis
+ * A flexible C++ formatting library designed for internationalization (i18n).
+ */
+
 #ifndef PAPILIO_PAPILIO_HPP
 #define PAPILIO_PAPILIO_HPP
 
