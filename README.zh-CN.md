@@ -91,7 +91,7 @@ papilio::format("{:d}", cat); // 返回 "1"
 ```
 
 ### 访问成员
-支持索引（整数或字符串）、切片和访问成员属性。
+支持访问成员属性与基于整数，范围或字符串下标访问。
 ```c++
 papilio::format("length of \"{0}\" is {0.length}", "hello");
 // 返回 "length of "hello" is 5"

@@ -41,7 +41,7 @@ struct accessor<utf::basic_string_container<typename Context::char_type>, Contex
     }
 
     [[nodiscard]]
-    static string_container_type index(const string_container_type& str, slice s)
+    static string_container_type index(const string_container_type& str, index_range s)
     {
         return str.template substr<utf::substr_behavior::empty_string>(s);
     }
@@ -84,7 +84,7 @@ struct contiguous_range_accessor
     }
 
     [[nodiscard]]
-    static format_arg_type index(const Range& rng, slice s)
+    static format_arg_type index(const Range& rng, index_range s)
     {
         namespace stdr = std::ranges;
         auto ptr = stdr::cdata(rng);

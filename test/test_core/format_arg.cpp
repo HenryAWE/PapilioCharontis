@@ -214,12 +214,12 @@ TEST(format_arg, access)
     {
         format_arg fmt_arg("long sentence for testing slicing");
 
-        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(0, 4))), "long");
-        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(-7, slice::npos))), "slicing");
-        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(14, -16))), "for");
-        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(slice(-slice::npos, -20))), "long sentence");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(index_range(0, 4))), "long");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(index_range(-7, index_range::npos))), "slicing");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(index_range(14, -16))), "for");
+        EXPECT_EQ(get<utf::string_container>(fmt_arg.index(index_range(-index_range::npos, -20))), "long sentence");
 
-        EXPECT_EQ(get<std::string>(fmt_arg.index(slice(0, 4))), "long");
-        EXPECT_EQ(get<std::string_view>(fmt_arg.index(slice(0, 4))), "long");
+        EXPECT_EQ(get<std::string>(fmt_arg.index(index_range(0, 4))), "long");
+        EXPECT_EQ(get<std::string_view>(fmt_arg.index(index_range(0, 4))), "long");
     }
 }

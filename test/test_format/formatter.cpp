@@ -39,6 +39,26 @@ TYPED_TEST(int_formatter_suite, basic)
     }
 }
 
+TEST(int_formatter, extreme_value)
+{
+    using namespace papilio;
+
+    {
+        constexpr std::uint64_t val = std::numeric_limits<std::uint64_t>::max();
+        EXPECT_EQ(PAPILIO_NS format("{}", val), std::to_string(val));
+        EXPECT_EQ(PAPILIO_NS format(L"{}", val), std::to_wstring(val));
+
+        {
+            std::string buf;
+            buf.reserve(64);
+            PAPILIO_NS format_to(std::back_inserter(buf), "{:b}", val);
+            EXPECT_EQ(buf.size(), 64);
+            for(std::size_t i = 0; i < buf.size(); ++i)
+                EXPECT_EQ(buf[i], '1') << "i = " << i;
+        }
+    }
+}
+
 TYPED_TEST(int_formatter_suite, fill_and_align)
 {
     using namespace papilio;
@@ -191,8 +211,20 @@ TEST(fundamental_formatter, string)
     EXPECT_EQ(PAPILIO_NS format("{:.5}", "hello!"), "hello");
     EXPECT_EQ(PAPILIO_NS format(L"{:.5}", L"hello!"), L"hello");
 
+    EXPECT_EQ(PAPILIO_NS format("{:<8.5}", "hello!"), "hello   ");
+    EXPECT_EQ(PAPILIO_NS format(L"{:<8.5}", L"hello!"), L"hello   ");
+    EXPECT_EQ(PAPILIO_NS format("{:8.5}", "hello!"), "hello   ");
+    EXPECT_EQ(PAPILIO_NS format(L"{:8.5}", L"hello!"), L"hello   ");
+
     EXPECT_EQ(PAPILIO_NS format("{:^8.5}", "hello!"), " hello  ");
     EXPECT_EQ(PAPILIO_NS format(L"{:^8.5}", L"hello!"), L" hello  ");
+    EXPECT_EQ(PAPILIO_NS format("{:*^8.5}", "hello!"), "*hello**");
+    EXPECT_EQ(PAPILIO_NS format(L"{:*^8.5}", L"hello!"), L"*hello**");
+
+    EXPECT_EQ(PAPILIO_NS format("{:>8.5}", "hello!"), "   hello");
+    EXPECT_EQ(PAPILIO_NS format(L"{:>8.5}", L"hello!"), L"   hello");
+    EXPECT_EQ(PAPILIO_NS format("{:*>8.5}", "hello!"), "***hello");
+    EXPECT_EQ(PAPILIO_NS format(L"{:*>8.5}", L"hello!"), L"***hello");
 }
 
 TEST(fundamental_formatter, bool)
@@ -283,11 +315,20 @@ TEST(fundamental_formatter, magic_enum)
         dog
     };
 
+#ifdef PAPILIO_HAS_ENUM_NAME
+
     EXPECT_EQ(PAPILIO_NS format("{}", cat), "cat");
     EXPECT_EQ(PAPILIO_NS format("{}", dog), "dog");
-    EXPECT_EQ(PAPILIO_NS format("{:d}", cat), "1");
+    EXPECT_EQ(PAPILIO_NS format("{:>5s}", dog), "  dog");
 
     EXPECT_EQ(PAPILIO_NS format(L"{}", cat), L"cat");
     EXPECT_EQ(PAPILIO_NS format(L"{}", dog), L"dog");
+    EXPECT_EQ(PAPILIO_NS format(L"{:>5s}", dog), L"  dog");
+
+#endif
+
+    EXPECT_EQ(PAPILIO_NS format("{:d}", cat), "1");
     EXPECT_EQ(PAPILIO_NS format(L"{:d}", cat), L"1");
+    EXPECT_EQ(PAPILIO_NS format("{:#x}", cat), "0x1");
+    EXPECT_EQ(PAPILIO_NS format(L"{:#x}", cat), L"0x1");
 }

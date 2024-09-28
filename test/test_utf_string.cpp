@@ -241,7 +241,7 @@ TEST(basic_string_ref, wstring_ref)
     }
 }
 
-TEST(basic_string_ref, substr_slice)
+TEST(basic_string_ref, substr_index_range)
 {
     using namespace papilio;
     using namespace utf;
@@ -249,26 +249,26 @@ TEST(basic_string_ref, substr_slice)
     {
         string_ref src = "hello world!";
 
-        EXPECT_EQ(src.substr(slice(0)), "hello world!");
-        EXPECT_EQ(src.substr(slice(0, 1)), "h");
-        EXPECT_EQ(src.substr(slice(-1)), "!");
-        EXPECT_EQ(src.substr(slice(0, 5)), "hello");
-        EXPECT_EQ(src.substr(slice(-6)), "world!");
-        EXPECT_EQ(src.substr(slice(-6, -1)), "world");
-        EXPECT_EQ(src.substr(slice(6, -1)), "world");
+        EXPECT_EQ(src.substr(index_range(0)), "hello world!");
+        EXPECT_EQ(src.substr(index_range(0, 1)), "h");
+        EXPECT_EQ(src.substr(index_range(-1)), "!");
+        EXPECT_EQ(src.substr(index_range(0, 5)), "hello");
+        EXPECT_EQ(src.substr(index_range(-6)), "world!");
+        EXPECT_EQ(src.substr(index_range(-6, -1)), "world");
+        EXPECT_EQ(src.substr(index_range(6, -1)), "world");
 
-        EXPECT_THROW((void)src.substr(slice(13)), std::out_of_range);
-        EXPECT_THROW((void)src.substr(slice(-14)), std::out_of_range);
+        EXPECT_THROW((void)src.substr(index_range(13)), std::out_of_range);
+        EXPECT_THROW((void)src.substr(index_range(-14)), std::out_of_range);
 
-        EXPECT_EQ(src.substr<substr_behavior::empty_string>(slice(6, 15)), "world!");
-        EXPECT_EQ(src.substr<substr_behavior::empty_string>(slice(-15, 5)), "hello");
-        EXPECT_TRUE(src.substr<substr_behavior::empty_string>(slice(13)).empty());
+        EXPECT_EQ(src.substr<substr_behavior::empty_string>(index_range(6, 15)), "world!");
+        EXPECT_EQ(src.substr<substr_behavior::empty_string>(index_range(-15, 5)), "hello");
+        EXPECT_TRUE(src.substr<substr_behavior::empty_string>(index_range(13)).empty());
 
-        EXPECT_TRUE(src.substr(slice(0, 0)).empty());
-        EXPECT_TRUE(src.substr(slice(2, 1)).empty());
-        EXPECT_TRUE(src.substr(slice(-1, -1)).empty());
-        EXPECT_TRUE(src.substr(slice(-1, -2)).empty());
-        EXPECT_TRUE(src.substr(slice(-5, 5)).empty());
+        EXPECT_TRUE(src.substr(index_range(0, 0)).empty());
+        EXPECT_TRUE(src.substr(index_range(2, 1)).empty());
+        EXPECT_TRUE(src.substr(index_range(-1, -1)).empty());
+        EXPECT_TRUE(src.substr(index_range(-1, -2)).empty());
+        EXPECT_TRUE(src.substr(index_range(-5, 5)).empty());
     }
 }
 

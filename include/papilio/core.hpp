@@ -3222,7 +3222,7 @@ protected:
                     throw_end_of_string();
 
                 char32_t next_ch = *next_it;
-                ssize_t next_idx = slice::npos;
+                ssize_t next_idx = index_range::npos;
                 if(next_ch == U'-' || utf::is_digit(next_ch))
                 {
                     std::tie(next_idx, next_it) = parse_integer<ssize_t>(
@@ -3230,7 +3230,7 @@ protected:
                     );
                 }
 
-                return std::make_pair(slice(idx, next_idx), next_it);
+                return std::make_pair(index_range(idx, next_idx), next_it);
             }
 
             return std::make_pair(idx, next_it);
@@ -3247,11 +3247,11 @@ protected:
                 auto [idx, next_it] = parse_integer<ssize_t>(
                     start, stop
                 );
-                return std::make_pair(slice(0, idx), next_it);
+                return std::make_pair(index_range(0, idx), next_it);
             }
             else
             {
-                return std::make_pair(slice(), start);
+                return std::make_pair(index_range(), start);
             }
         }
 

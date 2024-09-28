@@ -16,7 +16,7 @@ You can check https://github.com/microsoft/STL/blob/main/stl/debugger/STL.natvis
         <DisplayString>reverse_index</DisplayString>
     </Type>
 
-    <Type Name="papilio::slice">
+    <Type Name="papilio::index_range">
         <DisplayString IncludeView="noparens" Condition="second == npos">{first}, npos</DisplayString>
         <DisplayString ExcludeView="noparens" Condition="second == npos">({first}, npos)</DisplayString>
         <DisplayString IncludeView="noparens" Condition="second != npos">{first}, {second}</DisplayString>

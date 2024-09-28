@@ -22,10 +22,10 @@ TEST(indexing_value, constructor)
     }
 
     {
-        indexing_value idx(slice(0, 1));
-        ASSERT_TRUE(idx.holds_slice());
-        EXPECT_EQ(idx.as_slice().first, 0);
-        EXPECT_EQ(idx.as_slice().second, 1);
+        indexing_value idx(index_range(0, 1));
+        ASSERT_TRUE(idx.holds_range());
+        EXPECT_EQ(idx.as_range().first, 0);
+        EXPECT_EQ(idx.as_range().second, 1);
     }
 
     {

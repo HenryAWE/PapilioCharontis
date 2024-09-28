@@ -273,16 +273,16 @@ namespace detail
 
         template <substr_behavior OnOutOfRange = substr_behavior::exception>
         [[nodiscard]]
-        constexpr Derived substr(slice s) const
+        constexpr Derived substr(index_range s) const
         {
-            auto get_iter = [this](slice::index_type idx) -> const_iterator
+            auto get_iter = [this](index_range::index_type idx) -> const_iterator
             {
                 if(idx >= 0)
                 {
                     const auto sentinel = as_derived().cend();
 
                     const_iterator it = as_derived().cbegin();
-                    for(slice::index_type i = 0; i < idx; ++i)
+                    for(index_range::index_type i = 0; i < idx; ++i)
                     {
                         if(it == sentinel)
                         {
@@ -304,7 +304,7 @@ namespace detail
                     const auto sentinel = cbegin();
 
                     const_iterator it = cend();
-                    for(slice::index_type i = 0; i < idx; ++i)
+                    for(index_range::index_type i = 0; i < idx; ++i)
                     {
                         if(it == sentinel)
                         {
@@ -322,7 +322,7 @@ namespace detail
             };
 
             auto start = get_iter(s.begin());
-            auto stop = s.end() == slice::npos ? as_derived().cend() : get_iter(s.end());
+            auto stop = s.end() == index_range::npos ? as_derived().cend() : get_iter(s.end());
 
             if(start >= stop) [[unlikely]]
                 return Derived();

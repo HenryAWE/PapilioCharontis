@@ -145,10 +145,13 @@ PAPILIO_EXPORT constexpr reverse_index_t reverse_index = {};
  */
 PAPILIO_EXPORT using ssize_t = std::make_signed_t<std::size_t>;
 
-// [begin, end) range
-// Negative value means reverse index like Python.
-// For example, -1 refers to the last element, and -2 refers to the second to last element.
-PAPILIO_EXPORT class slice : public std::pair<ssize_t, ssize_t>
+/**
+ * @brief `[begin, end)` range.
+ *
+ * Negative value means reverse index like Python.
+ * For example, -1 refers to the last element, and -2 refers to the second to last element.
+ */
+PAPILIO_EXPORT class index_range : public std::pair<ssize_t, ssize_t>
 {
 public:
     using size_type = std::size_t;
@@ -156,17 +159,17 @@ public:
 
     static constexpr index_type npos = std::numeric_limits<index_type>::max();
 
-    constexpr slice() noexcept
-        : slice(0, npos) {}
+    constexpr index_range() noexcept
+        : index_range(0, npos) {}
 
-    constexpr slice(const slice&) noexcept = default;
+    constexpr index_range(const index_range&) noexcept = default;
 
-    constexpr explicit slice(index_type start, index_type stop = npos) noexcept
+    constexpr explicit index_range(index_type start, index_type stop = npos) noexcept
         : pair(start, stop) {}
 
-    constexpr slice& operator=(const slice&) noexcept = default;
+    constexpr index_range& operator=(const index_range&) noexcept = default;
 
-    constexpr bool operator==(const slice&) const noexcept = default;
+    constexpr bool operator==(const index_range&) const noexcept = default;
 
     constexpr void normalize(std::in_place_t, size_type len) noexcept
     {
@@ -183,9 +186,9 @@ public:
     }
 
     [[nodiscard]]
-    constexpr slice normalize(size_type len) const noexcept
+    constexpr index_range normalize(size_type len) const noexcept
     {
-        slice result = *this;
+        index_range result = *this;
         result.normalize(std::in_place, len);
         return result;
     }
@@ -212,6 +215,9 @@ public:
     }
 };
 
+/**
+ * @brief Proxy of named argument.
+ */
 PAPILIO_EXPORT template <typename CharT, typename T>
 struct basic_named_arg
 {
@@ -396,6 +402,7 @@ namespace detail
 
 #ifdef PAPILIO_COMPILER_MSVC
 #    pragma warning(push)
+    // Variable 'variable' is uninitialized. Always initialize a member variable (type.6).
 #    pragma warning(disable : 26495)
 #endif
 

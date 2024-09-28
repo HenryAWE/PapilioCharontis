@@ -43,56 +43,56 @@ static_assert(papilio::u8string_like<std::u8string_view>);
 static_assert(papilio::map_like<std::map<int, int>>);
 static_assert(papilio::map_like<papilio::fixed_flat_map<int, int, 8>>);
 
-TEST(slice, slice)
+TEST(index_range, index_range)
 {
     using namespace papilio;
 
     {
-        constexpr slice s;
+        constexpr index_range s;
         static_assert(s.begin() == 0);
-        static_assert(s.end() == slice::npos);
+        static_assert(s.end() == index_range::npos);
     }
 
     {
-        constexpr slice s{1};
-        constexpr slice normalized_s = s.normalize(182376);
+        constexpr index_range s{1};
+        constexpr index_range normalized_s = s.normalize(182376);
         static_assert(normalized_s.begin() == 1);
         static_assert(normalized_s.end() == 182376);
         static_assert(normalized_s.length() == 182375);
     }
 
     {
-        slice s;
+        index_range s;
         EXPECT_EQ(s.begin(), 0);
-        EXPECT_EQ(s.end(), slice::npos);
+        EXPECT_EQ(s.end(), index_range::npos);
     }
 
     {
-        slice s{1};
+        index_range s{1};
         EXPECT_EQ(s.begin(), 1);
-        EXPECT_EQ(s.end(), slice::npos);
+        EXPECT_EQ(s.end(), index_range::npos);
     }
 
     {
-        slice s{1, 3};
+        index_range s{1, 3};
         EXPECT_EQ(s.begin(), 1);
         EXPECT_EQ(s.end(), 3);
         EXPECT_EQ(s.length(), 2);
     }
 
     {
-        slice s{1};
-        slice normalized_s = s.normalize(182376);
+        index_range s{1};
+        index_range normalized_s = s.normalize(182376);
         EXPECT_EQ(normalized_s.begin(), 1);
         EXPECT_EQ(normalized_s.end(), 182376);
         EXPECT_EQ(normalized_s.length(), 182375);
     }
 
     {
-        slice s{-3, -1};
-        EXPECT_EQ(s, (slice{-3, -1}));
+        index_range s{-3, -1};
+        EXPECT_EQ(s, (index_range{-3, -1}));
 
-        slice normalized_s = s.normalize(16);
+        index_range normalized_s = s.normalize(16);
         EXPECT_EQ(normalized_s.begin(), 13);
         EXPECT_EQ(normalized_s.end(), 15);
         EXPECT_EQ(normalized_s.length(), 2);

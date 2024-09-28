@@ -24,7 +24,7 @@ public:
     using index_type = ssize_t;
     using variant_type = std::variant<
         index_type,
-        slice,
+        index_range,
         string_container_type>;
 
     basic_indexing_value() = delete;
@@ -34,7 +34,7 @@ public:
     basic_indexing_value(index_type index)
         : m_val(index) {}
 
-    basic_indexing_value(slice s)
+    basic_indexing_value(index_range s)
         : m_val(s) {}
 
     basic_indexing_value(string_container_type key)
@@ -64,9 +64,9 @@ public:
     }
 
     [[nodiscard]]
-    bool holds_slice() const noexcept
+    bool holds_range() const noexcept
     {
-        return holds<slice>();
+        return holds<index_range>();
     }
 
     [[nodiscard]]
@@ -83,10 +83,10 @@ public:
     }
 
     [[nodiscard]]
-    slice as_slice() const noexcept
+    index_range as_range() const noexcept
     {
-        PAPILIO_ASSERT(holds<slice>());
-        return *std::get_if<slice>(&m_val);
+        PAPILIO_ASSERT(holds<index_range>());
+        return *std::get_if<index_range>(&m_val);
     }
 
     [[nodiscard]]
@@ -242,7 +242,7 @@ namespace detail
         }
 
         [[noreturn]]
-        static void slice_index_unavailable()
+        static void index_range_unavailable()
         {
             throw std::runtime_error("index unavailable");
         }
@@ -267,24 +267,21 @@ public:
 
     using format_arg_type = basic_format_arg<Context>;
 
-    [[nodiscard]]
-    static constexpr bool has_integer_index() noexcept
+    static consteval bool integer_index_available() noexcept
     {
         return requires(T object, index_type i) {
             accessor_type::index(object, i);
         };
     }
 
-    [[nodiscard]]
-    static constexpr bool has_slice_index() noexcept
+    static consteval bool range_index_available() noexcept
     {
-        return requires(T object, slice s) {
+        return requires(T object, index_range s) {
             accessor_type::index(object, s);
         };
     }
 
-    [[nodiscard]]
-    static constexpr bool has_string_index() noexcept
+    static consteval bool string_index_available() noexcept
     {
         return requires(T object, string_view_type s) {
             accessor_type::index(object, s);
@@ -295,7 +292,7 @@ public:
     requires std::is_same_v<std::remove_cvref_t<U>, target_type>
     static format_arg_type index(U&& object, index_type i)
     {
-        if constexpr(!has_integer_index())
+        if constexpr(!integer_index_available())
         {
             integer_index_unavailable();
         }
@@ -307,11 +304,11 @@ public:
 
     template <typename U>
     requires std::is_same_v<std::remove_cvref_t<U>, target_type>
-    static format_arg_type index(U&& object, slice s)
+    static format_arg_type index(U&& object, index_range s)
     {
-        if constexpr(!has_slice_index())
+        if constexpr(!range_index_available())
         {
-            slice_index_unavailable();
+            index_range_unavailable();
         }
         else
         {
@@ -323,7 +320,7 @@ public:
     requires std::is_same_v<std::remove_cvref_t<U>, target_type>
     static format_arg_type index(U&& object, string_view_type str)
     {
-        if constexpr(!has_string_index())
+        if constexpr(!string_index_available())
         {
             string_index_unavailable();
         }
@@ -334,7 +331,7 @@ public:
     }
 
     [[nodiscard]]
-    static constexpr bool has_attribute() noexcept
+    static constexpr bool attribute_available() noexcept
     {
         return requires(T object, const attribute_name_type& attr) {
             accessor_type::attribute(object, attr);
@@ -345,7 +342,7 @@ public:
     requires std::is_same_v<std::remove_cvref_t<U>, target_type>
     static format_arg_type attribute(U&& object, const attribute_name_type& attr)
     {
-        if constexpr(has_attribute())
+        if constexpr(attribute_available())
         {
             return format_arg_type(accessor_type::attribute(std::forward<U>(object), attr));
         }
@@ -375,19 +372,19 @@ public:
 
 template <typename T, typename Context>
 concept integer_accessible_with =
-    accessor_traits<T, Context>::has_integer_index();
+    accessor_traits<T, Context>::integer_index_available();
 
 template <typename T, typename Context>
 concept string_accessible_with =
-    accessor_traits<T, Context>::has_string_index();
+    accessor_traits<T, Context>::string_index_available();
 
 template <typename T, typename Context>
-concept slice_accessible_with =
-    accessor_traits<T, Context>::has_slice_index();
+concept range_accessible_with =
+    accessor_traits<T, Context>::range_index_available();
 
 template <typename T, typename Context>
 concept attribute_accessible_with =
-    accessor_traits<T, Context>::has_attribute();
+    accessor_traits<T, Context>::attribute_available();
 
 template <typename T>
 concept integer_accessible = integer_accessible_with<T, format_context>;
@@ -396,7 +393,7 @@ template <typename T>
 concept string_accessible = string_accessible_with<T, format_context>;
 
 template <typename T>
-concept slice_accessible = slice_accessible_with<T, format_context>;
+concept range_accessible = range_accessible_with<T, format_context>;
 
 template <typename T>
 concept attribute_accessible = attribute_accessible_with<T, format_context>;

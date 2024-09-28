@@ -91,7 +91,7 @@ papilio::format("{:d}", cat); // Returns "1"
 ```
 
 ### Accessing Member
-Support indexing (integer or string), slicing and accessing member attributes.
+Support accessing member attributes, and subscripting by integer, range, or string.
 ```c++
 papilio::format("length of \"{0}\" is {0.length}", "hello");
 // Returns "length of "hello" is 5"
