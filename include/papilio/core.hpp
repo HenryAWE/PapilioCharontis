@@ -13,7 +13,6 @@
 #include <limits>
 #include <variant>
 #include <typeinfo>
-#include <vector>
 #include <map>
 #include <span>
 #include <array>
@@ -1427,6 +1426,11 @@ namespace detail
 #    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 #endif
 
+/**
+ * @brief Base of format argument storage.
+ *
+ * @tparam Context Format context @sa FormatContext
+ */
 template <typename Context, typename CharT = typename Context::char_type>
 class format_args_base
 {
@@ -1443,6 +1447,18 @@ public:
     virtual const format_arg_type& get(size_type i) const = 0;
     [[nodiscard]]
     virtual const format_arg_type& get(string_view_type key) const = 0;
+
+    [[nodiscard]]
+    const format_arg_type& get(const char_type* key) const
+    {
+        return get(string_view_type(key));
+    }
+
+    [[nodiscard]]
+    const format_arg_type& get(const string_type& key) const
+    {
+        return get(string_view_type(key));
+    }
 
     [[nodiscard]]
     virtual const format_arg_type& get(const indexing_value_type& idx) const
@@ -1470,16 +1486,28 @@ public:
     }
 
     [[nodiscard]]
-    bool check(size_type i) const noexcept
+    bool contains(size_type i) const noexcept
     {
         return i < indexed_size();
     }
 
     [[nodiscard]]
-    virtual bool check(string_view_type key) const noexcept = 0;
+    virtual bool contains(string_view_type key) const noexcept = 0;
 
     [[nodiscard]]
-    bool check(const indexing_value_type& idx) const noexcept
+    bool contains(const char_type* key) const noexcept
+    {
+        return contains(string_view_type(key));
+    }
+
+    [[nodiscard]]
+    bool contains(const string_type& key) const noexcept
+    {
+        return contains(string_view_type(key));
+    }
+
+    [[nodiscard]]
+    bool contains(const indexing_value_type& idx) const noexcept
     {
         return idx.visit(
             [this]<typename T>(const T& v) -> bool
@@ -1488,11 +1516,11 @@ public:
                 {
                     if(v < 0)
                         return false;
-                    return check(static_cast<size_type>(v));
+                    return contains(static_cast<size_type>(v));
                 }
                 else if constexpr(std::is_same_v<T, string_container_type>)
                 {
-                    return check(string_view_type(v));
+                    return contains(string_view_type(v));
                 }
                 else
                 {
@@ -1510,6 +1538,8 @@ public:
         return get(idx);
     }
 
+#ifndef PAPILIO_DOXYGEN // Don't generate documentation for internal APIs
+
 protected:
     [[noreturn]]
     static void throw_index_out_of_range()
@@ -1522,6 +1552,8 @@ protected:
     {
         throw std::out_of_range("invalid named argument");
     }
+
+#endif
 };
 
 #ifdef PAPILIO_COMPILER_CLANG
@@ -1588,12 +1620,12 @@ public:
     using my_base::get;
 
     [[nodiscard]]
-    bool check(string_view_type key) const noexcept override
+    bool contains(string_view_type key) const noexcept override
     {
         return m_named_args.contains(key);
     }
 
-    using my_base::check;
+    using my_base::contains;
 
     [[nodiscard]]
     size_type indexed_size() const noexcept override
@@ -1622,7 +1654,7 @@ private:
             "invalid named argument count"
         );
 
-        (push(std::forward<Args>(args)), ...);
+        (emplace(std::forward<Args>(args)), ...);
     }
 
     vector_type m_indexed_args;
@@ -1630,14 +1662,14 @@ private:
 
     template <typename T>
     requires(!is_named_arg_v<T>)
-    void push(T&& val) noexcept(std::is_nothrow_constructible_v<format_arg_type, T>)
+    void emplace(T&& val) noexcept(std::is_nothrow_constructible_v<format_arg_type, T>)
     {
         m_indexed_args.emplace_back(std::forward<T>(val));
     }
 
     template <typename T>
     requires(is_named_arg_v<T> && std::is_same_v<char_type, typename T::char_type>)
-    void push(T&& na) noexcept(std::is_nothrow_constructible_v<format_arg_type, typename T::value_type>)
+    void emplace(T&& na) noexcept(std::is_nothrow_constructible_v<format_arg_type, typename T::value_type>)
     {
         m_named_args.insert_or_assign(
             na.name,
@@ -1675,11 +1707,11 @@ public:
     template <typename... Args>
     basic_dynamic_format_args(Args&&... args)
     {
-        push_tuple(std::forward<Args>(args)...);
+        append(std::forward<Args>(args)...);
     }
 
     template <typename T>
-    void push(T&& val)
+    void emplace(T&& val)
     {
         if constexpr(is_named_arg_v<std::remove_cvref_t<T>>)
         {
@@ -1700,13 +1732,14 @@ public:
     }
 
     template <typename... Args>
-    void push_tuple(Args&&... args)
+    requires(sizeof...(Args) >= 1)
+    void append(Args&&... args)
     {
         m_indexed_args.reserve(
             m_indexed_args.size() + detail::get_indexed_arg_count<Args...>()
         );
 
-        (push(std::forward<Args>(args)), ...);
+        (emplace(std::forward<Args>(args)), ...);
     }
 
     [[nodiscard]]
@@ -1729,12 +1762,12 @@ public:
     using my_base::get;
 
     [[nodiscard]]
-    bool check(string_view_type key) const noexcept override
+    bool contains(string_view_type key) const noexcept override
     {
         return m_named_args.contains(key);
     }
 
-    using my_base::check;
+    using my_base::contains;
 
     [[nodiscard]]
     const vector_type& indexed() const noexcept
@@ -1779,6 +1812,7 @@ class basic_format_args_ref final : public format_args_base<Context, CharT>
 
 public:
     using char_type = CharT;
+    using string_type = std::basic_string<char_type>;
     using string_view_type = std::basic_string_view<char_type>;
     using size_type = std::size_t;
     using format_arg_type = basic_format_arg<Context>;
@@ -1820,12 +1854,12 @@ public:
     }
 
     [[nodiscard]]
-    bool check(string_view_type k) const noexcept override
+    bool contains(string_view_type k) const noexcept override
     {
-        return m_ptr->check(k);
+        return m_ptr->contains(k);
     }
 
-    using my_base::check;
+    using my_base::contains;
 
 private:
     const my_base* m_ptr;
@@ -2589,13 +2623,13 @@ public:
     void check_arg_id(size_type i) const
     {
         enable_manual_indexing();
-        if(!get_args().check(i))
+        if(!get_args().contains(i))
             throw format_error("invalid arg id");
     }
 
     void check_arg_id(string_view_type name) const
     {
-        if(!get_args().check(name))
+        if(!get_args().contains(name))
             throw format_error("invalid arg id");
     }
 

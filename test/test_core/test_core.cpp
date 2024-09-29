@@ -27,7 +27,7 @@ TEST(format_args, dynamic)
         EXPECT_EQ(args.indexed_size(), 0);
         EXPECT_EQ(args.named_size(), 0);
 
-        args.push_tuple('a', 'b', "c"_a = 'c', "d"_a = 'd');
+        args.append('a', 'b', "c"_a = 'c', "d"_a = 'd');
 
         EXPECT_EQ(args.indexed_size(), 2);
         EXPECT_EQ(args.named_size(), 2);
@@ -55,31 +55,50 @@ TEST(format_args, static)
         EXPECT_EQ(args.named_size(), 0);
     }
 
+    [](auto args)
     {
-        auto args = make_format_args(182375, 182376);
         EXPECT_EQ(args.indexed_size(), 2);
-    }
+        EXPECT_EQ(args.named_size(), 1);
+        EXPECT_TRUE(args.contains("name"));
+
+        EXPECT_EQ(get<std::string>(args.get("name")), "scene");
+    }(make_format_args(182375, 182376, "name"_a = "scene"));
 }
 
 TEST(format_args, ref)
 {
     using namespace papilio;
+    using namespace std::literals;
 
     {
         dynamic_format_args underlying_fmt_args;
+        underlying_fmt_args.emplace("named"_a = "value"s);
+
         format_args_ref args_ref(underlying_fmt_args);
 
         EXPECT_EQ(args_ref.indexed_size(), 0);
+        EXPECT_EQ(args_ref.named_size(), 1);
+        EXPECT_TRUE(args_ref.contains("named"));
 
         format_args_ref new_ref(args_ref);
+
+        EXPECT_EQ(new_ref.indexed_size(), 0);
+        EXPECT_EQ(new_ref.named_size(), 1);
+        EXPECT_TRUE(new_ref.contains("named"));
+
+        EXPECT_EQ(get<std::string>(new_ref.get("named")), "value");
     }
 
+    [](auto underlying_fmt_args)
     {
-        auto underlying_fmt_args = make_format_args(182375, 182376);
         format_args_ref args_ref(underlying_fmt_args);
 
         EXPECT_EQ(args_ref.indexed_size(), 2);
-    }
+        EXPECT_EQ(args_ref.named_size(), 1);
+        EXPECT_TRUE(args_ref.contains("name"));
+
+        EXPECT_EQ(get<std::string>(args_ref.get("name")), "scene");
+    }(make_format_args(182375, 182376, "name"_a = "scene"s));
 }
 
 TEST(format_parse_context, char)
@@ -88,8 +107,8 @@ TEST(format_parse_context, char)
 
     {
         dynamic_format_args args;
-        args.push_tuple(0, 1, 2);
-        args.push("value"_a = 0);
+        args.append(0, 1, 2);
+        args.emplace("value"_a = 0);
 
         utf::string_ref sr = "{}";
 
@@ -113,8 +132,8 @@ TEST(format_parse_context, char)
 
     {
         dynamic_format_args args;
-        args.push_tuple(0, 1, 2);
-        args.push("value"_a = 0);
+        args.append(0, 1, 2);
+        args.emplace("value"_a = 0);
 
         format_parse_context ctx("{0} {}", args);
 

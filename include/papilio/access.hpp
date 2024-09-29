@@ -13,6 +13,14 @@
 
 namespace papilio
 {
+/// @defgroup Access Accessing Member
+/// @{
+
+/**
+ * @brief Subscripting support.
+ *
+ * @tparam CharT Character type
+ */
 PAPILIO_EXPORT template <typename CharT>
 class basic_indexing_value
 {
@@ -96,6 +104,11 @@ public:
         return *std::get_if<string_container_type>(&m_val);
     }
 
+    /**
+     * @brief Visit the value.
+     *
+     * @param vis Visitor
+     */
     template <typename Visitor>
     decltype(auto) visit(Visitor&& vis) const
     {
@@ -106,6 +119,11 @@ private:
     variant_type m_val;
 };
 
+/**
+ * @brief Attribute name of a format argument.
+ *
+ * @tparam CharT Character type
+ */
 PAPILIO_EXPORT template <typename CharT>
 class basic_attribute_name
 {
@@ -181,6 +199,9 @@ private:
     string_container_type m_name;
 };
 
+/**
+ * @brief Base of invalid attribute name.
+ */
 PAPILIO_EXPORT class invalid_attribute_base : public std::invalid_argument
 {
 public:
@@ -193,6 +214,11 @@ protected:
         : invalid_argument("invalid attribute") {}
 };
 
+/**
+ * @brief Invalid attribute name.
+ *
+ * @tparam CharT Character type
+ */
 PAPILIO_EXPORT template <typename CharT>
 class basic_invalid_attribute : public invalid_attribute_base
 {
@@ -213,6 +239,13 @@ private:
     attribute_name_type m_attr;
 };
 
+/**
+ * @brief Throw an invalid attribute exception.
+ *
+ * @param attr The invalid attribute name
+ *
+ * @throw basic_invalid_attribute
+ */
 PAPILIO_EXPORT template <typename CharT>
 [[noreturn]]
 void throw_invalid_attribute(const basic_attribute_name<CharT>& attr)
@@ -220,6 +253,14 @@ void throw_invalid_attribute(const basic_attribute_name<CharT>& attr)
     throw basic_invalid_attribute<CharT>(attr);
 }
 
+/**
+ * @brief Defualt accessor, which is empty.
+ *
+ * @tparam T Type to access
+ * @tparam Context Format context type @sa FormatContext
+ *
+ * @ingroup Accessor
+ */
 PAPILIO_EXPORT template <typename T, typename Context = format_context>
 struct accessor
 {};
@@ -249,6 +290,15 @@ namespace detail
     };
 } // namespace detail
 
+/// @defgroup Accessor Accessors
+/// @{
+
+/**
+ * @brief Traits of accessors.
+ *
+ * @tparam T Type to access.
+ * @tparam Context Format context type @sa FormatContext
+ */
 PAPILIO_EXPORT template <typename T, typename Context = format_context>
 class accessor_traits : public detail::accessor_traits_base
 {
@@ -370,6 +420,8 @@ public:
     }
 };
 
+/// @}
+
 template <typename T, typename Context>
 concept integer_accessible_with =
     accessor_traits<T, Context>::integer_index_available();
@@ -397,6 +449,8 @@ concept range_accessible = range_accessible_with<T, format_context>;
 
 template <typename T>
 concept attribute_accessible = attribute_accessible_with<T, format_context>;
+
+/// @}
 } // namespace papilio
 
 #include "detail/suffix.hpp"

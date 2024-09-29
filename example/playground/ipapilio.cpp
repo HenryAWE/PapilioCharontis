@@ -133,7 +133,7 @@ void ipapilio::addi()
         return;
     }
 
-    m_args.push(val);
+    m_args.emplace(val);
     papilio::println(
         "Added integer argument: {}",
         papilio::styled(papilio::fg(papilio::color::green), val)
@@ -169,7 +169,7 @@ void ipapilio::addf()
         return;
     }
 
-    m_args.push(val);
+    m_args.emplace(val);
     papilio::println(
         "Added floating point argument: {}",
         papilio::styled(papilio::fg(papilio::color::green), val)
@@ -185,7 +185,7 @@ void ipapilio::adds()
         "Added string argument: {}",
         papilio::styled(papilio::fg(papilio::color::yellow), str)
     );
-    m_args.push(std::move(str));
+    m_args.emplace(std::move(str));
 }
 
 void ipapilio::setf()
