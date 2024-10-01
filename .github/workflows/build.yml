@@ -4,13 +4,13 @@ on: [push, pull_request]
 
 jobs:
     GCC:
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         strategy:
           fail-fast: false
           matrix:
-            cxxstd: [20, 23]
+            gcc: [12, 13, 14]
 
-        name: GCC-12 C++${{matrix.cxxstd}}
+        name: GCC-${{matrix.gcc}}
 
         steps:
         - uses: actions/checkout@v4
@@ -18,15 +18,14 @@ jobs:
         - name: Install Dependencies
           run: |
             sudo apt-get update
-            sudo apt-get install -y cmake ninja-build gcc-12
+            sudo apt-get install -y cmake ninja-build gcc-${{matrix.gcc}} g++-${{matrix.gcc}}
 
         - name: Build
           run: >
             ./build.sh
-            -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
             -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_C_COMPILER=gcc-12
-            -DCMAKE_CXX_COMPILER=g++-12
+            -DCMAKE_C_COMPILER=gcc-${{matrix.gcc}}
+            -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
             -Dpapilio_build_unit_test=1
             -Dpapilio_build_example=1
 
@@ -44,26 +43,29 @@ jobs:
 
         - name: Test Installation
           run: |
-            cmake -GNinja -S test/test_install/ -B build/papilio_test_install -DCMAKE_CXX_COMPILER=g++-12
+            cmake -GNinja -S test/test_install/ -B build/papilio_test_install -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
             cmake --build build/papilio_test_install
             build/papilio_test_install/papilio_test_install
 
         - name: Test add_subdirectory
           run: |
-            cmake -GNinja -S test/test_subdir/ -B build/papilio_test_subdir -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-12
+            cmake -GNinja -S test/test_subdir/ -B build/papilio_test_subdir -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
             cmake --build build/papilio_test_subdir
             build/papilio_test_subdir/papilio_test_subdir
 
     Clang:
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         strategy:
           fail-fast: false
           matrix:
-            clang: [15]
-            cxxstd: [20]
+            clang: [15, 16, 17]
             stdlib: ["libstdc++", "libc++"]
+            exclude:
+              # Clang 15 does not fully support some features used by libstdc++
+              - clang: 15
+                stdlib: "libstdc++"
 
-        name: Clang-${{matrix.clang}} C++${{matrix.cxxstd}} ${{matrix.stdlib}}
+        name: Clang-${{matrix.clang}} ${{matrix.stdlib}}
 
         steps:
         - uses: actions/checkout@v4
@@ -79,26 +81,14 @@ jobs:
             sudo apt-get install -y libc++-${{matrix.clang}}-dev libc++abi-${{matrix.clang}}-dev
 
         - name: Build
-          if: ${{matrix.stdlib == 'libstdc++'}}
           run: >
             ./build.sh
-            -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
             -DCMAKE_BUILD_TYPE=Release
             -DCMAKE_C_COMPILER=clang-${{matrix.clang}}
             -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang}}
             -Dpapilio_build_unit_test=1
             -Dpapilio_build_example=1
-        - name: Build
-          if: ${{matrix.stdlib == 'libc++'}}
-          run: >
-            ./build.sh
-            -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_C_COMPILER=clang-${{matrix.clang}}
-            -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang}}
-            -Dpapilio_build_unit_test=1
-            -Dpapilio_build_example=1
-            -Dpapilio_use_libcpp=1
+            ${{matrix.stdlib == 'libc++' && '-Dpapilio_use_libcpp=1'}}
 
         - name: Test
           working-directory: ${{github.workspace}}/build
@@ -110,16 +100,8 @@ jobs:
 
     MSVC:
       runs-on: windows-2022
-      strategy:
-        fail-fast: false
-        matrix:
-          cxxstd: [20, 23]
 
-      name: MSVC C++${{matrix.cxxstd}}
-
-      env:
-        VCPKG_BUILD_TYPE: release
-        VCPKG_DEFAULT_TRIPLET: x64-windows
+      name: MSVC
 
       steps:
       - uses: actions/checkout@v4
@@ -130,9 +112,7 @@ jobs:
       - name: Build
         run: >
           ./build.ps1
-          -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
           -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
           -Dpapilio_build_unit_test=1
           -Dpapilio_build_example=1
 
@@ -146,12 +126,8 @@ jobs:
 
     ClangCl:
       runs-on: windows-2022
-      strategy:
-        fail-fast: false
-        matrix:
-          cxxstd: [20, 23]
 
-      name: ClangCl C++${{matrix.cxxstd}}
+      name: ClangCl
 
       steps:
       - uses: actions/checkout@v4
@@ -167,7 +143,6 @@ jobs:
       - name: Build
         run: >
           ./build.ps1
-          -DCMAKE_CXX_STANDARD=${{matrix.cxxstd}}
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_C_COMPILER=clang-cl
           -DCMAKE_CXX_COMPILER=clang-cl
@@ -184,15 +159,13 @@ jobs:
 
     Doxygen:
       needs: [GCC, Clang]
-      runs-on: ubuntu-22.04
+      runs-on: ubuntu-24.04
 
       steps:
       - uses: actions/checkout@v4
 
-      # Install newer version using PPA
       - name: Install Dependencies
         run: |
-          sudo add-apt-repository ppa:savoury1/build-tools
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build doxygen graphviz
 

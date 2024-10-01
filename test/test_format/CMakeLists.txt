@@ -1,7 +1,6 @@
 file(GLOB test_format_src "*.cpp" "*.hpp")
 add_executable(test_format ${test_format_src})
-target_link_libraries(test_format PRIVATE papilio_test)
-gtest_discover_tests(test_format DISCOVERY_TIMEOUT 300)
+configure_test(test_format)
 
 if(CMAKE_CXX_STANDARD GREATER_EQUAL 23)
     # For #include <stacktrace>

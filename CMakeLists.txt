@@ -1,13 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
 
-if(NOT DEFINED CMAKE_CXX_STANDARD)
-    # Use C++ 20 by default
-    set(CMAKE_CXX_STANDARD 20)
-elseif(CMAKE_CXX_STANDARD LESS 20)
-    message(FATAL_ERROR "C++ 20 is required")
-endif()
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 option(papilio_build_unit_test "build unit tests" OFF)
 mark_as_advanced(papilio_build_unit_test)
 
@@ -69,6 +61,10 @@ if(${papilio_build_lib})
     include(GNUInstallDirs)
 
     add_library(papilio ${papilio_src})
+    target_compile_features(papilio PUBLIC cxx_std_20)
+    set_target_properties(papilio PROPERTIES
+        CXX_STANDARD_REQUIRED ON
+    )
     target_sources(papilio PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/natvis/papilio.natvis>")
     target_include_directories(papilio PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -189,6 +185,8 @@ if(${papilio_build_unit_test})
     )
     set(BUILD_GMOCK OFF)
     set(INSTALL_GTEST OFF)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
     FetchContent_MakeAvailable(googletest)
 
     enable_testing()
