@@ -244,7 +244,7 @@ private:
  *
  * @param attr The invalid attribute name
  *
- * @throw basic_invalid_attribute
+ * @throw basic_invalid_attribute The exception in specified character type
  */
 PAPILIO_EXPORT template <typename CharT>
 [[noreturn]]

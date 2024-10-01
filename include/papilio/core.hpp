@@ -30,8 +30,10 @@
 namespace papilio
 {
 /**
-* @brief Format error
-*/
+ * @brief Base of all format error.
+ *
+ * @ingroup Format
+ */
 PAPILIO_EXPORT class format_error : public std::runtime_error
 {
 public:
@@ -43,32 +45,50 @@ public:
 };
 
 /**
- * @brief Format alignment
+ * @brief Format alignment.
+ * Filling character will be used for the remaining space.
+ *
+ * @ingroup Format
  */
 PAPILIO_EXPORT enum class format_align : std::uint8_t
 {
+    /** Actual alignment depends on the type to be formatted. */
     default_align = 0,
-    left,
-    middle,
-    right
+    /** `<`: Align to left. */
+    left = 1,
+    /** `^`: Align to middle. */
+    middle = 2,
+    /** `>`: Align to right */
+    right = 3
 };
 
 /**
  * @brief Format sign for numeric values.
+ *
+ * @ingroup Format
  */
 PAPILIO_EXPORT enum class format_sign : std::uint8_t
 {
+    /** Actual meaning depends on the type to be formatted. */
     default_sign = 0,
-    positive,
-    negative,
-    space
+    /** `+`: Always write sign for any values. */
+    positive = 1,
+    /** `-`: Only write sign for negative values. */
+    negative = 2,
+    /** `(space)`: Write space prefix for positive values and '-' for negative values. */
+    space = 3
 };
 
 /**
- * @brief Format string
+ * @brief Format string.
+ * Provides compile-time check if possible.
+ *
+ * @tparam CharT Character type
  *
  * @note Currently, this class does not provide any compile-time checking.
  *       It is provided only for consistency with the STL.
+ *
+ * @ingroup Format
  */
 PAPILIO_EXPORT template <typename CharT, typename... Args>
 class basic_format_string
@@ -103,20 +123,40 @@ private:
 };
 
 /**
- * @brief The script error code
+ * @brief The script error code.
+ *
+ * @ingroup Script
  */
 PAPILIO_EXPORT enum class script_error_code : int
 {
+    /** No error */
     no_error = 0,
+    /**
+     * The interpreter reached the end of string.
+     * Typically, this error is related to an incomplete format string.
+     */
     end_of_string = 1,
+    /** Invalid name of replacement field. */
     invalid_field_name = 2,
+    /** Invalid script condition operation. */
     invalid_condition = 3,
+    /** Invalid index (subscripting operator). */
     invalid_index = 4,
+    /** Invalid attribute name. */
     invalid_attribute = 5,
+    /** Unrecognized operator. */
     invalid_operator = 6,
+    /** Invalid string constant in scirpt. */
     invalid_string = 7,
+    /** Unenclosed brace. */
     unclosed_brace = 8,
 
+    /**
+     * Unknown error.
+     *
+     * This will only occur if there is an internal error.
+     * Please report in GitHub Issue if you get this in normal code.
+     */
     unknown_error = -1
 };
 
@@ -130,6 +170,7 @@ std::wostream& operator<<(std::wostream& os, script_error_code ec);
 
 /**
  * @brief Formatter data for standard format specification
+ * @ingroup Formatter
  */
 PAPILIO_EXPORT struct std_formatter_data
 {
@@ -186,6 +227,9 @@ PAPILIO_EXPORT struct std_formatter_data
  * @brief Formatter data for simple formatter data.
  *
  * Simple formatter data only contains width, filling character, alignment, and locale.
+ *
+ * @ingroup Formatter
+ * @sa std_formatter_data
  */
 PAPILIO_EXPORT struct simple_formatter_data
 {
@@ -229,6 +273,11 @@ PAPILIO_EXPORT struct simple_formatter_data
     }
 };
 
+/**
+ * @brief Bad variable access
+ *
+ * @ingroup Variable
+ */
 PAPILIO_EXPORT class bad_variable_access : public std::bad_variant_access
 {
 public:
@@ -252,6 +301,13 @@ public:
     ~invalid_conversion();
 };
 
+/// @defgroup Variable Script variable
+/// @ingroup Script
+/// @{
+
+/**
+ * @brief Base of script variable
+ */
 PAPILIO_EXPORT class variable_base
 {
 public:
@@ -272,6 +328,9 @@ protected:
     }
 };
 
+/**
+ * @brief Script variable
+ */
 PAPILIO_EXPORT template <typename CharT>
 class basic_variable : public variable_base
 {
@@ -663,6 +722,8 @@ PAPILIO_EXPORT template <typename T>
 using is_variable_storable = is_basic_variable_storable<T, char>;
 PAPILIO_EXPORT template <typename T>
 inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
+
+/// @}
 
 /**
  * @brief Bad handle cast
@@ -2049,6 +2110,9 @@ public:
     using char_type = CharT;
     using iterator = OutputIt;
     using format_args_type = basic_format_args_ref<basic_format_context, char_type>;
+
+    using indexing_value_type = basic_indexing_value<CharT>;
+    using attribute_name_type = basic_attribute_name<CharT>;
 
     template <typename T>
     using formatter_type = detail::select_formatter_t<T, basic_format_context>;
