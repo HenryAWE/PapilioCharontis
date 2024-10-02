@@ -410,6 +410,8 @@ TEST(interpreter, debug)
         }                                                                 \
     } while(0)
 
+    PAPILIO_TEST_INTERPRETER_DEBUG("{$}", invalid_condition, 2);
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'}", invalid_condition, 8);
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str':}", invalid_string, 9);
+    PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'==={0}:'s'}", invalid_condition, 10);
 }

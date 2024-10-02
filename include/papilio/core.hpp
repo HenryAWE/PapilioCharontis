@@ -149,7 +149,7 @@ PAPILIO_EXPORT enum class script_error_code : int
     /** Invalid string constant in scirpt. */
     invalid_string = 7,
     /** Unenclosed brace. */
-    unclosed_brace = 8,
+    unenclosed_brace = 8,
 
     /**
      * Unknown error.
@@ -3423,7 +3423,7 @@ public:
                 if(parse_it == parse_ctx.end()) [[unlikely]]
                     my_base::throw_end_of_string();
                 if(*parse_it != U'}') [[unlikely]]
-                    my_base::throw_error(script_error_code::unclosed_brace, parse_it);
+                    my_base::throw_error(script_error_code::unenclosed_brace, parse_it);
 
                 context_t::append(fmt_ctx, char_type('}'));
                 ++parse_it;
@@ -3452,7 +3452,7 @@ public:
                     if(parse_it == parse_ctx.end()) [[unlikely]]
                         my_base::throw_end_of_string();
                     if(*parse_it != U'}') [[unlikely]]
-                        my_base::throw_error(script_error_code::unclosed_brace, parse_it);
+                        my_base::throw_error(script_error_code::unenclosed_brace, parse_it);
                     ++parse_it;
                 }
                 else
@@ -3464,7 +3464,7 @@ public:
                     if(parse_it == parse_ctx.end()) [[unlikely]]
                         my_base::throw_end_of_string();
                     if(*parse_it != U'}') [[unlikely]]
-                        my_base::throw_error(script_error_code::unclosed_brace, parse_it);
+                        my_base::throw_error(script_error_code::unenclosed_brace, parse_it);
                     ++parse_it;
                 }
             }
@@ -3531,7 +3531,7 @@ private:
             if(start == parse_ctx.end()) [[unlikely]]
                 my_base::throw_end_of_string();
             if(*start != U'}') [[unlikely]]
-                my_base::throw_error(script_error_code::unclosed_brace, start);
+                my_base::throw_error(script_error_code::unenclosed_brace, start);
             ++start;
 
             return start;
@@ -3572,7 +3572,7 @@ private:
             if(start == parse_ctx.end()) [[unlikely]]
                 my_base::throw_end_of_string();
             if(*start != U'}') [[unlikely]]
-                my_base::throw_error(script_error_code::unclosed_brace, start);
+                my_base::throw_error(script_error_code::unenclosed_brace, start);
             ++start;
 
             return start;
@@ -3688,7 +3688,7 @@ private:
             if(next_it == stop) [[unlikely]]
                 my_base::throw_end_of_string();
             if(*next_it != U'}') [[unlikely]]
-                my_base::throw_error(script_error_code::unclosed_brace, next_it);
+                my_base::throw_error(script_error_code::unenclosed_brace, next_it);
 
             ++next_it;
             return std::make_pair(

@@ -30,7 +30,7 @@ namespace detail
             PAPILIO_SCRIPT_ERR(invalid_attribute, "invalid attribute");
             PAPILIO_SCRIPT_ERR(invalid_operator, "invalid operator");
             PAPILIO_SCRIPT_ERR(invalid_string, "invalid string");
-            PAPILIO_SCRIPT_ERR(unclosed_brace, "unclosed brace");
+            PAPILIO_SCRIPT_ERR(unenclosed_brace, "unenclosed brace");
 
         [[unlikely]] default:
             PAPILIO_SCRIPT_ERR(unknown_error, "unknown error");
@@ -57,7 +57,7 @@ namespace detail
             PAPILIO_SCRIPT_ERR(invalid_attribute, "invalid attribute");
             PAPILIO_SCRIPT_ERR(invalid_operator, "invalid operator");
             PAPILIO_SCRIPT_ERR(invalid_string, "invalid string");
-            PAPILIO_SCRIPT_ERR(unclosed_brace, "unclosed brace");
+            PAPILIO_SCRIPT_ERR(unenclosed_brace, "unenclosed brace");
 
         [[unlikely]] default:
             PAPILIO_SCRIPT_ERR(unknown_error, "unknown error");
