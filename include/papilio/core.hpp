@@ -79,6 +79,71 @@ PAPILIO_EXPORT enum class format_sign : std::uint8_t
     space = 3
 };
 
+/// @defgroup RangeFormat Range format
+/// @brief Specifies how a range should be formatted.
+/// @ingroup Format
+/// @{
+
+/**
+ * @brief Specifies how a range should be formatted.
+ *
+ * @ingroup Format
+ */
+PAPILIO_EXPORT enum class range_format
+{
+    /** Disallows range default formatter to format range. */
+    disabled = 0,
+    /**
+     * Allows to format range as map representation with modified brackets `"{"`, `"}"` and separator `": "`
+     * for underlying pair-like types in the following format:
+     * `{ key-1 : value-1, ..., key-n : value-n }`
+     */
+    map = 1,
+    /**
+     * Allows to format range as set representation with modified brackets `"{"` and `"}"`
+     * in the following format:
+     * `{ key-1, ..., key-n }`
+     */
+    set = 2,
+    /**
+     * Allows to format range as sequence representation with default brackets "[", "]" and separator ", "
+     * in the following format:
+     * `[ element-1, ..., element-n ]`
+     */
+    sequence = 3,
+    /** Allows to format range as string. */
+    string = 4,
+    /** Allows to format range as escaped string. */
+    debug_string = 5
+};
+
+template <typename R>
+constexpr inline range_format format_kind = []()
+{
+    static_assert(!sizeof(R), "Invalid type");
+    return range_format::disabled;
+}();
+
+template <std::ranges::input_range R>
+requires std::same_as<R, std::remove_cvref_t<R>>
+constexpr inline range_format format_kind<R> = []
+{
+    if constexpr(std::same_as<std::remove_cvref_t<std::ranges::range_reference_t<R>>, R>)
+        return range_format::disabled;
+    else if constexpr(requires { typename R::key_type; })
+    {
+        if constexpr(requires { typename R::mapped_type; } &&
+                     pair_like<std::ranges::range_reference_t<R>>)
+            return range_format::map;
+        else
+            return range_format::set;
+    }
+    else
+        return range_format::sequence;
+}();
+
+/// @}
+
 /**
  * @brief Format string.
  * Provides compile-time check if possible.
@@ -1984,6 +2049,8 @@ PAPILIO_EXPORT template <typename T, typename FormatContext = format_context>
 class adl_format_adaptor
 {
 public:
+    using char_type = typename FormatContext::char_type;
+
     using parse_context = basic_format_parse_context<FormatContext>;
 
     auto format(const T& val, parse_context& parse_ctx, FormatContext& fmt_ctx) const
@@ -2008,6 +2075,8 @@ requires streamable<T, CharT>
 class streamable_formatter
 {
 public:
+    using char_type = CharT;
+
     template <typename ParseContext>
     auto parse(ParseContext& ctx);
 
@@ -2763,12 +2832,30 @@ namespace detail
 /// @defgroup Formatter Formatters for various types
 /// @{
 
+namespace detail
+{
+    template <typename T>
+    struct formatter_traits_helper
+    {
+        using char_type = typename T::char_type;
+    };
+
+    template <typename T, typename CharT>
+    struct formatter_traits_helper<formatter<T, CharT>>
+    {
+        using char_type = CharT;
+    };
+} // namespace detail
+
 /**
  * @brief Traits for formatters
  */
 PAPILIO_EXPORT template <typename Formatter>
 struct formatter_traits
 {
+    using char_type = typename detail::formatter_traits_helper<Formatter>::char_type;
+    using string_view_type = std::basic_string_view<char_type>;
+
     /**
      * @brief Returns true if the formatter has a @b standalone parse function
      */
@@ -2829,6 +2916,60 @@ struct formatter_traits
         {
             parse_ctx.skip_spec();
         }
+    }
+
+    static constexpr bool has_debug_format()
+    {
+        return requires(Formatter& fmt) {
+            fmt.set_debug_format();
+        };
+    }
+
+    static bool try_set_debug_format(Formatter& fmt)
+    {
+        if constexpr(has_debug_format())
+        {
+            fmt.set_debug_format();
+            return true;
+        }
+        else
+            return false;
+    }
+
+    static constexpr bool has_set_separator() noexcept
+    {
+        return requires(Formatter& fmt, string_view_type sep) {
+            fmt.set_separator(sep);
+        };
+    }
+
+    static bool try_set_separator(Formatter& fmt, string_view_type sep)
+    {
+        if constexpr(has_set_separator())
+        {
+            fmt.set_separator(sep);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    static constexpr bool has_set_brackets() noexcept
+    {
+        return requires(Formatter& fmt, string_view_type opening, string_view_type closing) {
+            fmt.set_brackets(opening, closing);
+        };
+    }
+
+    static bool try_set_brackets(Formatter& fmt, string_view_type opening, string_view_type closing)
+    {
+        if constexpr(has_set_brackets())
+        {
+            fmt.set_brackets(opening, closing);
+            return true;
+        }
+        else
+            return false;
     }
 };
 
@@ -4849,6 +4990,11 @@ public:
             data().align = format_align::left;
     }
 
+    void set_debug_format() noexcept
+    {
+        data().type = U'?';
+    }
+
     template <typename FormatContext>
     auto format(string_ref_type str, FormatContext& ctx)
         -> typename FormatContext::iterator
@@ -4974,6 +5120,160 @@ public:
 
 private:
     std_formatter_data m_data{.type = U's'};
+};
+
+/**
+ * @brief Base formatter for ranges.
+ *
+ * @note Different from the standard one, whose first template parameter is @b underlying type.
+ *
+ * @tparam R @b Range type
+ * @tparam CharT Character type
+ */
+template <typename R, typename CharT = char>
+//requires(formattable<std::ranges::range_value_t<R>, CharT>)
+class range_formatter
+{
+public:
+    using underlying_type = std::remove_cvref_t<std::ranges::range_value_t<R>>;
+    using underlying_formatter_type = formatter<underlying_type, CharT>;
+    using string_view_type = std::basic_string_view<CharT>;
+
+    range_formatter()
+        : m_underlying()
+    {
+        switch(get_kind())
+        {
+        default:
+        case range_format::disabled:
+            break;
+
+        case range_format::set:
+        case range_format::map:
+            use_set_brackets();
+            break;
+
+        case range_format::sequence:
+            use_seq_brackets();
+            break;
+
+        case range_format::string:
+        case range_format::debug_string:
+            clear_brackets();
+            break;
+        }
+    }
+
+    void set_separator(string_view_type sep) noexcept
+    {
+        m_sep = sep;
+    }
+
+    void set_brackets(string_view_type opening, string_view_type closing) noexcept
+    {
+        m_opening = opening;
+        m_closing = closing;
+    }
+
+    template <typename ParseContext>
+    auto parse(ParseContext& ctx)
+        -> typename ParseContext::iterator
+    {
+        auto it = ctx.begin();
+        if(it == ctx.end())
+            return it;
+
+        if(char32_t ch = *it; ch == U'n')
+        {
+            m_type = U'n';
+            clear_brackets();
+            ++it;
+        }
+        else if(ch == U'm')
+        {
+            m_type = U'm';
+            use_set_brackets();
+            ++it;
+        }
+        else if(ch != U':')
+        {
+            // error
+            goto end_parse;
+        }
+
+        if(it != ctx.end() && *it == U':')
+        {
+            ++it;
+            ctx.advance_to(it);
+            it = m_underlying.parse(ctx);
+        }
+
+        using fmt_t = formatter_traits<underlying_formatter_type>;
+        if(m_type == U'm')
+        {
+            fmt_t::try_set_brackets(m_underlying, string_view_type(), string_view_type());
+            fmt_t::try_set_separator(m_underlying, PAPILIO_TSTRING_VIEW(CharT, ": "));
+        }
+        else if(m_type == U'\0')
+        {
+            fmt_t::try_set_debug_format(m_underlying);
+        }
+
+end_parse:
+        return it;
+    }
+
+    template <typename Context>
+    auto format(const R& rng, Context& ctx) const
+        -> typename Context::iterator
+    {
+        using context_t = format_context_traits<Context>;
+
+        context_t::append(ctx, m_opening);
+
+        bool first = true;
+        for(auto&& i : rng)
+        {
+            if(!first)
+            {
+                context_t::append(ctx, m_sep);
+            }
+            first = false;
+
+            context_t::advance_to(ctx, m_underlying.format(i, ctx));
+        }
+
+        context_t::append(ctx, m_closing);
+
+        return context_t::out(ctx);
+    }
+
+private:
+    char32_t m_type = U'\0';
+    underlying_formatter_type m_underlying;
+    string_view_type m_sep = PAPILIO_TSTRING_VIEW(CharT, ", ");
+    string_view_type m_opening;
+    string_view_type m_closing;
+
+    static constexpr range_format get_kind()
+    {
+        return format_kind<std::remove_cvref_t<R>>;
+    }
+
+    void clear_brackets() noexcept
+    {
+        set_brackets(string_view_type(), string_view_type());
+    }
+
+    void use_set_brackets()
+    {
+        set_brackets(PAPILIO_TSTRING_VIEW(CharT, "{"), PAPILIO_TSTRING_VIEW(CharT, "}"));
+    }
+
+    void use_seq_brackets()
+    {
+        set_brackets(PAPILIO_TSTRING_VIEW(CharT, "["), PAPILIO_TSTRING_VIEW(CharT, "]"));
+    }
 };
 
 /// @}
@@ -5323,6 +5623,11 @@ private:
 template <typename T, typename CharT>
 requires std::is_enum_v<T>
 class formatter<T, CharT> : public enum_formatter<T, CharT>
+{};
+
+template <std::ranges::input_range R, typename CharT>
+class formatter<R, CharT> :
+    public std::conditional_t<formattable<std::ranges::range_value_t<R>, CharT>, range_formatter<R, CharT>, disabled_formatter>
 {};
 
 /// @}
