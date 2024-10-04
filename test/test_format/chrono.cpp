@@ -10,11 +10,8 @@ static std::tm create_tm_epoch()
     // The Unix epoch (January 1, 1970)
     const std::time_t t = 0;
     std::tm result{};
-#ifdef PAPILIO_STDLIB_MSVC_STL
-    gmtime_s(&result, &t);
-#else
+
     result = *std::gmtime(&t);
-#endif
 
     return result;
 }

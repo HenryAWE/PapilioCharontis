@@ -1547,11 +1547,6 @@ namespace detail
     }
 } // namespace detail
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
-#endif
-
 /**
  * @brief Base of format argument storage.
  *
@@ -1681,10 +1676,6 @@ protected:
 
 #endif
 };
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
 PAPILIO_EXPORT template <typename T, typename Context = format_context>
 struct is_format_args :

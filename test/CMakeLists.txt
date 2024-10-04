@@ -11,6 +11,9 @@ function(configure_test test_target)
     )
     # Use a large DISCOVERY_TIMEOUT value reduce accidental CI failure
     gtest_discover_tests(${test_target} DISCOVERY_TIMEOUT 1000)
+    if(WIN32)
+        target_compile_definitions(${test_target} PRIVATE _CRT_SECURE_NO_WARNINGS)
+    endif()
 endfunction()
 
 macro(papilio_simple_test test_name)

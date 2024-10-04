@@ -14,6 +14,7 @@
 #    pragma clang diagnostic ignored "-Wpadded"
 #    pragma clang diagnostic ignored "-Wcovered-switch-default"
 #    pragma clang diagnostic ignored "-Wsuggest-destructor-override"
+#    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 
 #    if __clang_major__ >= 16
 #        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
