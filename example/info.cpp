@@ -58,10 +58,6 @@ int main()
     println("PAPILIO_HAS_LIB_EXPECTED = {:d}L", PAPILIO_HAS_LIB_EXPECTED);
 #endif
 
-#ifdef PAPILIO_HAS_VA_OPT
-    println("PAPILIO_HAS_VA_OPT defined");
-#endif
-
     println("PAPILIO_HAS_UNREACHABLE = {}", PAPILIO_HAS_UNREACHABLE);
 #ifdef PAPILIO_HAS_ENUM_NAME
     println("PAPILIO_HAS_ENUM_NAME = {}", PAPILIO_HAS_ENUM_NAME);

@@ -63,17 +63,6 @@
 #    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #endif
 
-#define PAPILIO_HAS_VA_OPT_HELPER(_0, _1, result, ...) result
-#define PAPILIO_HAS_VA_OPT_IMPL(...) \
-    PAPILIO_HAS_VA_OPT_HELPER(__VA_OPT__(, ), 1, 0)
-
-#if PAPILIO_HAS_VA_OPT_IMPL(_0) == 1
-#    define PAPILIO_HAS_VA_OPT 1
-#endif
-
-#undef PAPILIO_HAS_VA_OPT_HELPER
-#undef PAPILIO_HAS_VA_OPT_IMPL
-
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
