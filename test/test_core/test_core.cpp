@@ -65,6 +65,68 @@ TEST(format_args, static)
     }(make_format_args(182375, 182376, "name"_a = "scene"));
 }
 
+namespace test_core
+{
+template <typename Context>
+class custom_format_args final : public papilio::basic_dynamic_format_args<Context>
+{
+    using my_base = papilio::basic_dynamic_format_args<Context>;
+
+public:
+    using char_type = typename Context::char_type;
+    using string_type = typename my_base::string_type;
+    using string_view_type = typename my_base::string_view_type;
+    using format_arg_type = typename my_base::format_arg_type;
+
+    using my_base::my_base;
+
+    bool contains(string_view_type key) const noexcept override
+    {
+        if(key == PAPILIO_TSTRING_VIEW(char_type, "argc"))
+            return true;
+
+        return my_base::contains(key);
+    }
+
+    const format_arg_type& get(string_view_type key) const override
+    {
+        if(key == PAPILIO_TSTRING_VIEW(char_type, "argc"))
+        {
+            update_argc();
+            return m_argc;
+        }
+
+        return my_base::get(key);
+    }
+
+private:
+    mutable format_arg_type m_argc;
+
+    void update_argc() const
+    {
+        m_argc = format_arg_type(this->indexed_size() + this->named_size());
+    }
+};
+} // namespace test_core
+
+TEST(format_args, custom)
+{
+    using namespace papilio;
+
+    test_core::custom_format_args<format_context> args(1, "three"_a = 3, 2);
+
+    EXPECT_EQ(get<int>(args[0]), 1);
+    EXPECT_EQ(get<int>(args[1]), 2);
+    EXPECT_EQ(get<int>(args["three"]), 3);
+
+    EXPECT_TRUE(args.contains("argc"));
+    EXPECT_EQ(get<std::size_t>(args["argc"]), 3);
+
+    format_args_ref args_ref(args);
+    EXPECT_TRUE(args_ref.contains("argc"));
+    EXPECT_EQ(get<std::size_t>(args_ref["argc"]), 3);
+}
+
 TEST(format_args, ref)
 {
     using namespace papilio;

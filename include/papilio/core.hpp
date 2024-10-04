@@ -1805,7 +1805,7 @@ private:
 };
 
 PAPILIO_EXPORT template <typename Context, typename CharT>
-class basic_dynamic_format_args final : public format_args_base<Context, CharT>
+class basic_dynamic_format_args : public format_args_base<Context, CharT>
 {
     using my_base = format_args_base<Context, CharT>;
 
