@@ -25,8 +25,14 @@ TEST(ranges, sequence)
     EXPECT_EQ(PAPILIO_NS format(L"{}", bvec), L"[true, false, true]");
     EXPECT_EQ(PAPILIO_NS format(L"{::d}", bvec), L"[1, 0, 1]");
 
+
+    // Workaround for libc++-15
+#if !defined(PAPILIO_STDLIB_LIBCPP) || PAPILIO_STDLIB_LIBCPP >= 160000
+
     EXPECT_EQ(PAPILIO_NS format("{}", std::views::iota(1, 4)), "[1, 2, 3]");
     EXPECT_EQ(PAPILIO_NS format(L"{}", std::views::iota(1, 4)), L"[1, 2, 3]");
+
+#endif
 }
 
 TEST(ranges, set)
