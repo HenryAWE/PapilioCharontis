@@ -2192,6 +2192,11 @@ public:
         return m_out;
     }
 
+    const iterator& out_ref() const
+    {
+        return m_out;
+    }
+
     void advance_to(iterator it)
     {
         m_out = std::move(it);
@@ -3530,6 +3535,190 @@ public:
         return access_impl(ctx, ctx.begin(), ctx.end());
     }
 
+    class interpreter_context
+    {
+    public:
+        using input_iterator = typename parse_context::iterator;
+
+        interpreter_context() = delete;
+
+        interpreter_context(const interpreter_context&) = default;
+
+        interpreter_context(parse_context& ictx, FormatContext& octx)
+            : m_parse_ctx(std::addressof(ictx)),
+              m_format_ctx(std::addressof(octx)),
+              m_input_it(ictx.begin()) {}
+
+        parse_context& input_context() const noexcept
+        {
+            return *m_parse_ctx;
+        }
+
+        FormatContext& output_context() const noexcept
+        {
+            return *m_format_ctx;
+        }
+
+        auto parse_begin() const
+        {
+            return m_parse_ctx->begin();
+        }
+
+        auto parse_end() const
+        {
+            return m_parse_ctx->end();
+        }
+
+        void input_next()
+        {
+            ++m_input_it;
+        }
+
+        void advance_input_to(input_iterator it)
+        {
+            m_input_it = std::move(it);
+        }
+
+        input_iterator& input() noexcept
+        {
+            return m_input_it;
+        }
+
+        const input_iterator& input() const noexcept
+        {
+            return m_input_it;
+        }
+
+        char32_t input_value() const
+        {
+            return *m_input_it;
+        }
+
+        bool input_at_end() const
+        {
+            return m_input_it == parse_end();
+        }
+
+        void update_input_context() const
+        {
+            m_parse_ctx->advance_to(m_input_it);
+        }
+
+    private:
+        parse_context* m_parse_ctx;
+        FormatContext* m_format_ctx;
+        input_iterator m_input_it;
+    };
+
+    interpreter_context create_context(parse_context& parse_ctx, FormatContext& fmt_ctx)
+    {
+        return interpreter_context(parse_ctx, fmt_ctx);
+    }
+
+    void run_once(interpreter_context& intp_ctx)
+    {
+        PAPILIO_ASSERT(!intp_ctx.input_at_end());
+
+        using context_t = format_context_traits<FormatContext>;
+
+        char32_t ch = intp_ctx.input_value();
+
+        if(ch == U'}')
+        {
+            intp_ctx.input_next();
+            if(intp_ctx.input_at_end()) [[unlikely]]
+                my_base::throw_end_of_string();
+            if(intp_ctx.input_value() != U'}') [[unlikely]]
+                my_base::throw_error(script_error_code::unenclosed_brace, intp_ctx.input());
+
+            context_t::append(intp_ctx.output_context(), char_type('}'));
+            intp_ctx.input_next();
+        }
+        else if(ch == U'{')
+        {
+            intp_ctx.input_next();
+            if(intp_ctx.input_at_end()) [[unlikely]]
+                my_base::throw_end_of_string();
+
+            ch = intp_ctx.input_value();
+            if(ch == U'{')
+            {
+                context_t::append(intp_ctx.output_context(), char_type('{'));
+
+                intp_ctx.input_next();
+            }
+            else if(ch == my_base::script_start)
+            {
+                intp_ctx.input_next();
+
+                intp_ctx.update_input_context();
+                exec_script(intp_ctx.input_context(), intp_ctx.output_context());
+
+                intp_ctx.advance_input_to(intp_ctx.parse_begin());
+                if(intp_ctx.input_at_end()) [[unlikely]]
+                    my_base::throw_end_of_string();
+                if(intp_ctx.input_value() != U'}') [[unlikely]]
+                    my_base::throw_error(script_error_code::unenclosed_brace, intp_ctx.input());
+                intp_ctx.input_next();
+            }
+            else
+            {
+                intp_ctx.update_input_context();
+                exec_repl(intp_ctx.input_context(), intp_ctx.output_context());
+
+                intp_ctx.advance_input_to(intp_ctx.parse_begin());
+                if(intp_ctx.input_at_end()) [[unlikely]]
+                    my_base::throw_end_of_string();
+                if(intp_ctx.input_value() != U'}') [[unlikely]]
+                    my_base::throw_error(script_error_code::unenclosed_brace, intp_ctx.input());
+                intp_ctx.input_next();
+            }
+        }
+        else
+        {
+            // Ordinary characters
+            context_t::append(intp_ctx.output_context(), ch);
+            intp_ctx.input_next();
+        }
+    }
+
+    std::size_t run_n(interpreter_context& intp_ctx, std::size_t n)
+    {
+        std::size_t count = 0;
+        while(!intp_ctx.input_at_end())
+        {
+            if(count == n)
+                return n;
+            ++count;
+            run_once(intp_ctx);
+        }
+
+        return count;
+    }
+
+    template <typename Pred>
+    std::size_t run_if(interpreter_context& intp_ctx, Pred&& pred)
+    {
+        std::size_t count = 0;
+        while(!intp_ctx.input_at_end())
+        {
+            if(!pred())
+                return count;
+            ++count;
+            run_once(intp_ctx);
+        }
+
+        return count;
+    }
+
+    void run(interpreter_context& intp_ctx)
+    {
+        while(!intp_ctx.input_at_end())
+        {
+            run_once(intp_ctx);
+        }
+    }
+
     /**
      * @brief Parse and format
      *
@@ -3541,72 +3730,8 @@ public:
         FormatContext& fmt_ctx
     )
     {
-        using context_t = format_context_traits<FormatContext>;
-
-        auto parse_it = parse_ctx.begin();
-
-        while(parse_it != parse_ctx.end())
-        {
-            char32_t ch = *parse_it;
-
-            if(ch == U'}')
-            {
-                ++parse_it;
-                if(parse_it == parse_ctx.end()) [[unlikely]]
-                    my_base::throw_end_of_string();
-                if(*parse_it != U'}') [[unlikely]]
-                    my_base::throw_error(script_error_code::unenclosed_brace, parse_it);
-
-                context_t::append(fmt_ctx, char_type('}'));
-                ++parse_it;
-            }
-            else if(ch == U'{')
-            {
-                ++parse_it;
-                if(parse_it == parse_ctx.end()) [[unlikely]]
-                    my_base::throw_end_of_string();
-
-                ch = *parse_it;
-                if(ch == U'{')
-                {
-                    context_t::append(fmt_ctx, char_type('{'));
-
-                    ++parse_it;
-                }
-                else if(ch == my_base::script_start)
-                {
-                    ++parse_it;
-
-                    parse_ctx.advance_to(parse_it);
-                    exec_script(parse_ctx, fmt_ctx);
-
-                    parse_it = parse_ctx.begin();
-                    if(parse_it == parse_ctx.end()) [[unlikely]]
-                        my_base::throw_end_of_string();
-                    if(*parse_it != U'}') [[unlikely]]
-                        my_base::throw_error(script_error_code::unenclosed_brace, parse_it);
-                    ++parse_it;
-                }
-                else
-                {
-                    parse_ctx.advance_to(parse_it);
-                    exec_repl(parse_ctx, fmt_ctx);
-
-                    parse_it = parse_ctx.begin();
-                    if(parse_it == parse_ctx.end()) [[unlikely]]
-                        my_base::throw_end_of_string();
-                    if(*parse_it != U'}') [[unlikely]]
-                        my_base::throw_error(script_error_code::unenclosed_brace, parse_it);
-                    ++parse_it;
-                }
-            }
-            else
-            {
-                // ordinary character
-                context_t::append(fmt_ctx, ch);
-                ++parse_it;
-            }
-        }
+        auto intp_ctx = create_context(parse_ctx, fmt_ctx);
+        run(intp_ctx);
     }
 
 private:

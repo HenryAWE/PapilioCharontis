@@ -5,6 +5,7 @@
 #include <papilio/format.hpp>
 #include <vector>
 #include <iostream>
+#include <ranges>
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
@@ -171,4 +172,73 @@ TYPED_TEST(format_suite, exception)
         ) << "f = "
           << std::quoted(utf::basic_string_ref<TypeParam>(f).to_string());
     }
+}
+
+TYPED_TEST(format_suite ,formatted_range)
+{
+    using namespace papilio;
+
+    using char_type = typename TestFixture::char_type;
+    using string_type = typename TestFixture::string_type;
+    using context_type = basic_format_context<
+        format_iterator_for<char_type>,
+        char_type>;
+
+    static_assert(std::input_iterator<typename formatted_range<char_type>::iterator>);
+    static_assert(std::ranges::input_range<formatted_range<char_type>>);
+
+    [](const auto& args)
+    {
+        string_type result;
+        result.reserve(16);
+
+        // Test CTAD of formatted_range
+
+        for(char_type c : formatted_range(PAPILIO_TSTRING(char_type, "{} "), args))
+        {
+            result.push_back(c);
+        }
+
+        for(char_type c : formatted_range(PAPILIO_TSTRING_VIEW(char_type, "{} "), args))
+        {
+            result.push_back(c);
+        }
+
+        string_type fmt_str = string_type(PAPILIO_TSTRING(char_type, "{} "));
+        for(char_type c : formatted_range(fmt_str, args))
+        {
+            result.push_back(c);
+        }
+
+        auto expected_str = PAPILIO_TSTRING(char_type, "true true true ");
+        EXPECT_EQ(result, expected_str);
+    }(PAPILIO_NS make_format_args<context_type>(true));
+
+    [](const auto& args)
+    {
+        string_type result;
+        result.reserve(10);
+
+        auto fr = formatted_range(PAPILIO_TSTRING(char_type, "{} {}"), args);
+
+        // Transformer
+        auto fn = [](char_type ch) -> char_type
+        {
+            if(ch == 't')
+                return 'T';
+            else if(ch == 'f')
+                return 'F';
+            else
+                return ch;
+        };
+
+        namespace stdv = std::views;
+        for(char_type c : fr | stdv::transform(fn))
+        {
+            result.push_back(c);
+        }
+
+        auto expected_str = PAPILIO_TSTRING(char_type, "True False");
+        EXPECT_EQ(result, expected_str);
+    }(PAPILIO_NS make_format_args<context_type>(true, false));
 }

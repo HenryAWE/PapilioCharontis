@@ -71,6 +71,7 @@ template <typename CharT>
 class format_suite : public ::testing::Test
 {
 public:
+    using char_type = CharT;
     using string_type = std::basic_string<CharT>;
     using string_view_type = std::basic_string_view<CharT>;
 };
