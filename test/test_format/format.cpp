@@ -132,6 +132,24 @@ TYPED_TEST(format_suite, format_to_n)
     }
 
     {
+        string_type str{};
+        str.resize(8);
+        auto result = PAPILIO_NS format_to_n(
+            str.begin(),
+            str.size(),
+            PAPILIO_TSTRING_VIEW(TypeParam, "val={:b}."),
+            0xffff
+        );
+
+        EXPECT_EQ(result.out, str.begin() + str.size());
+        EXPECT_EQ(result.size, str.size());
+        EXPECT_EQ(result.size, 8);
+
+        const auto expected_str = PAPILIO_TSTRING_VIEW(TypeParam, "val=1111");
+        EXPECT_EQ(str, expected_str);
+    }
+
+    {
         std::locale loc = test_format::attach_yes_no<TypeParam>();
 
         string_type str{};
@@ -174,7 +192,7 @@ TYPED_TEST(format_suite, exception)
     }
 }
 
-TYPED_TEST(format_suite ,formatted_range)
+TYPED_TEST(format_suite, formatted_range)
 {
     using namespace papilio;
 
@@ -214,6 +232,9 @@ TYPED_TEST(format_suite ,formatted_range)
         EXPECT_EQ(result, expected_str);
     }(PAPILIO_NS make_format_args<context_type>(true));
 
+    // Workaround for libc++-15
+#if !defined(PAPILIO_STDLIB_LIBCPP) || PAPILIO_STDLIB_LIBCPP >= 160000
+
     [](const auto& args)
     {
         string_type result;
@@ -241,4 +262,6 @@ TYPED_TEST(format_suite ,formatted_range)
         auto expected_str = PAPILIO_TSTRING(char_type, "True False");
         EXPECT_EQ(result, expected_str);
     }(PAPILIO_NS make_format_args<context_type>(true, false));
+
+#endif
 }
