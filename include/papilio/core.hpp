@@ -5055,6 +5055,11 @@ public:
         data().fill = dt.fill_or(U' ');
     }
 
+    void set_debug_format() noexcept
+    {
+        data().type = U'?';
+    }
+
     template <typename FormatContext>
     auto format(utf::codepoint cp, FormatContext& ctx)
     {
@@ -5291,6 +5296,11 @@ public:
         m_closing = closing;
     }
 
+    void set_debug_format() noexcept
+    {
+        m_debug = true;
+    }
+
     template <typename ParseContext>
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
@@ -5309,6 +5319,20 @@ public:
         {
             m_type = U'm';
             use_set_brackets();
+            ++it;
+        }
+        else if(ch == U'?')
+        {
+            set_debug_format();
+            ++it;
+            if(it == ctx.end() || *it != U's')
+                throw format_error("invalid range format");
+            m_type = U's';
+            ++it;
+        }
+        else if(ch == U's')
+        {
+            m_type = U's';
             ++it;
         }
         else if(ch != U':')
@@ -5334,6 +5358,8 @@ public:
         {
             fmt_t::try_set_debug_format(m_underlying);
         }
+        else if(m_type == U's' && m_debug)
+            fmt_t::try_set_debug_format(m_underlying);
 
 end_parse:
         return it;
@@ -5344,6 +5370,28 @@ end_parse:
         -> typename Context::iterator
     {
         using context_t = format_context_traits<Context>;
+
+        if(m_type == U's')
+        {
+            constexpr bool is_string_like_range =
+                std::convertible_to<std::ranges::range_reference_t<R>, CharT> ||
+                std::convertible_to<std::ranges::range_reference_t<R>, utf::codepoint>;
+
+            if constexpr(!is_string_like_range)
+                throw format_error("invalid range format");
+            else
+            {
+                utf::basic_string_container<CharT> str;
+                str.assign_range(rng);
+
+                if(m_debug)
+                    context_t::append_escaped(ctx, str);
+                else
+                    context_t::append(ctx, str);
+            }
+
+            return context_t::out(ctx);
+        }
 
         context_t::append(ctx, m_opening);
 
@@ -5370,6 +5418,7 @@ private:
     string_view_type m_sep = PAPILIO_TSTRING_VIEW(CharT, ", ");
     string_view_type m_opening;
     string_view_type m_closing;
+    bool m_debug = false;
 
     static constexpr range_format get_kind()
     {
@@ -5507,6 +5556,11 @@ PAPILIO_EXPORT template <typename CharT>
 class formatter<utf::codepoint, CharT>
 {
 public:
+    void set_debug_format() noexcept
+    {
+        m_data.type = U'?';
+    }
+
     template <typename ParseContext>
     auto parse(ParseContext& ctx) -> typename ParseContext::iterator
     {
@@ -5543,6 +5597,22 @@ public:
 private:
     std_formatter_data m_data;
 };
+
+/**
+ * @brief Formatter for character type.
+ * It simply redirect all calls to the Unicode code point formatter.
+ *
+ * @sa utf::codepoint
+ *
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `c`, `?`, `b`,`B`,`x`,`X`,`o`,`d`.
+ * - none, `c`, `?`: Format as a Unicode code point. @sa codepoint_formatter
+ * - `b`,`B`,`x`,`X`,`o`,`d`: Format as integer. @sa int_formatter
+ */
+PAPILIO_EXPORT template <typename CharT>
+class formatter<CharT, CharT> : public formatter<utf::codepoint, CharT>
+{};
 
 /**
  * @brief Formatter for the Boolean type.

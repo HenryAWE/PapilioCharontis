@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include <list>
 #include <set>
 #include <ranges>
 #include <papilio/format.hpp>
@@ -61,4 +62,42 @@ TEST(ranges, map)
     EXPECT_EQ(PAPILIO_NS format(L"{}", m), L"{(1, 1), (2, 2), (3, 3)}");
     EXPECT_EQ(PAPILIO_NS format(L"{:n}", m), L"(1, 1), (2, 2), (3, 3)");
     EXPECT_EQ(PAPILIO_NS format(L"{:m}", m), L"{1: 1, 2: 2, 3: 3}");
+}
+
+TEST(ranges, string_like)
+{
+    using namespace papilio;
+
+    {
+        static_assert(formattable<std::list<char>>);
+
+        std::list<char> vec{'a', '"', 'b'};
+        EXPECT_EQ(PAPILIO_NS format("{}", vec), "[a, \", b]");
+        EXPECT_EQ(PAPILIO_NS format("{:s}", vec), "a\"b");
+        EXPECT_EQ(PAPILIO_NS format("{:?s}", vec), "a\\\"b");
+    }
+
+    {
+        static_assert(formattable<std::list<wchar_t>, wchar_t>);
+
+        std::list<wchar_t> vec{L'a', L'"', L'b'};
+        EXPECT_EQ(PAPILIO_NS format(L"{}", vec), L"[a, \", b]");
+        EXPECT_EQ(PAPILIO_NS format(L"{:s}", vec), L"a\"b");
+        EXPECT_EQ(PAPILIO_NS format(L"{:?s}", vec), L"a\\\"b");
+    }
+
+    {
+        static_assert(formattable<std::list<utf::codepoint>>);
+        static_assert(formattable<std::list<utf::codepoint>, wchar_t>);
+
+        std::list<utf::codepoint> vec{U'a'_cp, U'"'_cp, U'b'_cp};
+
+        EXPECT_EQ(PAPILIO_NS format("{}", vec), "[a, \", b]");
+        EXPECT_EQ(PAPILIO_NS format("{:s}", vec), "a\"b");
+        EXPECT_EQ(PAPILIO_NS format("{:?s}", vec), "a\\\"b");
+
+        EXPECT_EQ(PAPILIO_NS format(L"{}", vec), L"[a, \", b]");
+        EXPECT_EQ(PAPILIO_NS format(L"{:s}", vec), L"a\"b");
+        EXPECT_EQ(PAPILIO_NS format(L"{:?s}", vec), L"a\\\"b");
+    }
 }

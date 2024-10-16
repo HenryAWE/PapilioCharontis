@@ -977,6 +977,35 @@ public:
         return *this;
     }
 
+    template <std::ranges::input_range R>
+    basic_string_container& assign_range(R&& r) noexcept
+    {
+        if constexpr(std::convertible_to<std::ranges::range_reference_t<R>, CharT>)
+        {
+            string_type buf;
+            if constexpr(std::ranges::sized_range<R>)
+                buf.reserve(std::ranges::size(r));
+            for(CharT ch : r)
+                buf.push_back(ch);
+
+            assign(std::move(buf));
+        }
+        else if constexpr(std::convertible_to<std::ranges::range_reference_t<R>, utf::codepoint>)
+        {
+            string_type buf;
+            for(utf::codepoint cp : r)
+                cp.append_to(buf);
+
+            assign(std::move(buf));
+        }
+        else
+        {
+            static_assert(!sizeof(R), "Invalid range");
+        }
+
+        return *this;
+    }
+
     constexpr basic_string_container& operator=(const basic_string_container&) = default;
     constexpr basic_string_container& operator=(basic_string_container&&) noexcept = default;
 
