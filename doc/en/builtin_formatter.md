@@ -1,10 +1,17 @@
 # Built-In Formatter
+The format specification of most built-in formatters are compatible with the usage of the corresponding parts of the standard library `<format>`.  
+See the [standard library documentation](https://en.cppreference.com/w/cpp/utility/format/spec) for more detailed explanation.
+
 ## Format Specification for Common Types
 Used by fundamental types, character and string.
 ```
 fill-and-align sign # 0 width .precision L type
 ```
 These arguments are all optional.
+
+- **Note:**  
+  In most of the cases the syntax is similar to the C-style `%`-formatting of `printf` family, with the addition of the `{}` and with `:` used instead of `%`.  
+  For example, `%03.2f` can be translated to `{:03.2f}`
 
 ### Fill and Align
 Fill can be any character, followed by align option which is one of the `<`, `>` and `^`.  
@@ -72,6 +79,7 @@ This option is only available for some types. It may cause the output to be affe
 ### Type
 #### String
 - None, `s`: Copy the string to the output.
+- `?`: Copy escaped string (see below) to the output.
 
 #### Integral Type (Except `bool` type)
 - `b`: Binary output.
@@ -83,6 +91,7 @@ This option is only available for some types. It may cause the output to be affe
 
 #### Character Type
 - None, `c`: Copy the character to the output.
+- `?`: Copy the escaped character (see below) to the output.
 - `b`, `B`, `d`, `o`, `x`, `X`: Use integer representation types with `static_cast<std::uint32_t>(value)`.
 
 #### `bool` Type
@@ -106,6 +115,34 @@ Infinite values and NaN are formatted to `inf` and `nan`, respectively.
 - None, `s`: Copy the corresponding string of the enumeration value to the output.
 - `b`, `B`, `d`, `o`, `x`, `X`: Use integer representation types with `static_cast<std::underlying_type_t<Enum>>(value)`.
 
-Note: The `enum_name` function defined in `<papilio/utility.hpp>` uses compiler extension to retrieve string from enumeration value. It has following limitations:
-1. Only support enumeration values within the `[-128, 128)` range.
-2. Output result of multiple enumerations with same value is compiler dependent.
+Note: The `enum_name` function defined in `<papilio/utility.hpp>` uses compiler extension to retrieve string from enumeration value. It has following limitations:  
+1. Requires compiler extension. If supported by the compiler, the implementation will define a `PAPILIO_HAS_ENUM_NAME` macro.
+2. Only support enumeration values within the `[-128, 128)` range.
+3. Output result of multiple enumerations with same value is compiler dependent.
+
+# Formatting escaped characters and strings
+A character or string can be formatted as escaped to make it more suitable for debugging or for logging.
+
+For a character `C`:
+- If `C` is one of the characters in the following table, the corresponding escape sequence is used.  
+  | Character       | Escape sequence | Notes                                           |
+  | --------------- | --------------- | ----------------------------------------------- |
+  | Horizontal tab  | `\t`            |                                                 |
+  | New line        | `\n`            |                                                 |
+  | Carriage return | `\r`            |                                                 |
+  | Double quote    | `\"`            | Used only if the output is double-quoted string |
+  | Single quote    | `\'`            | Used only if the output is single-quoted string |
+  | Backslash       | `\\`            |                                                 |
+
+- If `C` and following characters form a sequence that is not printable.
+
+- If `C` and following characters cannot form a valid code point. The hexadecimal digits will be used to represent the invalid sequence.
+
+## Example
+```c++
+papilio::format("{:?} {:?}", '\'', '"'); // Returns "\\' \""
+papilio::format("{:?}", "hello\n"); // Returns "hello\\n"
+papilio::format("{:?}", std::string("\0 \n \t \x02 \x1b", 9)); // Returns "\\u{0} \\n \\t \\u{2} \\u{1b}"
+// Invalid UTF-8
+papilio::format("{:?}", "\xc3\x28"); // Returns "\\x{c3}("
+```

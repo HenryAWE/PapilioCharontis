@@ -2251,13 +2251,24 @@ public:
     format_context_traits() = delete;
 
 private:
-    static void append_hex_digits(context_type& ctx, int_type val)
+    static void append_hex_digits(context_type& ctx, int_type val, bool is_valid)
     {
-        format_to(
-            ctx,
-            PAPILIO_TSTRING_VIEW(char_type, "\\u{{{:x}}}"),
-            val
-        );
+        if(is_valid)
+        {
+            format_to(
+                ctx,
+                PAPILIO_TSTRING_VIEW(char_type, "\\u{{{:x}}}"),
+                val
+            );
+        }
+        else
+        {
+            format_to(
+                ctx,
+                PAPILIO_TSTRING_VIEW(char_type, "\\x{{{:x}}}"),
+                val
+            );
+        }
     }
 
     template <bool DoubleQuote, bool SingleQuote>
@@ -2267,7 +2278,7 @@ private:
         {
         default:
 other_ch:
-            append_hex_digits(ctx, val);
+            append_hex_digits(ctx, val, true);
             break;
 
         case '\t':
@@ -2316,7 +2327,8 @@ other_ch:
                val == '\r' ||
                val == '\\' ||
                (DoubleQuote && val == '"') ||
-               (SingleQuote && val == '\'');
+               (SingleQuote && val == '\'') ||
+               val < U' ';
     }
 
 public:
@@ -2459,12 +2471,12 @@ private:
         {
             if(PAPILIO_NS utf::is_leading_byte(str[i]))
             {
-                std::uint8_t size_bytes = utf::byte_count(str[i]);
+                std::uint8_t size_bytes = PAPILIO_NS utf::byte_count(str[i]);
                 if(i + size_bytes > str.size())
                 {
                     for(std::size_t j = i; j < str.size(); ++j)
                     {
-                        append_hex_digits(ctx, static_cast<std::uint8_t>(str[j]));
+                        append_hex_digits(ctx, static_cast<std::uint8_t>(str[j]), false);
                     }
                     return;
                 }
@@ -2497,7 +2509,7 @@ private:
 
                     for(auto it = str.begin() + i; it != stop; ++it)
                     {
-                        append_hex_digits(ctx, static_cast<std::uint8_t>(*it));
+                        append_hex_digits(ctx, static_cast<std::uint8_t>(*it), false);
                     }
 
                     i += std::distance(str.begin() + i, stop);
@@ -2508,7 +2520,7 @@ private:
             }
             else
             {
-                append_hex_digits(ctx, str[i]);
+                append_hex_digits(ctx, str[i], false);
                 ++i;
             }
         }
@@ -2526,16 +2538,16 @@ private:
                 append_as_esc_seq<true, false>(ctx, ch);
                 ++i;
             }
-            else if(utf::is_high_surrogate(ch))
+            else if(PAPILIO_NS utf::is_high_surrogate(ch))
             {
                 if(i + 1 >= str.size())
                 {
-                    append_hex_digits(ctx, ch);
+                    append_hex_digits(ctx, ch, false);
                     return;
                 }
-                else if(!utf::is_low_surrogate(str[i + 1]))
+                else if(!PAPILIO_NS utf::is_low_surrogate(str[i + 1]))
                 {
-                    append_hex_digits(ctx, ch);
+                    append_hex_digits(ctx, ch, false);
                 }
                 else
                 {
@@ -2546,9 +2558,9 @@ private:
             }
             else
             {
-                if(utf::is_low_surrogate(ch))
+                if(PAPILIO_NS utf::is_low_surrogate(ch))
                 {
-                    append_hex_digits(ctx, ch);
+                    append_hex_digits(ctx, ch, false);
                 }
                 else
                 {
@@ -2586,7 +2598,7 @@ public:
      * @code{.cpp}
      * append_escaped(ctx, "hello\t");  // Appends "hello\\t"
      * // Invalid UTF-8
-     * append_escaped(ctx, "\xc3\x28"); // Appends "\u{c3}("
+     * append_escaped(ctx, "\xc3\x28"); // Appends "\x{c3}("
      * @endcode
      */
     static void append_escaped(context_type& ctx, string_view_type str)
@@ -5395,6 +5407,13 @@ end_parse:
 
         context_t::append(ctx, m_opening);
 
+        // Possible implicit conversion when forwarding range values to the underlying formatter.
+        // Suppress related compiler warnings.
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wsign-conversion"
+#endif
+
         bool first = true;
         for(auto&& i : rng)
         {
@@ -5406,6 +5425,11 @@ end_parse:
 
             context_t::advance_to(ctx, m_underlying.format(i, ctx));
         }
+
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
         context_t::append(ctx, m_closing);
 

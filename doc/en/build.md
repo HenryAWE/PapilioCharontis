@@ -16,3 +16,10 @@ Run `build.sh` from the project root directory. For Windows, run `build.ps1` ins
 
 ## Install the Library
 Run `cmake --install` in the `build/` directory.
+
+## Use the Library in `CMakeLists.txt`
+```cmake
+find_package(Papilio REQUIRED)
+
+target_link_libraries(main PRIVATE papilio::papilio)
+```

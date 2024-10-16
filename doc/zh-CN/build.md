@@ -16,3 +16,10 @@
 
 ## 安装库
 在 `build/` 目录执行 `cmake --install .` 即可。
+
+## 在 `CMakeLists.txt` 中使用库
+```cmake
+find_package(Papilio REQUIRED)
+
+target_link_libraries(main PRIVATE papilio::papilio)
+```

@@ -12,9 +12,9 @@ Example: Given string  `"hello world!"`, then
 - `[-1]`: Returns `'!'`.
 - `[-100]`: Returns null character.
 
-### Slicing
-The left-closed, right-open interval `[begin, end)` consists of index pair `begin`, `end`  
-Default values are `0` and `.length`, respectively
+### Indexing by Range
+The left-closed, right-opened range `[begin, end)` consists of index pair `begin`, `end`. Default values are `0` and `.length`, respectively.
+
 Example: Given string "hello world!"
 - `[:]`: Returns `"hello world!"`
 -  `[:-1]`: Returns `"hello world"`
@@ -24,7 +24,8 @@ Example: Given string "hello world!"
 ### Attributes
 - `size`：The number of *elements* in the string. That is, the string is regarded as a container whose value type is `char` (or other character type), and the result is its number of elements.
 - `length`：The number of *characters* in the string.  
-For string containing non-ASCII characters, these two values may not be equal. For example, the `size` of string `"ü"` is `2`, but its `length` is `1`; for string `L"ü"` (`wchar_t` string), its `size` and `length` are both `1`.
+  For string containing non-ASCII characters, these two values may not be equal.  
+  For example, the `size` of string `"ü"` is `2`, but its `length` is `1`. For string `L"ü"` (`wchar_t` string), its `size` and `length` are both `1`.
 
 ## Tuples (`tuple` and `pair`)
 ### Indexing by Integer

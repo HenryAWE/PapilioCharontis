@@ -134,7 +134,7 @@ TYPED_TEST(format_context_suite, append_escaped)
         {
             context_t::append_escaped(ctx, reinterpret_cast<const TypeParam*>("\xc3\x28"));
 
-            const auto expected_str = PAPILIO_TSTRING(TypeParam, "\\u{c3}(");
+            const auto expected_str = PAPILIO_TSTRING(TypeParam, "\\x{c3}(");
             EXPECT_EQ(result, expected_str);
         }
     }

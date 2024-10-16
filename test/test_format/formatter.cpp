@@ -205,6 +205,11 @@ TEST(fundamental_formatter, string)
     EXPECT_EQ(PAPILIO_NS format("{:?}", "hello\n\t\r"), "hello\\n\\t\\r");
     EXPECT_EQ(PAPILIO_NS format(L"{:?}", L"hello\n\t\r"), L"hello\\n\\t\\r");
 
+    EXPECT_EQ(PAPILIO_NS format("{:?}", std::string("\0 \n \t \x02 \x1b", 9)), "\\u{0} \\n \\t \\u{2} \\u{1b}");
+    EXPECT_EQ(PAPILIO_NS format(L"{:?}", std::wstring(L"\0 \n \t \x02 \x1b", 9)), L"\\u{0} \\n \\t \\u{2} \\u{1b}");
+
+    EXPECT_EQ(PAPILIO_NS format("{:?}", "\xc3\x28"), "\\x{c3}(");
+
     EXPECT_EQ(PAPILIO_NS format("{:s}", "hello"), "hello");
     EXPECT_EQ(PAPILIO_NS format(L"{:s}", L"hello"), L"hello");
 

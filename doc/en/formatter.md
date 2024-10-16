@@ -126,7 +126,7 @@ format("{:S}", used_adl_ex{}); // Returns "ADL (EX)"
 ```
 
 # Overloaded `operator<<`
-If a type does not implement the above format methods, but it has a overloaded `operator<<` of traditional C++, that overload will be used for outputting.
+If a type does not implement the above format methods, but it has a overloaded `operator<<` for legacy stream output, that overload will be used for outputting.
 
 # Disabled Formatter
 Explicitly prevent a type from being formatted:
