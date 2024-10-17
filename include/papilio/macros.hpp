@@ -19,7 +19,7 @@
 // clang-format off: Used by CMakeLists.txt for parsing version
 
 #define PAPILIO_VERSION_MAJOR 0
-#define PAPILIO_VERSION_MINOR 5
+#define PAPILIO_VERSION_MINOR 6
 #define PAPILIO_VERSION_PATCH 0
 
 // clang-format on
