@@ -380,17 +380,19 @@ namespace detail
     template <typename T1, typename T2>
     inline consteval int get_cp_impl_id()
     {
-        using namespace std;
-        if constexpr(!cp_is_empty<T1> && !cp_is_empty<T2>)
+        using first_type = std::remove_cv_t<T1>;
+        using second_type = std::remove_cv_t<T2>;
+
+        if constexpr(!cp_is_empty<first_type> && !cp_is_empty<second_type>)
             return 0; // normal pair
-        else if constexpr(cp_is_empty<T1> && !cp_is_empty<T2>)
+        else if constexpr(cp_is_empty<first_type> && !cp_is_empty<second_type>)
             return 1; // only T1 is empty
-        else if constexpr(!cp_is_empty<T1> && cp_is_empty<T2>)
+        else if constexpr(!cp_is_empty<first_type> && cp_is_empty<second_type>)
             return 2; // only T2 is empty
         else
         {
             // both are empty
-            if constexpr(!is_same_v<T1, T2>)
+            if constexpr(!std::is_same_v<first_type, second_type>)
                 return 3; // T1 != T2
             else
                 return 1; // T1 == T2, fallback to implementation for only T1 is empty
@@ -608,7 +610,13 @@ namespace detail
 
     // T1 != T2, both are empty
     template <typename T1, typename T2>
-    class compressed_pair_impl<T1, T2, 3> : private std::remove_cv_t<T1>, private std::remove_cv_t<T2>
+#ifdef PAPILIO_COMPILER_MSVC
+    class __declspec(empty_bases) compressed_pair_impl<T1, T2, 3> :
+#else
+    class compressed_pair_impl<T1, T2, 3> :
+#endif
+        private std::remove_cv_t<T1>,
+        private std::remove_cv_t<T2>
     {
     public:
         using first_type = T1;

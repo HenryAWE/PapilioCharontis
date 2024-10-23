@@ -5400,9 +5400,9 @@ end_parse:
                     context_t::append_escaped(ctx, str);
                 else
                     context_t::append(ctx, str);
-            }
 
-            return context_t::out(ctx);
+                return context_t::out(ctx);
+            }
         }
 
         context_t::append(ctx, m_opening);
