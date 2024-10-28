@@ -338,6 +338,8 @@ TEST(basic_oiterstream, output)
     test_oiterstream<wchar_t>();
 }
 
+#ifdef PAPILIO_HAS_ENUM_NAME
+
 TEST(enum_name, enum_name)
 {
     using namespace papilio;
@@ -364,9 +366,23 @@ TEST(enum_name, enum_name)
     EXPECT_EQ(enum_name(my_enum_class::two), "two");
 }
 
+#endif
+
 TEST(tuple_for_each, tuple_for_each)
 {
     using namespace papilio;
+
+    {
+        std::tuple<> empty_tp{};
+
+        tuple_for_each(
+            empty_tp,
+            []() -> void
+            {
+                GTEST_FAIL() << "Unreachable";
+            }
+        );
+    }
 
     {
         std::vector<int> result;

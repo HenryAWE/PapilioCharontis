@@ -23,15 +23,17 @@ TEST(print, file_descriptor_linux)
     using namespace papilio;
 
     PAPILIO_NS println(fp, "test");
+    PAPILIO_NS print(fp, "test");
+    PAPILIO_NS println(fp);
     fflush(fp);
 
     char buf[32]{};
 
     ASSERT_EQ(fseek(fp, 0, SEEK_SET), 0);
-    size_t len = fread(buf, sizeof(char), 5, fp);
+    size_t len = fread(buf, sizeof(char), 10, fp);
 
-    EXPECT_EQ(len, 5);
-    EXPECT_STREQ(buf, "test\n");
+    EXPECT_EQ(len, 10);
+    EXPECT_EQ(std::string_view(buf, 10), "test\ntest\n");
 
     fclose(fp);
 }
@@ -42,40 +44,22 @@ TEST(print, tmpfile)
 {
     using namespace papilio;
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(push)
-#    pragma warning(disable : 4996)
-#endif
-// The std::tmpfile in the STL shipped with MSVC is marked as deprecated.
-// This workaround is clang-cl specific,
-// which means it should not be applied to clang on other platforms.
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
     std::FILE* fp = std::tmpfile();
     if(!fp)
         GTEST_SKIP();
 
-#ifdef PAPILIO_COMPILER_MSVC
-#    pragma warning(pop)
-#endif
-#ifdef PAPILIO_COMPILER_CLANG_CL
-#    pragma clang diagnostic pop
-#endif
-
     PAPILIO_NS println(fp, "test");
     PAPILIO_NS print(fp, "test");
+    PAPILIO_NS println(fp);
     fflush(fp);
 
     char buf[32]{};
 
     ASSERT_EQ(fseek(fp, 0, SEEK_SET), 0);
-    size_t len = fread(buf, sizeof(char), 5, fp);
+    size_t len = fread(buf, sizeof(char), 10, fp);
 
-    EXPECT_EQ(len, 5);
-    EXPECT_STREQ(buf, "test\n");
+    EXPECT_EQ(len, 10);
+    EXPECT_EQ(std::string_view(buf, 10), "test\ntest\n");
 }
 
 TEST(print, file_stdout)
@@ -88,12 +72,33 @@ TEST(print, file_stdout)
 
     PAPILIO_NS println(fmt, 1);
     PAPILIO_NS print(fmt, 2);
+    PAPILIO_NS println();
 
     auto stdout_result = ::testing::internal::GetCapturedStdout();
     EXPECT_EQ(
         stdout_result,
         "1 warning\n"
-        "2 warnings"
+        "2 warnings\n"
+    );
+}
+
+TEST(print, file_stderr)
+{
+    using namespace papilio;
+
+    ::testing::internal::CaptureStderr();
+
+    std::string_view fmt = "{} warning{${0}>1:'s'}";
+
+    PAPILIO_NS println(stderr, fmt, 1);
+    PAPILIO_NS print(stderr, fmt, 2);
+    PAPILIO_NS println(stderr);
+
+    auto stderr_result = ::testing::internal::GetCapturedStderr();
+    EXPECT_EQ(
+        stderr_result,
+        "1 warning\n"
+        "2 warnings\n"
     );
 }
 
@@ -103,8 +108,65 @@ TEST(print, stream)
 
     std::ostringstream os;
 
-    PAPILIO_NS println(os, "val={val}", "val"_a = 1);
-    EXPECT_EQ(os.str(), "val=1\n");
+    PAPILIO_NS println(os, "stream:");
+    PAPILIO_NS print(os, "val={val}", "val"_a = 1);
+    PAPILIO_NS println(os);
+    EXPECT_EQ(os.str(), "stream:\nval=1\n");
+}
+
+TEST(print, styled)
+{
+    using namespace papilio;
+
+    auto styled_helper = []<typename... Args>(bool newline, text_style st, format_string<Args...> fmt, Args&&... args)
+    {
+        ::testing::internal::CaptureStdout();
+
+        if(newline)
+        {
+            PAPILIO_NS println(st, fmt, std::forward<Args>(args)...);
+        }
+        else
+        {
+            PAPILIO_NS print(st, fmt, std::forward<Args>(args)...);
+        }
+
+        auto stdout_result = ::testing::internal::GetCapturedStdout();
+        return stdout_result;
+    };
+
+    {
+        EXPECT_EQ(
+            styled_helper(false, style::bold, "hello"),
+            "\x1B[1mhello\x1B[0m"
+        );
+        EXPECT_EQ(
+            styled_helper(true, style::bold, "hello"),
+            "\x1B[1mhello\x1B[0m\n"
+        );
+    }
+
+    {
+        EXPECT_EQ(
+            styled_helper(false, fg(color::yellow) | bg(color::white), "WARNING"),
+            "\x1B[33;47mWARNING\x1B[0m"
+        );
+        EXPECT_EQ(
+            styled_helper(true, fg(color::yellow) | bg(color::white), "WARNING"),
+            "\x1B[33;47mWARNING\x1B[0m\n"
+        );
+    }
+
+    {
+        EXPECT_EQ(
+            styled_helper(false, fg(color::yellow) | bg(color::white) | style::bold, "WARNING"),
+            "\x1B[1m\x1B[33;47mWARNING\x1B[0m"
+        );
+        EXPECT_EQ(
+            styled_helper(true, fg(color::yellow) | bg(color::white) | style::bold, "WARNING"),
+            "\x1B[1m\x1B[33;47mWARNING\x1B[0m\n"
+        );
+    }
 }
 
 int main(int argc, char* argv[])
