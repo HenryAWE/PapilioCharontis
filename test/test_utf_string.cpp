@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <papilio/utf/string.hpp>
 #include <sstream>
+#include <cstring>
 #include <papilio_test/setup.hpp>
 
 // Peach Emoji, CJK Unified Ideographs 4E00, Capital A with Diaeresis, A
@@ -440,21 +441,45 @@ TEST(basic_string_container, istream)
     }
 }
 
-TEST(basic_string_container, ostream)
+TEST(basic_string_container, resize_and_overwrite)
 {
     using namespace papilio;
     using namespace utf;
 
+    std::string stdlib_info = "__cpp_lib_string_resize_and_overwrite";
+#ifdef __cpp_lib_string_resize_and_overwrite
+    stdlib_info += " = " + std::to_string(__cpp_lib_string_resize_and_overwrite) + 'L';
+#else
+    stdlib_info += " not defined";
+#endif
+
+    SCOPED_TRACE(stdlib_info);
+
+    auto my_c_api = +[](char* p, std::size_t count) -> std::size_t
     {
-        std::stringstream ss;
-        ss << "test"_sc;
-        EXPECT_EQ(ss.str(), "test");
-    }
+        const char* text = "hello!";
+        std::size_t n = std::min(count, static_cast<std::size_t>(6));
+        std::strncpy(p, text, n);
+        return n;
+    };
 
     {
-        std::wstringstream ss;
-        ss << L"test"_sc;
-        EXPECT_EQ(ss.str(), L"test");
+        string_container sc;
+
+        sc.resize_and_overwrite(10, my_c_api);
+
+        EXPECT_TRUE(sc.has_ownership());
+        EXPECT_EQ(sc.size(), 6);
+        EXPECT_EQ(sc, "hello!");
+    }
+    {
+        string_container sc;
+
+        sc.resize_and_overwrite(5, my_c_api);
+
+        EXPECT_TRUE(sc.has_ownership());
+        EXPECT_EQ(sc.size(), 5);
+        EXPECT_EQ(sc, "hello");
     }
 }
 

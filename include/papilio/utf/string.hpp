@@ -10,7 +10,6 @@
 #include "../fmtfwd.hpp"
 #include "stralgo.hpp"
 #include "codepoint.hpp"
-#include "../memory.hpp"
 #include "../detail/prefix.hpp"
 
 namespace papilio::utf
@@ -31,381 +30,389 @@ namespace detail
             throw std::out_of_range(msg);
         }
     };
+} // namespace detail
 
-    template <typename CharT, typename Derived>
-    class str_impl : public str_impl_base
+/**
+ * @brief Common code for string classes
+ *
+ * CRTP base of string classes.
+ */
+template <typename CharT, typename Derived>
+class string_base : public detail::str_impl_base
+{
+public:
+    using size_type = std::size_t;
+    using value_type = codepoint;
+    using char_type = CharT;
+    using string_view_type = std::basic_string_view<CharT>;
+    using string_type = std::basic_string<CharT>;
+    using string_ref_type = basic_string_ref<CharT>;
+
+    using const_iterator = codepoint_iterator<CharT>;
+
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    constexpr const_iterator cbegin() const noexcept
     {
-    public:
-        using value_type = codepoint;
-        using char_type = CharT;
-        using size_type = std::size_t;
-        using string_view_type = std::basic_string_view<CharT>;
+        return PAPILIO_NS utf::codepoint_begin(get_view());
+    }
 
-        using const_iterator = codepoint_iterator<CharT>;
+    constexpr const_iterator cend() const noexcept
+    {
+        return PAPILIO_NS utf::codepoint_end(get_view());
+    }
 
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    constexpr const_iterator begin() const noexcept
+    {
+        return cbegin();
+    }
 
-        constexpr const_iterator cbegin() const noexcept
-        {
-            return PAPILIO_NS utf::codepoint_begin(get_view());
-        }
+    constexpr const_iterator end() const noexcept
+    {
+        return cend();
+    }
 
-        constexpr const_iterator cend() const noexcept
-        {
-            return PAPILIO_NS utf::codepoint_end(get_view());
-        }
+    constexpr const_reverse_iterator crbegin() const noexcept
+    {
+        return const_reverse_iterator(cend());
+    }
 
-        constexpr const_iterator begin() const noexcept
-        {
-            return cbegin();
-        }
+    constexpr const_reverse_iterator crend() const noexcept
+    {
+        return const_reverse_iterator(cbegin());
+    }
 
-        constexpr const_iterator end() const noexcept
-        {
-            return cend();
-        }
+    constexpr const_reverse_iterator rbegin() const noexcept
+    {
+        return crbegin();
+    }
 
-        constexpr const_reverse_iterator crbegin() const noexcept
-        {
-            return const_reverse_iterator(cend());
-        }
+    constexpr const_reverse_iterator rend() const noexcept
+    {
+        return crend();
+    }
 
-        constexpr const_reverse_iterator crend() const noexcept
-        {
-            return const_reverse_iterator(cbegin());
-        }
-
-        constexpr const_reverse_iterator rbegin() const noexcept
-        {
-            return crbegin();
-        }
-
-        constexpr const_reverse_iterator rend() const noexcept
-        {
-            return crend();
-        }
-
-        constexpr codepoint operator[](size_type i) const noexcept
-        {
-            return index(i);
-        }
+    constexpr codepoint operator[](size_type i) const noexcept
+    {
+        return index(i);
+    }
 
 #ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
 
-        constexpr codepoint operator[](reverse_index_t, size_type i) const noexcept
-        {
-            return index(reverse_index, i);
-        }
+    constexpr codepoint operator[](reverse_index_t, size_type i) const noexcept
+    {
+        return index(reverse_index, i);
+    }
 
 #endif
 
-        // for consistency
-        [[nodiscard]]
-        constexpr codepoint index(size_type i) const noexcept
+    // for consistency
+    [[nodiscard]]
+    constexpr codepoint index(size_type i) const noexcept
+    {
+        return cp_from_off(get_offset(i));
+    }
+
+    // for pre-C++ 23
+    [[nodiscard]]
+    constexpr codepoint index(reverse_index_t, size_type i) const noexcept
+    {
+        return cp_from_off(get_offset(reverse_index, i));
+    }
+
+    constexpr codepoint at(size_type i) const
+    {
+        size_type off = get_offset(i);
+        if(off == npos) throw_out_of_range();
+        return cp_from_off(off);
+    }
+
+    constexpr codepoint at(reverse_index_t, size_type i) const
+    {
+        size_type off = get_offset(reverse_index, i);
+        if(off == npos) throw_out_of_range();
+        return cp_from_off(off);
+    }
+
+    [[nodiscard]]
+    constexpr codepoint index_or(size_type i, codepoint default_val) const noexcept
+    {
+        size_type off = get_offset(i);
+        if(off == npos) return default_val;
+        return cp_from_off(off);
+    }
+
+    [[nodiscard]]
+    constexpr codepoint index_or(reverse_index_t, size_type i, codepoint default_val) const noexcept
+    {
+        size_type off = get_offset(reverse_index, i);
+        if(off == npos) return default_val;
+        return cp_from_off(off);
+    }
+
+    [[nodiscard]]
+    constexpr const CharT* data() const noexcept
+    {
+        return get_view().data();
+    }
+
+    [[nodiscard]]
+    constexpr size_type get_offset(size_type i) const noexcept
+    {
+        return index_offset(i, get_view());
+    }
+
+    [[nodiscard]]
+    constexpr size_type get_offset(reverse_index_t, size_type i) const noexcept
+    {
+        return index_offset(reverse_index, i, get_view());
+    }
+
+    [[nodiscard]]
+    constexpr size_type length() const noexcept
+    {
+        return utf::strlen(get_view());
+    }
+
+    [[nodiscard]]
+    constexpr size_type size() const noexcept
+    {
+        return get_view().size();
+    }
+
+    [[nodiscard]]
+    constexpr bool empty() const noexcept
+    {
+        return as_derived().size() == 0;
+    }
+
+    [[nodiscard]]
+    constexpr codepoint front() const noexcept
+    {
+        return index(0);
+    }
+
+    [[nodiscard]]
+    constexpr codepoint back() const noexcept
+    {
+        return index(reverse_index, 0);
+    }
+
+    [[nodiscard]]
+    const_iterator find(codepoint ch, size_type pos = 0) const noexcept
+    {
+        auto it = as_derived().cbegin();
+        const auto sentinel = as_derived().cend();
+        for(size_type n = 0; n < pos; ++n)
         {
-            return cp_from_off(get_offset(i));
+            if(it == sentinel) return sentinel;
+            ++it;
         }
 
-        // for pre-C++ 23
-        [[nodiscard]]
-        constexpr codepoint index(reverse_index_t, size_type i) const noexcept
-        {
-            return cp_from_off(get_offset(reverse_index, i));
-        }
+        return std::find(it, sentinel, ch);
+    }
 
-        constexpr codepoint at(size_type i) const
-        {
-            size_type off = get_offset(i);
-            if(off == npos) throw_out_of_range();
-            return cp_from_off(off);
-        }
+    [[nodiscard]]
+    constexpr bool contains(codepoint ch) const noexcept
+    {
+        return find(ch) != as_derived().cend();
+    }
 
-        constexpr codepoint at(reverse_index_t, size_type i) const
-        {
-            size_type off = get_offset(reverse_index, i);
-            if(off == npos) throw_out_of_range();
-            return cp_from_off(off);
-        }
+    [[nodiscard]]
+    constexpr bool starts_with(string_view_type str) const noexcept
+    {
+        return get_view().substr(0, str.size()) == str;
+    }
 
-        [[nodiscard]]
-        constexpr codepoint index_or(size_type i, codepoint default_val) const noexcept
-        {
-            size_type off = get_offset(i);
-            if(off == npos) return default_val;
-            return cp_from_off(off);
-        }
+    [[nodiscard]]
+    constexpr bool starts_with(const CharT* str) const noexcept
+    {
+        return starts_with(string_view_type(str));
+    }
 
-        [[nodiscard]]
-        constexpr codepoint index_or(reverse_index_t, size_type i, codepoint default_val) const noexcept
-        {
-            size_type off = get_offset(reverse_index, i);
-            if(off == npos) return default_val;
-            return cp_from_off(off);
-        }
+    [[nodiscard]]
+    constexpr bool starts_with(codepoint cp) const noexcept
+    {
+        return !empty() && front() == cp;
+    }
 
-        [[nodiscard]]
-        constexpr const CharT* data() const noexcept
-        {
-            return get_view().data();
-        }
+    template <substr_behavior OnOutOfRange = substr_behavior::exception>
+    [[nodiscard]]
+    constexpr std::pair<Derived, size_type> substr_extended(
+        size_type pos = 0, size_type count = npos
+    ) const noexcept(OnOutOfRange != substr_behavior::exception)
+    {
+        const auto sentinel = cend();
 
-        [[nodiscard]]
-        constexpr size_type get_offset(size_type i) const noexcept
+        auto start = cbegin();
+        for(size_type i = 0; i < pos; ++i)
         {
-            return index_offset(i, get_view());
-        }
-
-        [[nodiscard]]
-        constexpr size_type get_offset(reverse_index_t, size_type i) const noexcept
-        {
-            return index_offset(reverse_index, i, get_view());
-        }
-
-        [[nodiscard]]
-        constexpr size_type length() const noexcept
-        {
-            return utf::strlen(get_view());
-        }
-
-        [[nodiscard]]
-        constexpr size_type size() const noexcept
-        {
-            return get_view().size();
-        }
-
-        [[nodiscard]]
-        constexpr bool empty() const noexcept
-        {
-            return as_derived().size() == 0;
-        }
-
-        [[nodiscard]]
-        constexpr codepoint front() const noexcept
-        {
-            return index(0);
-        }
-
-        [[nodiscard]]
-        constexpr codepoint back() const noexcept
-        {
-            return index(reverse_index, 0);
-        }
-
-        [[nodiscard]]
-        const_iterator find(codepoint ch, size_type pos = 0) const noexcept
-        {
-            auto it = as_derived().cbegin();
-            const auto sentinel = as_derived().cend();
-            for(size_type n = 0; n < pos; ++n)
+            if(start == sentinel)
             {
-                if(it == sentinel) return sentinel;
-                ++it;
-            }
-
-            return std::find(it, sentinel, ch);
-        }
-
-        [[nodiscard]]
-        constexpr bool contains(codepoint ch) const noexcept
-        {
-            return find(ch) != as_derived().cend();
-        }
-
-        [[nodiscard]]
-        constexpr bool starts_with(string_view_type str) const noexcept
-        {
-            return get_view().substr(0, str.size()) == str;
-        }
-
-        [[nodiscard]]
-        constexpr bool starts_with(const CharT* str) const noexcept
-        {
-            return starts_with(string_view_type(str));
-        }
-
-        [[nodiscard]]
-        constexpr bool starts_with(codepoint cp) const noexcept
-        {
-            return !empty() && front() == cp;
-        }
-
-        template <substr_behavior OnOutOfRange = substr_behavior::exception>
-        [[nodiscard]]
-        constexpr std::pair<Derived, size_type> substr_extended(
-            size_type pos = 0, size_type count = npos
-        ) const noexcept(OnOutOfRange != substr_behavior::exception)
-        {
-            const auto sentinel = cend();
-
-            auto start = cbegin();
-            for(size_type i = 0; i < pos; ++i)
-            {
-                if(start == sentinel)
-                {
-                    // out of range
-                    if constexpr(OnOutOfRange == substr_behavior::exception)
-                        this->throw_out_of_range();
-                    else
-                        return std::make_pair(Derived(), 0);
-                }
-
-                ++start;
-            }
-
-            size_type n = 0;
-            auto stop = start;
-            for(size_type i = 0; i < count; ++i)
-            {
-                if(stop == sentinel) break;
-                ++n;
-                ++stop;
-            }
-
-            return std::make_pair(Derived(start, stop), n);
-        }
-
-        template <substr_behavior OnOutOfRange = substr_behavior::exception>
-        [[nodiscard]]
-        constexpr Derived substr(size_type pos = 0, size_type count = npos) const noexcept(OnOutOfRange != substr_behavior::exception)
-        {
-            return substr_extended<OnOutOfRange>(pos, count).first;
-        }
-
-        template <substr_behavior OnOutOfRange = substr_behavior::exception>
-        [[nodiscard]]
-        constexpr Derived substr(index_range s) const
-        {
-            auto get_iter = [this](index_range::index_type idx) -> const_iterator
-            {
-                if(idx >= 0)
-                {
-                    const auto sentinel = as_derived().cend();
-
-                    const_iterator it = as_derived().cbegin();
-                    for(index_range::index_type i = 0; i < idx; ++i)
-                    {
-                        if(it == sentinel)
-                        {
-                            if constexpr(OnOutOfRange == substr_behavior::exception)
-                                throw_out_of_range();
-                            else
-                                return it;
-                        }
-
-                        ++it;
-                    }
-
-                    return it;
-                }
+                // out of range
+                if constexpr(OnOutOfRange == substr_behavior::exception)
+                    this->throw_out_of_range();
                 else
+                    return std::make_pair(Derived(), 0);
+            }
+
+            ++start;
+        }
+
+        size_type n = 0;
+        auto stop = start;
+        for(size_type i = 0; i < count; ++i)
+        {
+            if(stop == sentinel) break;
+            ++n;
+            ++stop;
+        }
+
+        return std::make_pair(Derived(start, stop), n);
+    }
+
+    template <substr_behavior OnOutOfRange = substr_behavior::exception>
+    [[nodiscard]]
+    constexpr Derived substr(size_type pos = 0, size_type count = npos) const noexcept(OnOutOfRange != substr_behavior::exception)
+    {
+        return substr_extended<OnOutOfRange>(pos, count).first;
+    }
+
+    template <substr_behavior OnOutOfRange = substr_behavior::exception>
+    [[nodiscard]]
+    constexpr Derived substr(index_range s) const
+    {
+        auto get_iter = [this](index_range::index_type idx) -> const_iterator
+        {
+            if(idx >= 0)
+            {
+                const auto sentinel = as_derived().cend();
+
+                const_iterator it = as_derived().cbegin();
+                for(index_range::index_type i = 0; i < idx; ++i)
                 {
-                    idx = -idx; // abs(idx)
-
-                    const auto sentinel = cbegin();
-
-                    const_iterator it = cend();
-                    for(index_range::index_type i = 0; i < idx; ++i)
+                    if(it == sentinel)
                     {
-                        if(it == sentinel)
-                        {
-                            if constexpr(OnOutOfRange == substr_behavior::exception)
-                                throw_out_of_range();
-                            else
-                                return it;
-                        }
-
-                        --it;
+                        if constexpr(OnOutOfRange == substr_behavior::exception)
+                            throw_out_of_range();
+                        else
+                            return it;
                     }
 
-                    return it;
+                    ++it;
                 }
-            };
 
-            auto start = get_iter(s.begin());
-            auto stop = s.end() == index_range::npos ? as_derived().cend() : get_iter(s.end());
-
-            if(start >= stop) [[unlikely]]
-                return Derived();
-
-            return Derived(start, stop);
-        }
-
-        friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const Derived& str)
-        {
-            auto sv = str.to_string_view();
-            os.write(sv.data(), static_cast<std::streamsize>(sv.size()));
-            return os;
-        }
-
-    protected:
-        constexpr string_view_type get_view() const noexcept
-        {
-            return as_derived().to_string_view();
-        }
-
-        // Calculates how many characters are required by a codepoint.
-        static constexpr std::uint8_t ch_size_for_cp(CharT ch) noexcept
-        {
-            if constexpr(char8_like<CharT>)
-            {
-                return utf::byte_count(std::uint8_t(ch));
+                return it;
             }
-            else if constexpr(char16_like<CharT>)
+            else
             {
-                return utf::is_high_surrogate(ch) ? 2 : 1;
-            }
-            else // char32_like
-            {
-                return 1;
-            }
-        }
+                idx = -idx; // abs(idx)
 
-        constexpr codepoint cp_from_off(size_type off) const noexcept
+                const auto sentinel = cbegin();
+
+                const_iterator it = cend();
+                for(index_range::index_type i = 0; i < idx; ++i)
+                {
+                    if(it == sentinel)
+                    {
+                        if constexpr(OnOutOfRange == substr_behavior::exception)
+                            throw_out_of_range();
+                        else
+                            return it;
+                    }
+
+                    --it;
+                }
+
+                return it;
+            }
+        };
+
+        auto start = get_iter(s.begin());
+        auto stop = s.end() == index_range::npos ? as_derived().cend() : get_iter(s.end());
+
+        if(start >= stop) [[unlikely]]
+            return Derived();
+
+        return Derived(start, stop);
+    }
+
+    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const Derived& str)
+    {
+        auto sv = str.to_string_view();
+        os.write(sv.data(), static_cast<std::streamsize>(sv.size()));
+        return os;
+    }
+
+protected:
+    constexpr string_view_type get_view() const noexcept
+    {
+        return as_derived().to_string_view();
+    }
+
+    // Calculates how many characters are required by a codepoint.
+    static constexpr std::uint8_t ch_size_for_cp(CharT ch) noexcept
+    {
+        if constexpr(char8_like<CharT>)
         {
-            string_view_type str = get_view();
-            PAPILIO_ASSERT(off < str.size());
-
-            if constexpr(char8_like<CharT>)
-            {
-                std::uint8_t ch_size = ch_size_for_cp(str[off]);
-                return codepoint(str.data() + off, ch_size);
-            }
-            else if constexpr(char16_like<CharT>)
-            {
-                std::uint8_t ch_size = ch_size_for_cp(str[off]) ? 2 : 1;
-                return decoder<CharT>::to_codepoint(str.substr(off, ch_size)).first;
-            }
-            else // char32_like
-            {
-                char32_t ch = static_cast<char32_t>(str[off]);
-                return decoder<char32_t>::to_codepoint(ch).first;
-            }
+            return utf::byte_count(std::uint8_t(ch));
         }
-
-    private:
-        constexpr Derived& as_derived() noexcept
+        else if constexpr(char16_like<CharT>)
         {
-            return static_cast<Derived&>(*this);
+            return utf::is_high_surrogate(ch) ? 2 : 1;
         }
-
-        constexpr const Derived& as_derived() const noexcept
+        else // char32_like
         {
-            return static_cast<const Derived&>(*this);
+            return 1;
         }
-    };
-} // namespace detail
+    }
+
+    constexpr codepoint cp_from_off(size_type off) const noexcept
+    {
+        string_view_type str = get_view();
+        PAPILIO_ASSERT(off < str.size());
+
+        if constexpr(char8_like<CharT>)
+        {
+            std::uint8_t ch_size = ch_size_for_cp(str[off]);
+            return codepoint(str.data() + off, ch_size);
+        }
+        else if constexpr(char16_like<CharT>)
+        {
+            std::uint8_t ch_size = ch_size_for_cp(str[off]) ? 2 : 1;
+            return decoder<CharT>::to_codepoint(str.substr(off, ch_size)).first;
+        }
+        else // char32_like
+        {
+            char32_t ch = static_cast<char32_t>(str[off]);
+            return decoder<char32_t>::to_codepoint(ch).first;
+        }
+    }
+
+private:
+    constexpr Derived& as_derived() noexcept
+    {
+        return static_cast<Derived&>(*this);
+    }
+
+    constexpr const Derived& as_derived() const noexcept
+    {
+        return static_cast<const Derived&>(*this);
+    }
+};
 
 PAPILIO_EXPORT template <char_like CharT>
-class basic_string_ref<CharT> : public detail::str_impl<CharT, basic_string_ref<CharT>>
+class basic_string_ref<CharT> : public string_base<CharT, basic_string_ref<CharT>>
 {
-    using my_base = detail::str_impl<CharT, basic_string_ref<CharT>>;
+    using my_base = string_base<CharT, basic_string_ref<CharT>>;
 
 public:
-    using char_type = CharT;
-    using value_type = codepoint;
     using size_type = std::size_t;
-    using string_type = std::basic_string<CharT>;
+    using value_type = codepoint;
+    using char_type = CharT;
     using string_view_type = std::basic_string_view<CharT>;
+    using string_type = std::basic_string<CharT>;
+    using string_ref_type = basic_string_ref<CharT>;
 
     using const_iterator = typename my_base::const_iterator;
     using iterator = const_iterator;
@@ -556,46 +563,57 @@ public:
         set_view(sentinel.base(), it.base());
     }
 
-    template <char_like To>
+    template <char_like To = char>
     [[nodiscard]]
-    std::basic_string<To> to_string_as() const
+    std::basic_string<To> to_string() const
     {
-        std::basic_string<To> result;
+        if constexpr(std::is_same_v<To, CharT>)
+        {
+            return std::basic_string<To>(get_view());
+        }
+        else if constexpr(sizeof(To) == sizeof(CharT))
+        {
+            string_view_type raw_view = get_view();
+            std::basic_string_view<To> target_view(
+                reinterpret_cast<const To*>(raw_view.data()),
+                raw_view.size()
+            );
 
-        for(codepoint cp : *this)
-            cp.append_to(result);
+            return std::basic_string<To>(target_view);
+        }
+        else
+        {
+            std::basic_string<To> result;
 
-        return result;
-    }
+            for(codepoint cp : *this)
+                cp.append_to(result);
 
-    [[nodiscard]]
-    std::string to_string() const
-    {
-        return to_string_as<char>();
+            return result;
+        }
     }
 
     [[nodiscard]]
     std::u8string to_u8string() const
     {
-        return to_string_as<char8_t>();
+        return to_string<char8_t>();
     }
 
     [[nodiscard]]
     std::u16string to_u16string() const
     {
-        return to_string_as<char16_t>();
+        return to_string<char16_t>();
     }
 
     [[nodiscard]]
     std::u32string to_u32string() const
     {
-        return to_string_as<char32_t>();
+        return to_string<char32_t>();
     }
 
     [[nodiscard]]
     std::wstring to_wstring() const
     {
-        return to_string_as<wchar_t>();
+        return to_string<wchar_t>();
     }
 
     constexpr string_view_type to_string_view() const noexcept
@@ -831,9 +849,9 @@ inline namespace literals
 } // namespace literals
 
 PAPILIO_EXPORT template <char_like CharT>
-class basic_string_container<CharT> : public detail::str_impl<CharT, basic_string_container<CharT>>
+class basic_string_container<CharT> : public string_base<CharT, basic_string_container<CharT>>
 {
-    using my_base = detail::str_impl<CharT, basic_string_container<CharT>>;
+    using my_base = string_base<CharT, basic_string_container<CharT>>;
 
 public:
     using size_type = std::size_t;
@@ -1202,6 +1220,22 @@ public:
     using my_base::end;
 
     // TODO: iterator and begin() end() pair
+
+    template <typename Operation>
+    constexpr void resize_and_overwrite(size_type count, Operation op)
+    {
+        string_type& str = to_str();
+
+#if defined(__cpp_lib_string_resize_and_overwrite) && __cpp_lib_string_resize_and_overwrite >= 202110L
+        str.resize_and_overwrite(count, std::move(op));
+
+#else
+        str.resize(count);
+        size_type result = std::move(op)(str.data(), str.size());
+        str.resize(result);
+
+#endif
+    }
 
 private:
     using string_store = std::variant<std::basic_string<CharT>, std::basic_string_view<CharT>>;

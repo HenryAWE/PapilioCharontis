@@ -27,7 +27,7 @@ struct accessor<std::type_index, Context>
             else
             {
                 utf::string_ref narrow_name = info.name();
-                return narrow_name.to_string_as<char_type>();
+                return narrow_name.to_string<char_type>();
             }
         }
         else if(attr == PAPILIO_TSTRING_VIEW(char_type, "hash_code"))

@@ -30,4 +30,8 @@
 
 #endif
 
+#ifdef PAPILIO_COMPILER_GCC
+#    pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
+
 #endif

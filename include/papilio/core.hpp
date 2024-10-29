@@ -5239,7 +5239,7 @@ public:
             else
             {
                 utf::string_ref name = enum_name<Enum>(e);
-                auto name_conv = name.to_string_as<CharT>();
+                auto name_conv = name.to_string<CharT>();
                 return fmt.format(
                     name_conv,
                     ctx
