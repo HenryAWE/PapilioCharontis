@@ -18,7 +18,7 @@ This code will mix the output logic with other logic, and it cannot handle langu
 
 With this library, the code can be rewritten as:
 ```c++
-print(translate("Found {0} file{${0}!=1:'s'}"), n);
+print(translate("Found {0} file{$ {0}!=1 ? 's'}"), n);
 ```
 
 ## Overview
@@ -28,21 +28,21 @@ You can use the embedded script to control the output, such as using plural form
 #### Example 1:
 Based on the number of warnings, decide whether to use the plural form of the word "warning".
 ```c++
-papilio::format("{0} warning{${0}>1:'s'}", 1); // Returns "1 warning"
-papilio::format("{0} warning{${0}>1:'s'}", 2); // Returns "2 warnings"
+papilio::format("{0} warning{$ {0}>1 ? 's'}", 1); // Returns "1 warning"
+papilio::format("{0} warning{$ {0}>1 ? 's'}", 2); // Returns "2 warnings"
 ```
 #### Example 2:
 Determine the form of words based on the number of items.
 ```c++
 // English
 std::string_view fmt_en =
-    "There {${0}!=1: 'are' : 'is'} {0} apple{${0}!=1: 's'}";
+    "There {$ {0}!=1 ? 'are' : 'is'} {0} apple{$ {0}!=1 ? 's'}";
 papilio::format(fmt_en, 1); // Returns "There is 1 apple"
 papilio::format(fmt_en, 2); // Returns "There are 2 apples"
 
 // French
 std::string_view fmt_fr =
-    "Il y a {0} pomme{${0}>1:'s'}";
+    "Il y a {0} pomme{$ {0}>1 ? 's'}";
 papilio::format(fmt_fr, 1); // Returns "Il y a 1 pomme"
 papilio::format(fmt_fr, 2); // Returns "Il y a 2 pommes"
 

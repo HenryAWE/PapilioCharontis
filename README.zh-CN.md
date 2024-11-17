@@ -27,21 +27,21 @@ print(translate("Found {0} file{${0}!=1:'s'}"), n);
 #### 示例 1：
 根据警告的数量，决定是否使用“warning”一词的复数形式。
 ```c++
-papilio::format("{0} warning{${0}>1:'s'}", 1); // 返回 "1 warning"
-papilio::format("{0} warning{${0}>1:'s'}", 2); // 返回 "2 warnings"
+papilio::format("{0} warning{$ {0}>1 ? 's'}", 1); // 返回 "1 warning"
+papilio::format("{0} warning{$ {0}>1 ? 's'}", 2); // 返回 "2 warnings"
 ```
 #### 示例 2：
 根据物品的数量决定单词的形式。
 ```c++
 // 英文
 std::string_view fmt_en =
-    "There {${0}!=1: 'are' : 'is'} {0} apple{${0}!=1: 's'}";
+    "There {$ {0}!=1 ? 'are' : 'is'} {0} apple{$ {0}!=1 ? 's'}";
 papilio::format(fmt_en, 1); // 返回 "There is 1 apple"
 papilio::format(fmt_en, 2); // 返回 "There are 2 apples"
 
 // 法文
 std::string_view fmt_fr =
-    "Il y a {0} pomme{${0}>1:'s'}";
+    "Il y a {0} pomme{$ {0}>1 ? 's'}";
 papilio::format(fmt_fr, 1); // 返回 "Il y a 1 pomme"
 papilio::format(fmt_fr, 2); // 返回 "Il y a 2 pommes"
 

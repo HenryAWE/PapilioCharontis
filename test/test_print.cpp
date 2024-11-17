@@ -68,7 +68,7 @@ TEST(print, file_stdout)
 
     ::testing::internal::CaptureStdout();
 
-    std::string_view fmt = "{} warning{${0}>1:'s'}";
+    std::string_view fmt = "{} warning{${0}>1?'s'}";
 
     PAPILIO_NS println(fmt, 1);
     PAPILIO_NS print(fmt, 2);
@@ -88,7 +88,7 @@ TEST(print, file_stderr)
 
     ::testing::internal::CaptureStderr();
 
-    std::string_view fmt = "{} warning{${0}>1:'s'}";
+    std::string_view fmt = "{} warning{${0}>1?'s'}";
 
     PAPILIO_NS println(stderr, fmt, 1);
     PAPILIO_NS print(stderr, fmt, 2);

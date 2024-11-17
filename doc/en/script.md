@@ -6,16 +6,16 @@ Script is used to control the formatting output. It a superset of the replacemen
 
 ## Replacement Field
 Similar to the standard library and {fmt}, it is used to insert values into the output string. It has the following format:
-1. `{arg-id}`: Replacement filed without a format specification
-2. `{arg-id:format-spec}`: Replacement filed with a format specification
+1. `{arg-id}`: Replacement filed without a format specification.
+2. `{arg-id:format-spec}`: Replacement filed with a format specification.
 
 - `arg-id`: Specifies the index or the name of the argument; if it is omitted, the arguments are used in order. Using omitted arg-id after a specified one is an error.
-  You can use `[]` operator and `.attribute` to access its member, e.g. `[0]`, `[0:5]`, `['name']` and `.size`. See [Built-In Accessor](./builtin_accessor.md) and [Custom Accessor](./accessor.md) for more information
+  You can use `[]` operator and `.attribute` to access its member, e.g. `[0]`, `[0:5]`, `['name']` and `.size`. See [Built-In Accessor](./builtin_accessor.md) and [Custom Accessor](./accessor.md) for more information.
 - `format-spec`: The format specification defined by corresponding specialization of `papilio::formatter`. See [Built-In Formatter](./builtin_formatter.md) and [Custom Formatter](./formatter.md) for more information.
 
 ## Scripted Field
 Script field is similar to the replacement field. It is surrounded by a pair of brace (`{}`) and starts with a `$` sign. A script field must contains a condition statement and at least one branch. Condition statement and branches are separated by the colon (`:`).  
-For example, `{$ {0} != 0: 'non-'}zero` and `{$ {0} != 0: 'non-zero' : 'zero'}` have valid script fields.
+For example, `{$ {0} != 0 ? 'non-'}zero` and `{$ {0} != 0 ? 'non-zero' : 'zero'}` have valid script fields.
 
 ### Conditional Statement
 The conditional statement is a Boolean expression. It can be comparison, logical not, or a value that convertible to `bool`. The value in the condition statement can be format arguments (`format_arg`) or constant values.
@@ -55,7 +55,7 @@ The execution result of the branch is to output a string, which is defined by th
 #### Multi-Branch
 Used to deal with complex output.
 
-Syntax: `{$ cond-1: result-1 : $ cond-2: result-2: result-3}`
+Syntax: `{$ cond-1 ? result-1 : $ cond-2 ? result-2: result-3}`
 
 | `cond-1` | `cond-2` |  Result  |
 | :------: | :------: | :------: |

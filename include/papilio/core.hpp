@@ -3046,7 +3046,7 @@ PAPILIO_EXPORT class script_base
 {
 public:
     static constexpr char32_t script_start = U'$';
-    static constexpr char32_t condition_end = U':';
+    static constexpr char32_t condition_end = U'?';
 
     /**
      * @brief Script error.

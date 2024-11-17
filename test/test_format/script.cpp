@@ -23,22 +23,22 @@ TYPED_TEST(format_suite, script_bool_op)
           << ", val = " << #val;                             \
     } while(0)
 
-    PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}: 'true'}", 1, "true");
-    PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}: 'false'}", 0, "false");
+    PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}? 'true'}", 1, "true");
+    PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}? 'false'}", 0, "false");
 
     if constexpr(std::is_same_v<TypeParam, char>)
     {
-        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}: 'true'}", "nonempty", "true");
-        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}: 'false'}", "", "false");
+        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}? 'true'}", "nonempty", "true");
+        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}? 'false'}", "", "false");
 
-        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {val}: 'true'}", "val"_a = 1, "true");
+        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {val}? 'true'}", "val"_a = 1, "true");
     }
     else if constexpr(std::is_same_v<TypeParam, wchar_t>)
     {
-        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}: 'true'}", L"nonempty", "true");
-        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}: 'false'}", L"", "false");
+        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}? 'true'}", L"nonempty", "true");
+        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}? 'false'}", L"", "false");
 
-        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {val}: 'true'}", L"val"_a = 1, "true");
+        PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {val}? 'true'}", L"val"_a = 1, "true");
     }
 }
 
@@ -64,29 +64,29 @@ TYPED_TEST(format_suite, script_cmp_op)
     } while(0)
 
 #define PAPILIO_CHECK_SCRIPT_EQ_OP(lhs, rhs) \
-    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} == {}: 'eq'}", lhs, rhs, "eq")
+    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} == {}? 'eq'}", lhs, rhs, "eq")
 
     PAPILIO_CHECK_SCRIPT_EQ_OP(0, 0);
     PAPILIO_CHECK_SCRIPT_EQ_OP(1, 1);
 
 #define PAPILIO_CHECK_SCRIPT_NE_OP(lhs, rhs) \
-    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} != {}: 'ne'}", lhs, rhs, "ne")
+    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} != {}? 'ne'}", lhs, rhs, "ne")
 
     PAPILIO_CHECK_SCRIPT_NE_OP(1, 2);
     PAPILIO_CHECK_SCRIPT_NE_OP(2, 1);
 
 #define PAPILIO_CHECK_SCRIPT_LT_OP(lhs, rhs) \
-    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} < {}: 'lt'}", lhs, rhs, "lt")
+    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} < {}? 'lt'}", lhs, rhs, "lt")
 #define PAPILIO_CHECK_SCRIPT_GT_OP(lhs, rhs) \
-    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} > {}: 'gt'}", lhs, rhs, "gt")
+    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} > {}? 'gt'}", lhs, rhs, "gt")
 
     PAPILIO_CHECK_SCRIPT_LT_OP(1, 2);
     PAPILIO_CHECK_SCRIPT_GT_OP(2, 1);
 
 #define PAPILIO_CHECK_SCRIPT_LE_OP(lhs, rhs) \
-    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} <= {}: 'le'}", lhs, rhs, "le")
+    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} <= {}? 'le'}", lhs, rhs, "le")
 #define PAPILIO_CHECK_SCRIPT_GE_OP(lhs, rhs) \
-    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} >= {}: 'ge'}", lhs, rhs, "ge")
+    PAPILIO_CHECK_SCRIPT_CMP_OP("{$ {} >= {}? 'ge'}", lhs, rhs, "ge")
 
     PAPILIO_CHECK_SCRIPT_LE_OP(1, 2);
     PAPILIO_CHECK_SCRIPT_GE_OP(2, 1);
@@ -106,7 +106,7 @@ TYPED_TEST(format_suite, script_branch)
 
     {
         string_view_type script =
-            PAPILIO_TSTRING_VIEW(TypeParam, "{$ {}: 'a': ${}: 'b' : 'c'}");
+            PAPILIO_TSTRING_VIEW(TypeParam, "{$ {}? 'a' : ${}? 'b' : 'c'}");
 
         EXPECT_EQ(PAPILIO_NS format(script, true, true), expected_a);
         EXPECT_EQ(PAPILIO_NS format(script, true, false), expected_a);
@@ -118,7 +118,7 @@ TYPED_TEST(format_suite, script_branch)
 
     {
         string_view_type script =
-            PAPILIO_TSTRING_VIEW(TypeParam, "{$ {}: 'a': ${}: 'b' : ${} : 'c'}");
+            PAPILIO_TSTRING_VIEW(TypeParam, "{$ {}? 'a' : ${}? 'b' : ${}? 'c'}");
 
         EXPECT_EQ(PAPILIO_NS format(script, true, true, false), expected_a);
         EXPECT_EQ(PAPILIO_NS format(script, true, false, false), expected_a);
@@ -170,7 +170,7 @@ TYPED_TEST(format_suite, script_composite)
             PAPILIO_TSTRING_VIEW(TypeParam, "2 warnings"),
         };
 
-        string_view_type fmt = PAPILIO_TSTRING_VIEW(TypeParam, "{0} warning{${0}!=1:'s'}");
+        string_view_type fmt = PAPILIO_TSTRING_VIEW(TypeParam, "{0} warning{${0}!=1?'s'}");
 
         for(std::size_t i : {0, 1, 2})
         {
@@ -192,9 +192,9 @@ TYPED_TEST(format_suite, script_composite)
         string_view_type fmt = PAPILIO_TSTRING_VIEW(
             TypeParam,
             "There"
-            " {${0} != 1: 'are' : 'is'} "
+            " {${0} != 1? 'are' : 'is'} "
             "{0}"
-            " apple{${0} != 1: 's'}"
+            " apple{${0} != 1? 's'}"
         );
 
         for(int i : {0, 1, 2})
@@ -214,7 +214,7 @@ TYPED_TEST(format_suite, script_composite)
             PAPILIO_TSTRING_VIEW(TypeParam, "2"),
         };
 
-        string_view_type fmt = PAPILIO_TSTRING_VIEW(TypeParam, "{${0}==0: 'zero' : {0}}");
+        string_view_type fmt = PAPILIO_TSTRING_VIEW(TypeParam, "{${0}==0? 'zero' : {0}}");
 
         for(int i : {0, 1, 2})
         {

@@ -369,9 +369,9 @@ TEST(interpreter, exception)
 
     EXPECT_EQ(get_err("{").error_code(), end_of_string);
     EXPECT_EQ(get_err("{$ 'str'}").error_code(), invalid_condition);
-    EXPECT_EQ(get_err("{$ 'str':}").error_code(), invalid_string);
-    EXPECT_EQ(get_err("{$ 'str': 'incomplete\\").error_code(), invalid_string);
-    EXPECT_EQ(get_err("{$ 'str': 'incomplete}").error_code(), end_of_string);
+    EXPECT_EQ(get_err("{$ 'str'?}").error_code(), invalid_string);
+    EXPECT_EQ(get_err("{$ 'str'? 'incomplete\\").error_code(), invalid_string);
+    EXPECT_EQ(get_err("{$ 'str'? 'incomplete}").error_code(), end_of_string);
 }
 
 TEST(interpreter, debug)
@@ -412,6 +412,6 @@ TEST(interpreter, debug)
 
     PAPILIO_TEST_INTERPRETER_DEBUG("{$}", invalid_condition, 2);
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'}", invalid_condition, 8);
-    PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str':}", invalid_string, 9);
-    PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'==={0}:'s'}", invalid_condition, 10);
+    PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'?}", invalid_string, 9);
+    PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'==={0}?'s'}", invalid_condition, 10);
 }

@@ -307,11 +307,11 @@ TEST(accessor, optional)
         );
 
         EXPECT_EQ(
-            PAPILIO_NS format("{$ !{0.has_value} : 'empty'}", empty),
+            PAPILIO_NS format("{$ !{0.has_value} ? 'empty'}", empty),
             "empty"
         );
         EXPECT_EQ(
-            PAPILIO_NS format(L"{$ !{0.has_value} : 'empty'}", empty),
+            PAPILIO_NS format(L"{$ !{0.has_value} ? 'empty'}", empty),
             L"empty"
         );
     }
