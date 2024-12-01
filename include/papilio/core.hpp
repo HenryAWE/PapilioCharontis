@@ -4662,19 +4662,25 @@ public:
         const auto& digits = uppercase ? digit_map_upper : digit_map_lower;
 
         const bool neg = val < 0;
+
         if constexpr(std::is_signed_v<T>)
         {
-            if(neg)
-                val = -val;
+            do
+            {
+                const T digit = std::abs(val % static_cast<T>(base));
+                buf[buf_size++] = static_cast<CharT>(digits[digit]);
+                val /= static_cast<T>(base);
+            } while(val);
         }
-
-        do
+        else
         {
-            const T t_base = static_cast<T>(base);
-            const T digit = val % t_base;
-            buf[buf_size++] = static_cast<CharT>(digits[digit]);
-            val /= static_cast<T>(t_base);
-        } while(val);
+            do
+            {
+                const T digit = val % static_cast<T>(base);
+                buf[buf_size++] = static_cast<CharT>(digits[digit]);
+                val /= static_cast<T>(base);
+            } while(val);
+        }
 
         using context_t = format_context_traits<FormatContext>;
 

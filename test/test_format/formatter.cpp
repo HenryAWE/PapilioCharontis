@@ -45,8 +45,8 @@ TEST(int_formatter, extreme_value)
 
     {
         constexpr std::uint64_t val = std::numeric_limits<std::uint64_t>::max();
-        EXPECT_EQ(PAPILIO_NS format("{}", val), std::to_string(val));
-        EXPECT_EQ(PAPILIO_NS format(L"{}", val), std::to_wstring(val));
+        EXPECT_EQ(PAPILIO_NS format("{}", val), "18446744073709551615");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", val), L"18446744073709551615");
 
         {
             std::string buf;
@@ -55,6 +55,38 @@ TEST(int_formatter, extreme_value)
             EXPECT_EQ(buf.size(), 64);
             for(std::size_t i = 0; i < buf.size(); ++i)
                 EXPECT_EQ(buf[i], '1') << "i = " << i;
+        }
+    }
+
+    {
+        constexpr std::int64_t val = std::numeric_limits<std::int64_t>::max();
+        EXPECT_EQ(PAPILIO_NS format("{}", val), "9223372036854775807");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", val), L"9223372036854775807");
+
+        {
+            std::string buf;
+            buf.reserve(64);
+            PAPILIO_NS format_to(std::back_inserter(buf), "{:b}", val);
+            EXPECT_EQ(buf.size(), 63);
+            for(std::size_t i = 0; i < buf.size(); ++i)
+                EXPECT_EQ(buf[i], '1') << "i = " << i;
+        }
+    }
+
+    {
+        constexpr std::int64_t val = std::numeric_limits<std::int64_t>::min();
+        EXPECT_EQ(PAPILIO_NS format("{}", val), "-9223372036854775808");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", val), L"-9223372036854775808");
+
+        {
+            std::string buf;
+            buf.reserve(65);
+            PAPILIO_NS format_to(std::back_inserter(buf), "{:b}", val);
+            EXPECT_EQ(buf.size(), 65);
+            EXPECT_EQ(buf[0], '-');
+            EXPECT_EQ(buf[1], '1');
+            for(std::size_t i = 2; i < buf.size(); ++i)
+                EXPECT_EQ(buf[i], '0') << "i = " << i;
         }
     }
 }
