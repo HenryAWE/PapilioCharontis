@@ -1,0 +1,103 @@
+#include <gtest/gtest.h>
+#if __has_include(<format>)
+#    include <format> // Test ADL-proof
+#endif
+#include <papilio/format.hpp>
+#include <random>
+#include "test_format.hpp"
+#include <papilio_test/setup.hpp>
+
+template <typename T>
+class float_formatter_suite : public ::testing::Test
+{
+public:
+    static T create_inf() noexcept
+    {
+        return std::numeric_limits<T>::infinity();
+    }
+
+    static T create_nan() noexcept
+    {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+};
+
+using float_types = ::testing::Types<float, double, long double>;
+TYPED_TEST_SUITE(float_formatter_suite, float_types);
+
+TYPED_TEST(float_formatter_suite, basic)
+{
+    using namespace papilio;
+
+    EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(0.0L)), "0");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(0.0L)), L"0");
+
+    EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(-0.0L)), "-0");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(-0.0L)), L"-0");
+
+    EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(42)), "42");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(42)), L"42");
+
+    EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(3.14L)), "3.14");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(3.14L)), L"3.14");
+
+    EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(-3.14L)), "-3.14");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(-3.14L)), L"-3.14");
+
+    EXPECT_EQ(PAPILIO_NS format("{}", TestFixture::create_inf()), "inf");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TestFixture::create_inf()), L"inf");
+
+    EXPECT_EQ(PAPILIO_NS format("{}", TestFixture::create_nan()), "nan");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TestFixture::create_nan()), L"nan");
+}
+
+TYPED_TEST(float_formatter_suite, fill_and_align)
+{
+    {
+        const TypeParam pi = TypeParam(3.14L);
+
+        EXPECT_EQ(PAPILIO_NS format("{:10f}", pi), "  3.140000");
+        EXPECT_EQ(PAPILIO_NS format(L"{:10f}", pi), L"  3.140000");
+
+        EXPECT_EQ(PAPILIO_NS format("{:.5f}", pi), "3.14000");
+        EXPECT_EQ(PAPILIO_NS format(L"{:.5f}", pi), L"3.14000");
+
+        EXPECT_EQ(PAPILIO_NS format("{:10.5f}", pi), "   3.14000");
+        EXPECT_EQ(PAPILIO_NS format(L"{:10.5f}", pi), L"   3.14000");
+    }
+
+    {
+        const TypeParam inf = TestFixture::create_inf();
+
+        EXPECT_EQ(
+            PAPILIO_NS format("{0:},{0:+},{0:-},{0: }", inf),
+            "inf,+inf,inf, inf"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{0:},{0:+},{0:-},{0: }", inf),
+            L"inf,+inf,inf, inf"
+        );
+
+        EXPECT_EQ(
+            PAPILIO_NS format("{0:},{0:+},{0:-},{0: }", -inf),
+            "-inf,-inf,-inf,-inf"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{0:},{0:+},{0:-},{0: }", -inf),
+            L"-inf,-inf,-inf,-inf"
+        );
+    }
+
+    {
+        const TypeParam nan = TestFixture::create_nan();
+
+        EXPECT_EQ(
+            PAPILIO_NS format("{}", nan),
+            "nan"
+        );
+        EXPECT_EQ(
+            PAPILIO_NS format(L"{}", nan),
+            L"nan"
+        );
+    }
+}
