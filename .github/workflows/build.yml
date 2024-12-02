@@ -180,3 +180,33 @@ jobs:
         with:
           name: papilio-doc
           path: ${{github.workspace}}/build/doxygen_output
+
+    ASan:
+      needs: Clang
+      runs-on: ubuntu-24.04
+
+      env:
+        ASAN_SYMBOLIZER_PATH=: "/usr/bin/llvm-symbolizer-18"
+        ASAN_OPTIONS: "detect_leaks=1"
+
+      steps:
+      - uses: actions/checkout@v4
+
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang-18
+
+      - name: Build
+        run: >
+          ./build.sh
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=clang-18
+          -DCMAKE_CXX_COMPILER=clang++-18
+          -Dpapilio_asan=1
+          -Dpapilio_build_unit_test=1
+
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest
