@@ -44,11 +44,90 @@ TYPED_TEST(float_formatter_suite, basic)
     EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(-3.14L)), "-3.14");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(-3.14L)), L"-3.14");
 
+    EXPECT_EQ(PAPILIO_NS format("{}", TypeParam(1.0e10L)), "1e+10");
+    EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(1.0e10L)), L"1e+10");
+}
+
+TYPED_TEST(float_formatter_suite, inf_and_nan)
+{
     EXPECT_EQ(PAPILIO_NS format("{}", TestFixture::create_inf()), "inf");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TestFixture::create_inf()), L"inf");
+    EXPECT_EQ(PAPILIO_NS format("{:g}", TestFixture::create_inf()), "inf");
+    EXPECT_EQ(PAPILIO_NS format(L"{:g}", TestFixture::create_inf()), L"inf");
+    EXPECT_EQ(PAPILIO_NS format("{:f}", TestFixture::create_inf()), "inf");
+    EXPECT_EQ(PAPILIO_NS format(L"{:f}", TestFixture::create_inf()), L"inf");
+    EXPECT_EQ(PAPILIO_NS format("{:e}", TestFixture::create_inf()), "inf");
+    EXPECT_EQ(PAPILIO_NS format(L"{:e}", TestFixture::create_inf()), L"inf");
+
+    EXPECT_EQ(PAPILIO_NS format("{:G}", TestFixture::create_inf()), "INF");
+    EXPECT_EQ(PAPILIO_NS format(L"{:G}", TestFixture::create_inf()), L"INF");
+    EXPECT_EQ(PAPILIO_NS format("{:F}", TestFixture::create_inf()), "INF");
+    EXPECT_EQ(PAPILIO_NS format(L"{:F}", TestFixture::create_inf()), L"INF");
+    EXPECT_EQ(PAPILIO_NS format("{:E}", TestFixture::create_inf()), "INF");
+    EXPECT_EQ(PAPILIO_NS format(L"{:E}", TestFixture::create_inf()), L"INF");
 
     EXPECT_EQ(PAPILIO_NS format("{}", TestFixture::create_nan()), "nan");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TestFixture::create_nan()), L"nan");
+    EXPECT_EQ(PAPILIO_NS format("{:g}", TestFixture::create_nan()), "nan");
+    EXPECT_EQ(PAPILIO_NS format(L"{:g}", TestFixture::create_nan()), L"nan");
+    EXPECT_EQ(PAPILIO_NS format("{:f}", TestFixture::create_nan()), "nan");
+    EXPECT_EQ(PAPILIO_NS format(L"{:f}", TestFixture::create_nan()), L"nan");
+    EXPECT_EQ(PAPILIO_NS format("{:e}", TestFixture::create_nan()), "nan");
+    EXPECT_EQ(PAPILIO_NS format(L"{:e}", TestFixture::create_nan()), L"nan");
+
+    EXPECT_EQ(PAPILIO_NS format("{:G}", TestFixture::create_nan()), "NAN");
+    EXPECT_EQ(PAPILIO_NS format(L"{:G}", TestFixture::create_nan()), L"NAN");
+    EXPECT_EQ(PAPILIO_NS format("{:F}", TestFixture::create_nan()), "NAN");
+    EXPECT_EQ(PAPILIO_NS format(L"{:F}", TestFixture::create_nan()), L"NAN");
+    EXPECT_EQ(PAPILIO_NS format("{:E}", TestFixture::create_nan()), "NAN");
+    EXPECT_EQ(PAPILIO_NS format(L"{:E}", TestFixture::create_nan()), L"NAN");
+}
+
+TYPED_TEST(float_formatter_suite, scientific)
+{
+    using namespace papilio;
+
+    {
+        TypeParam val = TypeParam(1.0e-4L);
+
+        EXPECT_EQ(PAPILIO_NS format("{:e}", val), "1.000000e-04");
+        EXPECT_EQ(PAPILIO_NS format(L"{:e}", val), L"1.000000e-04");
+
+        EXPECT_EQ(PAPILIO_NS format("{:E}", val), "1.000000E-04");
+        EXPECT_EQ(PAPILIO_NS format(L"{:E}", val), L"1.000000E-04");
+
+        EXPECT_EQ(PAPILIO_NS format("{:.2e}", val), "1.00e-04");
+        EXPECT_EQ(PAPILIO_NS format(L"{:.2e}", val), L"1.00e-04");
+    }
+
+    {
+        TypeParam val = TypeParam(1.0e10L);
+
+        EXPECT_EQ(PAPILIO_NS format("{:e}", val), "1.000000e+10");
+        EXPECT_EQ(PAPILIO_NS format(L"{:e}", val), L"1.000000e+10");
+
+        EXPECT_EQ(PAPILIO_NS format("{:E}", val), "1.000000E+10");
+        EXPECT_EQ(PAPILIO_NS format(L"{:E}", val), L"1.000000E+10");
+
+        EXPECT_EQ(PAPILIO_NS format("{:.2e}", val), "1.00e+10");
+        EXPECT_EQ(PAPILIO_NS format(L"{:.2e}", val), L"1.00e+10");
+    }
+}
+
+TYPED_TEST(float_formatter_suite, hex)
+{
+    using namespace papilio;
+
+    if constexpr(!std::is_same_v<TypeParam, long double>)
+    {
+        TypeParam hex_pi = TypeParam(0x1.921fb6p1);
+
+        EXPECT_EQ(PAPILIO_NS format("{:a}", hex_pi), "1.921fb6p+1");
+        EXPECT_EQ(PAPILIO_NS format(L"{:a}", hex_pi), L"1.921fb6p+1");
+
+        EXPECT_EQ(PAPILIO_NS format("{:A}", hex_pi), "1.921FB6P+1");
+        EXPECT_EQ(PAPILIO_NS format(L"{:A}", hex_pi), L"1.921FB6P+1");
+    }
 }
 
 TYPED_TEST(float_formatter_suite, fill_and_align)

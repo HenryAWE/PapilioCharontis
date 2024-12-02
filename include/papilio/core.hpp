@@ -4889,24 +4889,7 @@ public:
         bool neg = std::signbit(val);
         val = std::abs(val);
 
-        if(std::isinf(val)) [[unlikely]]
-        {
-            buf[0] = static_cast<CharT>('i');
-            buf[1] = static_cast<CharT>('n');
-            buf[2] = static_cast<CharT>('f');
-            fp_size = 3;
-        }
-        else if(std::isnan(val)) [[unlikely]]
-        {
-            buf[0] = static_cast<CharT>('n');
-            buf[1] = static_cast<CharT>('a');
-            buf[2] = static_cast<CharT>('n');
-            fp_size = 3;
-        }
-        else [[likely]]
-        {
-            fp_size = conv<CharT>(buf, val);
-        }
+        fp_size = conv<CharT>(buf, val);
 
         std::size_t used = fp_size;
 
@@ -4978,6 +4961,8 @@ private:
             break;
 
         case 'F':
+            uppercase = true;
+            [[fallthrough]];
         case 'f':
             ch_fmt = std::chars_format::fixed;
             break;
@@ -5007,6 +4992,39 @@ private:
 
         std::to_chars_result result;
         auto [ch_fmt, uppercase] = get_chars_fmt();
+
+        if(std::isinf(val)) [[unlikely]]
+        {
+            if(uppercase)
+            {
+                buf[0] = 'I';
+                buf[1] = 'N';
+                buf[2] = 'F';
+            }
+            else
+            {
+                buf[0] = 'i';
+                buf[1] = 'n';
+                buf[2] = 'f';
+            }
+            return 3;
+        }
+        else if(std::isnan(val)) [[unlikely]]
+        {
+            if(uppercase)
+            {
+                buf[0] = 'N';
+                buf[1] = 'A';
+                buf[2] = 'N';
+            }
+            else
+            {
+                buf[0] = 'n';
+                buf[1] = 'a';
+                buf[2] = 'n';
+            }
+            return 3;
+        }
 
         int precision = static_cast<int>(data().precision);
         if(precision == 0 &&
