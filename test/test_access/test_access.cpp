@@ -322,6 +322,9 @@ TEST(accessor, optional)
         EXPECT_EQ(PAPILIO_NS format("{.has_value}", val), "true");
         EXPECT_EQ(PAPILIO_NS format(L"{.has_value}", val), L"true");
 
+        EXPECT_EQ(PAPILIO_NS format("{$ {.has_value} ? 'non-empty'}", val), "non-empty");
+        EXPECT_EQ(PAPILIO_NS format(L"{$ {.has_value} ? 'non-empty'}", val), L"non-empty");
+
         EXPECT_EQ(PAPILIO_NS format("{.value}", val), "42");
         EXPECT_EQ(PAPILIO_NS format(L"{.value}", val), L"42");
 

@@ -21,6 +21,25 @@ With this library, the code can be rewritten as:
 print(translate("Found {0} file{$ {0}!=1 ? 's'}"), n);
 ```
 
+This library not only supports for outputting based on numerical values, but also supports for outputting based on complex conditions.
+```c++
+struct person
+{
+    string name;
+    int gender;
+
+    bool is_female() const;
+};
+
+// Some code for registering attributes. See documentation for details.
+
+// Example Usage
+person p = /* ... */;
+format("{$ {0.is_female} ? 'She' : 'He'} is a nice person.", p);
+// If is_female() returns true, the result will be "She is a nice person."
+// Otherwise, the result will be "He is a nice person."
+```
+
 ## Overview
 ### Main Feature: Embedded Script
 You can use the embedded script to control the output, such as using plural form of a word for a certain number.

@@ -300,3 +300,73 @@ TEST(format, complex_spec)
     EXPECT_EQ(PAPILIO_NS format("{:*<8}", complex_spec{}), "8,<,*,false");
     EXPECT_EQ(PAPILIO_NS format("{:*<8L}", complex_spec{}), "8,<,*,true");
 }
+
+namespace test_format
+{
+struct person
+{
+    int gender; // 1 == female
+
+    bool is_female() const
+    {
+        return gender == 1;
+    }
+};
+} // namespace test_format
+
+namespace papilio
+{
+template <typename Context>
+struct accessor<test_format::person, Context>
+{
+    using char_type = typename Context::char_type;
+    using format_arg_type = basic_format_arg<Context>;
+    using attribute_name_type = basic_attribute_name<char_type>;
+
+    static format_arg_type attribute(const test_format::person& p, const attribute_name_type& attr)
+    {
+        using namespace std::literals;
+
+        if(attr == PAPILIO_TSTRING_VIEW(char_type, "is_female"))
+        {
+            return p.is_female();
+        }
+
+        throw_invalid_attribute(attr);
+    }
+};
+} // namespace papilio
+
+TEST(format, attributes)
+{
+    using test_format::person;
+    using namespace papilio;
+
+    {
+        person p{.gender = 0};
+        EXPECT_FALSE(p.is_female());
+
+        EXPECT_EQ(
+            format("{$ {0.is_female} ? 'She' : 'He'} is a nice person", p),
+            "He is a nice person"
+        );
+        EXPECT_EQ(
+            format(L"{$ {0.is_female} ? 'She' : 'He'} is a nice person", p),
+            L"He is a nice person"
+        );
+    }
+
+    {
+        person p{.gender = 1};
+        EXPECT_TRUE(p.is_female());
+
+        EXPECT_EQ(
+            format("{$ {0.is_female} ? 'She' : 'He'} is a nice person", p),
+            "She is a nice person"
+        );
+        EXPECT_EQ(
+            format(L"{$ {0.is_female} ? 'She' : 'He'} is a nice person", p),
+            L"She is a nice person"
+        );
+    }
+}

@@ -895,6 +895,9 @@ public:
     using parse_context = basic_format_parse_context<Context>;
 
 private:
+    template <typename T>
+    static constexpr bool use_handle_v = detail::use_handle<T, char_type>;
+
     [[noreturn]]
     static void throw_unformattable()
     {
@@ -1208,7 +1211,7 @@ public:
         template <typename Impl, typename... Args>
         void construct_impl(Args&&... args)
         {
-            static_assert(detail::use_handle<typename Impl::value_type, char_type>);
+            static_assert(use_handle_v<typename Impl::value_type>);
             static_assert(sizeof(Impl) <= storage_size);
 
             new(ptr()) Impl(std::forward<Args>(args)...);
@@ -1283,6 +1286,11 @@ public:
 
     basic_format_arg(const basic_format_arg&) noexcept = default;
 
+    // Avoid accidentally mixing format arguments from different context
+    template <typename AnotherContext>
+    requires(!std::is_same_v<AnotherContext, Context>)
+    basic_format_arg(const basic_format_arg<AnotherContext>&) = delete;
+
     basic_format_arg(basic_format_arg&& other) noexcept
         : m_val(std::move(other.m_val))
     {
@@ -1337,7 +1345,8 @@ public:
     basic_format_arg(std::nullptr_t) noexcept
         : m_val(std::in_place_type<const void*>, nullptr) {}
 
-    template <detail::use_handle<char_type> T>
+    template <typename T>
+    requires(use_handle_v<T>)
     basic_format_arg(const T& val) noexcept
         : m_val(std::in_place_type<handle>, val)
     {}
@@ -1354,7 +1363,8 @@ public:
         : m_val(std::in_place_type<handle>, std::span<const T>(arr.data(), N))
     {}
 
-    template <detail::use_handle<char_type> T>
+    template <typename T>
+    requires(use_handle_v<T>)
     basic_format_arg(independent_t, T&& val) noexcept
         : m_val(std::in_place_type<handle>, independent, std::forward<T>(val))
     {}

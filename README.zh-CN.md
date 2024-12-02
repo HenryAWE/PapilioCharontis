@@ -20,6 +20,25 @@ else
 print(translate("Found {0} file{${0}!=1:'s'}"), n);
 ```
 
+该库不仅支持基于数值的输出，还支持基于复杂条件的输出。
+```c++
+struct person
+{
+    string name;
+    int gender;
+
+    bool is_female() const;
+};
+
+/* 一些用于注册属性的代码，详情请参阅文档 */
+
+// 示例用法
+person p = /* ... */;
+papilio::format("{$ {0.is_female} ? 'She' : 'He'} is a nice person.", p);
+// 如果 is_female() 返回 true，结果将会是 "She is a nice person."
+// 否则结果将会是 "He is a nice person."
+```
+
 ## 概览
 ### 核心特性：内嵌脚本
 使用内嵌脚本控制输出，例如对某个数字使用单词的复数形式。

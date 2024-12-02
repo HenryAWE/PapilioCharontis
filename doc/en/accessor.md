@@ -40,6 +40,6 @@ namespace papilio
 
             throw_invalid_attribute(attr);
         }
-    }
+    };
 }
 ```
