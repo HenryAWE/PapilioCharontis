@@ -58,7 +58,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            clang: [15, 16, 17]
+            clang: [15, 16, 17, 18]
             stdlib: ["libstdc++", "libc++"]
             exclude:
               # Clang 15 does not fully support some features used by libstdc++

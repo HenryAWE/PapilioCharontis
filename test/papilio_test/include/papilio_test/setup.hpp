@@ -28,6 +28,8 @@
 #        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #    endif
 
+#    pragma clang diagnostic ignored "-Wunused-private-field"
+
 #endif
 
 #ifdef PAPILIO_COMPILER_GCC
