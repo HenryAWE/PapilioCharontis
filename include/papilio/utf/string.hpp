@@ -14,31 +14,38 @@
 
 namespace papilio::utf
 {
-namespace detail
+/**
+ * @brief Base of all string classes
+ */
+class string_base
 {
-    class str_impl_base
+public:
+    using size_type = std::size_t;
+
+    /**
+     * @brief Special position value. Its actual meaning depends on API returning this value.
+     */
+    static constexpr size_type npos = utf::npos;
+
+protected:
+#ifndef PAPILIO_DOXYGEN // Don't generate documentation for internal APIs
+
+    [[noreturn]]
+    static void throw_out_of_range(const char* msg = "out of range")
     {
-    public:
-        using size_type = std::size_t;
+        throw std::out_of_range(msg);
+    }
 
-        static constexpr size_type npos = utf::npos;
-
-    protected:
-        [[noreturn]]
-        static void throw_out_of_range(const char* msg = "out of range")
-        {
-            throw std::out_of_range(msg);
-        }
-    };
-} // namespace detail
+#endif
+};
 
 /**
- * @brief Common code for string classes
+ * @brief CRTP base of string classes
  *
- * CRTP base of string classes.
+ * Implements common functionalities
  */
 template <typename CharT, typename Derived>
-class string_base : public detail::str_impl_base
+class implement_string : public string_base
 {
 public:
     using size_type = std::size_t;
@@ -345,6 +352,8 @@ public:
     }
 
 protected:
+#ifndef PAPILIO_DOXYGEN // Don't generate documentation for internal APIs
+
     constexpr string_view_type get_view() const noexcept
     {
         return as_derived().to_string_view();
@@ -389,6 +398,8 @@ protected:
         }
     }
 
+#endif
+
 private:
     constexpr Derived& as_derived() noexcept
     {
@@ -401,10 +412,13 @@ private:
     }
 };
 
+/**
+ * @brief Reference to a string without ownership, similar to `std::string_view`
+ */
 PAPILIO_EXPORT template <char_like CharT>
-class basic_string_ref<CharT> : public string_base<CharT, basic_string_ref<CharT>>
+class basic_string_ref<CharT> : public implement_string<CharT, basic_string_ref<CharT>>
 {
-    using my_base = string_base<CharT, basic_string_ref<CharT>>;
+    using my_base = implement_string<CharT, basic_string_ref<CharT>>;
 
 public:
     using size_type = std::size_t;
@@ -443,6 +457,11 @@ public:
 
     constexpr basic_string_ref(const_iterator start, const_iterator stop) noexcept
         : m_str(string_view_type(start.base(), stop.base()))
+    {}
+
+    template <std::convertible_to<const_iterator> Iterator>
+    constexpr basic_string_ref(Iterator start, Iterator stop) noexcept
+        : m_str(string_view_type(const_iterator(start).base(), const_iterator(stop).base()))
     {}
 
     constexpr basic_string_ref& operator=(const basic_string_ref&) noexcept = default;
@@ -848,10 +867,16 @@ inline namespace literals
     }
 } // namespace literals
 
+/**
+ * @brief Copy-on-write string container
+ *
+ * This string class not only can refer to a string without owning it,
+ * but also has ability to obtain ownership when necessary.
+ */
 PAPILIO_EXPORT template <char_like CharT>
-class basic_string_container<CharT> : public string_base<CharT, basic_string_container<CharT>>
+class basic_string_container<CharT> : public implement_string<CharT, basic_string_container<CharT>>
 {
-    using my_base = string_base<CharT, basic_string_container<CharT>>;
+    using my_base = implement_string<CharT, basic_string_container<CharT>>;
 
 public:
     using size_type = std::size_t;
@@ -1219,7 +1244,241 @@ public:
     using my_base::begin;
     using my_base::end;
 
-    // TODO: iterator and begin() end() pair
+    class reference_proxy
+    {
+        friend basic_string_container;
+
+        constexpr reference_proxy(basic_string_container* p, size_type off) noexcept
+            : m_str(p), m_offset(off) {}
+
+    public:
+        reference_proxy(const reference_proxy&) = delete;
+
+        constexpr bool operator==(const reference_proxy& rhs) const noexcept
+        {
+            return static_cast<char32_t>(*this) == static_cast<char32_t>(rhs);
+        }
+
+        friend bool operator==(const reference_proxy& lhs, codepoint rhs) noexcept
+        {
+            return static_cast<char32_t>(lhs) == static_cast<char32_t>(rhs);
+        }
+
+        friend bool operator==(codepoint lhs, const reference_proxy& rhs) noexcept
+        {
+            return static_cast<char32_t>(lhs) == static_cast<char32_t>(rhs);
+        }
+
+        friend bool operator==(const reference_proxy& lhs, char32_t rhs) noexcept
+        {
+            return static_cast<char32_t>(lhs) == rhs;
+        }
+
+        friend bool operator==(char32_t lhs, const reference_proxy& rhs) noexcept
+        {
+            return lhs == static_cast<char32_t>(rhs);
+        }
+
+        constexpr operator codepoint() const noexcept
+        {
+            return m_str->cp_from_off(m_offset);
+        }
+
+        constexpr explicit operator char32_t() const noexcept
+        {
+            return static_cast<codepoint>(*this);
+        }
+
+        constexpr const CharT* operator&() const noexcept
+        {
+            return m_str->data() + m_offset;
+        }
+
+        template <bool C>
+        constexpr const reference_proxy& operator=(const reference_proxy& rhs) const
+        {
+            assign_cp(rhs);
+            return *this;
+        }
+
+        constexpr const reference_proxy& operator=(codepoint cp) const
+        {
+            assign_cp(cp);
+            return *this;
+        }
+
+    private:
+        basic_string_container* m_str;
+        size_type m_offset;
+
+        void assign_cp(const codepoint& cp) const
+        {
+            std::uint8_t len = m_str->ch_size_for_cp(*&*this);
+
+            string_type& str = m_str->to_str();
+            cp.replace(str, m_offset, len);
+        }
+    };
+
+    using reference = reference_proxy;
+
+private:
+    constexpr reference make_reference(size_type off)
+    {
+        return reference(this, off);
+    }
+
+public:
+    using my_base::operator[];
+
+    constexpr reference operator[](size_type idx) noexcept
+    {
+        size_type off = this->get_offset(idx);
+        PAPILIO_ASSERT(off != npos);
+        return make_reference(off);
+    }
+
+    class iterator
+    {
+        friend class basic_string_container;
+
+        iterator(basic_string_container* str, size_type offset)
+            : m_str(str), m_offset(offset) {}
+
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+
+        using char_type = CharT;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using value_type = codepoint;
+        using reference = reference_proxy;
+        using const_reference = codepoint;
+
+        iterator() = delete;
+
+        constexpr iterator(const iterator&) noexcept = default;
+
+        constexpr iterator& operator=(const iterator&) noexcept = default;
+
+        constexpr bool operator==(const iterator& rhs) const noexcept
+        {
+            return to_address() == rhs.to_address();
+        }
+
+        constexpr void swap(iterator& other) noexcept
+        {
+            using std::swap;
+            swap(m_str, other.m_str);
+        }
+
+        constexpr const CharT* to_address() const noexcept
+        {
+            return m_str->data() + m_offset;
+        }
+
+        constexpr operator codepoint_iterator<CharT>() const noexcept
+        {
+            return codepoint_begin<CharT>(m_str->get_view().substr(m_offset));
+        }
+
+        reference operator*() const noexcept
+        {
+            return m_str->make_reference(m_offset);
+        }
+
+        iterator& operator++()
+        {
+            next_pos();
+            return *this;
+        }
+
+        iterator& operator--()
+        {
+            prev_pos();
+            return *this;
+        }
+
+        iterator operator++(int)
+        {
+            iterator tmp(*this);
+            ++*this;
+            return tmp;
+        }
+
+        iterator operator--(int)
+        {
+            iterator tmp(*this);
+            --*this;
+            return tmp;
+        }
+
+    private:
+        basic_string_container* m_str;
+        size_type m_offset;
+
+        void next_pos()
+        {
+            m_offset += m_str->ch_size_for_cp(to_address()[m_offset]);
+            if(m_offset > m_str->size())
+                m_offset = m_str->size();
+        }
+
+        void prev_pos()
+        {
+            if constexpr(char8_like<CharT>)
+            {
+                const CharT* p = m_str->data();
+
+                PAPILIO_ASSERT(m_offset != 0);
+                --m_offset;
+                size_type next_offset = m_offset;
+                while(true)
+                {
+                    char8_t ch = static_cast<char8_t>(p[next_offset]);
+
+                    if(m_offset - next_offset > 3) [[unlikely]]
+                    {
+                        break;
+                    }
+                    else if(PAPILIO_NS utf::is_leading_byte(ch))
+                    {
+                        m_offset = next_offset;
+                        break;
+                    }
+                    else if(next_offset == 0)
+                    {
+                        break;
+                    }
+
+                    --next_offset;
+                }
+            }
+            else if constexpr(char16_like<CharT>)
+            {
+                const CharT* p = m_str->data();
+
+                PAPILIO_ASSERT(m_offset != 0);
+                --m_offset;
+                while(PAPILIO_NS utf::is_low_surrogate(p[m_offset]))
+                    --m_offset;
+            }
+            else
+            {
+                --m_offset;
+            }
+        }
+    };
+
+    iterator begin()
+    {
+        return iterator(this, 0);
+    }
+
+    iterator end()
+    {
+        return iterator(this, size());
+    }
 
     template <typename Operation>
     constexpr void resize_and_overwrite(size_type count, Operation op)
@@ -1238,7 +1497,10 @@ public:
     }
 
 private:
-    using string_store = std::variant<std::basic_string<CharT>, std::basic_string_view<CharT>>;
+    // String data type
+    using string_store = std::variant<
+        std::basic_string<CharT>, // has ownership
+        std::basic_string_view<CharT>>; // no ownership
 
     mutable string_store m_data;
 

@@ -320,7 +320,7 @@ TEST(basic_string_container, string_container)
         string_container sc = "hello world"s;
         EXPECT_TRUE(sc.has_ownership());
         EXPECT_EQ(sc.find("hello"), sc.begin());
-        EXPECT_EQ(sc.find("world"), sc.begin() + 6);
+        EXPECT_EQ(sc.find("world"), std::next(sc.begin(), 6));
         EXPECT_TRUE(sc.contains("hello"));
         EXPECT_TRUE(sc.contains("world"));
 
@@ -336,6 +336,38 @@ TEST(basic_string_container, string_container)
 
         EXPECT_EQ("test"_sc.size(), 4);
         EXPECT_EQ(u8"test"_sc.size(), 4);
+    }
+
+    {
+        string_container sc = "aaaa";
+
+        EXPECT_FALSE(sc.has_ownership());
+        for(auto&& c : sc)
+        {
+            EXPECT_EQ(c, 'a');
+            c = 'A';
+            EXPECT_EQ(c, 'A');
+            EXPECT_TRUE(sc.has_ownership());
+        }
+
+        EXPECT_EQ(sc, "AAAA");
+    }
+
+    {
+        string_container sc = "aaaa";
+        sc.obtain_ownership();
+
+        const char* ptr = sc.data();
+        for(auto&& c : sc)
+        {
+            EXPECT_EQ(&c, ptr);
+            ptr++;
+            EXPECT_EQ(c, 'a');
+            c = 'A';
+            EXPECT_EQ(c, 'A');
+        }
+
+        EXPECT_EQ(sc, "AAAA");
     }
 
     {
@@ -371,6 +403,23 @@ TEST(basic_string_container, wstring_container)
         EXPECT_EQ(sc[1], U'e');
         EXPECT_EQ(sc[2], U's');
         EXPECT_EQ(sc[3], U't');
+    }
+
+    {
+        wstring_container sc = L"aaaa";
+        sc.obtain_ownership();
+
+        const wchar_t* ptr = sc.data();
+        for(auto&& c : sc)
+        {
+            EXPECT_EQ(&c, ptr);
+            ptr++;
+            EXPECT_EQ(c, L'a');
+            c = L'A';
+            EXPECT_EQ(c, L'A');
+        }
+
+        EXPECT_EQ(sc, L"AAAA");
     }
 }
 

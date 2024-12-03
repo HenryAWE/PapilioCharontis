@@ -426,6 +426,27 @@ public:
         return os;
     }
 
+    template <typename CharT>
+    std::basic_string<CharT>& replace(std::basic_string<CharT>& str, std::size_t pos, std::size_t count) const
+    {
+        if constexpr(char8_like<CharT>)
+        {
+            str.replace(pos, count, std::basic_string_view<CharT>(*this));
+        }
+        else if(char16_like<CharT>)
+        {
+            auto result = decoder<CharT>::from_codepoint(*this);
+            str.replace(pos, count, result.get());
+        }
+        else
+        {
+            CharT ch = static_cast<CharT>(static_cast<char32_t>(*this));
+            str.replace(pos, count, &ch, 1);
+        }
+
+        return str;
+    }
+
     // Locale independent APIs
 
     [[nodiscard]]
@@ -511,10 +532,10 @@ namespace detail
                     m_len = 1;
                     break;
                 }
-                else if(is_leading_byte(ch))
+                else if(PAPILIO_NS utf::is_leading_byte(ch))
                 {
                     m_offset = next_offset;
-                    m_len = byte_count(ch);
+                    m_len = PAPILIO_NS utf::byte_count(ch);
                     break;
                 }
                 else if(next_offset == 0)
