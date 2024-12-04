@@ -279,6 +279,42 @@ TEST(basic_string_container, string_container)
     using namespace utf;
 
     {
+        const string_container sc = "test";
+
+        EXPECT_FALSE(sc.has_ownership());
+        EXPECT_EQ(sc.size(), 4);
+        EXPECT_EQ(sc.length(), 4);
+        EXPECT_TRUE(sc.null_terminated());
+
+        EXPECT_EQ(sc[0], U't');
+        EXPECT_EQ(sc[1], U'e');
+        EXPECT_EQ(sc[2], U's');
+        EXPECT_EQ(sc[3], U't');
+
+#ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
+
+        EXPECT_EQ((sc[reverse_index, 0]), U't');
+        EXPECT_EQ((sc[reverse_index, 1]), U's');
+        EXPECT_EQ((sc[reverse_index, 2]), U'e');
+        EXPECT_EQ((sc[reverse_index, 3]), U't');
+
+#endif
+
+        EXPECT_EQ(sc.front(), U't');
+        EXPECT_EQ(sc.back(), U't');
+
+        EXPECT_EQ(sc.index_or(4, U'\0'), U'\0');
+        EXPECT_EQ(sc.index_or(reverse_index, 4, U'\0'), U'\0');
+        EXPECT_THROW((void)sc.at(4), std::out_of_range);
+
+        string_container sc_2 = sc;
+        EXPECT_FALSE(sc_2.has_ownership());
+
+        sc_2.obtain_ownership();
+        EXPECT_TRUE(sc_2.has_ownership());
+    }
+
+    {
         string_container sc = "test";
 
         EXPECT_FALSE(sc.has_ownership());
@@ -339,6 +375,44 @@ TEST(basic_string_container, string_container)
     }
 
     {
+        const string_container sc = "aaaa";
+
+        EXPECT_FALSE(sc.has_ownership());
+        const char* ptr = sc.data();
+        for(auto&& c : sc)
+        {
+            EXPECT_EQ(&c, ptr);
+            ++ptr;
+            EXPECT_EQ(c, 'a');
+            EXPECT_FALSE(sc.has_ownership());
+        }
+
+        EXPECT_EQ(sc, "aaaa");
+        std::for_each(
+            sc.crbegin(),
+            sc.crend(),
+            [](auto&& ch)
+            {
+                EXPECT_EQ(ch, 'a');
+                EXPECT_EQ('a', ch);
+                char32_t ch32 = ch;
+                EXPECT_EQ(ch32, U'a');
+            }
+        );
+        std::for_each(
+            sc.rbegin(),
+            sc.rend(),
+            [](auto&& ch)
+            {
+                EXPECT_EQ(ch, 'a');
+                EXPECT_EQ('a', ch);
+                char32_t ch32 = ch;
+                EXPECT_EQ(ch32, U'a');
+            }
+        );
+    }
+
+    {
         string_container sc = "aaaa";
 
         EXPECT_FALSE(sc.has_ownership());
@@ -351,6 +425,17 @@ TEST(basic_string_container, string_container)
         }
 
         EXPECT_EQ(sc, "AAAA");
+        std::for_each(
+            sc.rbegin(),
+            sc.rend(),
+            [](auto&& ch)
+            {
+                EXPECT_EQ(ch, 'A');
+                EXPECT_EQ('A', ch);
+                char32_t ch32 = ch;
+                EXPECT_EQ(ch32, U'A');
+            }
+        );
     }
 
     {
@@ -397,12 +482,34 @@ TEST(basic_string_container, wstring_container)
     using namespace utf;
 
     {
+        const wstring_container sc = L"test";
+
+        EXPECT_EQ(sc[0], U't');
+        EXPECT_EQ(sc[1], U'e');
+        EXPECT_EQ(sc[2], U's');
+        EXPECT_EQ(sc[3], U't');
+    }
+
+    {
         wstring_container sc = L"test";
 
         EXPECT_EQ(sc[0], U't');
         EXPECT_EQ(sc[1], U'e');
         EXPECT_EQ(sc[2], U's');
         EXPECT_EQ(sc[3], U't');
+    }
+
+    {
+        const wstring_container sc = L"aaaa";
+
+        EXPECT_FALSE(sc.has_ownership());
+        for(auto&& c : sc)
+        {
+            EXPECT_EQ(c, L'a');
+            EXPECT_FALSE(sc.has_ownership());
+        }
+
+        EXPECT_EQ(sc, L"aaaa");
     }
 
     {

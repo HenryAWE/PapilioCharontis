@@ -59,6 +59,8 @@ public:
 
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    using const_reference = typename codepoint_iterator<CharT>::const_reference;
+
     constexpr const_iterator cbegin() const noexcept
     {
         return PAPILIO_NS utf::codepoint_begin(get_view());
@@ -99,14 +101,22 @@ public:
         return crend();
     }
 
-    constexpr codepoint operator[](size_type i) const noexcept
+private:
+    constexpr const_reference make_const_reference(size_type off) const noexcept
+    {
+        const CharT* p = data() + off;
+        return const_reference(p, ch_size_for_cp(*p));
+    }
+
+public:
+    constexpr const_reference operator[](size_type i) const noexcept
     {
         return index(i);
     }
 
 #ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
 
-    constexpr codepoint operator[](reverse_index_t, size_type i) const noexcept
+    constexpr const_reference operator[](reverse_index_t, size_type i) const noexcept
     {
         return index(reverse_index, i);
     }
@@ -115,16 +125,16 @@ public:
 
     // for consistency
     [[nodiscard]]
-    constexpr codepoint index(size_type i) const noexcept
+    constexpr const_reference index(size_type i) const noexcept
     {
-        return cp_from_off(get_offset(i));
+        return make_const_reference(get_offset(i));
     }
 
     // for pre-C++ 23
     [[nodiscard]]
-    constexpr codepoint index(reverse_index_t, size_type i) const noexcept
+    constexpr const_reference index(reverse_index_t, size_type i) const noexcept
     {
-        return cp_from_off(get_offset(reverse_index, i));
+        return make_const_reference(get_offset(reverse_index, i));
     }
 
     constexpr codepoint at(size_type i) const
@@ -432,6 +442,9 @@ public:
     using iterator = const_iterator;
     using const_reverse_iterator = typename my_base::const_reverse_iterator;
     using reverse_iterator = const_reverse_iterator;
+
+    using const_reference = typename my_base::const_reference;
+    using reference = const_reference;
 
     constexpr basic_string_ref() noexcept = default;
     constexpr basic_string_ref(const basic_string_ref& other) noexcept = default;
@@ -889,6 +902,8 @@ public:
     using const_iterator = typename my_base::const_iterator;
     using const_reverse_iterator = typename my_base::const_reverse_iterator;
 
+    using const_reference = typename my_base::const_reference;
+
     basic_string_container() noexcept = default;
     basic_string_container(std::nullptr_t) = delete;
 
@@ -1259,32 +1274,12 @@ public:
             return static_cast<char32_t>(*this) == static_cast<char32_t>(rhs);
         }
 
-        friend bool operator==(const reference_proxy& lhs, codepoint rhs) noexcept
-        {
-            return static_cast<char32_t>(lhs) == static_cast<char32_t>(rhs);
-        }
-
-        friend bool operator==(codepoint lhs, const reference_proxy& rhs) noexcept
-        {
-            return static_cast<char32_t>(lhs) == static_cast<char32_t>(rhs);
-        }
-
-        friend bool operator==(const reference_proxy& lhs, char32_t rhs) noexcept
-        {
-            return static_cast<char32_t>(lhs) == rhs;
-        }
-
-        friend bool operator==(char32_t lhs, const reference_proxy& rhs) noexcept
-        {
-            return lhs == static_cast<char32_t>(rhs);
-        }
-
         constexpr operator codepoint() const noexcept
         {
             return m_str->cp_from_off(m_offset);
         }
 
-        constexpr explicit operator char32_t() const noexcept
+        constexpr operator char32_t() const noexcept
         {
             return static_cast<codepoint>(*this);
         }
@@ -1294,7 +1289,6 @@ public:
             return m_str->data() + m_offset;
         }
 
-        template <bool C>
         constexpr const reference_proxy& operator=(const reference_proxy& rhs) const
         {
             assign_cp(rhs);
@@ -1338,6 +1332,29 @@ public:
         return make_reference(off);
     }
 
+#ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
+
+    constexpr reference operator[](reverse_index_t, size_type i) noexcept
+    {
+        return index(reverse_index, i);
+    }
+
+#endif
+
+    // for consistency
+    [[nodiscard]]
+    constexpr reference index(size_type i) noexcept
+    {
+        return make_reference(this->get_offset(i));
+    }
+
+    // for pre-C++ 23
+    [[nodiscard]]
+    constexpr reference index(reverse_index_t, size_type i) noexcept
+    {
+        return make_reference(this->get_offset(reverse_index, i));
+    }
+
     class iterator
     {
         friend class basic_string_container;
@@ -1355,7 +1372,8 @@ public:
         using reference = reference_proxy;
         using const_reference = codepoint;
 
-        iterator() = delete;
+        iterator() noexcept
+            : m_str(nullptr), m_offset(0) {}
 
         constexpr iterator(const iterator&) noexcept = default;
 
@@ -1370,43 +1388,54 @@ public:
         {
             using std::swap;
             swap(m_str, other.m_str);
+            swap(m_offset, other.m_offset);
         }
 
         constexpr const CharT* to_address() const noexcept
         {
+            if(!*this)
+                return nullptr;
             return m_str->data() + m_offset;
         }
 
         constexpr operator codepoint_iterator<CharT>() const noexcept
         {
+            if(!*this)
+                return codepoint_iterator<CharT>();
             return codepoint_begin<CharT>(m_str->get_view().substr(m_offset));
         }
 
-        reference operator*() const noexcept
+        constexpr reference operator*() const noexcept
         {
+            PAPILIO_ASSERT(*this);
             return m_str->make_reference(m_offset);
         }
 
-        iterator& operator++()
+        constexpr operator bool() const noexcept
+        {
+            return m_str != nullptr;
+        }
+
+        constexpr iterator& operator++()
         {
             next_pos();
             return *this;
         }
 
-        iterator& operator--()
+        constexpr iterator& operator--()
         {
             prev_pos();
             return *this;
         }
 
-        iterator operator++(int)
+        constexpr iterator operator++(int)
         {
             iterator tmp(*this);
             ++*this;
             return tmp;
         }
 
-        iterator operator--(int)
+        constexpr iterator operator--(int)
         {
             iterator tmp(*this);
             --*this;
@@ -1417,15 +1446,17 @@ public:
         basic_string_container* m_str;
         size_type m_offset;
 
-        void next_pos()
+        constexpr void next_pos()
         {
+            PAPILIO_ASSERT(*this);
             m_offset += m_str->ch_size_for_cp(to_address()[m_offset]);
             if(m_offset > m_str->size())
                 m_offset = m_str->size();
         }
 
-        void prev_pos()
+        constexpr void prev_pos()
         {
+            PAPILIO_ASSERT(*this);
             if constexpr(char8_like<CharT>)
             {
                 const CharT* p = m_str->data();
@@ -1470,14 +1501,29 @@ public:
         }
     };
 
-    iterator begin()
+    constexpr iterator begin()
     {
         return iterator(this, 0);
     }
 
-    iterator end()
+    constexpr iterator end()
     {
         return iterator(this, size());
+    }
+
+    using reverse_iterator = std::reverse_iterator<iterator>;
+
+    using my_base::rbegin;
+    using my_base::rend;
+
+    constexpr reverse_iterator rbegin()
+    {
+        return reverse_iterator(end());
+    }
+
+    constexpr reverse_iterator rend()
+    {
+        return reverse_iterator(begin());
     }
 
     template <typename Operation>
@@ -1504,7 +1550,7 @@ private:
 
     mutable string_store m_data;
 
-    string_type& to_str() const
+    constexpr string_type& to_str() const
     {
         string_view_type* p_str = std::get_if<string_view_type>(&m_data);
         if(p_str)
@@ -1519,7 +1565,7 @@ private:
     }
 
     template <typename T, typename... Args>
-    T& emplace_data(Args&&... args) const noexcept(std::is_nothrow_constructible_v<T, Args...>)
+    constexpr T& emplace_data(Args&&... args) const noexcept(std::is_nothrow_constructible_v<T, Args...>)
     {
         return m_data.template emplace<T>(std::forward<Args>(args)...);
     }

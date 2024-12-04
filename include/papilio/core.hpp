@@ -5181,7 +5181,7 @@ public:
         {
             for(auto it = str.begin(); it != str.end(); ++it)
             {
-                std::size_t w = (*it).estimate_width();
+                std::size_t w = utf::codepoint(*it).estimate_width();
                 if(used + w > data().precision)
                 {
                     str.assign(str.begin(), it);

@@ -548,11 +548,6 @@ namespace detail
             }
         }
 
-        constexpr codepoint deref() const noexcept
-        {
-            return codepoint(to_ptr(), m_len);
-        }
-
         constexpr bool to_bool() const noexcept
         {
             return !m_str.empty();
@@ -628,11 +623,6 @@ namespace detail
             m_len = utf::is_high_surrogate(m_str[m_offset]) ? 2 : 1;
         }
 
-        constexpr codepoint deref() const
-        {
-            return decoder<CharT>::to_codepoint(m_str.substr(m_offset, m_len)).first;
-        }
-
         constexpr bool to_bool() const noexcept
         {
             return !m_str.empty();
@@ -693,12 +683,6 @@ namespace detail
             --m_iter;
         }
 
-        constexpr codepoint deref() const noexcept
-        {
-            char32_t ch = static_cast<char32_t>(*m_iter);
-            return decoder<char32_t>::to_codepoint(ch).first;
-        }
-
         constexpr bool to_bool() const noexcept
         {
             return to_ptr() != nullptr;
@@ -738,7 +722,6 @@ public:
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using value_type = codepoint;
-    using const_reference = codepoint;
     using string_view_type = std::basic_string_view<CharT>;
 
     constexpr codepoint_iterator() noexcept = default;
@@ -748,6 +731,51 @@ private:
     using my_base::my_base;
 
 public:
+    class reference_proxy
+    {
+        friend class codepoint_iterator;
+        template <typename CharU, typename Derived>
+        friend class implement_string;
+
+        constexpr reference_proxy(const codepoint_iterator& iter) noexcept
+            : m_ptr(iter.base()), m_len(iter.size()) {}
+
+        constexpr reference_proxy(const CharT* str, std::uint8_t len) noexcept
+            : m_ptr(str), m_len(len) {}
+
+    public:
+        reference_proxy() = delete;
+
+        reference_proxy(const reference_proxy&) = delete;
+
+        constexpr bool operator==(const reference_proxy& rhs) const noexcept
+        {
+            return static_cast<char32_t>(*this) == static_cast<char32_t>(rhs);
+        }
+
+        constexpr operator codepoint() const noexcept
+        {
+            return decoder<CharT>::to_codepoint(std::basic_string_view<CharT>(m_ptr, m_len)).first;
+        }
+
+        constexpr operator char32_t() const noexcept
+        {
+            return static_cast<codepoint>(*this);
+        }
+
+        constexpr const CharT* operator&() const noexcept
+        {
+            return m_ptr;
+        }
+
+    private:
+        const CharT* m_ptr;
+        std::uint8_t m_len;
+    };
+
+    using const_reference = reference_proxy;
+    using reference = const_reference;
+
     constexpr codepoint_iterator& operator=(const codepoint_iterator&) noexcept = default;
 
     const CharT* base() const noexcept
@@ -773,7 +801,7 @@ public:
 
     constexpr const_reference operator*() const
     {
-        return my_base::deref();
+        return reference_proxy(*this);
     }
 
     constexpr explicit operator bool() const noexcept
