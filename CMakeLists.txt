@@ -169,6 +169,18 @@ if(${papilio_build_doc})
     )
 endif()
 
+set(papilio_internal_cxx_std 23)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    string(REPLACE "." ";" version_list ${CMAKE_CXX_COMPILER_VERSION})
+    list(GET version_list 0 clang_major_version)
+
+    # Clang <18 combined with libstdc++ has too many problems in C++23 mode
+    if (clang_major_version LESS 18 AND NOT ${papilio_use_libcpp})
+        set(papilio_internal_cxx_std 20)
+        message(STATUS "Use C++20 for internal things for old Clang (<18) combined with libstdc++")
+    endif()
+endif()
+
 if(${papilio_build_example})
     add_subdirectory(example)
 endif()

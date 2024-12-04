@@ -161,5 +161,18 @@ NOTE: This feature requires you to compile the library with `papilio_build_modul
 7. [Custom Formatter](doc/en/formatter.md): Add format support for custom types in order to output them.
 8. [Custom Accessor](doc/en/accessor.md): Add indexing, slicing and attribute support for custom type.
 
+## Supported Platforms & Known Limitations
+The core module of this library is cross-platform. The OS-specific APIs support Windows and Linux, and work on Mac theoretically.
+
+Some features are implemented by non-standard C++, but they are guaranteed to have correct results on supported compilers, which are tested by CI.
+
+### Supported Compilers
+- MSVC 19.3+ (Visual Studio 2022)
+- GCC 12+
+- Clang 15+ with libc++
+- Clang 16+ with libstdc++ (See Note)
+
+Note: Clang 16 ~ 17 with libstdc++ only supports compiling under C++20. You need Clang 18+ for using this library under C++23.
+
 ## License
 [MIT](LICENSE) License

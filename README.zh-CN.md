@@ -161,5 +161,18 @@ int main()
 7. [自定义格式化器（Formatter）](doc/zh-CN/formatter.md)：为自定义类型添加格式化支持，使得它们能够被输出
 8. [自定义访问器（Accessor）](doc/zh-CN/accessor.md)：为自定义类添加索引、切片与属性支持
 
+## 支持的平台和已知限制
+该库的核心模块能跨平台。操作系统相关的 API 支持 Windows 和 Linux，理论上可以在 Mac 上使用。
+
+某些功能由非标准 C++ 实现，但保证在受支持的编译器上经过 CI 测试，能获得正确的结果。
+
+### 支持的编译器
+- MSVC 19.3+（Visual Studio 2022）
+- GCC 12+
+- Clang 15+（使用 libc++）
+- Clang 16+（使用 libstdc++，参见注意事项）
+
+注意：使用 libstdc++ 的 Clang 16 ~ 17 仅支持在 C++20 下编译，需要 Clang 18+ 才能在 C++23 下使用此库。
+
 ## 许可证
 [MIT](LICENSE) 许可证

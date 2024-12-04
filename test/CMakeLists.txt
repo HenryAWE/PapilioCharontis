@@ -6,7 +6,7 @@ add_subdirectory(papilio_test)
 function(configure_test test_target)
     target_link_libraries(${test_target} PRIVATE papilio_test)
     set_target_properties(${test_target} PROPERTIES
-        CXX_STANDARD 23
+        CXX_STANDARD ${papilio_internal_cxx_std}
         CXX_STANDARD_REQUIRED ON
     )
     # Use a large DISCOVERY_TIMEOUT value reduce accidental CI failure

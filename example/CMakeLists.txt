@@ -12,7 +12,7 @@ if(WIN32)
     target_compile_definitions(info PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 set_target_properties(info PROPERTIES
-    CXX_STANDARD 23
+    CXX_STANDARD ${papilio_internal_cxx_std}
 )
 
 define_papilio_example(script_demo)
