@@ -211,7 +211,7 @@ PAPILIO_EXPORT enum class script_error_code : int
     invalid_attribute = 5,
     /** Unrecognized operator. */
     invalid_operator = 6,
-    /** Invalid string constant in scirpt. */
+    /** Invalid string constant in script. */
     invalid_string = 7,
     /** Unenclosed brace. */
     unenclosed_brace = 8,
