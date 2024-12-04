@@ -2,6 +2,7 @@
 #include <papilio/utf/string.hpp>
 #include <sstream>
 #include <cstring>
+#include <papilio/print.hpp>
 #include <papilio_test/setup.hpp>
 
 // Peach Emoji, CJK Unified Ideographs 4E00, Capital A with Diaeresis, A
@@ -642,5 +643,10 @@ TEST(basic_string_container, resize_and_overwrite)
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);
+
+#ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
+    papilio::println(std::cerr, "PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT = {:d}L", PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT);
+#endif
+
     return RUN_ALL_TESTS();
 }

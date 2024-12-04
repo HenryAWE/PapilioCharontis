@@ -11,6 +11,9 @@ define_papilio_example(info)
 if(WIN32)
     target_compile_definitions(info PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
+set_target_properties(info PROPERTIES
+    CXX_STANDARD 23
+)
 
 define_papilio_example(script_demo)
 

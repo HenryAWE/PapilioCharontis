@@ -59,7 +59,7 @@ namespace detail
         {
             context_t::append(
                 ctx,
-                utf::string_ref(info).to_string_as<CharT>()
+                utf::string_ref(info).to_string<CharT>()
             );
         }
     }

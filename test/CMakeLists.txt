@@ -6,7 +6,7 @@ add_subdirectory(papilio_test)
 function(configure_test test_target)
     target_link_libraries(${test_target} PRIVATE papilio_test)
     set_target_properties(${test_target} PROPERTIES
-        CMAKE_CXX_STANDARD 23
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED ON
     )
     # Use a large DISCOVERY_TIMEOUT value reduce accidental CI failure

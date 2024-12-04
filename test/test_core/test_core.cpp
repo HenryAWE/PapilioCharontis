@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <papilio/core.hpp>
+#include <papilio/papilio.hpp>
 #include <papilio_test/setup.hpp>
 
 TEST(format_args, dynamic)
@@ -209,5 +209,14 @@ TEST(format_parse_context, char)
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);
+
+    papilio::println(
+        std::cerr,
+        "Papilio Version = {}\n"
+        "PAPILIO_CPLUSPLUS = {}",
+        papilio::get_version(),
+        PAPILIO_CPLUSPLUS
+    );
+
     return RUN_ALL_TESTS();
 }
