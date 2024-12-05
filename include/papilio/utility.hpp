@@ -131,6 +131,67 @@ concept map_like = detail::map_like_impl<
     typename MapType::key_type,
     typename MapType::mapped_type>;
 
+namespace detail
+{
+    template <typename T>
+    concept spec_sequence_container = requires(T t, const typename T::value_type& val) {
+        t.back();
+        t.push_back(val);
+        t.pop_back();
+    };
+
+    template <typename T>
+    concept check_container_type = requires() {
+        typename T::container_type;
+    } && spec_sequence_container<typename T::container_type>;
+
+    template <typename T>
+    struct check_adaptor_member : public T
+    {
+        using container_type = typename T::container_type;
+
+        struct derived : T
+        {
+            template <typename U = derived>
+            static std::true_type test(decltype(std::declval<U>().c)*)
+                requires(std::is_same_v<decltype(std::declval<U>().c), container_type>);
+
+            template <typename U = derived>
+            static std::false_type test(...);
+        };
+
+        constexpr static bool value = decltype(derived::test(nullptr))::value;
+    };
+} // namespace detail
+
+template <typename T>
+concept container_adaptor =
+    !std::is_final_v<T> &&
+    detail::check_container_type<T> &&
+    detail::check_adaptor_member<T>::value;
+
+/**
+ * @brief Helper of extracting underlying container from a adaptor
+ *
+ * @tparam Adaptor The container adaptor
+ */
+template <container_adaptor Adaptor>
+class adaptor_extractor : private Adaptor
+{
+public:
+    using container_type = typename Adaptor::container_type;
+
+    static container_type& get(Adaptor& adaptor) noexcept
+    {
+        return static_cast<adaptor_extractor&>(adaptor).c;
+    }
+
+    static const container_type& get(const Adaptor& adaptor) noexcept
+    {
+        return static_cast<const adaptor_extractor&>(adaptor).c;
+    }
+};
+
 // ^^^ concepts ^^^ / vvv tags vvv
 
 PAPILIO_EXPORT struct reverse_index_t
