@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "../detail/config.hpp"
 #include <thread>
 #include <sstream>
 #ifdef PAPILIO_HAS_LIB_STACKTRACE
@@ -22,7 +23,11 @@ public:
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
     {
-        return ctx.begin();
+        simple_formatter_parser<ParseContext> parser;
+        auto [data, it] = parser.parse(ctx);
+        m_data = data;
+
+        return it;
     }
 
     template <typename FormatContext>
@@ -31,39 +36,18 @@ public:
         std::basic_stringstream<CharT> ss;
         ss << id;
 
-        using context_t = format_context_traits<FormatContext>;
-        context_t::append(ctx, std::move(ss).str());
+        string_formatter<CharT> fmt;
+        fmt.set_data(m_data.to_std_data());
+        return fmt.format(std::move(ss).str(), ctx);
 
         return ctx.out();
     }
+
+private:
+    simple_formatter_data m_data;
 };
 
 #ifdef PAPILIO_HAS_LIB_STACKTRACE
-
-namespace detail
-{
-    template <typename CharT, typename FormatContext>
-    void stack_info_append(FormatContext& ctx, std::string_view info)
-    {
-        using context_t = format_context_traits<FormatContext>;
-
-        if constexpr(char8_like<CharT>)
-        {
-            std::basic_string_view<CharT> sv{
-                std::bit_cast<const CharT*>(info.data()),
-                info.size()
-            };
-            context_t::append(ctx, sv);
-        }
-        else
-        {
-            context_t::append(
-                ctx,
-                utf::string_ref(info).to_string<CharT>()
-            );
-        }
-    }
-} // namespace detail
 
 PAPILIO_EXPORT template <typename Alloc, typename CharT>
 class formatter<std::basic_stacktrace<Alloc>, CharT>
@@ -82,10 +66,25 @@ public:
     auto format(const value_type& val, FormatContext& ctx) const
         -> typename FormatContext::iterator
     {
-        detail::stack_info_append<CharT>(
-            ctx,
-            std::to_string(val)
-        );
+        using context_t = format_context_traits<FormatContext>;
+
+        std::string info = std::to_string(val);
+
+        if constexpr(char8_like<CharT>)
+        {
+            std::basic_string_view<CharT> sv{
+                std::bit_cast<const CharT*>(info.data()),
+                info.size()
+            };
+            context_t::append(ctx, sv);
+        }
+        else
+        {
+            context_t::append(
+                ctx,
+                utf::string_ref(info).to_string<CharT>()
+            );
+        }
 
         return ctx.out();
     }
@@ -99,20 +98,32 @@ public:
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
     {
-        return ctx.begin();
+        simple_formatter_parser<ParseContext> parser;
+        auto [data, it] = parser.parse(ctx);
+        m_data = data;
+
+        return it;
     }
 
     template <typename FormatContext>
     auto format(const std::stacktrace_entry val, FormatContext& ctx) const
         -> typename FormatContext::iterator
     {
-        detail::stack_info_append<CharT>(
-            ctx,
-            std::to_string(val)
-        );
+        auto helper = [&val]()
+        {
+            if constexpr(std::is_same_v<CharT, char>)
+                return std::to_string(val);
+            else
+                return utf::string_ref(std::to_string(val)).to_string<CharT>();
+        };
 
-        return ctx.out();
+        string_formatter<CharT> fmt;
+        fmt.set_data(m_data.to_std_data());
+        return fmt.format(helper(), ctx);
     }
+
+private:
+    simple_formatter_data m_data;
 };
 
 #endif

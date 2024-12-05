@@ -83,6 +83,34 @@ TEST(fundamental_formatter, bool)
         EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", true), L"yes");
         EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", false), L"no");
     }
+
+    {
+        std::vector<bool> bvec = {false, true};
+
+        static_assert(formattable<std::vector<bool>::reference>);
+
+        EXPECT_EQ(PAPILIO_NS format("{}", bvec[1]), "true");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", bvec[1]), L"true");
+        EXPECT_EQ(PAPILIO_NS format("{}", bvec[0]), "false");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", bvec[0]), L"false");
+
+        EXPECT_EQ(PAPILIO_NS format("{:d}", bvec[1]), "1");
+        EXPECT_EQ(PAPILIO_NS format(L"{:d}", bvec[1]), L"1");
+        EXPECT_EQ(PAPILIO_NS format("{:#x}", bvec[1]), "0x1");
+        EXPECT_EQ(PAPILIO_NS format(L"{:#x}", bvec[1]), L"0x1");
+
+        {
+            std::locale loc = test_format::attach_yes_no<char>();
+            EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", bvec[1]), "yes");
+            EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", bvec[0]), "no");
+        }
+
+        {
+            std::locale loc = test_format::attach_yes_no<wchar_t>();
+            EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", bvec[1]), L"yes");
+            EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", bvec[0]), L"no");
+        }
+    }
 }
 
 TEST(fundamental_formatter, pointer)

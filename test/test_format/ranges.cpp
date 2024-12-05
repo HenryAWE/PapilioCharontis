@@ -19,13 +19,26 @@ TEST(ranges, sequence)
     EXPECT_EQ(PAPILIO_NS format(L"{:n}", vec), L"1, 2, 3");
     EXPECT_EQ(PAPILIO_NS format(L"{:n:_^3}", vec), L"_1_, _2_, _3_");
 
-    std::vector<bool> bvec = {true, false, true};
+    {
+        std::vector<bool> bvec = {true, false, true};
 
-    EXPECT_EQ(PAPILIO_NS format("{}", bvec), "[true, false, true]");
-    EXPECT_EQ(PAPILIO_NS format("{::d}", bvec), "[1, 0, 1]");
-    EXPECT_EQ(PAPILIO_NS format(L"{}", bvec), L"[true, false, true]");
-    EXPECT_EQ(PAPILIO_NS format(L"{::d}", bvec), L"[1, 0, 1]");
+        EXPECT_EQ(PAPILIO_NS format("{}", bvec), "[true, false, true]");
+        EXPECT_EQ(PAPILIO_NS format("{::d}", bvec), "[1, 0, 1]");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", bvec), L"[true, false, true]");
+        EXPECT_EQ(PAPILIO_NS format(L"{::d}", bvec), L"[1, 0, 1]");
 
+        {
+            std::locale loc = test_format::attach_yes_no<char>();
+            EXPECT_EQ(PAPILIO_NS format(loc, "{::L}", bvec), "[yes, no, yes]");
+            EXPECT_EQ(PAPILIO_NS format(loc, "{:n:L}", bvec), "yes, no, yes");
+        }
+
+        {
+            std::locale loc = test_format::attach_yes_no<wchar_t>();
+            EXPECT_EQ(PAPILIO_NS format(loc, L"{::L}", bvec), L"[yes, no, yes]");
+            EXPECT_EQ(PAPILIO_NS format(loc, L"{:n:L}", bvec), L"yes, no, yes");
+        }
+    }
 
     // Workaround for libc++-15
 #if !defined(PAPILIO_STDLIB_LIBCPP) || PAPILIO_STDLIB_LIBCPP >= 160000
@@ -38,13 +51,37 @@ TEST(ranges, sequence)
 
 TEST(ranges, set)
 {
-    std::set<int> s{1, 2, 3};
+    {
+        std::set<int> s{1, 2, 3};
 
-    EXPECT_EQ(PAPILIO_NS format("{}", s), "{1, 2, 3}");
-    EXPECT_EQ(PAPILIO_NS format("{:n}", s), "1, 2, 3");
+        EXPECT_EQ(PAPILIO_NS format("{}", s), "{1, 2, 3}");
+        EXPECT_EQ(PAPILIO_NS format("{:n}", s), "1, 2, 3");
 
-    EXPECT_EQ(PAPILIO_NS format(L"{}", s), L"{1, 2, 3}");
-    EXPECT_EQ(PAPILIO_NS format(L"{:n}", s), L"1, 2, 3");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", s), L"{1, 2, 3}");
+        EXPECT_EQ(PAPILIO_NS format(L"{:n}", s), L"1, 2, 3");
+    }
+
+    {
+        std::set<bool> s{false, true};
+
+        EXPECT_EQ(PAPILIO_NS format("{}", s), "{false, true}");
+        EXPECT_EQ(PAPILIO_NS format("{:n}", s), "false, true");
+
+        EXPECT_EQ(PAPILIO_NS format(L"{}", s), L"{false, true}");
+        EXPECT_EQ(PAPILIO_NS format(L"{:n}", s), L"false, true");
+
+        {
+            std::locale loc = test_format::attach_yes_no<char>();
+            EXPECT_EQ(PAPILIO_NS format(loc, "{::L}", s), "{no, yes}");
+            EXPECT_EQ(PAPILIO_NS format(loc, "{:n:L}", s), "no, yes");
+        }
+
+        {
+            std::locale loc = test_format::attach_yes_no<wchar_t>();
+            EXPECT_EQ(PAPILIO_NS format(loc, L"{::L}", s), L"{no, yes}");
+            EXPECT_EQ(PAPILIO_NS format(loc, L"{:n:L}", s), L"no, yes");
+        }
+    }
 }
 
 TEST(ranges, map)

@@ -5746,6 +5746,15 @@ private:
 };
 
 /**
+ * @brief Formatter for reference type of `std::vector<bool>`
+ *
+ * This formatter will forward the value to bool formatter.
+ */
+PAPILIO_EXPORT template <typename CharT>
+class formatter<std::vector<bool>::reference, CharT> : public formatter<bool, CharT>
+{};
+
+/**
  * @brief Formatter for Unicode string.
  *
  * @sa utf::basic_string_container

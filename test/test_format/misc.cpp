@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/format.hpp>
+#include <papilio/print.hpp>
 #include <papilio/formatter/misc.hpp>
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
@@ -95,6 +96,21 @@ TEST(misc_formatter, thread_id)
     }
 
     {
+        const std::string expected_str = [&]()
+        {
+            std::stringstream ss;
+            ss << id;
+            return PAPILIO_NS format("{:*^20}", std::move(ss).str());
+        }();
+
+        std::string result = PAPILIO_NS format("{:*^20}", id);
+
+        EXPECT_EQ(result, expected_str);
+        // Print platform-dependent result for visual check
+        PAPILIO_NS println(std::cerr, "result = \"{}\"", result);
+    }
+
+    {
         const std::wstring wexpected_str = [&]()
         {
             std::wstringstream ss;
@@ -125,6 +141,9 @@ TEST(misc_formatter, stacktrace)
             PAPILIO_NS format(L"{}", cur),
             utf::string_ref(expected_str).to_wstring()
         );
+
+        // Print platform-dependent result for visual check
+        PAPILIO_NS println(std::cerr, "std::stacktrace::current():\n{}", cur);
     }
 
     if(cur.size() == 0)
@@ -138,9 +157,17 @@ TEST(misc_formatter, stacktrace)
             expected_str
         );
         EXPECT_EQ(
+            PAPILIO_NS format("{:*^120}", cur[0]),
+            PAPILIO_NS format("{:*^120}", expected_str)
+        );
+        EXPECT_EQ(
             PAPILIO_NS format(L"{}", cur[0]),
             utf::string_ref(expected_str).to_wstring()
         );
+
+        // Print platform-dependent result for visual check
+        PAPILIO_NS println(std::cerr, "cur[0]:\n{}", cur[0]);
+        PAPILIO_NS println(std::cerr, "cur[0] {{:*^120}}:\n{:*^120}", cur[0]);
     }
 }
 
