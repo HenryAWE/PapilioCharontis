@@ -39,8 +39,6 @@ public:
         string_formatter<CharT> fmt;
         fmt.set_data(m_data.to_std_data());
         return fmt.format(std::move(ss).str(), ctx);
-
-        return ctx.out();
     }
 
 private:

@@ -161,6 +161,11 @@ namespace detail
         return init;
     }
 
+#if defined(PAPILIO_COMPILER_CLANG) || defined(PAPILIO_COMPILER_CLANG_CL)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wsign-conversion"
+#endif
+
     inline std::tm to_tm(const std::chrono::year_month_day& date, std::chrono::weekday weekday)
     {
         namespace chrono = std::chrono;
@@ -263,9 +268,13 @@ namespace detail
         std::tm result = init_tm();
         result.tm_hour = t.hours().count();
         result.tm_min = t.minutes().count();
-        result.tm_sec = t.seconds().count();
+        result.tm_sec = static_cast<int>(t.seconds().count());
         return result;
     }
+
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
 
     template <typename CharT>
     void format_century(std::basic_stringstream<CharT>& ss, int year)
