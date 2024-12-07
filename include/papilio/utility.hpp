@@ -131,6 +131,17 @@ concept map_like = detail::map_like_impl<
     typename MapType::key_type,
     typename MapType::mapped_type>;
 
+PAPILIO_EXPORT template <typename T, template <typename...> typename Template>
+struct is_specialization_of : public std::false_type
+{};
+
+PAPILIO_EXPORT template <template <typename...> typename Template, typename... Args>
+struct is_specialization_of<Template<Args...>, Template> : public std::true_type
+{};
+
+PAPILIO_EXPORT template <typename T, template <typename...> typename Template>
+inline constexpr bool is_specialization_of_v = is_specialization_of<T, Template>::value;
+
 namespace detail
 {
     template <typename T>

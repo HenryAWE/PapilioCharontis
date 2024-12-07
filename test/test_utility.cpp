@@ -43,6 +43,10 @@ static_assert(papilio::u8string_like<std::u8string_view>);
 static_assert(papilio::map_like<std::map<int, int>>);
 static_assert(papilio::map_like<papilio::fixed_flat_map<int, int, 8>>);
 
+static_assert(papilio::is_specialization_of_v<std::vector<int>, std::vector>);
+static_assert(papilio::is_specialization_of_v<std::vector<float>, std::vector>);
+static_assert(!papilio::is_specialization_of_v<papilio::small_vector<float, 12>, std::vector>);
+
 TEST(index_range, index_range)
 {
     using namespace papilio;
