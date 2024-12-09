@@ -49,7 +49,7 @@ TYPED_TEST(format_suite, format_to)
     using namespace papilio;
 
     {
-        const auto vec_str = PAPILIO_TSTRING(TypeParam, "vec");
+        const auto vec_str = PAPILIO_TSTRING_ARRAY(TypeParam, "vec");
 
         std::vector<TypeParam> result;
         auto it = PAPILIO_NS format_to(
@@ -212,7 +212,7 @@ TYPED_TEST(format_suite, formatted_range)
 
         // Test CTAD of formatted_range
 
-        for(char_type c : formatted_range(PAPILIO_TSTRING(char_type, "{} "), args))
+        for(char_type c : formatted_range(PAPILIO_TSTRING_ARRAY(char_type, "{} "), args))
         {
             result.push_back(c);
         }
@@ -222,13 +222,13 @@ TYPED_TEST(format_suite, formatted_range)
             result.push_back(c);
         }
 
-        string_type fmt_str = string_type(PAPILIO_TSTRING(char_type, "{} "));
+        string_type fmt_str = string_type(PAPILIO_TSTRING_VIEW(char_type, "{} "));
         for(char_type c : formatted_range(fmt_str, args))
         {
             result.push_back(c);
         }
 
-        auto expected_str = PAPILIO_TSTRING(char_type, "true true true ");
+        auto expected_str = PAPILIO_TSTRING_CSTR(char_type, "true true true ");
         EXPECT_EQ(result, expected_str);
     }(PAPILIO_NS make_format_args<context_type>(true));
 
@@ -240,7 +240,7 @@ TYPED_TEST(format_suite, formatted_range)
         string_type result;
         result.reserve(10);
 
-        auto fr = formatted_range(PAPILIO_TSTRING(char_type, "{} {}"), args);
+        auto fr = formatted_range(PAPILIO_TSTRING_CSTR(char_type, "{} {}"), args);
 
         // Transformer
         auto fn = [](char_type ch) -> char_type
@@ -259,7 +259,7 @@ TYPED_TEST(format_suite, formatted_range)
             result.push_back(c);
         }
 
-        auto expected_str = PAPILIO_TSTRING(char_type, "True False");
+        auto expected_str = PAPILIO_TSTRING_ARRAY(char_type, "True False");
         EXPECT_EQ(result, expected_str);
     }(PAPILIO_NS make_format_args<context_type>(true, false));
 

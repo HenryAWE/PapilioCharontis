@@ -1124,8 +1124,11 @@ namespace detail
         using char_type = CharT;
         using string_view_type = std::basic_string_view<CharT>;
 
-        inline static const string_view_type default_sep =
-            PAPILIO_TSTRING_VIEW(CharT, ", ");
+        static const string_view_type default_sep()
+        {
+            static constexpr CharT sep[2] = {CharT(','), CharT(' ')};
+            return string_view_type(sep, 2);
+        }
     };
 } // namespace detail
 
@@ -1146,7 +1149,10 @@ public:
 
     joiner(const joiner&) noexcept = default;
 
-    explicit joiner(R& rng, string_view_type sep = my_base::default_sep)
+    explicit joiner(R& rng)
+        : m_p_rng(std::addressof(rng)), m_sep(my_base::default_sep()) {}
+
+    explicit joiner(R& rng, string_view_type sep)
         : m_p_rng(std::addressof(rng)), m_sep(sep) {}
 
     friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os, const joiner& j)
@@ -1207,6 +1213,86 @@ auto join(R& rng, const CharT* sep)
 }
 
 /// @}
+
+/**
+ * @brief Stringize given text.
+ */
+#define PAPILIO_STRINGIZE(text) #text
+/**
+ * @brief Stringize given text without expanding any macros in it.
+ */
+#define PAPILIO_STRINGIZE_EX(text) PAPILIO_STRINGIZE(text)
+
+namespace detail
+{
+    template <typename CharT>
+    consteval const CharT* statically_widen(
+        const char* narrow,
+        const wchar_t* wide,
+        const char16_t* u16,
+        const char32_t* u32,
+        const char8_t* u8
+    )
+    {
+        if constexpr(::std::is_same_v<CharT, char>)
+            return narrow;
+        else if constexpr(::std::is_same_v<CharT, wchar_t>)
+            return wide;
+        else if constexpr(::std::is_same_v<CharT, char32_t>)
+            return u32;
+        else if constexpr(::std::is_same_v<CharT, char16_t>)
+            return u16;
+        else
+            return u8;
+    }
+
+    template <typename CharT>
+    consteval std::basic_string_view<CharT> statically_widen_view(
+        std::size_t len,
+        const char* narrow,
+        const wchar_t* wide,
+        const char16_t* u16,
+        const char32_t* u32,
+        const char8_t* u8
+    )
+    {
+        if constexpr(::std::is_same_v<CharT, char>)
+            return std::string_view(narrow, len);
+        else if constexpr(::std::is_same_v<CharT, wchar_t>)
+            return std::wstring_view(wide, len);
+        else if constexpr(::std::is_same_v<CharT, char32_t>)
+            return std::u32string_view(u32, len);
+        else if constexpr(::std::is_same_v<CharT, char16_t>)
+            return std::u16string_view(u16, len);
+        else
+            return std::u8string_view(u8, len);
+    }
+} // namespace detail
+
+#define PAPILIO_TSTRING_ARRAY(char_t, str)                    \
+    []() noexcept -> decltype(auto)                           \
+    {                                                         \
+        if constexpr(::std::is_same_v<char_t, char>)          \
+            return str;                                       \
+        else if constexpr(::std::is_same_v<char_t, wchar_t>)  \
+            return L##str;                                    \
+        else if constexpr(::std::is_same_v<char_t, char8_t>)  \
+            return u8##str;                                   \
+        else if constexpr(::std::is_same_v<char_t, char32_t>) \
+            return U##str;                                    \
+        else if constexpr(::std::is_same_v<char_t, char16_t>) \
+            return u##str;                                    \
+    }()
+
+#define PAPILIO_TSTRING_CSTR(char_t, str)         \
+    (PAPILIO_NS detail::statically_widen<char_t>( \
+        str, L##str, u##str, U##str, u8##str      \
+    ))
+
+#define PAPILIO_TSTRING_VIEW(char_t, str)                          \
+    (PAPILIO_NS detail::statically_widen_view<char_t>(             \
+        ::std::size(str) - 1, str, L##str, u##str, U##str, u8##str \
+    ))
 
 /// @}
 } // namespace papilio

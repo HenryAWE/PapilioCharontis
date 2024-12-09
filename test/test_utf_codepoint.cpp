@@ -127,14 +127,14 @@ TYPED_TEST(decoder_suite, to_codepoint)
     std::uint8_t processed_size;
 
     std::tie(cp, processed_size) = decoder_t::to_codepoint(
-        PAPILIO_TSTRING(TypeParam, "A")
+        PAPILIO_TSTRING_CSTR(TypeParam, "A")
     );
     EXPECT_EQ(cp, U'A');
     EXPECT_EQ(cp.size_bytes(), 1);
     EXPECT_EQ(processed_size, 1);
 
     std::tie(cp, processed_size) = decoder_t::to_codepoint(
-        PAPILIO_TSTRING(TypeParam, "\u00c4")
+        PAPILIO_TSTRING_CSTR(TypeParam, "\u00c4")
     );
     EXPECT_EQ(cp, U'\u00c4');
     EXPECT_EQ(cp.size_bytes(), 2);
@@ -144,7 +144,7 @@ TYPED_TEST(decoder_suite, to_codepoint)
         EXPECT_EQ(processed_size, 1);
 
     std::tie(cp, processed_size) = decoder_t::to_codepoint(
-        PAPILIO_TSTRING(TypeParam, "\u4e00")
+        PAPILIO_TSTRING_CSTR(TypeParam, "\u4e00")
     );
     EXPECT_EQ(cp, U'\u4e00');
     EXPECT_EQ(cp.size_bytes(), 3);
@@ -154,7 +154,7 @@ TYPED_TEST(decoder_suite, to_codepoint)
         EXPECT_EQ(processed_size, 1);
 
     std::tie(cp, processed_size) = decoder_t::to_codepoint(
-        PAPILIO_TSTRING(TypeParam, "\U0001f351")
+        PAPILIO_TSTRING_CSTR(TypeParam, "\U0001f351")
     );
     EXPECT_EQ(cp, U'\U0001f351');
     if constexpr(char8_like<TypeParam>)
@@ -219,7 +219,7 @@ TYPED_TEST(codepoint_suite, append_to)
         // CJK Unified Ideographs 6587
         // "文"
         codepoint cjk_6587 = U'\u6587'_cp;
-        constexpr auto expected_str = PAPILIO_TSTRING(TypeParam, "\u6587");
+        constexpr auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "\u6587");
 
         std::basic_string<TypeParam> result;
         cjk_6587.append_to(result);

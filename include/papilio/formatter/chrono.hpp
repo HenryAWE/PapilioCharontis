@@ -79,7 +79,6 @@ inline constexpr CharT month_names_short[12][3] = {
     {'D', 'e', 'c'}
 };
 
-
 /**
  * @brief Similar to `std::asctime()` but without the trailing newline
  *
@@ -334,7 +333,7 @@ namespace detail
     {
         PAPILIO_NS format_to(
             std::ostreambuf_iterator<CharT>(ss),
-            PAPILIO_TSTRING(CharT, "{:02}"),
+            PAPILIO_TSTRING_VIEW(CharT, "{:02}"),
             year / 100
         );
     }
@@ -346,7 +345,7 @@ namespace detail
         {
             PAPILIO_NS format_to(
                 std::ostreambuf_iterator<CharT>(ss),
-                PAPILIO_TSTRING(CharT, "{:04}"),
+                PAPILIO_TSTRING_VIEW(CharT, "{:04}"),
                 year
             );
         }
@@ -354,7 +353,7 @@ namespace detail
         {
             PAPILIO_NS format_to(
                 std::ostreambuf_iterator<CharT>(ss),
-                PAPILIO_TSTRING(CharT, "{:02}"),
+                PAPILIO_TSTRING_VIEW(CharT, "{:02}"),
                 year % 100
             );
         }
@@ -369,7 +368,7 @@ namespace detail
 
         PAPILIO_NS format_to(
             std::ostreambuf_iterator<CharT>(ss),
-            PAPILIO_TSTRING(CharT, "{}"),
+            PAPILIO_TSTRING_VIEW(CharT, "{}"),
             day
         );
     }
@@ -463,9 +462,17 @@ namespace detail
         else if constexpr(is_same_v<type, std::ratio<86400>>)
             return helper("d");
         else if constexpr(Period::type::den == 1)
-            return PAPILIO_NS format_to(out, PAPILIO_TSTRING(CharT, "[{}]s"), Period::type::num);
+        {
+            return PAPILIO_NS format_to(
+                out, PAPILIO_TSTRING_VIEW(CharT, "[{}]s"), Period::type::num
+            );
+        }
         else
-            return PAPILIO_NS format_to(out, PAPILIO_TSTRING(CharT, "[{}/{}]s"), Period::type::num, Period::type::den);
+        {
+            return PAPILIO_NS format_to(
+                out, PAPILIO_TSTRING_VIEW(CharT, "[{}/{}]s"), Period::type::num, Period::type::den
+            );
+        }
     }
 
     template <typename CharT, typename ChronoType, typename OutputIt>
@@ -549,7 +556,7 @@ private:
         }
         else if constexpr(is_specialization_of_v<ChronoType, time_point>)
         {
-            result =  to_str(val,PAPILIO_TSTRING_VIEW(CharT, "%F %T"));
+            result = to_str(val, PAPILIO_TSTRING_VIEW(CharT, "%F %T"));
         }
         else if constexpr(is_same_v<ChronoType, year>)
         {
@@ -677,14 +684,14 @@ private:
             case U'd':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
                     t.tm_mday
                 );
                 continue;
             case U'e':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:2d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:2d}"),
                     t.tm_mday
                 );
                 continue;
@@ -706,14 +713,14 @@ private:
             case U'H':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
                     t.tm_hour
                 );
                 continue;
             case U'I':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
                     t.tm_hour % 12
                 );
                 continue;
@@ -721,7 +728,7 @@ private:
             case U'M':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
                     t.tm_min
                 );
                 continue;
@@ -729,7 +736,7 @@ private:
             case U'S':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
                     t.tm_sec
                 );
                 continue;
@@ -737,7 +744,7 @@ private:
             case U'R':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}:{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}:{:02d}"),
                     t.tm_hour,
                     t.tm_min
                 );
@@ -745,7 +752,7 @@ private:
             case U'T':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}:{:02d}:{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}:{:02d}:{:02d}"),
                     t.tm_hour,
                     t.tm_min,
                     t.tm_sec
@@ -755,7 +762,7 @@ private:
             case U'D': // Equivalent to %m/%d/%y
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "{:02d}/{:02d}/"),
+                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}/{:02d}/"),
                     t.tm_mon + 1,
                     t.tm_mday
                 );
@@ -765,7 +772,7 @@ private:
                 detail::format_year(ss, t.tm_year + 1900, true);
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING(CharT, "-{:02d}-{:02d}"),
+                    PAPILIO_TSTRING_VIEW(CharT, "-{:02d}-{:02d}"),
                     t.tm_mon + 1,
                     t.tm_mday
                 );

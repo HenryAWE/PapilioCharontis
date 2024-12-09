@@ -7,8 +7,9 @@
 static_assert(PAPILIO_STRINGIZE(hello world) == std::string_view("hello world"));
 static_assert(PAPILIO_STRINGIZE(PAPILIO_TEST_TMP) == std::string_view("PAPILIO_TEST_TMP"));
 static_assert(PAPILIO_STRINGIZE_EX(PAPILIO_TEST_TMP) == std::string_view("\"temp\""));
-static_assert(std::size(PAPILIO_TSTRING(wchar_t, "hello")) == 6);
+static_assert(std::size(PAPILIO_TSTRING_ARRAY(wchar_t, "hello")) == 6);
 static_assert(PAPILIO_TSTRING_VIEW(wchar_t, "hello") == L"hello");
+static_assert(PAPILIO_TSTRING_VIEW(wchar_t, "hello") == PAPILIO_TSTRING_CSTR(wchar_t, "hello"));
 
 TEST(strlen, char8_t)
 {

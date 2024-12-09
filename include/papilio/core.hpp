@@ -2669,6 +2669,19 @@ public:
     {
         vformat_to(ctx, fmt.get(), make_format_args(std::forward<Args>(args)...));
     }
+
+    /**
+     * @brief Append formatting result of default format specification (`{}`)
+     */
+    template <typename T>
+    static void append_by_format(
+        context_type& ctx,
+        T&& val
+    )
+    {
+        const char_type fmt[2] = {char_type('{'), char_type('}')};
+        format_to(ctx, string_view_type(fmt, 2), std::forward<T>(val));
+    }
 };
 
 /// @}

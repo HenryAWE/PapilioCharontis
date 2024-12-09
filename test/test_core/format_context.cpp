@@ -41,7 +41,7 @@ TYPED_TEST(format_context_suite, append)
     using context_t = format_context_traits<context_type>;
 
     {
-        const auto str = PAPILIO_TSTRING(TypeParam, "1234");
+        const auto str = PAPILIO_TSTRING_ARRAY(TypeParam, "1234");
 
         context_t::append(ctx, str);
         EXPECT_EQ(result, str);
@@ -51,7 +51,7 @@ TYPED_TEST(format_context_suite, append)
     {
         context_t::append(ctx, '1', 4);
 
-        const auto expected_str = PAPILIO_TSTRING(TypeParam, "1111");
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "1111");
         EXPECT_EQ(result, expected_str);
     }
 
@@ -59,7 +59,7 @@ TYPED_TEST(format_context_suite, append)
     {
         context_t::append(ctx, U'\u00c4', 2);
 
-        const auto expected_str = PAPILIO_TSTRING(TypeParam, "\u00c4\u00c4");
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "\u00c4\u00c4");
         EXPECT_EQ(result, expected_str);
     }
 }
@@ -76,17 +76,17 @@ TYPED_TEST(format_context_suite, format_to)
     using context_t = format_context_traits<context_type>;
 
     {
-        context_t::format_to(ctx, PAPILIO_TSTRING_VIEW(TypeParam, "{}"), true);
+        context_t::append_by_format(ctx, true);
 
-        const auto expected_str = PAPILIO_TSTRING(TypeParam, "true");
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "true");
         EXPECT_EQ(result, expected_str);
     }
 
     result.clear();
     {
-        context_t::format_to(ctx, PAPILIO_TSTRING_VIEW(TypeParam, "{}"), false);
+        context_t::append_by_format(ctx, false);
 
-        const auto expected_str = PAPILIO_TSTRING(TypeParam, "false");
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "false");
         EXPECT_EQ(result, expected_str);
     }
 
@@ -94,7 +94,7 @@ TYPED_TEST(format_context_suite, format_to)
     {
         context_t::format_to(ctx, PAPILIO_TSTRING_VIEW(TypeParam, "({:+})"), 1);
 
-        const auto expected_str = PAPILIO_TSTRING(TypeParam, "(+1)");
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "(+1)");
         EXPECT_EQ(result, expected_str);
     }
 }
@@ -116,7 +116,7 @@ TYPED_TEST(format_context_suite, append_escaped)
         context_t::append_escaped(ctx, U' '_cp);
         context_t::append_escaped(ctx, U'"'_cp);
 
-        const auto expected_str = PAPILIO_TSTRING(TypeParam, "\\' \"");
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "\\' \"");
         EXPECT_EQ(result, expected_str);
     }
 
@@ -124,7 +124,7 @@ TYPED_TEST(format_context_suite, append_escaped)
     {
         context_t::append_escaped(ctx, PAPILIO_TSTRING_VIEW(TypeParam, "hello\t"));
 
-        const auto expected_str = PAPILIO_TSTRING(TypeParam, "hello\\t");
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "hello\\t");
         EXPECT_EQ(result, expected_str);
     }
 
@@ -134,7 +134,7 @@ TYPED_TEST(format_context_suite, append_escaped)
         {
             context_t::append_escaped(ctx, reinterpret_cast<const TypeParam*>("\xc3\x28"));
 
-            const auto expected_str = PAPILIO_TSTRING(TypeParam, "\\x{c3}(");
+            const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "\\x{c3}(");
             EXPECT_EQ(result, expected_str);
         }
     }

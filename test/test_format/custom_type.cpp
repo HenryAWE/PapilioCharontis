@@ -166,7 +166,7 @@ private:
         using char_type = typename Context::char_type;
 
         using context_t = format_context_traits<Context>;
-        context_t::append(ctx, PAPILIO_TSTRING(char_type, "ADL"));
+        context_t::append(ctx, PAPILIO_TSTRING_VIEW(char_type, "ADL"));
 
         return ctx.out();
     }
@@ -198,9 +198,9 @@ private:
 
         using context_t = format_context_traits<FormatContext>;
         if(use_uppercase)
-            context_t::append(fmt_ctx, PAPILIO_TSTRING(char_type, "ADL (EX)"));
+            context_t::append(fmt_ctx, PAPILIO_TSTRING_VIEW(char_type, "ADL (EX)"));
         else
-            context_t::append(fmt_ctx, PAPILIO_TSTRING(char_type, "adl (ex)"));
+            context_t::append(fmt_ctx, PAPILIO_TSTRING_VIEW(char_type, "adl (ex)"));
 
         return fmt_ctx.out();
     }

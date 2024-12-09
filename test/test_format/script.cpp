@@ -153,7 +153,7 @@ TYPED_TEST(format_suite, script_composite)
     );
 
     {
-        const auto hello_str = PAPILIO_TSTRING(TypeParam, "hello");
+        const auto hello_str = PAPILIO_TSTRING_ARRAY(TypeParam, "hello");
 
         PAPILIO_CHECK_FORMAT_EQ(
             "***5", "{.length:*>4}", hello_str

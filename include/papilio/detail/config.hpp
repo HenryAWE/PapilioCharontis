@@ -58,15 +58,6 @@
 #    error "C++20 or later is required."
 #endif
 
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#endif
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
-
 #if defined(__cpp_multidimensional_subscript) && __cpp_multidimensional_subscript >= 202110L
 #    define PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT __cpp_multidimensional_subscript
 #endif

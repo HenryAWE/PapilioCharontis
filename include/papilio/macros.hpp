@@ -51,37 +51,6 @@
 #    define PAPILIO_NO_UNIQUE_ADDRESS
 #endif
 
-/**
- * @brief Stringize given text.
- */
-#define PAPILIO_STRINGIZE(text) #text
-/**
- * @brief Stringize given text without expanding any macros in it.
- */
-#define PAPILIO_STRINGIZE_EX(text) PAPILIO_STRINGIZE(text)
-
-#define PAPILIO_TSTRING_EX(char_t, str, suffix, decl)         \
-    []() noexcept -> decltype(auto)                           \
-    {                                                         \
-        decl;                                                 \
-        if constexpr(::std::is_same_v<char_t, char>)          \
-            return str##suffix;                               \
-        else if constexpr(::std::is_same_v<char_t, wchar_t>)  \
-            return L##str##suffix;                            \
-        else if constexpr(::std::is_same_v<char_t, char8_t>)  \
-            return u8##str##suffix;                           \
-        else if constexpr(::std::is_same_v<char_t, char32_t>) \
-            return U##str##suffix;                            \
-        else if constexpr(::std::is_same_v<char_t, char16_t>) \
-            return u##str##suffix;                            \
-    }()
-
-#define PAPILIO_TSTRING(char_t, str)      PAPILIO_TSTRING_EX(char_t, str, , )
-
-#define PAPILIO_TSTRING_VIEW(char_t, str) PAPILIO_TSTRING_EX( \
-    char_t, str, sv, using namespace ::std                    \
-)
-
 #define PAPILIO_UNREACHABLE() (PAPILIO_NS unreachable())
 
 #endif

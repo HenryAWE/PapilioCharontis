@@ -249,7 +249,7 @@ namespace test_utility
 template <typename CharT>
 void test_iter_buf_input()
 {
-    std::basic_string<CharT> src = PAPILIO_TSTRING(CharT, "12345");
+    std::basic_string<CharT> src = PAPILIO_TSTRING_CSTR(CharT, "12345");
 
     using streambuf_type = papilio::basic_iterbuf<
         CharT,
@@ -263,7 +263,7 @@ void test_iter_buf_input()
     EXPECT_TRUE(is.good());
     EXPECT_EQ(sbuf.base(), src.end());
 
-    const auto expected_result = PAPILIO_TSTRING(CharT, "12345");
+    const auto expected_result = PAPILIO_TSTRING_ARRAY(CharT, "12345");
     EXPECT_EQ(
         std::basic_string_view<CharT>(result_buf, 5),
         expected_result
@@ -294,10 +294,10 @@ void test_iter_buf_output()
     streambuf_type sbuf(std::back_inserter(buf));
     std::basic_ostream<CharT> os(&sbuf);
 
-    os << PAPILIO_TSTRING(CharT, "hello");
+    os << PAPILIO_TSTRING_CSTR(CharT, "hello");
     EXPECT_TRUE(os.good());
 
-    const auto hello_str = PAPILIO_TSTRING(CharT, "hello");
+    const auto hello_str = PAPILIO_TSTRING_ARRAY(CharT, "hello");
     EXPECT_EQ(buf, hello_str);
 }
 } // namespace test_utility
@@ -324,12 +324,12 @@ void test_oiterstream()
         std::back_insert_iterator<string_type>>;
     os_t os(std::back_inserter(buf));
 
-    os << PAPILIO_TSTRING(CharT, "hello");
+    os << PAPILIO_TSTRING_CSTR(CharT, "hello");
     os << CharT(' ');
     os << 12345;
     EXPECT_TRUE(os.good());
 
-    const auto expected_result = PAPILIO_TSTRING(CharT, "hello 12345");
+    const auto expected_result = PAPILIO_TSTRING_ARRAY(CharT, "hello 12345");
     EXPECT_EQ(buf, expected_result);
 }
 } // namespace test_utility
