@@ -11,6 +11,11 @@
 #include "../format.hpp"
 #include "../detail/prefix.hpp"
 
+// Workarounds
+#ifdef PAPILIO_STDLIB_LIBCPP
+#    define PAPILIO_CHRONO_NO_UTC_TIME
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT template <typename CharT>
@@ -78,6 +83,11 @@ inline constexpr CharT month_names_short[12][3] = {
     {'N', 'o', 'v'},
     {'D', 'e', 'c'}
 };
+
+#if defined(PAPILIO_COMPILER_CLANG)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wsign-conversion"
+#endif
 
 /**
  * @brief Similar to `std::asctime()` but without the trailing newline
@@ -166,11 +176,6 @@ namespace detail
 
         return init;
     }
-
-#if defined(PAPILIO_COMPILER_CLANG) || defined(PAPILIO_COMPILER_CLANG_CL)
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wsign-conversion"
-#endif
 
     inline std::tm to_tm(const std::chrono::year_month_day& date)
     {
@@ -323,10 +328,6 @@ namespace detail
         result.tm_sec = static_cast<int>(t.seconds().count());
         return result;
     }
-
-#ifdef PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic pop
-#endif
 
     template <typename CharT>
     void format_century(std::basic_stringstream<CharT>& ss, int year)
@@ -830,15 +831,23 @@ private:
     }
 };
 
+#ifdef PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic pop
+#endif
+
 template <typename Duration, typename CharT>
 class formatter<std::chrono::sys_time<Duration>, CharT> :
     public chrono_formatter<std::chrono::sys_time<Duration>, CharT>
 {};
 
+#ifndef PAPILIO_CHRONO_NO_UTC_TIME
+
 template <typename Duration, typename CharT>
 class formatter<std::chrono::utc_time<Duration>, CharT> :
     public chrono_formatter<std::chrono::utc_time<Duration>, CharT>
 {};
+
+#endif
 
 template <typename Rep, typename Period, typename CharT>
 class formatter<std::chrono::duration<Rep, Period>, CharT> :
