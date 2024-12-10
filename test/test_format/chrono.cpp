@@ -224,14 +224,23 @@ TEST(formatter, chrono)
         auto sys_now = std::chrono::system_clock::now();
         PAPILIO_NS println(
             std::cerr,
-            "now(): {0}\n"
-            "fractional_width = {1}\n"
-            "timezone: {2:%z %Z}\n"
-            "sys_info: {2}",
+            "now(): {}\n"
+            "fractional_width = {}",
             sys_now,
-            std::chrono::hh_mm_ss<system_clock::duration>::fractional_width,
+            std::chrono::hh_mm_ss<system_clock::duration>::fractional_width
+        );
+
+#ifndef PAPILIO_CHRONO_NO_TIMEZONE
+
+        static_assert(formattable<std::chrono::sys_info>);
+        PAPILIO_NS println(
+            std::cerr,
+            "timezone: {0:%z %Z}\n"
+            "sys_info: {0}",
             std::chrono::current_zone()->get_info(sys_now)
         );
+
+#endif
     }
 
     // Plain text and special characters

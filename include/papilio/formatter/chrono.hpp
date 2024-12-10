@@ -16,6 +16,14 @@
 #    define PAPILIO_CHRONO_NO_UTC_TIME
 #endif
 
+#ifdef PAPILIO_STDLIB_LIBCPP
+#    define PAPILIO_CHRONO_NO_TIMEZONE
+#elif defined(PAPILIO_STDLIB_LIBSTDCPP)
+#    if __GLIBCXX__ < 20240412
+#        define PAPILIO_CHRONO_NO_TIMEZONE
+#    endif
+#endif
+
 namespace papilio
 {
 PAPILIO_EXPORT template <typename CharT>
@@ -379,10 +387,14 @@ namespace detail
         return result;
     }
 
+#ifndef PAPILIO_CHRONO_NO_TIMEZONE
+
     inline std::tm to_tm(const std::chrono::sys_info&)
     {
         return init_tm();
     }
+
+#endif
 
     template <typename CharT>
     void format_century(std::basic_stringstream<CharT>& ss, int year)
@@ -656,11 +668,14 @@ namespace detail
     };
 
     template <typename ChronoType>
-    timezone_info get_timezone_info(const ChronoType& val)
+    timezone_info get_timezone_info([[maybe_unused]] const ChronoType& val)
     {
         using std::is_same_v;
+
+#ifndef PAPILIO_CHRONO_NO_TIMEZONE
         if constexpr(is_same_v<ChronoType, std::chrono::sys_info>)
             return {val.abbrev, val.offset};
+#endif
 
         return {"UTC", std::chrono::seconds(0)};
     }
@@ -844,6 +859,7 @@ private:
                 val.weekday()
             );
         }
+#ifndef PAPILIO_CHRONO_NO_TIMEZONE
         else if constexpr(is_same_v<ChronoType, sys_info>)
         {
             result = PAPILIO_NS format(
@@ -855,6 +871,7 @@ private:
                 val.abbrev
             );
         }
+#endif
 
         return result;
     }
@@ -1219,10 +1236,14 @@ class formatter<std::chrono::hh_mm_ss<Duration>, CharT> :
     public chrono_formatter<std::chrono::hh_mm_ss<Duration>, CharT>
 {};
 
+#ifndef PAPILIO_CHRONO_NO_TIMEZONE
+
 template <typename CharT>
 class formatter<std::chrono::sys_info, CharT> :
     public chrono_formatter<std::chrono::sys_info, CharT>
 {};
+
+#endif
 } // namespace papilio
 
 #include "../detail/suffix.hpp"

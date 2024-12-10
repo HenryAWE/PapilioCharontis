@@ -16,6 +16,8 @@
 #    pragma clang diagnostic ignored "-Wsuggest-destructor-override"
 #    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 
+#    pragma clang diagnostic ignored "-Wctad-maybe-unsupported"
+
 #    if __clang_major__ >= 16
 #        pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #    endif
