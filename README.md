@@ -138,7 +138,7 @@ papilio::format(u8"{}", true); // Returns u8"true"
 papilio::format(u"{}", true);  // Returns u"true"
 papilio::format(U"{}", true);  // Returns U"true"
 ```
-NOTE: Support for `char8_t`, `char16_t`, and `char32_t` added by newer C++ standard needs to include `<papilio/xchar.hpp>`.
+NOTE: Support for `char8_t`, `char16_t`, and `char32_t` added by newer C++ standard needs to include the separated header `<papilio/xchar.hpp>`. Besides, these character types don't support locale-specific formatting.
 
 ### C++ 20 Modules Support
 ```c++

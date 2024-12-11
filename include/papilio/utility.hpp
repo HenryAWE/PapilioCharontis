@@ -42,6 +42,12 @@ concept char16_like = char_like<CharT> && sizeof(CharT) == 2;
 PAPILIO_EXPORT template <typename CharT>
 concept char32_like = char_like<CharT> && sizeof(CharT) == 4;
 
+PAPILIO_EXPORT template <typename T>
+concept xchar =
+    std::is_same_v<std::remove_cv_t<T>, char16_t> ||
+    std::is_same_v<std::remove_cv_t<T>, char32_t> ||
+    std::is_same_v<std::remove_cv_t<T>, char8_t>;
+
 PAPILIO_EXPORT template <typename T, typename CharT>
 concept basic_string_like =
     std::is_same_v<std::decay_t<T>, CharT*> ||

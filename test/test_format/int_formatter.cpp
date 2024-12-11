@@ -162,3 +162,63 @@ TYPED_TEST(int_formatter_suite, fill_and_align)
     EXPECT_EQ(PAPILIO_NS format("{:^5c}", TypeParam(97)), "  a  ");
     EXPECT_EQ(PAPILIO_NS format(L"{:^5c}", TypeParam(97)), L"  a  ");
 }
+
+namespace test_format
+{
+template <typename CharT>
+class my_int_sep : public std::numpunct<CharT>
+{
+public:
+    using char_type = typename std::numpunct<CharT>::char_type;
+
+protected:
+    char_type do_thousands_sep() const override
+    {
+        return char_type('.');
+    }
+
+    std::string do_grouping() const override
+    {
+        return std::string("\1\2\3", 3);
+    }
+};
+
+template <typename CharT = char>
+std::locale attach_my_int_sep()
+{
+    return std::locale(std::locale::classic(), new my_int_sep<CharT>());
+}
+} // namespace test_format
+
+TEST(int_formatter, locale)
+{
+    using namespace papilio;
+
+    {
+        std::locale loc = test_format::attach_my_int_sep();
+
+        EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", 123456789), "123.456.78.9");
+
+        EXPECT_EQ(PAPILIO_NS format(loc, "{:012}", 123456789), "000123456789");
+        EXPECT_EQ(PAPILIO_NS format(loc, "{:012L}", 123456789), "000.123.456.78.9");
+
+        EXPECT_EQ(
+            PAPILIO_NS format(loc, "{:L}", std::numeric_limits<std::uint64_t>::max()),
+            "18.446.744.073.709.551.61.5"
+        );
+    }
+
+    {
+        std::locale loc = test_format::attach_my_int_sep<wchar_t>();
+
+        EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", 123456789), L"123.456.78.9");
+
+        EXPECT_EQ(PAPILIO_NS format(loc, L"{:012}", 123456789), L"000123456789");
+        EXPECT_EQ(PAPILIO_NS format(loc, L"{:012L}", 123456789), L"000.123.456.78.9");
+
+        EXPECT_EQ(
+            PAPILIO_NS format(loc, L"{:L}", std::numeric_limits<std::uint64_t>::max()),
+            L"18.446.744.073.709.551.61.5"
+        );
+    }
+}

@@ -73,8 +73,8 @@ papilio::format("{:.<5.5s}", "文文文"); // "文文."
 ### L (Locale-Specific Formatting)
 This option is only available for some types. It may cause the output to be affected by locale.
 - `bool` type: The output will use the result of `std::numpunct::truename()` or `std::numpunct::falsename()` to represent `true` or `false`.
-- Integral type: Not implemented yet.
-- Floating point: Not implemented yet.
+- Integral type: Appropriate digit group separators will be inserted to the output.
+- Floating point: Appropriate digit group separators and decimal point will be inserted to the output.
 
 ### Type
 #### String

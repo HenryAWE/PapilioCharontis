@@ -9,6 +9,17 @@ std::locale locale_ref::get() const
                std::locale::classic() :
                *m_loc;
 }
+
+char index_grouping(const std::string& grouping, std::size_t idx)
+{
+    if(grouping.empty()) [[unlikely]]
+        return '\0';
+
+    if(idx >= grouping.size())
+        return grouping.back();
+    else
+        return grouping[idx];
+}
 } // namespace papilio
 
 #include <papilio/detail/suffix.hpp>

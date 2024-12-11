@@ -4634,6 +4634,16 @@ inline constexpr char digit_map_lower[16] =
 inline constexpr char digit_map_upper[16] =
     {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
+template <typename CharT>
+inline constexpr std::basic_string_view<CharT> inf_name_lower = PAPILIO_TSTRING_VIEW(CharT, "inf");
+template <typename CharT>
+inline constexpr std::basic_string_view<CharT> inf_name_upper = PAPILIO_TSTRING_VIEW(CharT, "INF");
+
+template <typename CharT = char>
+inline constexpr std::basic_string_view<CharT> nan_name_lower = PAPILIO_TSTRING_VIEW(CharT, "nan");
+template <typename CharT = char>
+inline constexpr std::basic_string_view<CharT> nan_name_upper = PAPILIO_TSTRING_VIEW(CharT, "NAN");
+
 /// @}
 
 /// @defgroup BaseFormatter Formatter bases
@@ -4660,6 +4670,8 @@ requires(!char_like<T>)
 class int_formatter : public std_formatter_base
 {
 public:
+    using facet_type = std::numpunct<CharT>;
+
     constexpr void set_data(const std_formatter_data& dt) noexcept
     {
         PAPILIO_ASSERT(dt.contains_type(U"BbXxod"));
@@ -4677,6 +4689,14 @@ public:
     auto format(T val, FormatContext& ctx) const
         -> typename FormatContext::iterator
     {
+        if constexpr(!xchar<CharT>)
+        {
+            if(data().use_locale)
+            {
+                return format_by_facet(val, ctx);
+            }
+        }
+
         CharT buf[sizeof(T) * 8];
         std::size_t buf_size = 0;
 
@@ -4854,6 +4874,158 @@ private:
             PAPILIO_UNREACHABLE();
         }
     }
+
+    const std::numpunct<CharT>* use_facet_ptr(locale_ref loc) const
+    {
+        if constexpr(!xchar<CharT>)
+        {
+            if(data().use_locale)
+                return std::addressof(std::use_facet<facet_type>(loc));
+        }
+
+        return nullptr;
+    }
+
+    template <typename Context>
+    auto format_by_facet(T val, Context& ctx) const requires(!xchar<CharT>)
+    {
+        using context_t = format_context_traits<Context>;
+
+        small_vector<CharT, 256> buf;
+        const facet_type& facet = std::use_facet<facet_type>(ctx.getloc());
+
+        auto [base, uppercase] = parse_type_ch(data().type);
+
+        const auto& digits = uppercase ? digit_map_upper : digit_map_lower;
+
+        const bool neg = val < 0;
+
+        std::size_t used = 0;
+        std::size_t digit_count = 0;
+
+        std::string grouping = facet.grouping();
+        CharT sep = facet.thousands_sep();
+        const std::size_t sep_width = utf::codepoint(static_cast<char32_t>(sep)).estimate_width();
+
+        auto write_buf = [&, sep_idx = std::size_t(0), count_since_sep = std::size_t(0)](CharT ch) mutable
+        {
+            if(digit_count != 0)
+            {
+                char current_grouping_val = PAPILIO_NS index_grouping(grouping, sep_idx);
+                if(count_since_sep >= std::size_t(current_grouping_val))
+                {
+                    buf.push_back(sep);
+                    used += sep_width;
+                    count_since_sep = 0;
+                    ++sep_idx;
+                }
+            }
+
+            buf.push_back(ch);
+            ++digit_count;
+            ++count_since_sep;
+            ++used;
+        };
+
+        if constexpr(std::is_signed_v<T>)
+        {
+            do
+            {
+                const T digit = std::abs(val % static_cast<T>(base));
+                write_buf(static_cast<CharT>(digits[digit]));
+                val /= static_cast<T>(base);
+            } while(val);
+        }
+        else
+        {
+            do
+            {
+                const T digit = val % static_cast<T>(base);
+                write_buf(static_cast<CharT>(digits[digit]));
+                val /= static_cast<T>(base);
+            } while(val);
+        }
+
+        if(data().alternate_form)
+            used += alt_prefix_width(base);
+        switch(data().sign)
+        {
+        case format_sign::negative:
+        case format_sign::default_sign:
+            if(neg)
+                ++used;
+            break;
+
+        case format_sign::positive:
+        case format_sign::space:
+            ++used;
+            break;
+
+        default:
+            PAPILIO_UNREACHABLE();
+        }
+
+        auto [left, right] = data().fill_zero ?
+                                 std::make_pair<std::size_t, std::size_t>(0, 0) :
+                                 fill_size(used);
+
+        fill(ctx, left);
+
+        switch(data().sign)
+        {
+        case format_sign::negative:
+        case format_sign::default_sign:
+            if(neg)
+                context_t::append(ctx, static_cast<CharT>('-'));
+            break;
+
+        case format_sign::positive:
+            context_t::append(ctx, static_cast<CharT>(neg ? '-' : '+'));
+            break;
+
+        case format_sign::space:
+            context_t::append(ctx, static_cast<CharT>(neg ? '-' : ' '));
+            break;
+
+        default:
+            PAPILIO_UNREACHABLE();
+        }
+
+        if(data().alternate_form && base != 10)
+        {
+            context_t::append(ctx, '0');
+            switch(base)
+            {
+            case 16:
+                context_t::append(ctx, uppercase ? 'X' : 'x');
+                break;
+
+            case 2:
+                context_t::append(ctx, uppercase ? 'B' : 'b');
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        if(data().fill_zero)
+        {
+            if(digit_count < data().width)
+            {
+                std::size_t zeros = data().width - digit_count;
+                for(std::size_t i = 0; i < zeros; ++i)
+                    write_buf(CharT('0'));
+            }
+        }
+
+        for(std::size_t i = buf.size(); i > 0; --i)
+            context_t::append(ctx, buf[i - 1]);
+
+        fill(ctx, right);
+
+        return context_t::out(ctx);
+    }
 };
 
 /**
@@ -4879,6 +5051,8 @@ template <std::floating_point T, typename CharT>
 class float_formatter : public std_formatter_base
 {
 public:
+    using facet_type = std::numpunct<CharT>;
+
     void set_data(const std_formatter_data& dt)
     {
         PAPILIO_ASSERT(dt.contains_type(U"fFgGeEaA"));
@@ -4895,16 +5069,28 @@ public:
     {
         using context_t = format_context_traits<FormatContext>;
 
-        CharT buf[buf_size];
+        small_vector<CharT, 256> buf;
 
-        std::size_t fp_size = 0;
+        std::size_t used = 0;
 
         bool neg = std::signbit(val);
         val = std::abs(val);
 
-        fp_size = conv<CharT>(buf, val);
+        bool use_locale = false;
+        if constexpr(!xchar<CharT>)
+        {
+            if(data().use_locale)
+            {
+                use_locale = true;
+                used += float_to_chars_reversed(
+                            ctx.getloc_ref(), std::back_inserter(buf), val
+                )
+                            .second;
+            }
+        }
 
-        std::size_t used = fp_size;
+        if(!use_locale)
+            used += float_to_chars(std::back_inserter(buf), val).second;
 
         switch(data().sign)
         {
@@ -4947,7 +5133,15 @@ public:
             PAPILIO_UNREACHABLE();
         }
 
-        context_t::append(ctx, buf, buf + fp_size);
+        if(use_locale)
+        {
+            context_t::advance_to(
+                ctx,
+                std::reverse_copy(buf.begin(), buf.end(), ctx.out())
+            );
+        }
+        else
+            context_t::append(ctx, std::basic_string_view<CharT>(buf.data(), buf.size()));
 
         fill(ctx, right);
 
@@ -4955,8 +5149,6 @@ public:
     }
 
 private:
-    static constexpr std::size_t buf_size = 32;
-
     std::pair<std::chars_format, bool> get_chars_fmt() const
     {
         std::chars_format ch_fmt{};
@@ -4998,97 +5190,163 @@ private:
         return std::make_pair(ch_fmt, uppercase);
     }
 
-    template <char8_like U>
-    std::size_t conv(std::span<U, buf_size> buf, T val) const
+    std::size_t call_char_conv(
+        T val, char* buf, std::size_t buf_size, std::chars_format ch_fmt
+    ) const
     {
-        using namespace std::literals;
-
-        std::to_chars_result result;
-        auto [ch_fmt, uppercase] = get_chars_fmt();
-
-        if(std::isinf(val)) [[unlikely]]
-        {
-            if(uppercase)
-            {
-                buf[0] = 'I';
-                buf[1] = 'N';
-                buf[2] = 'F';
-            }
-            else
-            {
-                buf[0] = 'i';
-                buf[1] = 'n';
-                buf[2] = 'f';
-            }
-            return 3;
-        }
-        else if(std::isnan(val)) [[unlikely]]
-        {
-            if(uppercase)
-            {
-                buf[0] = 'N';
-                buf[1] = 'A';
-                buf[2] = 'N';
-            }
-            else
-            {
-                buf[0] = 'n';
-                buf[1] = 'a';
-                buf[2] = 'n';
-            }
-            return 3;
-        }
+        const std::u32string_view use_default_precision = U"fFeEgG";
 
         int precision = static_cast<int>(data().precision);
         if(precision == 0 &&
-           U"fFeEgG"sv.find(data().type) != std::u32string::npos)
+           use_default_precision.find(data().type) != std::u32string_view::npos)
         {
             precision = 6;
         }
 
-        char* start = std::bit_cast<char*>(std::to_address(buf.begin()));
-        char* stop = std::bit_cast<char*>(std::to_address(buf.end()));
-
+        std::to_chars_result result;
         if(precision == 0)
-            result = std::to_chars(start, stop, val, ch_fmt);
+            result = std::to_chars(buf, buf + buf_size, val, ch_fmt);
         else
-            result = std::to_chars(start, stop, val, ch_fmt, precision);
+            result = std::to_chars(buf, buf + buf_size, val, ch_fmt, precision);
 
         if(result.ec == std::errc::value_too_large) [[unlikely]]
         {
             throw format_error("value too large");
         }
-        else if(result.ec != std::errc())
+        else if(result.ec == std::errc())
         {
-            PAPILIO_UNREACHABLE();
+            return static_cast<std::size_t>(result.ptr - buf);
         }
 
-        std::size_t size = static_cast<std::size_t>(
-            result.ptr - std::bit_cast<char*>(buf.data())
-        );
+        PAPILIO_UNREACHABLE();
+    }
+
+    template <typename OutputIt>
+    std::pair<OutputIt, std::size_t> float_to_chars(OutputIt out, T val) const
+    {
+        using namespace std::literals;
+
+        auto [ch_fmt, uppercase] = get_chars_fmt();
+
+        if(std::isinf(val)) [[unlikely]]
+        {
+            auto inf_name = uppercase ? inf_name_upper<char> : inf_name_lower<char>;
+            out = std::copy(inf_name.begin(), inf_name.end(), out);
+            return {std::move(out), 3};
+        }
+        else if(std::isnan(val)) [[unlikely]]
+        {
+            auto nan_name = uppercase ? nan_name_upper<char> : nan_name_lower<char>;
+            out = std::copy(nan_name.begin(), nan_name.end(), out);
+            return {std::move(out), 3};
+        }
+
+        char buf[256];
+        std::size_t size = call_char_conv(val, buf, std::size(buf), ch_fmt);
 
         if(uppercase)
         {
-            for(std::size_t i = 0; i < size; ++i)
-            {
-                if('a' <= buf[i] && buf[i] <= 'z')
-                    buf[i] -= 'a' - 'A'; // to upper
-            }
+            out = std::transform(
+                buf,
+                buf + size,
+                out,
+                [](char ch) -> CharT
+                {
+                    if('a' <= ch && ch <= 'z')
+                        ch -= 'a' - 'A'; // to upper
+                    return static_cast<CharT>(ch);
+                }
+            );
+        }
+        else
+        {
+            out = std::copy_n(buf, size, out);
         }
 
-        return size;
+        return {std::move(out), size};
     }
 
-    template <typename U>
-    requires(!char8_like<U>)
-    std::size_t conv(std::span<U, buf_size> buf, T val) const
+    // Output in reversed order for easier implementation of locale support
+    template <typename OutputIt>
+    std::pair<OutputIt, std::size_t> float_to_chars_reversed(locale_ref loc, OutputIt out, T val) const requires(!xchar<CharT>)
     {
-        char narrow_buf[buf_size];
-        std::size_t size = conv<char>(narrow_buf, val);
-        PAPILIO_ASSERT(size <= buf.size());
+        using namespace std::literals;
 
-        std::copy_n(narrow_buf, size, buf.begin());
-        return size;
+        auto [ch_fmt, uppercase] = get_chars_fmt();
+
+        if(std::isinf(val)) [[unlikely]]
+        {
+            auto inf_name = uppercase ? inf_name_upper<char> : inf_name_lower<char>;
+            out = std::copy(inf_name.begin(), inf_name.end(), out);
+            return {std::move(out), 3};
+        }
+        else if(std::isnan(val)) [[unlikely]]
+        {
+            auto nan_name = uppercase ? nan_name_upper<char> : nan_name_lower<char>;
+            out = std::copy(nan_name.begin(), nan_name.end(), out);
+            return {std::move(out), 3};
+        }
+
+        const facet_type& facet = std::use_facet<facet_type>(loc);
+
+        char buf[256];
+        std::size_t size = call_char_conv(val, buf, std::size(buf), ch_fmt);
+        std::size_t length = 0;
+
+        CharT sep = facet.thousands_sep();
+        const std::size_t sep_width = utf::codepoint(static_cast<char32_t>(sep)).estimate_width();
+        std::string grouping = facet.grouping();
+
+        std::size_t digit_count = 0;
+        std::size_t sep_idx = 0;
+        std::size_t count_since_sep = 0;
+        bool point_reached = false;
+
+        for(auto it = std::reverse_iterator(buf + size); it != std::reverse_iterator(buf); ++it)
+        {
+            char ch = *it;
+
+            if(ch == '.') [[unlikely]]
+            {
+                CharT dp = facet.decimal_point();
+                length += utf::codepoint(static_cast<char32_t>(dp)).estimate_width();
+                point_reached = true;
+                count_since_sep = 0;
+
+                *out = dp;
+                ++out;
+
+                continue;
+            }
+
+            if(digit_count != 0 && point_reached)
+            {
+                char current_grouping_val = index_grouping(grouping, sep_idx);
+                if(count_since_sep >= std::size_t(current_grouping_val))
+                {
+                    ++sep_idx;
+                    count_since_sep = 0;
+                    length += sep_width;
+
+                    *out = sep;
+                    ++out;
+                }
+            }
+
+            if(uppercase)
+            {
+                if('a' <= ch && ch <= 'z')
+                    ch -= 'a' - 'A'; // to upper
+            }
+            ++length;
+            ++count_since_sep;
+            ++digit_count;
+
+            *out = static_cast<CharT>(ch);
+            ++out;
+        }
+
+        return {std::move(out), length};
     }
 };
 
@@ -5741,19 +5999,24 @@ private:
 
     utf::basic_string_container<CharT> get_str(bool val, locale_ref loc) const
     {
+        std::basic_string_view<CharT> true_name = PAPILIO_TSTRING_VIEW(CharT, "true");
+        std::basic_string_view<CharT> false_name = PAPILIO_TSTRING_VIEW(CharT, "false");
+
         if(!m_data.use_locale) [[likely]]
         {
-            static constexpr CharT true_str[] = {'t', 'r', 'u', 'e'};
-            std::basic_string_view<CharT> true_sv(true_str, 4);
-            static constexpr CharT false_str[] = {'f', 'a', 'l', 's', 'e'};
-            std::basic_string_view<CharT> false_sv(false_str, 5);
-
-            return val ? true_sv : false_sv;
+            return val ? true_name : false_name;
         }
         else
         {
-            const auto& facet = std::use_facet<std::numpunct<CharT>>(loc);
-            return val ? facet.truename() : facet.falsename();
+            if constexpr(xchar<CharT>)
+            {
+                return val ? true_name : false_name;
+            }
+            else
+            {
+                const auto& facet = std::use_facet<std::numpunct<CharT>>(loc);
+                return val ? facet.truename() : facet.falsename();
+            }
         }
     }
 };

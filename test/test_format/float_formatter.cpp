@@ -180,3 +180,52 @@ TYPED_TEST(float_formatter_suite, fill_and_align)
         );
     }
 }
+
+namespace test_format
+{
+template <typename CharT>
+class my_float_numpunct : public std::numpunct<CharT>
+{
+public:
+    using char_type = typename std::numpunct<CharT>::char_type;
+
+protected:
+    char_type do_thousands_sep() const override
+    {
+        return char_type('.');
+    }
+
+    char_type do_decimal_point() const override
+    {
+        return char_type(',');
+    }
+
+    std::string do_grouping() const override
+    {
+        return std::string("\1\2\3", 3);
+    }
+};
+
+template <typename CharT = char>
+std::locale attach_my_float_sep()
+{
+    return std::locale(std::locale::classic(), new my_float_numpunct<CharT>());
+}
+} // namespace test_format
+
+TEST(float_formatter, locale)
+{
+    {
+        std::locale loc = test_format::attach_my_float_sep();
+
+        EXPECT_EQ(PAPILIO_NS format(loc, "{:f}", 123456789.123456789), "123456789.123457");
+        EXPECT_EQ(PAPILIO_NS format(loc, "{:Lf}", 123456789.123456789), "123.456.78.9,123457");
+    }
+
+    {
+        std::locale loc = test_format::attach_my_float_sep<wchar_t>();
+
+        EXPECT_EQ(PAPILIO_NS format(loc, L"{:f}", 123456789.123456789), L"123456789.123457");
+        EXPECT_EQ(PAPILIO_NS format(loc, L"{:Lf}", 123456789.123456789), L"123.456.78.9,123457");
+    }
+}

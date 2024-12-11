@@ -138,7 +138,7 @@ papilio::format(u8"{}", true); // 返回 u8"true"
 papilio::format(u"{}", true);  // 返回 u"true"
 papilio::format(U"{}", true);  // 返回 U"true"
 ```
-注意：C++ 新标准添加的 `char8_t`、`char16_t`、`char32_t` 的支持需要包含头文件 `<papilio/xchar.hpp>`。
+注意：C++ 新标准添加的 `char8_t`、`char16_t`、`char32_t` 的支持需要包含单独的头文件 `<papilio/xchar.hpp>`。此外，这些字符类型不支持特定于本地环境（locale-specific）的格式化。
 
 ### C++ 20 模块（Modules）支持
 ```c++
