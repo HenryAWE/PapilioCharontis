@@ -51,6 +51,8 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{:%y}", 2024y), "24");
         EXPECT_EQ(PAPILIO_NS format("{}", 2024y), "2024");
         EXPECT_EQ(PAPILIO_NS format("{}", 2024y), PAPILIO_NS format("{:%Y}", 2024y));
+
+        EXPECT_THROW((void)PAPILIO_NS format("{:%m}", 2024y), format_error);
     }
 
     // month
@@ -85,19 +87,43 @@ TEST(formatter, chrono)
 
     // H:M:S
     {
-        std::chrono::hh_mm_ss<std::chrono::seconds> hms{65s};
+        {
+            std::chrono::hh_mm_ss<std::chrono::seconds> hms{3600s + 2 * 60s + 5s};
 
-        static_assert(formattable<decltype(hms)>);
-        EXPECT_EQ(PAPILIO_NS format("{:%H}", hms), "00");
-        EXPECT_EQ(PAPILIO_NS format("{:%I}", hms), "00");
-        EXPECT_EQ(PAPILIO_NS format("{:%M}", hms), "01");
-        EXPECT_EQ(PAPILIO_NS format("{:%S}", hms), "05");
-        EXPECT_EQ(PAPILIO_NS format("{:%R}", hms), "00:01");
-        EXPECT_EQ(PAPILIO_NS format("{:%R}", hms), PAPILIO_NS format("{:%H:%M}", hms));
-        EXPECT_EQ(PAPILIO_NS format("{:%T}", hms), "00:01:05");
-        EXPECT_EQ(PAPILIO_NS format("{:%T}", hms), PAPILIO_NS format("{:%H:%M:%S}", hms));
-        EXPECT_EQ(PAPILIO_NS format("{}", hms), "00:01:05");
-        EXPECT_EQ(PAPILIO_NS format("{}", hms), PAPILIO_NS format("{:%T}", hms));
+            static_assert(formattable<decltype(hms)>);
+            EXPECT_EQ(PAPILIO_NS format("{:%H}", hms), "01");
+            EXPECT_EQ(PAPILIO_NS format("{:%I}", hms), "01");
+            EXPECT_EQ(PAPILIO_NS format("{:%M}", hms), "02");
+            EXPECT_EQ(PAPILIO_NS format("{:%S}", hms), "05");
+            EXPECT_EQ(PAPILIO_NS format("{:%R}", hms), "01:02");
+            EXPECT_EQ(PAPILIO_NS format("{:%R}", hms), PAPILIO_NS format("{:%H:%M}", hms));
+            EXPECT_EQ(PAPILIO_NS format("{:%T}", hms), "01:02:05");
+            EXPECT_EQ(PAPILIO_NS format("{:%T}", hms), PAPILIO_NS format("{:%H:%M:%S}", hms));
+            EXPECT_EQ(PAPILIO_NS format("{}", hms), "01:02:05");
+            EXPECT_EQ(PAPILIO_NS format("{}", hms), PAPILIO_NS format("{:%T}", hms));
+
+            EXPECT_EQ(PAPILIO_NS format("{:%p}", hms), "AM");
+            EXPECT_EQ(PAPILIO_NS format("{:%r}", hms), "01:02:05 AM");
+            EXPECT_EQ(PAPILIO_NS format("{:%r}", hms), PAPILIO_NS format("{:%I:%M:%S %p}", hms));
+        }
+
+        {
+            std::chrono::hh_mm_ss<std::chrono::seconds> hms{13h};
+
+            static_assert(formattable<decltype(hms)>);
+            EXPECT_EQ(PAPILIO_NS format("{:%H}", hms), "13");
+            EXPECT_EQ(PAPILIO_NS format("{:%I}", hms), "01");
+            EXPECT_EQ(PAPILIO_NS format("{:%R}", hms), "13:00");
+            EXPECT_EQ(PAPILIO_NS format("{:%R}", hms), PAPILIO_NS format("{:%H:%M}", hms));
+            EXPECT_EQ(PAPILIO_NS format("{:%T}", hms), "13:00:00");
+            EXPECT_EQ(PAPILIO_NS format("{:%T}", hms), PAPILIO_NS format("{:%H:%M:%S}", hms));
+            EXPECT_EQ(PAPILIO_NS format("{}", hms), "13:00:00");
+            EXPECT_EQ(PAPILIO_NS format("{}", hms), PAPILIO_NS format("{:%T}", hms));
+
+            EXPECT_EQ(PAPILIO_NS format("{:%p}", hms), "PM");
+            EXPECT_EQ(PAPILIO_NS format("{:%r}", hms), "01:00:00 PM");
+            EXPECT_EQ(PAPILIO_NS format("{:%r}", hms), PAPILIO_NS format("{:%I:%M:%S %p}", hms));
+        }
 
         {
             std::chrono::hh_mm_ss<std::chrono::milliseconds> hms_ms{100ms};
@@ -106,6 +132,16 @@ TEST(formatter, chrono)
             EXPECT_EQ(PAPILIO_NS format("{:%S}", hms_ms), "00.100");
             EXPECT_EQ(PAPILIO_NS format("{:%T}", hms_ms), "00:00:00.100");
             EXPECT_EQ(PAPILIO_NS format("{:%T}", hms_ms), PAPILIO_NS format("{:%H:%M:%S}", hms_ms));
+            EXPECT_EQ(PAPILIO_NS format("{:%r}", hms_ms), PAPILIO_NS format("{:%I:%M:%S %p}", hms_ms));
+        }
+
+        {
+            std::chrono::hh_mm_ss<std::chrono::seconds> hms{};
+
+            EXPECT_THROW((void)PAPILIO_NS format("{:%Y}", hms), format_error);
+            EXPECT_THROW((void)PAPILIO_NS format("{:%m}", hms), format_error);
+            EXPECT_THROW((void)PAPILIO_NS format("{:%d}", hms), format_error);
+            EXPECT_THROW((void)PAPILIO_NS format("{:%u}", hms), format_error);
         }
     }
 
@@ -196,8 +232,6 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{:%F}", date), "2023-11-08");
         EXPECT_EQ(PAPILIO_NS format("{:%F}", date), PAPILIO_NS format("{:%Y-%m-%d}", date));
         EXPECT_EQ(PAPILIO_NS format("{}", date), PAPILIO_NS format("{:%F}", date));
-
-        EXPECT_EQ(PAPILIO_NS format("{:%c}", date), "Wed Nov  8 00:00:00 2023");
     }
 
     // %j
@@ -214,6 +248,7 @@ TEST(formatter, chrono)
         static_assert(formattable<system_clock::time_point>);
 
         EXPECT_EQ(PAPILIO_NS format("{:%F}", t), "2023-11-08");
+        EXPECT_EQ(PAPILIO_NS format("{:%c}", t), "Wed Nov  8 00:00:00 2023");
         EXPECT_EQ(PAPILIO_NS format("{:%Z}", t), "UTC");
         EXPECT_EQ(PAPILIO_NS format("{:%z}", t), "+0000");
         EXPECT_EQ(PAPILIO_NS format("{:%Ez}", t), "+00:00");

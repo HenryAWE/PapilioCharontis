@@ -9,23 +9,157 @@
 #include <iomanip>
 #include <sstream>
 #include "../format.hpp"
+#include "../chrono/chrono_traits.hpp"
 #include "../detail/prefix.hpp"
-
-// Workarounds
-#ifdef PAPILIO_STDLIB_LIBCPP
-#    define PAPILIO_CHRONO_NO_UTC_TIME
-#endif
-
-#ifdef PAPILIO_STDLIB_LIBCPP
-#    define PAPILIO_CHRONO_NO_TIMEZONE
-#elif defined(PAPILIO_STDLIB_LIBSTDCPP)
-#    if __GLIBCXX__ < 20240412
-#        define PAPILIO_CHRONO_NO_TIMEZONE
-#    endif
-#endif
 
 namespace papilio
 {
+namespace detail
+{
+    class chrono_fmt_parser_base
+    {
+    protected:
+        static bool is_year_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+            case U'E':
+                return ch == 'Y' ||
+                       ch == 'y' ||
+                       ch == 'C';
+
+            case U'O':
+                return ch == 'y';
+            }
+        }
+
+        static bool is_month_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+                return ch == U'm' ||
+                       ch == U'b' ||
+                       ch == U'h' ||
+                       ch == U'B';
+
+            case U'E':
+                return false;
+
+            case U'O':
+                return ch == 'm';
+            }
+        }
+
+        static bool is_day_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+            case U'O':
+                return ch == U'd' ||
+                       ch == U'e';
+
+            case U'E':
+                return false;
+            }
+        }
+
+        // Time of day, i.e. H:M:S
+        static bool is_time_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+                return ch == U'H' ||
+                       ch == U'I' ||
+                       ch == U'M' ||
+                       ch == U'S' ||
+                       ch == U'R' ||
+                       ch == U'T' ||
+                       ch == U'r' ||
+                       ch == U'p';
+
+            case U'O':
+                return ch == U'H' ||
+                       ch == U'I' ||
+                       ch == U'M' ||
+                       ch == U'S';
+
+            case U'E':
+                return ch == U'X';
+            }
+        }
+
+        // Week/day of the year
+        static bool is_yday_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+                return ch == U'j' ||
+                       ch == U'U' ||
+                       ch == U'W';
+
+            case U'O':
+                return ch == U'U' ||
+                       ch == U'W';
+
+            case U'E':
+                return false;
+            }
+        }
+
+        static bool is_weekday_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+                return ch == U'a' ||
+                       ch == U'A' ||
+                       ch == U'u' ||
+                       ch == U'w';
+
+            case U'O':
+                return ch == U'u' ||
+                       ch == U'w';
+
+            case U'E':
+                return false;
+            }
+        }
+
+        static bool is_date_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+                return ch == U'D' ||
+                       ch == U'F' ||
+                       ch == U'x';
+
+            case U'E':
+                return ch == U'x';
+            }
+        }
+
+        static bool is_timezone_spec(char32_t ch, char32_t loc_ch)
+        {
+            switch(loc_ch)
+            {
+            default:
+                return ch == U'z' ||
+                       ch == U'Z';
+
+            case U'O':
+            case U'E':
+                return ch == 'z';
+            }
+        }
+    };
+} // namespace detail
+
 PAPILIO_EXPORT template <typename CharT>
 struct chrono_formatter_data
 {
@@ -36,7 +170,7 @@ struct chrono_formatter_data
 };
 
 template <typename ParseContext>
-PAPILIO_EXPORT class chrono_formatter_parser
+PAPILIO_EXPORT class chrono_formatter_parser : private detail::chrono_fmt_parser_base
 {
 public:
     using char_type = typename ParseContext::char_type;
@@ -45,23 +179,109 @@ public:
     using result_type = chrono_formatter_data<char_type>;
     using interpreter_type = basic_interpreter<typename ParseContext::format_context_type>;
 
-    static std::pair<result_type, iterator> parse(ParseContext& ctx)
+    static std::pair<result_type, iterator> parse(
+        ParseContext& ctx,
+        chrono::components comp = chrono::components::all
+    )
     {
+        using chrono::components;
+
         result_type result;
 
         simple_formatter_parser<ParseContext, true> basic_parser;
         auto [basic_result, it] = basic_parser.parse(ctx);
         result.basic = basic_result;
 
-        auto spec_end = std::find_if(
-            it,
-            ctx.end(),
-            [](char32_t v)
-            { return v == U'}'; }
-        );
-        result.chrono_spec.assign(it, spec_end);
+        auto spec_start = it;
+        for(; it != ctx.end(); ++it)
+        {
+            char32_t ch32 = *it;
 
-        return std::make_pair(std::move(result), spec_end);
+            if(ch32 == '{') [[unlikely]]
+                throw format_error("'{' is invalid in chrono spec");
+            if(ch32 == '}')
+                break;
+
+            char32_t loc_ch = U'\0';
+            if(ch32 == U'%')
+            {
+                ++it;
+                if(it == ctx.end()) [[unlikely]]
+                    throw format_error("missing format specifier after %");
+                ch32 = *it;
+                if(ch32 == U'E' || ch32 == U'O')
+                {
+                    loc_ch = ch32;
+                    ++it;
+                    if(it == ctx.end()) [[unlikely]]
+                    {
+                        throw format_error(
+                            loc_ch == U'E' ? "missing format specifier after %E" : "missing format specifier after %O"
+                        );
+                    }
+                    ch32 = *it;
+                }
+            }
+            else
+                continue;
+
+            if(ch32 == U'%' || ch32 == U't' || ch32 == U'n')
+                continue;
+
+            if(is_year_spec(ch32, loc_ch))
+            {
+                if(!(comp & components::year))
+                    throw format_error("no year component");
+            }
+            else if(is_month_spec(ch32, loc_ch))
+            {
+                if(!(comp & components::month))
+                    throw format_error("no month component");
+            }
+            else if(is_day_spec(ch32, loc_ch))
+            {
+                if(!(comp & components::day))
+                    throw format_error("no day component");
+            }
+            else if(is_time_spec(ch32, loc_ch))
+            {
+                if(!(comp & components::hour_min_sec))
+                    throw format_error("no time component");
+            }
+            else if(is_weekday_spec(ch32, loc_ch))
+            {
+                if(!(comp & components::weekday))
+                    throw format_error("no weekday component");
+            }
+            else if(loc_ch == U'\0' && (ch32 == U'q' || ch32 == U'Q')) // %q and %Q
+            {
+                if(!(comp & components::duration_count))
+                    throw format_error("no count component");
+            }
+            else if(is_date_spec(ch32, loc_ch) || is_yday_spec(ch32, loc_ch))
+            {
+                if((comp & components::date) != components::date)
+                    throw format_error("no date component");
+            }
+            else if(loc_ch != U'O' && ch32 == U'c') // %c and %Ec
+            {
+                if((comp & components::date_time) != components::date_time)
+                    throw format_error("no datetime component");
+            }
+            else if(is_timezone_spec(ch32, loc_ch))
+            {
+                if(!(comp & components::time_zone))
+                    throw format_error("no time zone component");
+            }
+            else
+            {
+                throw format_error("unsupported chrono spec");
+            }
+        }
+
+        result.chrono_spec.assign(spec_start, it);
+
+        return std::make_pair(std::move(result), it);
     }
 };
 
@@ -204,198 +424,6 @@ private:
 
 namespace detail
 {
-    inline std::tm init_tm() noexcept
-    {
-        std::tm init{};
-
-#ifdef __GLIBC__
-        init.tm_zone = "UTC";
-#endif
-
-        return init;
-    }
-
-    inline std::tm to_tm(const std::chrono::year_month_day& date)
-    {
-        namespace chrono = std::chrono;
-
-        std::tm result = init_tm();
-
-        result.tm_year = static_cast<int>(date.year()) - 1900;
-        result.tm_mon = static_cast<unsigned int>(date.month()) - 1;
-        result.tm_mday = static_cast<unsigned int>(date.day());
-        result.tm_wday = static_cast<unsigned int>(std::chrono::weekday(date).c_encoding());
-        {
-            auto yday =
-                static_cast<std::chrono::sys_days>(date) -
-                static_cast<std::chrono::sys_days>(chrono::year_month_day{date.year(), chrono::January, chrono::day(1)});
-            result.tm_yday = yday.count();
-        }
-
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::year_month_day_last& date)
-    {
-        return to_tm(std::chrono::year_month_day(date));
-    }
-
-    inline std::tm to_tm(const std::chrono::year_month& date)
-    {
-        std::tm result = init_tm();
-
-        result.tm_year = static_cast<int>(date.year()) - 1900;
-        result.tm_mon = static_cast<unsigned int>(date.month()) - 1;
-
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::month_day& date)
-    {
-        std::tm result = init_tm();
-
-        result.tm_mon = static_cast<unsigned int>(date.month()) - 1;
-        result.tm_mday = static_cast<unsigned int>(date.day());
-
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::year_month_day& date, std::chrono::weekday weekday)
-    {
-        namespace chrono = std::chrono;
-
-        std::tm result = init_tm();
-
-        result.tm_year = static_cast<int>(date.year()) - 1900;
-        result.tm_mon = static_cast<unsigned int>(date.month()) - 1;
-        result.tm_mday = static_cast<unsigned int>(date.day());
-        result.tm_wday = static_cast<unsigned int>(weekday.c_encoding());
-        {
-            auto yday =
-                static_cast<std::chrono::sys_days>(date) -
-                static_cast<std::chrono::sys_days>(chrono::year_month_day{date.year(), chrono::January, chrono::day(1)});
-            result.tm_yday = yday.count();
-        }
-
-        return result;
-    }
-
-    template <typename Duration>
-    std::tm to_tm(const std::chrono::sys_time<Duration>& t)
-    {
-        namespace chrono = std::chrono;
-
-        chrono::sys_days days = chrono::floor<chrono::days>(t);
-        chrono::year_month_day ymd(days);
-
-        std::tm result = to_tm(ymd, chrono::weekday(days));
-
-        std::int64_t sec = chrono::duration_cast<chrono::seconds>(t - chrono::time_point_cast<chrono::seconds>(days)).count();
-        sec %= 24 * 3600;
-        result.tm_hour = static_cast<int>(sec / 3600);
-        sec %= 3600;
-        result.tm_min = static_cast<int>(sec / 60);
-        result.tm_sec = static_cast<int>(sec % 60);
-
-        return result;
-    }
-
-    template <typename Clock, typename Duration>
-    std::tm to_tm(const std::chrono::time_point<Clock, Duration>& t)
-    {
-        namespace chrono = std::chrono;
-        if constexpr(std::is_same_v<Clock, chrono::file_clock>)
-        {
-            return to_tm(Clock::to_sys(t));
-        }
-        else if(std::is_same_v<Clock, chrono::local_t>)
-        {
-            return to_tm(chrono::sys_time<Duration>(t.time_since_epoch()));
-        }
-        else
-        {
-            static_assert(!sizeof(Clock), "invalid clock type");
-        }
-    }
-
-    template <typename Rep, typename Period>
-    std::tm to_tm(const std::chrono::duration<Rep, Period>& d)
-    {
-        namespace chrono = std::chrono;
-
-        std::tm result = init_tm();
-
-        std::int64_t sec = chrono::duration_cast<chrono::seconds>(d).count();
-        sec %= 24 * 3600;
-        result.tm_hour = static_cast<int>(sec / 3600);
-        sec %= 3600;
-        result.tm_min = static_cast<int>(sec / 60);
-        result.tm_sec = static_cast<int>(sec % 60);
-
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::year& y)
-    {
-        std::tm result = init_tm();
-        result.tm_year = static_cast<int>(y) - 1900;
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::month& m)
-    {
-        std::tm result = init_tm();
-        result.tm_mon = static_cast<unsigned int>(m) - 1;
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::day& d)
-    {
-        std::tm result = init_tm();
-        result.tm_mday = static_cast<unsigned int>(d);
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::weekday& wd)
-    {
-        std::tm result = init_tm();
-        result.tm_wday = wd.c_encoding();
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::weekday_indexed& wd)
-    {
-        std::tm result = init_tm();
-        result.tm_wday = wd.weekday().c_encoding();
-        return result;
-    }
-
-    inline std::tm to_tm(const std::chrono::weekday_last& wd)
-    {
-        std::tm result = init_tm();
-        result.tm_wday = wd.weekday().c_encoding();
-        return result;
-    }
-
-    template <typename Duration>
-    inline std::tm to_tm(const std::chrono::hh_mm_ss<Duration>& t)
-    {
-        std::tm result = init_tm();
-        result.tm_hour = t.hours().count();
-        result.tm_min = t.minutes().count();
-        result.tm_sec = static_cast<int>(t.seconds().count());
-        return result;
-    }
-
-#ifndef PAPILIO_CHRONO_NO_TIMEZONE
-
-    inline std::tm to_tm(const std::chrono::sys_info&)
-    {
-        return init_tm();
-    }
-
-#endif
-
     template <typename CharT>
     void format_century(std::basic_stringstream<CharT>& ss, int year)
     {
@@ -464,6 +492,29 @@ namespace detail
             else
                 return std::copy_n(weekday_names_short<CharT>[wday], 3, out);
         }
+    }
+
+    template <typename CharT, typename OutputIt>
+    OutputIt put_hour(OutputIt out, int hour, bool mk12)
+    {
+        if(mk12)
+            hour = static_cast<int>(std::chrono::make12(std::chrono::hours(hour)).count());
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
+            hour
+        );
+    }
+
+    template <typename CharT, typename OutputIt>
+    OutputIt put_am_pm(OutputIt out, bool is_am)
+    {
+        *out = static_cast<CharT>(is_am ? 'A' : 'P');
+        ++out;
+        *out = CharT('M');
+        ++out;
+
+        return out;
     }
 
     template <typename CharT, typename OutputIt>
@@ -728,12 +779,14 @@ template <typename ChronoType, typename CharT>
 class chrono_formatter
 {
 public:
+    using chrono_traits_type = chrono::chrono_traits<ChronoType>;
+
     template <typename ParseContext>
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
     {
         chrono_formatter_parser<ParseContext> parser;
-        auto [result, it] = parser.parse(ctx);
+        auto [result, it] = parser.parse(ctx, chrono_traits_type::get_components());
 
         m_data = result;
 
@@ -878,7 +931,7 @@ private:
 
     static std::basic_string<CharT> to_str(const ChronoType& val, utf::basic_string_ref<CharT> spec)
     {
-        std::tm t = detail::to_tm(val);
+        std::tm t = chrono_traits_type::to_tm(val);
         detail::timezone_info tz = PAPILIO_NS detail::get_timezone_info(val);
 
         static constexpr bool has_count = requires() {
@@ -984,17 +1037,11 @@ private:
                 continue;
 
             case U'H':
-                PAPILIO_NS format_to(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
-                    t.tm_hour
-                );
-                continue;
             case U'I':
-                PAPILIO_NS format_to(
+                detail::put_hour<CharT>(
                     std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
-                    t.tm_hour % 12
+                    t.tm_hour,
+                    ch32 == U'I'
                 );
                 continue;
 
@@ -1058,6 +1105,39 @@ private:
                         val
                     );
                 }
+                continue;
+
+            case U'r': // Equivalent to %I:%M:%S %p
+                detail::put_hour<CharT>(
+                    std::ostreambuf_iterator<CharT>(ss),
+                    t.tm_hour,
+                    true
+                );
+                PAPILIO_NS format_to(
+                    std::ostreambuf_iterator<CharT>(ss),
+                    PAPILIO_TSTRING_VIEW(CharT, ":{:02d}:{:02d}"),
+                    t.tm_min,
+                    t.tm_sec
+                );
+                if constexpr(detail::has_fractional_width<ChronoType>())
+                {
+                    detail::put_subseconds<CharT>(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        val
+                    );
+                }
+                ss.put(CharT(' '));
+                detail::put_am_pm<CharT>(
+                    std::ostreambuf_iterator<CharT>(ss),
+                    std::chrono::is_am(std::chrono::hours(t.tm_hour))
+                );
+                continue;
+
+            case U'p':
+                detail::put_am_pm<CharT>(
+                    std::ostreambuf_iterator<CharT>(ss),
+                    std::chrono::is_am(std::chrono::hours(t.tm_hour))
+                );
                 continue;
 
             case U'D': // Equivalent to %m/%d/%y
@@ -1138,7 +1218,7 @@ private:
         std::basic_stringstream<CharT> ss;
         ss.imbue(loc);
 
-        std::tm t = detail::to_tm(val);
+        std::tm t = chrono_traits_type::to_tm(val);
         facet.put(
             std::ostreambuf_iterator<CharT>(ss),
             ss,
