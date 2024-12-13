@@ -215,9 +215,12 @@ TEST(formatter, chrono)
 
     // Date
     {
+        using std::chrono::last;
         auto date = 2023y / 11 / 8;
         static_assert(formattable<decltype(date)>);
         static_assert(formattable<decltype(2023y / 11)>);
+        static_assert(formattable<decltype(11 / last)>);
+        static_assert(formattable<decltype(2023y / 11 / last)>);
         static_assert(formattable<decltype(11 / 8d)>);
 
         EXPECT_EQ(PAPILIO_NS format("{:%Y}", date), "2023");
@@ -226,6 +229,8 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{}", 2023y / 11), "2023/Nov");
         EXPECT_EQ(PAPILIO_NS format("{:%m-%d}", 11 / 8d), "11-08");
         EXPECT_EQ(PAPILIO_NS format("{}", 11 / 8d), "Nov/08");
+        EXPECT_EQ(PAPILIO_NS format("{}", 11 / last), "Nov/last");
+        EXPECT_EQ(PAPILIO_NS format("{}", 2023y / 11 / last), "2023/Nov/last");
 
         EXPECT_EQ(PAPILIO_NS format("{:%D}", date), "11/08/23");
         EXPECT_EQ(PAPILIO_NS format("{:%D}", date), PAPILIO_NS format("{:%m/%d/%y}", date));
@@ -234,7 +239,7 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{}", date), PAPILIO_NS format("{:%F}", date));
     }
 
-    // %j
+    // Day of the year (%j)
     {
         EXPECT_EQ(PAPILIO_NS format("{:%j}", 2023y / 1 / 1), "001");
         EXPECT_EQ(PAPILIO_NS format("{:%j}", 2023y / 12 / 31), "365");
@@ -282,5 +287,11 @@ TEST(formatter, chrono)
     {
         EXPECT_EQ(PAPILIO_NS format("{:plain text}", 2024y), "plain text");
         EXPECT_EQ(PAPILIO_NS format("{:%%%t%n}", 2024y), "%\t\n");
+    }
+
+    // Error handling
+    {
+        EXPECT_THROW((void)PAPILIO_NS format("{:{{}", 2024y), format_error);
+        EXPECT_THROW((void)PAPILIO_NS format("{:}}", 2024y), format_error);
     }
 }

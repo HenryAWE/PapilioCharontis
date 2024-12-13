@@ -1,24 +1,14 @@
 #ifndef PAPILIO_CHRONO_CHRONO_TRAITS_HPP
 #define PAPILIO_CHRONO_CHRONO_TRAITS_HPP
 
+#pragma once
+
 #include <ctime>
 #include <chrono>
 #include <type_traits>
-#include "../utility.hpp"
+#include "../format.hpp"
+#include "chrono_utility.hpp"
 #include "../detail/prefix.hpp"
-
-// Workarounds
-#ifdef PAPILIO_STDLIB_LIBCPP
-#    define PAPILIO_CHRONO_NO_UTC_TIME
-#endif
-
-#ifdef PAPILIO_STDLIB_LIBCPP
-#    define PAPILIO_CHRONO_NO_TIMEZONE
-#elif defined(PAPILIO_STDLIB_LIBSTDCPP)
-#    if __GLIBCXX__ < 20240412
-#        define PAPILIO_CHRONO_NO_TIMEZONE
-#    endif
-#endif
 
 namespace papilio::chrono
 {
@@ -107,6 +97,16 @@ struct chrono_traits<std::chrono::year>
         result.tm_year = static_cast<int>(y) - 1900;
         return result;
     }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::year& y)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{:04d}"),
+            static_cast<int>(y)
+        );
+    }
 };
 
 template <>
@@ -124,11 +124,10 @@ struct chrono_traits<std::chrono::month>
         return result;
     }
 
-    static std::tm to_tm(const std::chrono::day& d)
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::month& m)
     {
-        std::tm result = PAPILIO_NS chrono::detail::init_tm();
-        result.tm_mday = static_cast<unsigned int>(d);
-        return result;
+        return PAPILIO_NS chrono::copy_month_name<CharT>(out, m);
     }
 };
 
@@ -146,6 +145,16 @@ struct chrono_traits<std::chrono::day>
         result.tm_mday = static_cast<unsigned int>(d);
         return result;
     }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::day& d)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
+            static_cast<unsigned int>(d)
+        );
+    }
 };
 
 template <>
@@ -156,14 +165,25 @@ struct chrono_traits<std::chrono::year_month>
         return components::year | components::month;
     }
 
-    static std::tm to_tm(const std::chrono::year_month& date)
+    static std::tm to_tm(const std::chrono::year_month& ym)
     {
         std::tm result = PAPILIO_NS chrono::detail::init_tm();
 
-        result.tm_year = static_cast<int>(date.year()) - 1900;
-        result.tm_mon = static_cast<unsigned int>(date.month()) - 1;
+        result.tm_year = static_cast<int>(ym.year()) - 1900;
+        result.tm_mon = static_cast<unsigned int>(ym.month()) - 1;
 
         return result;
+    }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::year_month& ym)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{}/{}"),
+            ym.year(),
+            ym.month()
+        );
     }
 };
 
@@ -175,14 +195,39 @@ struct chrono_traits<std::chrono::month_day>
         return components::month | components::day;
     }
 
-    static std::tm to_tm(const std::chrono::month_day& date)
+    static std::tm to_tm(const std::chrono::month_day& md)
     {
         std::tm result = PAPILIO_NS chrono::detail::init_tm();
 
-        result.tm_mon = static_cast<unsigned int>(date.month()) - 1;
-        result.tm_mday = static_cast<unsigned int>(date.day());
+        result.tm_mon = static_cast<unsigned int>(md.month()) - 1;
+        result.tm_mday = static_cast<unsigned int>(md.day());
 
         return result;
+    }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::month_day& md)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{}/{}"),
+            md.month(),
+            md.day()
+        );
+    }
+};
+
+template <>
+struct chrono_traits<std::chrono::month_day_last> : public chrono_traits<std::chrono::month_day>
+{
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::month_day_last& md)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{}/last"),
+            md.month()
+        );
     }
 };
 
@@ -213,15 +258,31 @@ struct chrono_traits<std::chrono::year_month_day>
 
         return result;
     }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::year_month_day& ymd)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{:%F}"),
+            ymd
+        );
+    }
 };
 
 template <>
 struct chrono_traits<std::chrono::year_month_day_last> : public chrono_traits<std::chrono::year_month_day>
 {
-    // std::tm to_tm(const std::chrono::year_month_day_last& date)
-    // {
-    //     return chrono_traits<std::chrono::year_month_day>::to_tm(date);
-    // }
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::year_month_day_last& ymd)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{}/{}"),
+            ymd.year(),
+            ymd.month_day_last()
+        );
+    }
 };
 
 template <typename Duration>
@@ -249,6 +310,16 @@ struct chrono_traits<std::chrono::sys_time<Duration>>
         result.tm_sec = static_cast<int>(sec % 60);
 
         return result;
+    }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::sys_time<Duration>& t)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{:%F %T}"),
+            t
+        );
     }
 };
 
@@ -303,6 +374,12 @@ struct chrono_traits<std::chrono::duration<Rep, Period>>
 
         return result;
     }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::duration<Rep, Period>& d)
+    {
+        return PAPILIO_NS chrono::copy_count(out, d);
+    }
 };
 
 template <>
@@ -319,20 +396,43 @@ struct chrono_traits<std::chrono::weekday>
         result.tm_wday = wd.c_encoding();
         return result;
     }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::weekday& wd)
+    {
+        return PAPILIO_NS chrono::copy_weekday_name<CharT>(out, wd);
+    }
 };
 
 template <typename WeekdayType>
 requires(std::same_as<WeekdayType, std::chrono::weekday_last> || std::same_as<WeekdayType, std::chrono::weekday_indexed>)
 struct chrono_traits<WeekdayType> : public chrono_traits<std::chrono::weekday>
 {
-    static constexpr components get_components() noexcept
-    {
-        return components::weekday;
-    }
-
     static std::tm to_tm(const WeekdayType& wd)
     {
         return chrono_traits<std::chrono::weekday>::to_tm(wd.weekday());
+    }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const WeekdayType& wd)
+    {
+        if constexpr(std::same_as<WeekdayType, std::chrono::weekday_indexed>)
+        {
+            return PAPILIO_NS format_to(
+                out,
+                PAPILIO_TSTRING_VIEW(CharT, "{}[{}]"),
+                wd.weekday(),
+                wd.index()
+            );
+        }
+        else // std::chrono::weekday_last
+        {
+            return PAPILIO_NS format_to(
+                out,
+                PAPILIO_TSTRING_VIEW(CharT, "{}[last]"),
+                wd.weekday()
+            );
+        }
     }
 };
 
@@ -352,6 +452,16 @@ struct chrono_traits<std::chrono::hh_mm_ss<Duration>>
         result.tm_sec = static_cast<int>(t.seconds().count());
         return result;
     }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::hh_mm_ss<Duration>& hms)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{:%T}"),
+            hms
+        );
+    }
 };
 
 #ifndef PAPILIO_CHRONO_NO_TIMEZONE
@@ -362,6 +472,11 @@ struct chrono_traits<std::chrono::sys_info>
     static constexpr components get_components() noexcept
     {
         return components::time_zone;
+    }
+
+    static timezone_info get_timezone_info(const std::chrono::sys_info& info) noexcept
+    {
+        return {info.abbrev, info.offset};
     }
 
     static std::tm to_tm([[maybe_unused]] const std::chrono::sys_info& info)
@@ -375,6 +490,20 @@ struct chrono_traits<std::chrono::sys_info>
 
         return result;
     }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::sys_info& info)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "({}, {}, {}, {}, {})"),
+            info.begin,
+            info.end,
+            info.offset,
+            info.save,
+            info.abbrev
+        );
+    }
 };
 
 #endif
@@ -382,6 +511,25 @@ struct chrono_traits<std::chrono::sys_info>
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic pop
 #endif
+
+template <typename ChronoType>
+requires(chrono_traits<ChronoType>::get_components() != components::none)
+timezone_info get_timezone_info(const ChronoType& val)
+{
+    using std::is_same_v;
+
+    using chrono_traits_type = chrono_traits<ChronoType>;
+
+    constexpr bool has_get_timezone_info = requires() {
+        { chrono_traits_type::get_timezone_info(val) } -> std::convertible_to<timezone_info>;
+    };
+    if constexpr(has_get_timezone_info)
+    {
+        return chrono_traits_type::get_timezone_info(val);
+    }
+
+    return {"UTC", std::chrono::seconds(0)};
+}
 } // namespace papilio::chrono
 
 #include "../detail/suffix.hpp"
