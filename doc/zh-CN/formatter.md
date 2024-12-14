@@ -60,8 +60,65 @@ format("{}", my_val); // 返回 "(B, 3)"
 format("{:s}", my_val); // 返回 "BBB"
 ```
 
+# 成员 `format`
+当自定义格式化器不存在时，将会尝试使用成员 `format` 函数：
+```c++
+// 简易成员 format
+class member_fmt
+{
+public:
+    template <typename Context>
+    auto format(Context& ctx) const
+        -> typename Context::iterator
+    {
+        std::string_view str = "member";
+
+        return std::copy(str.begin(), str.end(), ctx.out());
+    }
+};
+
+// 带参数的成员 format
+class member_fmt_ex
+{
+public:
+    template <typename ParseContext, typename FormatContext>
+    auto format(ParseContext& parse_ctx, FormatContext& ctx) const
+        -> typename FormatContext::iterator
+    {
+        bool upper = false;
+
+        auto parse_it = parse_ctx.begin();
+        if(parse_it != parse_ctx.end() && *parse_it != U'}')
+        {
+            if(*parse_it == U'U')
+            {
+                upper = true;
+                ++parse_it;
+            }
+            else
+                throw papilio::format_error("bad spec");
+
+            parse_ctx.advance_to(parse_it);
+        }
+
+        std::string_view str = upper ? "MEMBER" : "member";
+
+        return std::copy(str.begin(), str.end(), ctx.out());
+    }
+};
+```
+
+用户代码：
+```c++
+papilio::format("{}", member_fmt{}); // 返回 "member"
+
+papilio::format("{}", member_fmt_ex{}); // 返回 "member"
+papilio::format("{:U}", member_fmt_ex{}); // 返回 "MEMBER"
+```
+
+
 # ADL `format`
-当自定义格式化器不存在时，将会使用 ADL 查找符合要求的 `format` 函数：
+当自定义格式化器和成员 `format` 都不存在时，将会使用 ADL 查找符合要求的 `format` 函数：
 ```c++
 // 简易 ADL format
 class use_adl
@@ -117,12 +174,13 @@ private:
     }
 };
 ```
+
 用户代码：
 ```c++
-format("{}", use_adl{}); // 返回 "ADL"
+papilio::format("{}", use_adl{}); // 返回 "ADL"
 
-format("{}", use_adl_ex{}); // 返回 "adl (ex)"
-format("{:S}", used_adl_ex{}); // 返回 "ADL (EX)"
+papilio::format("{}", use_adl_ex{}); // 返回 "adl (ex)"
+papilio::format("{:S}", used_adl_ex{}); // 返回 "ADL (EX)"
 ```
 
 # `operator<<` 重载

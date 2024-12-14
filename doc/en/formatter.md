@@ -60,8 +60,63 @@ format("{}", my_val); // Returns "(B, 3)"
 format("{:s}", my_val); // Returns "BBB"
 ```
 
+# Member `format`
+If the custom formatter is not existed, the member `format` will be tried:
+```c++
+// Simple member format
+class member_fmt
+{
+public:
+    template <typename Context>
+    auto format(Context& ctx) const
+        -> typename Context::iterator
+    {
+        std::string_view str = "member";
+
+        return std::copy(str.begin(), str.end(), ctx.out());
+    }
+};
+
+// Member format with arguments
+class member_fmt_ex
+{
+public:
+    template <typename ParseContext, typename FormatContext>
+    auto format(ParseContext& parse_ctx, FormatContext& ctx) const
+        -> typename FormatContext::iterator
+    {
+        bool upper = false;
+
+        auto parse_it = parse_ctx.begin();
+        if(parse_it != parse_ctx.end() && *parse_it != U'}')
+        {
+            if(*parse_it == U'U')
+            {
+                upper = true;
+                ++parse_it;
+            }
+            else
+                throw papilio::format_error("bad spec");
+
+            parse_ctx.advance_to(parse_it);
+        }
+
+        std::string_view str = upper ? "MEMBER" : "member";
+
+        return std::copy(str.begin(), str.end(), ctx.out());
+    }
+};
+```
+User code:
+```c++
+papilio::format("{}", member_fmt{}); // Returns "member"
+
+papilio::format("{}", member_fmt_ex{}); // Returns "member"
+papilio::format("{:U}", member_fmt_ex{}); // Returns "MEMBER"
+```
+
 # ADL `format`
-If the custom formatter is not existed, the `format` found by ADL will be used:
+If the custom formatter amd member `format` are not existed, the `format` found by ADL will be used:
 ```c++
 // Simple ADL format
 class use_adl
@@ -119,10 +174,10 @@ private:
 ```
 User code:
 ```c++
-format("{}", use_adl{}); // Returns "ADL"
+papilio::format("{}", use_adl{}); // Returns "ADL"
 
-format("{}", use_adl_ex{}); // Returns "adl (ex)"
-format("{:S}", used_adl_ex{}); // Returns "ADL (EX)"
+papilio::format("{}", use_adl_ex{}); // Returns "adl (ex)"
+papilio::format("{:S}", used_adl_ex{}); // Returns "ADL (EX)"
 ```
 
 # Overloaded `operator<<`

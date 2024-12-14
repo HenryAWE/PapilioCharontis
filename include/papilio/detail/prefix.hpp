@@ -14,7 +14,6 @@
 #    pragma clang diagnostic ignored "-Wpadded"
 #    pragma clang diagnostic ignored "-Wcovered-switch-default"
 #    pragma clang diagnostic ignored "-Wsuggest-destructor-override"
-#    pragma clang diagnostic ignored "-Wnon-virtual-dtor"
 
 #    pragma clang diagnostic ignored "-Wctad-maybe-unsupported"
 

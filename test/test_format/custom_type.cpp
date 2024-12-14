@@ -303,6 +303,66 @@ TEST(format, complex_spec)
 
 namespace test_format
 {
+class member_fmt
+{
+public:
+    template <typename Context>
+    auto format(Context& ctx) const
+        -> typename Context::iterator
+    {
+        std::string_view str = "member";
+
+        return std::copy(str.begin(), str.end(), ctx.out());
+    }
+};
+
+class member_fmt_ex
+{
+public:
+    template <typename ParseContext, typename FormatContext>
+    auto format(ParseContext& parse_ctx, FormatContext& ctx) const
+        -> typename FormatContext::iterator
+    {
+        bool upper = false;
+
+        auto parse_it = parse_ctx.begin();
+        if(parse_it != parse_ctx.end() && *parse_it != U'}')
+        {
+            if(*parse_it == U'U')
+            {
+                upper = true;
+                ++parse_it;
+            }
+            else
+                throw papilio::format_error("bad spec");
+
+            parse_ctx.advance_to(parse_it);
+        }
+
+        std::string_view str = upper ? "MEMBER" : "member";
+
+        return std::copy(str.begin(), str.end(), ctx.out());
+    }
+};
+} // namespace test_format
+
+TEST(format, member_format)
+{
+    using namespace papilio;
+    using test_format::member_fmt;
+    using test_format::member_fmt_ex;
+
+    static_assert(formattable<member_fmt>);
+    static_assert(formattable<member_fmt_ex>);
+
+    EXPECT_EQ(PAPILIO_NS format("{}", member_fmt{}), "member");
+    EXPECT_EQ(PAPILIO_NS format("{}", member_fmt_ex{}), "member");
+    EXPECT_EQ(PAPILIO_NS format("{:U}", member_fmt_ex{}), "MEMBER");
+    EXPECT_THROW((void)PAPILIO_NS format("{:I}", member_fmt_ex{}), format_error);
+}
+
+namespace test_format
+{
 struct person
 {
     int gender; // 1 == female
