@@ -230,7 +230,7 @@ OutputIt copy_count(OutputIt out, const ChronoType& val, bool use_unit = true)
         val.count()
     );
     if(!use_unit)
-        return std::move(out);
+        return out;
 
     return PAPILIO_NS chrono::copy_unit_suffix<CharT>(
         out,

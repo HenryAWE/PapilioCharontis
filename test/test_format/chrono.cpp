@@ -194,6 +194,13 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{}", 1min), "1min");
         EXPECT_EQ(PAPILIO_NS format("{}", 1h), "1h");
 
+        EXPECT_EQ(PAPILIO_NS format(L"{}", 1ns), L"1ns");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", 1us), L"1us");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", 1ms), L"1ms");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", 1s), L"1s");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", 1min), L"1min");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", 1h), L"1h");
+
         auto d0 = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::sys_days(2023y / 11 / 8) - std::chrono::sys_days(2023y / 11 / 8)
         );

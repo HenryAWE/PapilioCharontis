@@ -220,6 +220,23 @@ struct chrono_traits<std::chrono::month_day>
 template <>
 struct chrono_traits<std::chrono::month_day_last> : public chrono_traits<std::chrono::month_day>
 {
+    // We cannot calculate the exact day without knowing the year.
+    // For example, Feb/last can be Feb/28 or Feb/29
+
+    static constexpr components get_components() noexcept
+    {
+        return components::month;
+    }
+
+    static std::tm to_tm(const std::chrono::month_day_last& md)
+    {
+        std::tm result = PAPILIO_NS chrono::detail::init_tm();
+
+        result.tm_mon = static_cast<unsigned int>(md.month()) - 1;
+
+        return result;
+    }
+
     template <typename CharT, typename OutputIt>
     static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::month_day_last& md)
     {
@@ -512,8 +529,11 @@ struct chrono_traits<std::chrono::sys_info>
 #    pragma clang diagnostic pop
 #endif
 
-template <typename ChronoType>
-requires(chrono_traits<ChronoType>::get_components() != components::none)
+template <typename T>
+concept chrono_type =
+    chrono_traits<T>::get_components() != components::none;
+
+template <chrono_type ChronoType>
 timezone_info get_timezone_info(const ChronoType& val)
 {
     using std::is_same_v;

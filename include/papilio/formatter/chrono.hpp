@@ -902,6 +902,11 @@ class formatter<std::chrono::month_day, CharT> :
 {};
 
 template <typename CharT>
+class formatter<std::chrono::month_day_last, CharT> :
+    public chrono_formatter<std::chrono::month_day_last, CharT>
+{};
+
+template <typename CharT>
 class formatter<std::chrono::year_month_day, CharT> :
     public chrono_formatter<std::chrono::year_month_day, CharT>
 {};
