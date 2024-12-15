@@ -2043,7 +2043,7 @@ public:
     auto format(const T& val, parse_context& parse_ctx, FormatContext& fmt_ctx) const
         -> typename FormatContext::iterator
     {
-        if constexpr (detail::check_member_format_simple<T, FormatContext>)
+        if constexpr(detail::check_member_format_simple<T, FormatContext>)
         {
             return val.format(fmt_ctx);
         }
@@ -2720,7 +2720,7 @@ public:
         return result_type(std::forward<Args>(args)...);
     }
 
-    using format_args_ref_type = format_args_ref_for<iterator, char_type>;
+    using format_args_ref_type = basic_format_args_ref<Context, char_type>;
     template <typename... Args>
     using format_string_type = basic_format_string<char_type, std::type_identity_t<Args>...>;
 
@@ -3112,7 +3112,7 @@ namespace detail
     template <
         typename T,
         typename Context,
-        typename Formatter = typename Context::template formatter_type<std::remove_const_t<T>>>
+        typename Formatter = typename Context::template formatter_type<T>>
     concept formattable_with_impl =
         std::semiregular<Formatter> &&
         check_format_method<T, Formatter, Context, basic_format_parse_context<Context>>;
@@ -4740,6 +4740,7 @@ requires(!char_like<T>)
 class int_formatter : public std_formatter_base
 {
 public:
+    using char_type = char;
     using facet_type = std::numpunct<CharT>;
 
     constexpr void set_data(const std_formatter_data& dt) noexcept
@@ -5121,6 +5122,7 @@ template <std::floating_point T, typename CharT>
 class float_formatter : public std_formatter_base
 {
 public:
+    using char_type = CharT;
     using facet_type = std::numpunct<CharT>;
 
     void set_data(const std_formatter_data& dt)
@@ -5566,6 +5568,8 @@ requires std::is_enum_v<Enum>
 class enum_formatter
 {
 public:
+    using char_type = char;
+
     template <typename ParseContext>
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
@@ -5643,6 +5647,8 @@ template <typename R, typename CharT = char>
 class range_formatter
 {
 public:
+    using char_type = char;
+
     using underlying_type = std::remove_cvref_t<std::ranges::range_value_t<R>>;
     using underlying_formatter_type = formatter<underlying_type, CharT>;
     using string_view_type = std::basic_string_view<CharT>;
