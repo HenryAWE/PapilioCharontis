@@ -1,9 +1,4 @@
 #include <papilio/core.hpp>
-#ifdef PAPILIO_STDLIB_LIBCPP
-// from_chars of libc++ is broken, use stringstream as a fallback.
-#    include <sstream>
-#    define PAPILIO_ENABLE_LIBCPP_CHARCONV_WORKAROUND 1
-#endif
 #include <papilio/detail/prefix.hpp>
 
 namespace papilio
@@ -164,43 +159,6 @@ char32_t script_base::get_esc_ch(char32_t ch) noexcept
     default:
         return ch;
     }
-}
-
-float script_base::chars_to_float(const char* start, const char* stop)
-{
-#ifndef PAPILIO_ENABLE_LIBCPP_CHARCONV_WORKAROUND
-    // Ordinary implementation using <charconv>
-
-    float val;
-    auto result = std::from_chars(
-        start, stop, val, std::chars_format::fixed
-    );
-    if(result.ec != std::errc())
-    {
-        throw std::runtime_error("invalid float");
-    }
-
-    return val;
-
-#else
-    // PAPILIO_ENABLE_LIBCPP_CHARCONV_WORKAROUND is defined
-    // Workaround for libc++ using <sstream>
-
-    std::stringstream ss;
-    ss.imbue(std::locale::classic());
-    ss.write(start, stop - start);
-
-    float val;
-    ss >> val;
-
-    if(!ss.good())
-    {
-        throw std::runtime_error("invalid float");
-    }
-
-    return val;
-
-#endif
 }
 } // namespace papilio
 

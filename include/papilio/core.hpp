@@ -3216,8 +3216,6 @@ protected:
 
     static char32_t get_esc_ch(char32_t ch) noexcept;
 
-    static float chars_to_float(const char* start, const char* stop);
-
 #endif
 };
 
@@ -3426,26 +3424,6 @@ protected:
         }
 
         return std::make_pair(value, start);
-    }
-
-    // Converts [start, stop) to a floating point
-    static float conv_float(iterator start, iterator stop)
-    {
-        if constexpr(char8_like<char_type>)
-        {
-            return chars_to_float(
-                std::bit_cast<const char*>(start.base()),
-                std::bit_cast<const char*>(stop.base())
-            );
-        }
-        else
-        {
-            std::string tmp = string_ref_type(start, stop).to_string();
-            return chars_to_float(
-                std::to_address(tmp.begin()),
-                std::to_address(tmp.end())
-            );
-        }
     }
 
     static iterator skip_string(iterator start, iterator stop) noexcept
@@ -4065,31 +4043,40 @@ private:
 
             return std::make_pair(std::move(str), next_it);
         }
-        else if(first_ch == U'-' || utf::is_digit(first_ch) || first_ch == U'.')
+        else if(first_ch == U'-' || PAPILIO_NS utf::is_digit(first_ch) || first_ch == U'.')
         {
             bool negative = first_ch == U'-';
 
             iterator int_end = std::find_if_not(
-                negative ? start + 1 : start, stop, utf::is_digit
+                negative ? start + 1 : start, stop, PAPILIO_NS utf::is_digit
             );
+            using int_type = typename variable_type::int_type;
+            int_type int_val = my_base::template parse_integer<int_type>(start, int_end).first;
+
             if(int_end != stop && *int_end == U'.')
             {
-                ++int_end;
-                iterator float_end = std::find_if_not(int_end, stop, utf::is_digit);
+                ++int_end; // Skip the decimal point
+
+                iterator float_end = int_end;
+                int_type pow10_val = 1;
+                for(; float_end != stop; ++float_end)
+                {
+                    if(!PAPILIO_NS utf::is_digit(*float_end))
+                        break;
+                    pow10_val *= 10;
+                }
+
+                int_type frac = my_base::template parse_integer<int_type>(int_end, float_end).first;
 
                 using float_type = typename variable_type::float_type;
-                float_type val = my_base::conv_float(
-                    start, float_end
-                );
+                float_type flt_val = static_cast<float_type>(int_val);
+                flt_val += static_cast<float_type>(frac) / static_cast<float_type>(pow10_val);
 
-                return std::make_pair(val, float_end);
+                return std::make_pair(flt_val, float_end);
             }
             else
             {
-                using int_t = typename variable_type::int_type;
-                int_t val = my_base::template parse_integer<int_t>(start, int_end).first;
-
-                return std::make_pair(val, int_end);
+                return std::make_pair(int_val, int_end);
             }
         }
 
