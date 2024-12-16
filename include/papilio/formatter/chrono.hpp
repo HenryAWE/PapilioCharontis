@@ -953,6 +953,11 @@ class formatter<std::chrono::hh_mm_ss<Duration>, CharT> :
 
 #ifndef PAPILIO_CHRONO_NO_TIMEZONE
 
+template <typename Duration, typename TimeZonePtr, typename CharT>
+class formatter<std::chrono::zoned_time<Duration, TimeZonePtr>, CharT> :
+    public chrono_formatter<std::chrono::zoned_time<Duration, TimeZonePtr>, CharT>
+{};
+
 template <typename CharT>
 class formatter<std::chrono::sys_info, CharT> :
     public chrono_formatter<std::chrono::sys_info, CharT>

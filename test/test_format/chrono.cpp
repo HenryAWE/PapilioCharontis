@@ -301,4 +301,29 @@ TEST(formatter, chrono)
         EXPECT_THROW((void)PAPILIO_NS format("{:{{}", 2024y), format_error);
         EXPECT_THROW((void)PAPILIO_NS format("{:}}", 2024y), format_error);
     }
+
+#ifndef PAPILIO_CHRONO_NO_TIMEZONE
+
+    // Time zone
+    {
+        const std::chrono::time_zone* tz = nullptr;
+        try
+        {
+            tz = std::chrono::locate_zone("Asia/Shanghai");
+        }
+        catch(const std::runtime_error& e)
+        {
+            GTEST_SKIP() << "locate_zone() failed: " << e.what();
+        }
+
+        std::chrono::zoned_time zt(tz, std::chrono::system_clock::now());
+        EXPECT_EQ(PAPILIO_NS format("{}", zt), PAPILIO_NS format("{:%F %T %Z}", zt));
+
+        // Print platform-dependent result for visual check
+        PAPILIO_NS println(std::cerr, "sys_info of zoned time: {}", zt.get_info());
+        PAPILIO_NS println(std::cerr, "zoned time as sys_time: {}", zt.get_sys_time());
+        PAPILIO_NS println(std::cerr, "{}", zt);
+    }
+
+#endif
 }

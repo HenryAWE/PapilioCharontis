@@ -483,6 +483,39 @@ struct chrono_traits<std::chrono::hh_mm_ss<Duration>>
 
 #ifndef PAPILIO_CHRONO_NO_TIMEZONE
 
+template <typename Duration, typename TimeZonePtr>
+struct chrono_traits<std::chrono::zoned_time<Duration, TimeZonePtr>>
+{
+    static constexpr components get_components() noexcept
+    {
+        return components::date_time | components::time_zone;
+    }
+
+    static timezone_info get_timezone_info(const std::chrono::zoned_time<Duration, TimeZonePtr>& t)
+    {
+        std::chrono::sys_info info = t.get_info();
+        return {info.abbrev, info.offset};
+    }
+
+    static std::tm to_tm(const std::chrono::zoned_time<Duration, TimeZonePtr>& t)
+    {
+        using sys_time_t = std::chrono::sys_time<Duration>;
+        return chrono_traits<sys_time_t>::to_tm(
+            sys_time_t(t.get_local_time().time_since_epoch())
+        );
+    }
+
+    template <typename CharT, typename OutputIt>
+    static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::zoned_time<Duration, TimeZonePtr>& t)
+    {
+        return PAPILIO_NS format_to(
+            out,
+            PAPILIO_TSTRING_VIEW(CharT, "{:%F %T %Z}"),
+            t
+        );
+    }
+};
+
 template <>
 struct chrono_traits<std::chrono::sys_info>
 {
