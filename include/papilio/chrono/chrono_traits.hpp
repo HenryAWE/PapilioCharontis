@@ -395,7 +395,11 @@ struct chrono_traits<std::chrono::duration<Rep, Period>>
     template <typename CharT, typename OutputIt>
     static OutputIt default_format(locale_ref, OutputIt out, const std::chrono::duration<Rep, Period>& d)
     {
-        return PAPILIO_NS chrono::copy_count(out, d);
+        out = PAPILIO_NS chrono::copy_count(out, d);
+        return PAPILIO_NS chrono::copy_unit_suffix<CharT>(
+            out,
+            std::in_place_type<Period>
+        );
     }
 };
 

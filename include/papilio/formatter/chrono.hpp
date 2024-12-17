@@ -538,17 +538,10 @@ public:
                 ctx
             );
         }
-        else if(!m_data.basic.use_locale)
-        {
-            return fmt.format(
-                to_str(val, m_data.chrono_spec),
-                ctx
-            );
-        }
         else
         {
             return fmt.format(
-                to_str_by_facet(ctx.getloc(), val, m_data.chrono_spec),
+                to_str(ctx.getloc_ref(), val, m_data.chrono_spec, m_data.basic.use_locale),
                 ctx
             );
         }
@@ -571,17 +564,26 @@ private:
         return result;
     }
 
-    static std::basic_string<CharT> to_str(const ChronoType& val, utf::basic_string_ref<CharT> spec)
+    static std::basic_string<CharT> to_str(locale_ref loc, const ChronoType& val, utf::basic_string_ref<CharT> spec, bool use_locale)
     {
+        PAPILIO_ASSERT(!spec.empty());
+
         std::tm t = chrono_traits_type::to_tm(val);
-        chrono::timezone_info tz = PAPILIO_NS chrono::get_timezone_info(val);
+        const chrono::timezone_info& tz = PAPILIO_NS chrono::get_timezone_info(val);
 
         const auto sentinel = spec.end();
 
         std::basic_stringstream<CharT> ss;
+        if(use_locale)
+            ss.imbue(loc);
+        const std::time_put<CharT>* facet = use_locale ?
+                                                std::addressof(std::use_facet<std::time_put<CharT>>(ss.getloc())) :
+                                                nullptr;
+
         for(auto it = spec.begin(); it != sentinel; ++it)
         {
             utf::codepoint ch = *it;
+            const CharT* start = &*it;
             if(ch != U'%')
             {
                 ss << ch;
@@ -594,6 +596,32 @@ private:
             ch = *it;
 
             char32_t ch32 = ch;
+            char32_t loc_ch = U'\0';
+            if(ch32 == U'E' || ch32 == U'O')
+            {
+                if(it == sentinel)
+                {
+                    throw_bad_format("invalid format for locale");
+                }
+
+                loc_ch = ch32;
+                ++it;
+                ch32 = *it;
+            }
+            const CharT* stop = &*std::next(it);
+
+            auto call_put_time = [=, &ss, tm_ptr = &t]()
+            {
+                facet->put(
+                    std::ostreambuf_iterator<CharT>(ss),
+                    ss,
+                    CharT(' '),
+                    tm_ptr,
+                    start,
+                    stop
+                );
+            };
+
             switch(ch32)
             {
             case U'n':
@@ -607,14 +635,23 @@ private:
                 continue;
 
             case U'C':
-                detail::format_century(ss, t.tm_year + 1900);
+                if(use_locale && loc_ch == U'E')
+                    call_put_time();
+                else
+                    detail::format_century(ss, t.tm_year + 1900);
                 continue;
 
             case U'y':
-                detail::format_year(ss, t.tm_year + 1900, false);
+                if(use_locale && loc_ch != U'\0')
+                    call_put_time();
+                else
+                    detail::format_year(ss, t.tm_year + 1900, false);
                 continue;
             case U'Y':
-                detail::format_year(ss, t.tm_year + 1900, true);
+                if(use_locale && loc_ch == U'E')
+                    call_put_time();
+                else
+                    detail::format_year(ss, t.tm_year + 1900, true);
                 continue;
 
             case U'm':
@@ -624,44 +661,59 @@ private:
                     t.tm_mon + 1
                 );
                 continue;
+
+            case U'h':
             case U'b':
             case U'B':
-                PAPILIO_NS chrono::copy_month_name<CharT>(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    std::chrono::month(t.tm_mon + 1),
-                    ch32 == U'B'
-                );
+                if(use_locale)
+                    call_put_time();
+                else
+                {
+                    PAPILIO_NS chrono::copy_month_name<CharT>(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        std::chrono::month(t.tm_mon + 1),
+                        ch32 == U'B'
+                    );
+                }
                 continue;
 
             case U'd':
-                PAPILIO_NS format_to(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
-                    t.tm_mday
-                );
-                continue;
             case U'e':
-                PAPILIO_NS format_to(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING_VIEW(CharT, "{:2d}"),
-                    t.tm_mday
-                );
+                if(use_locale && loc_ch == U'O')
+                    call_put_time();
+                else
+                {
+                    PAPILIO_NS format_to(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        ch32 == U'd' ?
+                            PAPILIO_TSTRING_VIEW(CharT, "{:02d}") :
+                            PAPILIO_TSTRING_VIEW(CharT, "{:2d}"),
+                        t.tm_mday
+                    );
+                }
                 continue;
 
                 // Day of the week
             case U'u':
-                detail::format_weekday(ss, t.tm_wday, true);
-                continue;
             case U'w':
-                detail::format_weekday(ss, t.tm_wday, false);
+                if(use_locale && loc_ch == U'O')
+                    call_put_time();
+                else
+                    detail::format_weekday(ss, t.tm_wday, ch32 == U'u');
                 continue;
+
             case U'a':
             case U'A':
-                PAPILIO_NS chrono::copy_weekday_name<CharT>(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    std::chrono::weekday(t.tm_wday),
-                    ch32 == U'A'
-                );
+                if(use_locale)
+                    call_put_time();
+                else
+                {
+                    PAPILIO_NS chrono::copy_weekday_name<CharT>(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        std::chrono::weekday(t.tm_wday),
+                        ch32 == U'A'
+                    );
+                }
                 continue;
 
                 // Day of the year
@@ -675,38 +727,55 @@ private:
 
             case U'H':
             case U'I':
-                detail::put_hour<CharT>(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    t.tm_hour,
-                    ch32 == U'I'
-                );
-                continue;
-
-            case U'M':
-                PAPILIO_NS format_to(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
-                    t.tm_min
-                );
-                continue;
-
-            case U'S':
-                PAPILIO_NS format_to(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
-                    t.tm_sec
-                );
-                if constexpr(detail::has_fractional_width<ChronoType>())
+                if(use_locale && loc_ch == U'O')
+                    call_put_time();
+                else
                 {
-                    detail::put_subseconds<CharT>(
+                    detail::put_hour<CharT>(
                         std::ostreambuf_iterator<CharT>(ss),
-                        val
+                        t.tm_hour,
+                        ch32 == U'I'
                     );
                 }
                 continue;
 
+            case U'M':
+                if(use_locale && loc_ch == U'O')
+                    call_put_time();
+                else
+                {
+                    PAPILIO_NS
+                    format_to(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
+                        t.tm_min
+                    );
+                }
+                continue;
+
+            case U'S':
+                if(use_locale && loc_ch == U'O')
+                    call_put_time();
+                else
+                {
+                    PAPILIO_NS
+                    format_to(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        PAPILIO_TSTRING_VIEW(CharT, "{:02d}"),
+                        t.tm_sec
+                    );
+                    if constexpr(PAPILIO_NS detail::has_fractional_width<ChronoType>())
+                    {
+                        detail::put_subseconds<CharT>(
+                            std::ostreambuf_iterator<CharT>(ss),
+                            val
+                        );
+                    }
+                }
+                continue;
+
             case 'z':
-                tz.copy_offset<CharT>(std::ostreambuf_iterator<CharT>(ss));
+                tz.copy_offset<CharT>(std::ostreambuf_iterator<CharT>(ss), loc_ch != U'\0');
                 continue;
             case 'Z':
                 tz.copy_abbrev(std::ostreambuf_iterator<CharT>(ss));
@@ -720,6 +789,15 @@ private:
                     t.tm_min
                 );
                 continue;
+
+
+            case U'X':
+                if(use_locale)
+                {
+                    call_put_time();
+                    continue;
+                }
+                [[fallthrough]];
             case U'T':
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
@@ -737,7 +815,13 @@ private:
                 }
                 continue;
 
-            case U'r': // Equivalent to %I:%M:%S %p
+            case U'r': // Equivalent to %I:%M:%S %p if use_locale is false
+                if(use_locale)
+                {
+                    call_put_time();
+                    continue;
+                }
+
                 detail::put_hour<CharT>(
                     std::ostreambuf_iterator<CharT>(ss),
                     t.tm_hour,
@@ -764,10 +848,15 @@ private:
                 continue;
 
             case U'p':
-                detail::put_am_pm<CharT>(
-                    std::ostreambuf_iterator<CharT>(ss),
-                    std::chrono::is_am(std::chrono::hours(t.tm_hour))
-                );
+                if(use_locale)
+                    call_put_time();
+                else
+                {
+                    PAPILIO_NS detail::put_am_pm<CharT>(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        std::chrono::is_am(std::chrono::hours(t.tm_hour))
+                    );
+                }
                 continue;
 
             case U'D': // Equivalent to %m/%d/%y
@@ -780,6 +869,12 @@ private:
                 detail::format_year(ss, t.tm_year + 1900, false);
                 continue;
             case U'x':
+                if(use_locale)
+                {
+                    call_put_time();
+                    continue;
+                }
+                [[fallthrough]];
             case U'F': // Equivalent to %Y-%m-%d
                 detail::format_year(ss, t.tm_year + 1900, true);
                 PAPILIO_NS format_to(
@@ -791,72 +886,56 @@ private:
                 continue;
 
             case U'c':
-                PAPILIO_NS chrono::copy_asctime(
-                    std::ostreambuf_iterator<CharT>(ss), t
-                );
+                if(use_locale)
+                {
+                    call_put_time();
+                }
+                else
+                {
+                    PAPILIO_NS chrono::copy_asctime(
+                        std::ostreambuf_iterator<CharT>(ss), t
+                    );
+                }
                 continue;
 
             case U'q':
+                if constexpr(static_cast<bool>(chrono_traits_type::get_components() & chrono::components::duration_count))
+                {
+                    PAPILIO_NS chrono::copy_unit_suffix<CharT>(
+                        std::ostreambuf_iterator<CharT>(ss),
+                        std::in_place_type<typename ChronoType::period>
+                    );
+                }
+                else
+                    throw format_error("no count component");
+                continue;
             case U'Q':
                 if constexpr(static_cast<bool>(chrono_traits_type::get_components() & chrono::components::duration_count))
                 {
                     PAPILIO_NS chrono::copy_count<CharT>(
                         std::ostreambuf_iterator<CharT>(ss),
-                        val,
-                        ch32 == U'q'
+                        val
                     );
                 }
                 else
-                    PAPILIO_UNREACHABLE();
-                continue;
-
-            case U'O':
-            case U'E':
-                if(it == sentinel)
-                {
-                    throw_bad_format("invalid format for locale");
-                }
-                else if(char32_t loc_ch = *std::next(it); loc_ch == U'z')
-                {
-                    tz.copy_offset<CharT>(
-                        std::ostreambuf_iterator<CharT>(ss),
-                        true
-                    );
-                    ++it;
-                }
-                else
-                {
-                    throw_bad_format("locale is not supported without 'L'");
-                }
+                    throw format_error("no count component");
                 continue;
 
             default:
+                if(use_locale)
+                {
+                    call_put_time();
+                }
+                else
                 {
                     std::string msg = "unsupported specifier %";
+                    if(loc_ch != U'\0')
+                        msg += static_cast<char>(loc_ch); // 'E' or 'O'
                     ch.append_to(msg);
                     throw_bad_format(msg.c_str());
                 }
             }
         }
-
-        return std::move(ss).str();
-    }
-
-    static std::basic_string<CharT> to_str_by_facet(const std::locale& loc, const ChronoType& val, std::basic_string_view<CharT> spec)
-    {
-        auto& facet = std::use_facet<std::time_put<CharT>>(loc);
-        std::basic_stringstream<CharT> ss;
-        ss.imbue(loc);
-
-        std::tm t = chrono_traits_type::to_tm(val);
-        facet.put(
-            std::ostreambuf_iterator<CharT>(ss),
-            ss,
-            static_cast<CharT>(' '),
-            &t,
-            spec.data(),
-            spec.data() + spec.size()
-        );
 
         return std::move(ss).str();
     }

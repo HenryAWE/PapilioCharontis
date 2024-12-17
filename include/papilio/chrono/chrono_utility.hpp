@@ -157,7 +157,7 @@ OutputIt copy_asctime(OutputIt out, const std::tm& t)
 }
 
 template <typename CharT = char, typename Period, typename OutputIt>
-OutputIt copy_unit_suffix(OutputIt out, std::in_place_type_t<Period>)
+OutputIt copy_unit_suffix(OutputIt out, std::in_place_type_t<Period> = {})
 {
     auto helper = [&out](std::string_view sv) -> OutputIt
     {
@@ -222,19 +222,12 @@ OutputIt copy_unit_suffix(OutputIt out, std::in_place_type_t<Period>)
 
 template <typename CharT = char, typename ChronoType, typename OutputIt>
 requires(is_specialization_of_v<ChronoType, std::chrono::duration>)
-OutputIt copy_count(OutputIt out, const ChronoType& val, bool use_unit = true)
+OutputIt copy_count(OutputIt out, const ChronoType& val)
 {
-    out = PAPILIO_NS format_to(
+    return PAPILIO_NS format_to(
         out,
         PAPILIO_TSTRING_VIEW(CharT, "{}"),
         val.count()
-    );
-    if(!use_unit)
-        return out;
-
-    return PAPILIO_NS chrono::copy_unit_suffix<CharT>(
-        out,
-        std::in_place_type<typename ChronoType::period>
     );
 }
 

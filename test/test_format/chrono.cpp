@@ -183,6 +183,16 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{:%u}", std::chrono::Monday[last]), "1");
         EXPECT_EQ(PAPILIO_NS format("{:%a}", std::chrono::Monday[last]), "Mon");
         EXPECT_EQ(PAPILIO_NS format("{}", std::chrono::Monday[last]), "Mon[last]");
+
+        for(int wd = 0; wd < 7 ;++wd)
+        {
+            PAPILIO_NS println(
+                std::cout,
+                "weekday({0}): L%a = {1:L%a}, L%A = {1:L%A} ",
+                wd,
+                std::chrono::weekday(wd)
+            );
+        }
     }
 
     // %Q and %q
@@ -207,7 +217,7 @@ TEST(formatter, chrono)
 
         static_assert(formattable<decltype(d0)>);
         EXPECT_EQ(PAPILIO_NS format("{:%Q}", d0), "0");
-        EXPECT_EQ(PAPILIO_NS format("{:%q}", d0), "0s");
+        EXPECT_EQ(PAPILIO_NS format("{:%q}", d0), "s");
         EXPECT_EQ(PAPILIO_NS format("{}", d0), "0s");
 
         auto d7 = std::chrono::duration_cast<std::chrono::days>(
@@ -216,7 +226,7 @@ TEST(formatter, chrono)
 
         static_assert(formattable<decltype(d7)>);
         EXPECT_EQ(PAPILIO_NS format("{:%Q}", d7), "7");
-        EXPECT_EQ(PAPILIO_NS format("{:%q}", d7), "7d");
+        EXPECT_EQ(PAPILIO_NS format("{:%q}", d7), "d");
         EXPECT_EQ(PAPILIO_NS format("{}", d7), "7d");
     }
 
@@ -244,6 +254,10 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{:%F}", date), "2023-11-08");
         EXPECT_EQ(PAPILIO_NS format("{:%F}", date), PAPILIO_NS format("{:%Y-%m-%d}", date));
         EXPECT_EQ(PAPILIO_NS format("{}", date), PAPILIO_NS format("{:%F}", date));
+        EXPECT_EQ(PAPILIO_NS format("{:%x}", date), "2023-11-08");
+
+        // Print platform-dependent result for visual check
+        PAPILIO_NS println(std::cerr, "L%x: {:L%x}", date);
     }
 
     // Day of the year (%j)
@@ -260,6 +274,7 @@ TEST(formatter, chrono)
         static_assert(formattable<system_clock::time_point>);
 
         EXPECT_EQ(PAPILIO_NS format("{:%F}", t), "2023-11-08");
+        EXPECT_EQ(PAPILIO_NS format("{:%x}", t), "2023-11-08");
         EXPECT_EQ(PAPILIO_NS format("{:%c}", t), "Wed Nov  8 00:00:00 2023");
         EXPECT_EQ(PAPILIO_NS format("{:%Z}", t), "UTC");
         EXPECT_EQ(PAPILIO_NS format("{:%z}", t), "+0000");
@@ -268,6 +283,8 @@ TEST(formatter, chrono)
         EXPECT_EQ(PAPILIO_NS format("{}", t), PAPILIO_NS format("{:%F %T}", t));
 
         // Print platform-dependent result for visual check
+        PAPILIO_NS println(std::cerr, "L%c: {:L%c}", t);
+
         auto sys_now = std::chrono::system_clock::now();
         PAPILIO_NS println(
             std::cerr,
