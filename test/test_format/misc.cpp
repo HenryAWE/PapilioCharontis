@@ -5,7 +5,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(misc_formatter, stream_adaptor)
+TEST(stream_adaptor, stream_adaptor)
 {
     using namespace papilio;
     using test_format::stream_only;
@@ -30,6 +30,24 @@ TEST(misc_formatter, stream_adaptor)
             PAPILIO_NS format(L"{:>15}", stream_only{}),
             L"    stream only"
         );
+    }
+}
+
+// Reported by KKoishi_
+TEST(stream_adaptor, bad_spec)
+{
+    using namespace papilio;
+    using test_format::stream_only;
+
+    try
+    {
+        (void)PAPILIO_NS format("{:.5f}", stream_only{});
+        FAIL() << "unreachable";
+    }
+    catch(const interpreter::error& e)
+    {
+        EXPECT_EQ(e.error_code(), script_error_code::invalid_fmt_spec);
+        EXPECT_STREQ(e.what(), "invalid format specification");
     }
 }
 

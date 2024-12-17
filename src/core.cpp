@@ -25,6 +25,7 @@ namespace detail
             PAPILIO_SCRIPT_ERR(invalid_attribute, "invalid attribute");
             PAPILIO_SCRIPT_ERR(invalid_operator, "invalid operator");
             PAPILIO_SCRIPT_ERR(invalid_string, "invalid string");
+            PAPILIO_SCRIPT_ERR(invalid_fmt_spec, "invalid format specification");
             PAPILIO_SCRIPT_ERR(unenclosed_brace, "unenclosed brace");
 
         [[unlikely]] default:
@@ -52,6 +53,7 @@ namespace detail
             PAPILIO_SCRIPT_ERR(invalid_attribute, "invalid attribute");
             PAPILIO_SCRIPT_ERR(invalid_operator, "invalid operator");
             PAPILIO_SCRIPT_ERR(invalid_string, "invalid string");
+            PAPILIO_SCRIPT_ERR(invalid_fmt_spec, "invalid format specification");
             PAPILIO_SCRIPT_ERR(unenclosed_brace, "unenclosed brace");
 
         [[unlikely]] default:

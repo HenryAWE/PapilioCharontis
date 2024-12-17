@@ -213,8 +213,15 @@ PAPILIO_EXPORT enum class script_error_code : int
     invalid_operator = 6,
     /** Invalid string constant in script. */
     invalid_string = 7,
+    /**
+     * Invalid format specification.
+     *
+     * This might be caused by a bad format parser,
+     * which returns a wrong iterator position to the interpreter.
+     */
+    invalid_fmt_spec = 8,
     /** Unenclosed brace. */
-    unenclosed_brace = 8,
+    unenclosed_brace = 9,
 
     /**
      * Unknown error.
@@ -3753,7 +3760,7 @@ public:
                 if(intp_ctx.input_at_end()) [[unlikely]]
                     my_base::throw_end_of_string();
                 if(intp_ctx.input_value() != U'}') [[unlikely]]
-                    my_base::throw_error(script_error_code::unenclosed_brace, intp_ctx.input());
+                    my_base::throw_error(script_error_code::invalid_fmt_spec, intp_ctx.input());
                 intp_ctx.input_next();
             }
         }
@@ -3871,7 +3878,7 @@ private:
             if(start == parse_ctx.end()) [[unlikely]]
                 my_base::throw_end_of_string();
             if(*start != U'}') [[unlikely]]
-                my_base::throw_error(script_error_code::unenclosed_brace, start);
+                my_base::throw_error(script_error_code::invalid_fmt_spec, start);
             ++start;
 
             return start;
@@ -3912,7 +3919,7 @@ private:
             if(start == parse_ctx.end()) [[unlikely]]
                 my_base::throw_end_of_string();
             if(*start != U'}') [[unlikely]]
-                my_base::throw_error(script_error_code::unenclosed_brace, start);
+                my_base::throw_error(script_error_code::invalid_fmt_spec, start);
             ++start;
 
             return start;
