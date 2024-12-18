@@ -373,6 +373,11 @@ public:
         return 1;
     }
 
+#if defined(PAPILIO_COMPILER_CLANG)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wsign-conversion"
+#endif
+
     template <char_like CharT, typename Iterator>
     Iterator append_to_as(Iterator iter) const
     {
@@ -418,6 +423,10 @@ public:
         }
         return out;
     }
+
+#if defined(PAPILIO_COMPILER_CLANG)
+#    pragma clang diagnostic pop
+#endif
 
     template <typename CharT>
     std::basic_ostream<CharT>& append_to(std::basic_ostream<CharT>& os) const
