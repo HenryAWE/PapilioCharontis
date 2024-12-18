@@ -24,9 +24,11 @@
 #    endif
 #endif
 
+/**
+ * @brief Utilities for date and time.
+ */
 namespace papilio::chrono
 {
-
 template <typename CharT>
 constexpr CharT weekday_names_short[7][3] = {
     {'S', 'u', 'n'},
@@ -132,11 +134,13 @@ OutputIt copy_month_name(OutputIt out, const std::chrono::month& m, bool fullnam
 }
 
 /**
-    * @brief Similar to `std::asctime()` but without the trailing newline
-    *
-    * @param out Output iterator
-    * @param t Time value
-    */
+ * @brief Similar to `std::asctime()` but without the trailing newline.
+ *
+ * @tparam CharT Character type
+ *
+ * @param out Output iterator
+ * @param t Time value
+ */
 template <typename CharT = char, typename OutputIt>
 OutputIt copy_asctime(OutputIt out, const std::tm& t)
 {
@@ -220,6 +224,13 @@ OutputIt copy_unit_suffix(OutputIt out, std::in_place_type_t<Period> = {})
     }
 }
 
+/**
+ * @brief Copy the result of member function `count()` of a duration to the output.
+ *
+ * @tparam CharT Character type
+ *
+ * @param out Output iterator
+ */
 template <typename CharT = char, typename ChronoType, typename OutputIt>
 requires(is_specialization_of_v<ChronoType, std::chrono::duration>)
 OutputIt copy_count(OutputIt out, const ChronoType& val)
@@ -236,9 +247,18 @@ OutputIt copy_count(OutputIt out, const ChronoType& val)
 */
 struct timezone_info
 {
+    /** Time zone abbreviation. */
     std::string abbrev;
+    /** Offset from UTC in seconds. */
     std::chrono::seconds offset;
 
+    /**
+     * @brief Copy the time zone abbreviation to the output.
+     *
+     * @note This function don't need a character type as template argument.
+     *
+     * @param out Output iterator
+     */
     template <typename OutputIt>
     OutputIt copy_abbrev(OutputIt out) const
     {
@@ -246,6 +266,14 @@ struct timezone_info
         return std::copy(abbrev.begin(), abbrev.end(), out);
     }
 
+    /**
+     * @brief Copy the offset is ISO 8601 format to the output.
+     *
+     * @tparam CharT Character type
+     *
+     * @param out Output iterator
+     * @param alt_fmt Use the alternate format by inserting a ':' between hour and minute
+     */
     template <typename CharT, typename OutputIt>
     OutputIt copy_offset(OutputIt out, bool alt_fmt = false) const
     {

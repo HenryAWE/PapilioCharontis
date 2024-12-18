@@ -4,12 +4,21 @@
  * @brief Main header file of the library
  *
  * @note Although this header will automatically include most of the library,
- *       some format support for seldom used types still need to be included separately.
+ *       some format support for seldom used types still need to be included manually.
  */
 
 /**
  * @mainpage Papilio Charontis
  * A flexible C++ formatting library designed for internationalization (i18n).
+ *
+ * Please open an issue at the project repository on GitHub
+ * if you encounter any problems when using this library.
+ *
+ * Project repository: https://github.com/HenryAWE/PapilioCharontis
+ *
+ * Mirror repository: https://gitee.com/HenryAWE/PapilioCharontis
+ *
+ * This project is licensed under the MIT license.
  */
 
 #ifndef PAPILIO_PAPILIO_HPP
@@ -34,9 +43,9 @@ PAPILIO_EXPORT inline constexpr int version_minor = PAPILIO_VERSION_MINOR;
 PAPILIO_EXPORT inline constexpr int version_patch = PAPILIO_VERSION_PATCH;
 
 /**
- * @brief Get the version number
+ * @brief Get the version number of library.
  *
- * @return constexpr std::tuple<int, int, int> The version number
+ * @return std::tuple<int, int, int> The version number
  */
 PAPILIO_EXPORT
 [[nodiscard]]

@@ -14,14 +14,14 @@ Similar to the standard library and {fmt}, it is used to insert values into the 
 - `format-spec`: The format specification defined by corresponding specialization of `papilio::formatter`. See [Built-In Formatter](./builtin_formatter.md) and [Custom Formatter](./formatter.md) for more information.
 
 ## Scripted Field
-Script field is similar to the replacement field. It is surrounded by a pair of brace (`{}`) and starts with a `$` sign. A script field must contains a condition statement and at least one branch. Condition statement and branches are separated by the colon (`:`).  
+Script field is similar to the replacement field. It is surrounded by a pair of brace (`{}`) and starts with a `$` sign. A script field must contains a condition statement and at least one branch. Condition statement ends with a question mark (`?`), while the branches are separated by colon (`:`).  
 For example, `{$ {0} != 0 ? 'non-'}zero` and `{$ {0} != 0 ? 'non-zero' : 'zero'}` have valid script fields.
 
 ### Conditional Statement
 The conditional statement is a Boolean expression. It can be comparison, logical not, or a value that convertible to `bool`. The value in the condition statement can be format arguments (`format_arg`) or constant values.
 
-1. Arguments and Constants
-   - Arguments: Referring the argument by the replacement field without a format specification.
+1. Arguments and Constants  
+   - Arguments: Referring a format argument by replacement field without a format specification, e.g. `{0}`, `{}`, or `{name.attr}`.
     - String: surrounded by single quotes (`'`), using escape sequences to include special characters:
       | Escape Sequence                   | Result              |
       | --------------------------------- | ------------------- |
@@ -31,7 +31,7 @@ The conditional statement is a Boolean expression. It can be comparison, logical
 
     - Floating points and integers: `3.14`, `10`, etc.
 
-2. Comparison
+2. Comparison  
    | Operator | Meaning          |
    | -------: | :--------------- |
    |     `==` | Equal            |
@@ -41,10 +41,10 @@ The conditional statement is a Boolean expression. It can be comparison, logical
    |     `>=` | Greater or equal |
    |     `<=` | Less or equal    |
 
-3. Logical not
-Logical not is preceding by an exclamation mark (`!`). It only has one operand.
+3. Logical not  
+   Logical not is preceding by an exclamation mark (`!`). It only has one operand.
 
-1. Value that convertible to `bool`
+4. Value that convertible to `bool`  
    Non-zero numerical value and non-empty string are considered as `true`, otherwise, they are considered as `false`.
 
 ### Branch
