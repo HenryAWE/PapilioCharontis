@@ -2,31 +2,15 @@
 #include <papilio/accessor/chrono.hpp>
 #include <papilio/formatter/chrono.hpp>
 #include <papilio/format.hpp>
+#include <papilio_test/chrono_helper.hpp>
 #include <papilio_test/setup.hpp>
-
-namespace test_access
-{
-static std::tm create_tm_epoch()
-{
-    // The Unix epoch (January 1, 1970)
-    const std::time_t t = 0;
-    std::tm result{};
-#ifdef PAPILIO_STDLIB_MSVC_STL
-    gmtime_s(&result, &t);
-#else
-    result = *std::gmtime(&t);
-#endif
-
-    return result;
-}
-} // namespace test_access
 
 TEST(accessor, chrono)
 {
     using namespace papilio;
     using namespace std::chrono_literals;
 
-    std::tm val = test_access::create_tm_epoch();
+    std::tm val = papilio_test::create_tm_epoch();
 
     EXPECT_EQ(
         PAPILIO_NS format("{.year}", val),
