@@ -146,3 +146,100 @@ papilio::format("{:?}", std::string("\0 \n \t \x02 \x1b", 9)); // Returns "\\u{0
 // Invalid UTF-8
 papilio::format("{:?}", "\xc3\x28"); // Returns "\\x{c3}("
 ```
+
+# Date and Time
+Formatter for date and time is provided by a separated header `<papilio/formatter/chrono.hpp>`
+
+```
+fill-and-align L chrono-spec
+```
+
+1. fill-and-align is same as the one for fundamental types.
+2. `L` means using locale object. Otherwise, the output will be locale-independent or use C-locale.
+3. chrono-spec: Format specification. It can be any characters other than `{` and `}`.
+
+## `std::tm` from `<ctime>`
+If the format specification is empty, the output result is similar to `asctime` but without the trailing newline. The the format specification is not empty, the formatter will forward the specification to `std::put_time` for converting it to string.
+
+## Other types from `std::chrono`
+The format specifier is started with a `%` and can be followed by the characters in the following list. Other characters will be directly copied to the output.
+
+If the type to be formatted lacks of the required component, e.g. formatting a `std::chrono::hh_mm_ss` with specifier for formatting year, a corresponding exception will be thrown.
+
+| Specifier | Meaning                                        |
+| --------- | ---------------------------------------------- |
+| `%%`      | Writes `%` to the output                       |
+| `%n`      | Writes `\n` (newline) to the output            |
+| `%t`      | Writes `\t` (tab) to the output                |
+| `%c`      | Locale-dependent date and time representation. |
+
+### Year
+| Specifier           | Meaning                                                               |
+| ------------------- | --------------------------------------------------------------------- |
+| `%C`                | Writes year divided by 100, prefixed with 0 for single digit.         |
+| `%Ec`               | Locale-dependent century format.                                      |
+| `%y`                | Writes last two digits of the year, prefixed with 0 for single digit. |
+| `%Y`                | Writes the year as number using `{:04d}` format.                      |
+| `%Oy`, `%Ey`, `%EY` | Locale-dependent year representation.                                 |
+
+### Month
+| Specifier  | Meaning                                                                         |
+| ---------- | ------------------------------------------------------------------------------- |
+| `%b`, `%h` | Writes abbreviated name (`Jan`). Will use locale if possible.                   |
+| `%B`       | Writes full name (`January`). Will use locale if possible.                      |
+| `%m`       | Writes the month as number (January is `01`), prefixed with 0 for single digit. |
+| `%Om`      | Locale-dependent month representation.                                          |
+
+### Day
+| Specifier    | Meaning                                                        |
+| ------------ | -------------------------------------------------------------- |
+| `%d`         | Writes the day of month, prefixed with 0 for single digit.     |
+| `%e`         | Writes the day of month, prefixed with space for single digit. |
+| `%Od`, `%Oe` | Locale-dependent day representation.                           |
+
+### Day of the Week
+| Specifier    | Meaning                                                       |
+| ------------ | ------------------------------------------------------------- |
+| `%a`         | Writes abbreviated name (`Mon`). Will use locale if possible. |
+| `%A`         | Writes full name (`Monday`). Will use locale if possible.     |
+| `%u`         | Writes the ISO weekday as number (1-7), where Monday is 1.    |
+| `%w`         | Writes the weekday as number (0-6), where Sunday is 0.        |
+| `%Ou`, `%Ow` | Locale-dependent weekday representation.                      |
+
+### Week/Day of the Year
+| Specifier    | Meaning                                           |
+| ------------ | ------------------------------------------------- |
+| `%j`         | Writes the day of the year using `{:03d}` format. |
+| `%U`         | Not implemented yet.                              |
+| `%W`         | Not implemented yet.                              |
+| `%OU`, `%OW` | Not implemented yet.                              |
+
+### Time of day
+| Specifier         | Meaning                                                          |
+| ----------------- | ---------------------------------------------------------------- |
+| `%H`              | Writes the hour as number (24-hour clock) using `{:02d}` format. |
+| `%I`              | Writes the hour as number (12-hour clock) using `{:02d}` format. |
+| `%OH`, `%OI`      | Locale-dependent hour representation.                            |
+| `%M`              | Writes the minute as number using `{:02d}` format.               |
+| `%OM`             | Locale-dependent minute representation.                          |
+| `%S`              | Writes the second as number using `{:02d}` format.               |
+| `%OS`             | Locale-dependent second representation.                          |
+| `%p`              | Writes `AM`/`PM`. Will use locale if possible.                   |
+| `%R`              | Equivalent to `%H:%M`.                                           |
+| `%T`              | Equivalent to `%H:%M:%S`.                                        |
+| `%r`, `%X`, `%EX` | Locale-dependent time representation.                            |
+
+### Duration Count
+| Specifier | Meaning                                 |
+| --------- | --------------------------------------- |
+| `%Q`      | Writes the return value of `count()`    |
+| `%q`      | Writes the unit suffix of the duration. |
+
+Note: The unit suffix is same as [the standard library](https://en.cppreference.com/w/cpp/chrono/duration/operator_ltlt). It choose `us` instead of `μs` as suffix for the `std::micro` for portability.
+
+### Time Zone
+| Specifier    | Meaning                                                                        |
+| ------------ | ------------------------------------------------------------------------------ |
+| `%z`         | Writes the offset from UTC in the ISO 8601 format, e.g. `+0800`.               |
+| `%Ez`, `%Oz` | Similar to `%z`, but insert a `:` between the hours and minutes, e.g. `+08:00` |
+| `%Z`         | Writes the time zone abbreviation.                                             |
