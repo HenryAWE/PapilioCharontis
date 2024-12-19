@@ -50,7 +50,7 @@ void output_conv(
     }
     else
     {
-        output_nonconv(file, out);
+        PAPILIO_NS os::output_nonconv(file, out);
     }
 }
 } // namespace papilio::os

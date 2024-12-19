@@ -5637,7 +5637,6 @@ private:
  * @tparam CharT Character type
  */
 template <typename R, typename CharT = char>
-//requires(formattable<std::ranges::range_value_t<R>, CharT>)
 class range_formatter
 {
 public:
@@ -6011,7 +6010,20 @@ private:
  */
 PAPILIO_EXPORT template <typename CharT>
 class formatter<CharT, CharT> : public formatter<utf::codepoint, CharT>
-{};
+{
+    using my_base = formatter<utf::codepoint, CharT>;
+
+public:
+    template <typename FormatContext>
+    auto format(CharT ch, FormatContext& ctx) const
+        -> typename FormatContext::iterator
+    {
+        return my_base::format(
+            utf::codepoint(static_cast<char32_t>(ch)),
+            ctx
+        );
+    }
+};
 
 /**
  * @brief Formatter for the Boolean type.

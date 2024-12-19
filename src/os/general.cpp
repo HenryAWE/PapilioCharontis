@@ -1,4 +1,5 @@
 #include "os_impl.hpp"
+#include <cstdio>
 #include <papilio/detail/prefix.hpp>
 
 namespace papilio::os
@@ -8,9 +9,7 @@ void output_nonconv(
     std::string_view out
 )
 {
-    using namespace std;
-
-    size_t result = fwrite(
+    std::size_t result = std::fwrite(
         out.data(), 1, out.size(), file
     );
     if(result < out.size())
@@ -20,7 +19,7 @@ void output_nonconv(
         );
     }
 
-    fflush(file);
+    std::fflush(file);
 }
 } // namespace papilio::os
 

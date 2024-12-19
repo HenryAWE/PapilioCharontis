@@ -21,7 +21,7 @@ TEST(modules, print)
 {
     ::testing::internal::CaptureStdout();
 
-    std::string_view fmt = "{} warning{${0}>1:'s'}";
+    std::string_view fmt = "{} warning{${0}>1?'s'}";
 
     papilio::println(fmt, 1);
     papilio::print(fmt, 2);

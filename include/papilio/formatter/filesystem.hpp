@@ -26,6 +26,16 @@ namespace detail
     utf::wstring_container path_to_sc<wchar_t>(const std::filesystem::path& p, bool gen);
 } // namespace detail
 
+/**
+ * @brief Formatter for filesystem path.
+ *
+ * @tparam CharT Character type
+ *
+ * Accepted format types are: none, `g`, `?`.
+ * - `g`: Copies the path as string in general format to the output.
+ * - none: Copies the path as string to the output.
+ * - `?`: Debug output, using escaped sequences if possible.
+ */
 template <typename CharT>
 class formatter<std::filesystem::path, CharT>
 {
@@ -57,7 +67,7 @@ public:
         fmt.set_data(data);
 
         return fmt.format(
-            PAPILIO_NS detail::path_to_sc<CharT>(p, m_data.type == 'g'),
+            PAPILIO_NS detail::path_to_sc<CharT>(p, m_data.type == U'g'),
             ctx
         );
     }

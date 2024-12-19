@@ -1,10 +1,11 @@
-#ifndef PAPILIO_OS_OS_IMPL_HPP
-#define PAPILIO_OS_OS_IMPL_HPP
+#ifndef PAPILIO_SRC_OS_OS_IMPL_HPP
+#define PAPILIO_SRC_OS_OS_IMPL_HPP
 
 #pragma once
 
-#include <papilio/detail/prefix.hpp>
+#include <papilio/macros.hpp>
 #include <papilio/os/os.hpp>
+#include <papilio/detail/prefix.hpp>
 
 #ifdef PAPILIO_PLATFORM_WINDOWS
 #    define PAPILIO_OS_IMPL_WINAPI 1

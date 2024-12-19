@@ -12,6 +12,9 @@
 
 namespace papilio::chrono
 {
+/**
+ * @brief Flags for component of chrono type.
+ */
 enum class components : int
 {
     none = 0,
@@ -28,11 +31,11 @@ enum class components : int
 
     weekday = 1 << 4,
 
-    duration_count = 1 << 5,
+    time_zone = 1 << 5,
 
-    time_zone = 1 << 6,
+    all = date_time | weekday | time_zone,
 
-    all = date_time | weekday | time_zone
+    duration_count = 1 << 6
 };
 
 constexpr components operator|(components lhs, components rhs) noexcept
@@ -69,7 +72,7 @@ namespace detail
     }
 } // namespace detail
 
-template <typename ChronoType>
+PAPILIO_EXPORT template <typename ChronoType>
 struct chrono_traits
 {
     static constexpr components get_components() noexcept
@@ -83,7 +86,7 @@ struct chrono_traits
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::year>
 {
     static constexpr components get_components()
@@ -109,7 +112,7 @@ struct chrono_traits<std::chrono::year>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::month>
 {
     static constexpr components get_components()
@@ -131,7 +134,7 @@ struct chrono_traits<std::chrono::month>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::day>
 {
     static constexpr components get_components() noexcept
@@ -157,7 +160,7 @@ struct chrono_traits<std::chrono::day>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::year_month>
 {
     static constexpr components get_components() noexcept
@@ -187,7 +190,7 @@ struct chrono_traits<std::chrono::year_month>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::month_day>
 {
     static constexpr components get_components() noexcept
@@ -217,7 +220,7 @@ struct chrono_traits<std::chrono::month_day>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::month_day_last> : public chrono_traits<std::chrono::month_day>
 {
     // We cannot calculate the exact day without knowing the year.
@@ -248,7 +251,7 @@ struct chrono_traits<std::chrono::month_day_last> : public chrono_traits<std::ch
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::year_month_day>
 {
     static constexpr components get_components()
@@ -287,7 +290,7 @@ struct chrono_traits<std::chrono::year_month_day>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::year_month_day_last> : public chrono_traits<std::chrono::year_month_day>
 {
     template <typename CharT, typename OutputIt>
@@ -302,7 +305,7 @@ struct chrono_traits<std::chrono::year_month_day_last> : public chrono_traits<st
     }
 };
 
-template <typename Duration>
+PAPILIO_EXPORT template <typename Duration>
 struct chrono_traits<std::chrono::sys_time<Duration>>
 {
     static constexpr components get_components() noexcept
@@ -340,7 +343,7 @@ struct chrono_traits<std::chrono::sys_time<Duration>>
     }
 };
 
-template <typename Clock, typename Duration>
+PAPILIO_EXPORT template <typename Clock, typename Duration>
 struct chrono_traits<std::chrono::time_point<Clock, Duration>>
 {
     static constexpr components get_components() noexcept
@@ -368,7 +371,7 @@ struct chrono_traits<std::chrono::time_point<Clock, Duration>>
     }
 };
 
-template <typename Rep, typename Period>
+PAPILIO_EXPORT template <typename Rep, typename Period>
 struct chrono_traits<std::chrono::duration<Rep, Period>>
 {
     static constexpr components get_components() noexcept
@@ -403,7 +406,7 @@ struct chrono_traits<std::chrono::duration<Rep, Period>>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::weekday>
 {
     static constexpr components get_components() noexcept
@@ -425,7 +428,7 @@ struct chrono_traits<std::chrono::weekday>
     }
 };
 
-template <typename WeekdayType>
+PAPILIO_EXPORT template <typename WeekdayType>
 requires(std::same_as<WeekdayType, std::chrono::weekday_last> || std::same_as<WeekdayType, std::chrono::weekday_indexed>)
 struct chrono_traits<WeekdayType> : public chrono_traits<std::chrono::weekday>
 {
@@ -457,7 +460,7 @@ struct chrono_traits<WeekdayType> : public chrono_traits<std::chrono::weekday>
     }
 };
 
-template <typename Duration>
+PAPILIO_EXPORT template <typename Duration>
 struct chrono_traits<std::chrono::hh_mm_ss<Duration>>
 {
     static constexpr components get_components() noexcept
@@ -487,7 +490,7 @@ struct chrono_traits<std::chrono::hh_mm_ss<Duration>>
 
 #ifndef PAPILIO_CHRONO_NO_TIMEZONE
 
-template <typename Duration, typename TimeZonePtr>
+PAPILIO_EXPORT template <typename Duration, typename TimeZonePtr>
 struct chrono_traits<std::chrono::zoned_time<Duration, TimeZonePtr>>
 {
     static constexpr components get_components() noexcept
@@ -520,7 +523,7 @@ struct chrono_traits<std::chrono::zoned_time<Duration, TimeZonePtr>>
     }
 };
 
-template <>
+PAPILIO_EXPORT template <>
 struct chrono_traits<std::chrono::sys_info>
 {
     static constexpr components get_components() noexcept
@@ -566,11 +569,11 @@ struct chrono_traits<std::chrono::sys_info>
 #    pragma clang diagnostic pop
 #endif
 
-template <typename T>
+PAPILIO_EXPORT template <typename T>
 concept chrono_type =
     chrono_traits<T>::get_components() != components::none;
 
-template <chrono_type ChronoType>
+PAPILIO_EXPORT template <chrono_type ChronoType>
 timezone_info get_timezone_info(const ChronoType& val)
 {
     using std::is_same_v;

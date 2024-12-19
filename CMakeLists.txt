@@ -61,7 +61,11 @@ if(${papilio_build_lib})
     include(GNUInstallDirs)
 
     add_library(papilio ${papilio_src})
-    target_compile_features(papilio PUBLIC cxx_std_20)
+    if(${papilio_build_module})
+        target_compile_features(papilio PUBLIC cxx_std_23)
+    else()
+        target_compile_features(papilio PUBLIC cxx_std_20)
+    endif()
     set_target_properties(papilio PROPERTIES
         CXX_STANDARD_REQUIRED ON
     )

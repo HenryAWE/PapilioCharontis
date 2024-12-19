@@ -17,7 +17,7 @@ void output_conv(
     std::string_view out
 )
 {
-    output_nonconv(file, out);
+    PAPILIO_NS os::output_nonconv(file, out);
 }
 } // namespace papilio::os
 
