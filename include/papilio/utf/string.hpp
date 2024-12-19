@@ -1077,6 +1077,16 @@ public:
         return assign(independent, str);
     }
 
+    basic_string_container& operator=(string_type&& str)
+    {
+        return assign(std::move(str));
+    }
+
+    basic_string_container& operator=(const string_type& str)
+    {
+        return assign(str);
+    }
+
     [[nodiscard]]
     constexpr bool empty() const noexcept
     {
@@ -1206,6 +1216,13 @@ public:
     constexpr operator string_ref_type() const noexcept
     {
         return string_ref_type(to_string_view());
+    }
+
+    template <char_like To = char>
+    [[nodiscard]]
+    std::basic_string<To> to_string() const
+    {
+        return string_ref_type(*this).template to_string<To>();
     }
 
     template <char_like U>

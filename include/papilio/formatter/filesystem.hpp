@@ -31,10 +31,12 @@ namespace detail
  *
  * @tparam CharT Character type
  *
- * Accepted format types are: none, `g`, `?`.
- * - `g`: Copies the path as string in general format to the output.
- * - none: Copies the path as string to the output.
- * - `?`: Debug output, using escaped sequences if possible.
+ * Accepted format specification is
+ * `fill-and-align width ? g`
+ * All of these values are optional.
+ * - fill-and-align, width: Same as the standard format specification.
+ * - `?`: Writes the path as an escaped string.
+ * - `g`: Writes the path in generic-format representation.
  */
 template <typename CharT>
 class formatter<std::filesystem::path, CharT>
@@ -42,17 +44,29 @@ class formatter<std::filesystem::path, CharT>
 public:
     void set_debug_format()
     {
-        m_data.type = '?';
+        m_debug = true;
     }
 
     template <typename ParseContext>
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
     {
-        std_formatter_parser<ParseContext, false> parser{};
-        auto&& [data, it] = parser.parse(ctx, U"?g");
-
+        simple_formatter_parser<ParseContext, false> parser{};
+        auto&& [data, it] = parser.parse(ctx);
         m_data = data;
+
+        if(it != ctx.end() && *it == U'?')
+        {
+            m_debug = true;
+            ++it;
+        }
+
+        if(it != ctx.end() && *it == U'g')
+        {
+            m_gen = true;
+            ++it;
+        }
+
         return it;
     }
 
@@ -61,19 +75,20 @@ public:
         -> typename Context::iterator
     {
         string_formatter<CharT> fmt{};
-        std_formatter_data data = m_data;
-        if(m_data.type != '?')
-            data.type = 's';
-        fmt.set_data(data);
+        fmt.set_data(m_data);
+        if(m_debug)
+            fmt.set_debug_format();
 
         return fmt.format(
-            PAPILIO_NS detail::path_to_sc<CharT>(p, m_data.type == U'g'),
+            PAPILIO_NS detail::path_to_sc<CharT>(p, m_gen),
             ctx
         );
     }
 
 private:
-    std_formatter_data m_data;
+    simple_formatter_data m_data;
+    bool m_debug = false;
+    bool m_gen = false;
 };
 } // namespace papilio
 

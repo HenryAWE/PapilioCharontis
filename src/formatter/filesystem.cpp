@@ -19,12 +19,12 @@ namespace detail
 #else
         static_assert(std::is_same_v<std::filesystem::path::value_type, wchar_t>);
 
-        std::u8string u8str;
+        utf::wstring_container wsc;
         if(gen)
-            u8str = p.generic_u8string();
+            wsc = p.generic_wstring();
         else
-            u8str = p.u8string();
-        return std::move(reinterpret_cast<std::string&>(u8str));
+            wsc = p.native();
+        return wsc.to_string();
 #endif
     }
 

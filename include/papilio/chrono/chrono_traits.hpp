@@ -583,12 +583,11 @@ timezone_info get_timezone_info(const ChronoType& val)
     constexpr bool has_get_timezone_info = requires() {
         { chrono_traits_type::get_timezone_info(val) } -> std::convertible_to<timezone_info>;
     };
-    if constexpr(has_get_timezone_info)
-    {
-        return chrono_traits_type::get_timezone_info(val);
-    }
 
-    return {"UTC", std::chrono::seconds(0)};
+    if constexpr(has_get_timezone_info)
+        return chrono_traits_type::get_timezone_info(val);
+    else
+        return {"UTC", std::chrono::seconds(0)};
 }
 } // namespace papilio::chrono
 

@@ -147,16 +147,28 @@ papilio::format("{:?}", std::string("\0 \n \t \x02 \x1b", 9)); // Returns "\\u{0
 papilio::format("{:?}", "\xc3\x28"); // Returns "\\x{c3}("
 ```
 
+# Path (`std::filesystem::path`)
+```
+fiil-and-align width ? g
+```
+These arguments are all optional.
+
+- fill-and-align and width have the same meaning as in format specification for common types.
+- `?`: Writes the path as an escaped string.
+- `g`: Writes the path in [generic-format representation](https://en.cppreference.com/w/cpp/filesystem/path/format).
+
 # Date and Time
 Formatter for date and time is provided by a separated header `<papilio/formatter/chrono.hpp>`
 
 ```
-fill-and-align L chrono-spec
+fill-and-align width L chrono-spec
 ```
 
-1. fill-and-align is same as the one for fundamental types.
+1. fill-and-align and width have the same meaning as in format specification for common types.
 2. `L` means using locale object. Otherwise, the output will be locale-independent or use C-locale.
 3. chrono-spec: Format specification. It can be any characters other than `{` and `}`.
+
+Note: Precision for duration types has not been implemented yet.
 
 ## `std::tm` from `<ctime>`
 If the format specification is empty, the output result is similar to `asctime` but without the trailing newline. The the format specification is not empty, the formatter will forward the specification to `std::put_time` for converting it to string.

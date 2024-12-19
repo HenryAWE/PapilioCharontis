@@ -26,6 +26,11 @@ TEST(formatter, filesystem_path)
 
         EXPECT_EQ(PAPILIO_NS format("{:g}", p), "folder/file.txt");
         EXPECT_EQ(PAPILIO_NS format(L"{:g}", p), L"folder/file.txt");
+        EXPECT_EQ(PAPILIO_NS format("{:?g}", p), "folder/file.txt");
+        EXPECT_EQ(PAPILIO_NS format(L"{:?g}", p), L"folder/file.txt");
+
+        EXPECT_EQ(PAPILIO_NS format("{:*^21g}", p), "***folder/file.txt***");
+        EXPECT_EQ(PAPILIO_NS format(L"{:*^21g}", p), L"***folder/file.txt***");
     }
 
     {
@@ -39,11 +44,17 @@ TEST(formatter, filesystem_path)
         EXPECT_EQ(PAPILIO_NS format("{}", p), "folder\\file.txt");
         EXPECT_EQ(PAPILIO_NS format(L"{}", p), L"folder\\file.txt");
 
+        EXPECT_EQ(PAPILIO_NS format("{:?}", p), "folder\\\\file.txt");
+        EXPECT_EQ(PAPILIO_NS format(L"{:?}", p), L"folder\\\\file.txt");
+
 #else
         static_assert(std::filesystem::path::preferred_separator == '/');
 
-        EXPECT_EQ(PAPILIO_NS format("{:g}", p), "folder/file.txt");
-        EXPECT_EQ(PAPILIO_NS format(L"{:g}", p), L"folder/file.txt");
+        EXPECT_EQ(PAPILIO_NS format("{}", p), "folder/file.txt");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", p), L"folder/file.txt");
+
+        EXPECT_EQ(PAPILIO_NS format("{:?}", p), "folder/file.txt");
+        EXPECT_EQ(PAPILIO_NS format(L"{:?}", p), L"folder/file.txt");
 #endif
     }
 
