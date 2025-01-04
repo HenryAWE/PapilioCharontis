@@ -67,9 +67,17 @@ concept u32string_like = basic_string_like<T, char32_t>;
 PAPILIO_EXPORT template <typename T>
 concept wstring_like = basic_string_like<T, wchar_t>;
 
+namespace detail
+{
+    template <typename T>
+    concept pointer_like_helper = requires(T ptr) { *ptr; ptr.operator->(); } ||
+                                  requires(T ptr, std::size_t i) { ptr[i]; };
+} // namespace detail
+
 PAPILIO_EXPORT template <typename T>
-concept pointer_like = requires(T ptr) { static_cast<bool>(ptr); } &&
-                       (requires(T ptr) { *ptr; ptr.operator->(); } || requires(T ptr, std::size_t i) { ptr[i]; });
+concept pointer_like =
+    requires(T ptr) { static_cast<bool>(ptr); } &&
+    (std::is_pointer_v<T> || detail::pointer_like_helper<T>);
 
 /**
  * @brief Get the raw pointer from a pointer-like object, e.g., `std::shared_ptr`.
@@ -78,9 +86,14 @@ concept pointer_like = requires(T ptr) { static_cast<bool>(ptr); } &&
  * @return The raw pointer
  */
 PAPILIO_EXPORT template <pointer_like T>
-constexpr const void* ptr(const T& p) noexcept
+constexpr const void* ptr(const T& p) noexcept(noexcept(std::to_address(p)))
 {
     return std::to_address(p);
+}
+
+PAPILIO_EXPORT constexpr const void* ptr(std::nullptr_t) noexcept
+{
+    return nullptr;
 }
 
 namespace detail

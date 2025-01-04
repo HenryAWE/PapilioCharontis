@@ -18,6 +18,8 @@ static_assert(papilio::pointer_like<std::shared_ptr<int[]>>);
 static_assert(papilio::pointer_like<int*>);
 static_assert(papilio::pointer_like<int[]>);
 static_assert(!papilio::pointer_like<int>);
+static_assert(papilio::pointer_like<void*>);
+static_assert(papilio::pointer_like<const void*>);
 
 static_assert(!papilio::string_like<unsigned char*>);
 static_assert(!papilio::string_like<signed char*>);
@@ -46,6 +48,26 @@ static_assert(papilio::map_like<papilio::fixed_flat_map<int, int, 8>>);
 static_assert(papilio::is_specialization_of_v<std::vector<int>, std::vector>);
 static_assert(papilio::is_specialization_of_v<std::vector<float>, std::vector>);
 static_assert(!papilio::is_specialization_of_v<papilio::small_vector<float, 12>, std::vector>);
+
+TEST(ptr, convert)
+{
+    {
+        EXPECT_EQ(papilio::ptr(nullptr), nullptr);
+    }
+
+    {
+        void* p = nullptr;
+        EXPECT_EQ(papilio::ptr(p), nullptr);
+    }
+
+    {
+        std::unique_ptr<int> p = nullptr;
+        EXPECT_EQ(papilio::ptr(p), nullptr);
+
+        p = std::make_unique<int>();
+        EXPECT_EQ(papilio::ptr(p), p.get());
+    }
+}
 
 TEST(index_range, index_range)
 {
