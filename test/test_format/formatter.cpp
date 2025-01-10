@@ -17,8 +17,8 @@ TEST(fundamental_formatter, codepoint)
     EXPECT_EQ(PAPILIO_NS format("{:d}", 'a'), "97");
     EXPECT_EQ(PAPILIO_NS format(L"{:d}", L'a'), L"97");
 
-    EXPECT_EQ(PAPILIO_NS format("{:?} {:?}", '\'', '"'), "\\' \"");
-    EXPECT_EQ(PAPILIO_NS format(L"{:?} {:?}", '\'', '"'), L"\\' \"");
+    EXPECT_EQ(PAPILIO_NS format("{:?} {:?}", '\'', '"'), R"('\'' '"')");
+    EXPECT_EQ(PAPILIO_NS format(L"{:?} {:?}", '\'', '"'), LR"('\'' '"')");
 }
 
 TEST(fundamental_formatter, string)
@@ -28,13 +28,13 @@ TEST(fundamental_formatter, string)
     EXPECT_EQ(PAPILIO_NS format("{}", "hello"), "hello");
     EXPECT_EQ(PAPILIO_NS format(L"{}", L"hello"), L"hello");
 
-    EXPECT_EQ(PAPILIO_NS format("{:?}", "hello\n\t\r"), "hello\\n\\t\\r");
-    EXPECT_EQ(PAPILIO_NS format(L"{:?}", L"hello\n\t\r"), L"hello\\n\\t\\r");
+    EXPECT_EQ(PAPILIO_NS format("{:?}", "hello\n\t\r"), R"("hello\n\t\r")");
+    EXPECT_EQ(PAPILIO_NS format(L"{:?}", L"hello\n\t\r"), LR"("hello\n\t\r")");
 
-    EXPECT_EQ(PAPILIO_NS format("{:?}", std::string("\0 \n \t \x02 \x1b", 9)), "\\u{0} \\n \\t \\u{2} \\u{1b}");
-    EXPECT_EQ(PAPILIO_NS format(L"{:?}", std::wstring(L"\0 \n \t \x02 \x1b", 9)), L"\\u{0} \\n \\t \\u{2} \\u{1b}");
+    EXPECT_EQ(PAPILIO_NS format("{:?}", std::string("\0 \n \t \x02 \x1b", 9)), R"("\u{0} \n \t \u{2} \u{1b}")");
+    EXPECT_EQ(PAPILIO_NS format(L"{:?}", std::wstring(L"\0 \n \t \x02 \x1b", 9)), LR"("\u{0} \n \t \u{2} \u{1b}")");
 
-    EXPECT_EQ(PAPILIO_NS format("{:?}", "\xc3\x28"), "\\x{c3}(");
+    EXPECT_EQ(PAPILIO_NS format("{:?}", std::string("\xc3\x28", 2)), "\"\\x{c3}(\"");
 
     EXPECT_EQ(PAPILIO_NS format("{:s}", "hello"), "hello");
     EXPECT_EQ(PAPILIO_NS format(L"{:s}", L"hello"), L"hello");

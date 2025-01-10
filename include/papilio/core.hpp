@@ -5447,10 +5447,14 @@ public:
     auto format(utf::codepoint cp, FormatContext& ctx)
     {
         using context_t = format_context_traits<FormatContext>;
+        using char_type = typename FormatContext::char_type;
 
         if(data().type == U'?')
         {
+            context_t::append(ctx, char_type('\''));
             context_t::append_escaped(ctx, cp, 1);
+            context_t::append(ctx, char_type('\''));
+
             return context_t::out(ctx);
         }
 
@@ -5507,7 +5511,9 @@ public:
 
         if(data().type == '?')
         {
+            context_t::append(ctx, CharT('"'));
             context_t::append_escaped(ctx, str);
+            context_t::append(ctx, CharT('"'));
             return context_t::out(ctx);
         }
 
