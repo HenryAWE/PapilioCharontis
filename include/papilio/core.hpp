@@ -5646,7 +5646,7 @@ template <typename R, typename CharT = char>
 class range_formatter
 {
 public:
-    using char_type = char;
+    using char_type = CharT;
 
     using underlying_type = std::remove_cvref_t<std::ranges::range_value_t<R>>;
     using underlying_formatter_type = formatter<underlying_type, CharT>;
@@ -5701,6 +5701,7 @@ public:
         if(it == ctx.end())
             return it;
 
+        bool set_underlying_debug = true;
         if(char32_t ch = *it; ch == U'n')
         {
             m_type = U'n';
@@ -5719,17 +5720,19 @@ public:
             ++it;
             if(it == ctx.end() || *it != U's')
                 throw format_error("invalid range format");
+            set_underlying_debug = false;
             m_type = U's';
             ++it;
         }
         else if(ch == U's')
         {
+            set_underlying_debug = false;
             m_type = U's';
             ++it;
         }
         else if(ch != U':')
         {
-            // error
+            // End of specification / invalid specification
             goto end_parse;
         }
 
@@ -5738,6 +5741,7 @@ public:
             ++it;
             ctx.advance_to(it);
             it = m_underlying.parse(ctx);
+            set_underlying_debug = false;
         }
 
         using fmt_t = formatter_traits<underlying_formatter_type>;
@@ -5746,14 +5750,11 @@ public:
             fmt_t::try_set_brackets(m_underlying, string_view_type(), string_view_type());
             fmt_t::try_set_separator(m_underlying, PAPILIO_TSTRING_VIEW(CharT, ": "));
         }
-        else if(m_type == U'\0')
-        {
-            fmt_t::try_set_debug_format(m_underlying);
-        }
-        else if(m_type == U's' && m_debug)
-            fmt_t::try_set_debug_format(m_underlying);
 
 end_parse:
+        if(set_underlying_debug)
+            fmt_t::try_set_debug_format(m_underlying);
+
         return it;
     }
 
@@ -5777,7 +5778,11 @@ end_parse:
                 str.assign_range(rng);
 
                 if(m_debug)
+                {
+                    context_t::append(ctx, CharT('"'));
                     context_t::append_escaped(ctx, str);
+                    context_t::append(ctx, CharT('"'));
+                }
                 else
                     context_t::append(ctx, str);
 

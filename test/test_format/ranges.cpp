@@ -108,33 +108,37 @@ TEST(ranges, string_like)
     {
         static_assert(formattable<std::list<char>>);
 
-        std::list<char> vec{'a', '"', 'b'};
-        EXPECT_EQ(PAPILIO_NS format("{}", vec), "[a, \", b]");
-        EXPECT_EQ(PAPILIO_NS format("{:s}", vec), "a\"b");
-        EXPECT_EQ(PAPILIO_NS format("{:?s}", vec), "a\\\"b");
+        std::list<char> ls{'a', '"', 'b'};
+        EXPECT_EQ(PAPILIO_NS format("{}", ls), R"(['a', '"', 'b'])");
+        EXPECT_EQ(PAPILIO_NS format("{::c}", ls), R"([a, ", b])");
+        EXPECT_EQ(PAPILIO_NS format("{:s}", ls), R"(a"b)");
+        EXPECT_EQ(PAPILIO_NS format("{:?s}", ls), "\"a\\\"b\"");
     }
 
     {
         static_assert(formattable<std::list<wchar_t>, wchar_t>);
 
-        std::list<wchar_t> vec{L'a', L'"', L'b'};
-        EXPECT_EQ(PAPILIO_NS format(L"{}", vec), L"[a, \", b]");
-        EXPECT_EQ(PAPILIO_NS format(L"{:s}", vec), L"a\"b");
-        EXPECT_EQ(PAPILIO_NS format(L"{:?s}", vec), L"a\\\"b");
+        std::list<wchar_t> ls{L'a', L'"', L'b'};
+        EXPECT_EQ(PAPILIO_NS format(L"{}", ls), LR"(['a', '"', 'b'])");
+        EXPECT_EQ(PAPILIO_NS format(L"{::c}", ls), LR"([a, ", b])");
+        EXPECT_EQ(PAPILIO_NS format(L"{:s}", ls), LR"(a"b)");
+        EXPECT_EQ(PAPILIO_NS format(L"{:?s}", ls), L"\"a\\\"b\"");
     }
 
     {
         static_assert(formattable<std::list<utf::codepoint>>);
         static_assert(formattable<std::list<utf::codepoint>, wchar_t>);
 
-        std::list<utf::codepoint> vec{U'a'_cp, U'"'_cp, U'b'_cp};
+        std::list<utf::codepoint> ls{U'a'_cp, U'"'_cp, U'b'_cp};
 
-        EXPECT_EQ(PAPILIO_NS format("{}", vec), "[a, \", b]");
-        EXPECT_EQ(PAPILIO_NS format("{:s}", vec), "a\"b");
-        EXPECT_EQ(PAPILIO_NS format("{:?s}", vec), "a\\\"b");
+        EXPECT_EQ(PAPILIO_NS format("{}", ls), R"(['a', '"', 'b'])");
+        EXPECT_EQ(PAPILIO_NS format("{::c}", ls), R"([a, ", b])");
+        EXPECT_EQ(PAPILIO_NS format("{:s}", ls), R"(a"b)");
+        EXPECT_EQ(PAPILIO_NS format("{:?s}", ls), "\"a\\\"b\"");
 
-        EXPECT_EQ(PAPILIO_NS format(L"{}", vec), L"[a, \", b]");
-        EXPECT_EQ(PAPILIO_NS format(L"{:s}", vec), L"a\"b");
-        EXPECT_EQ(PAPILIO_NS format(L"{:?s}", vec), L"a\\\"b");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", ls), LR"(['a', '"', 'b'])");
+        EXPECT_EQ(PAPILIO_NS format(L"{::c}", ls), LR"([a, ", b])");
+        EXPECT_EQ(PAPILIO_NS format(L"{:s}", ls), LR"(a"b)");
+        EXPECT_EQ(PAPILIO_NS format(L"{:?s}", ls), L"\"a\\\"b\"");
     }
 }
