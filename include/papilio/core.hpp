@@ -6139,6 +6139,11 @@ class formatter<utf::basic_string_container<CharT>, CharT>
 public:
     using string_container_type = utf::basic_string_container<CharT>;
 
+    void set_debug_format() noexcept
+    {
+        m_data.type = U'?';
+    }
+
     template <typename ParseContext>
     auto parse(ParseContext& ctx) -> typename ParseContext::iterator
     {
@@ -6166,6 +6171,14 @@ public:
 private:
     std_formatter_data m_data;
 };
+
+PAPILIO_EXPORT template <typename CharT>
+class formatter<CharT*, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
+{};
+
+PAPILIO_EXPORT template <typename CharT>
+class formatter<const CharT*, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
+{};
 
 /**
  * @brief Formatter for pointers.

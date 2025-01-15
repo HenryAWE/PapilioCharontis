@@ -20,6 +20,28 @@ TEST(ranges, sequence)
     EXPECT_EQ(PAPILIO_NS format(L"{:n:_^3}", vec), L"_1_, _2_, _3_");
 
     {
+        {
+            std::vector<const char*> chars_vec{
+                "hello",
+                "world"
+            };
+
+            EXPECT_EQ(PAPILIO_NS format("{}", chars_vec), R"(["hello", "world"])");
+            EXPECT_EQ(PAPILIO_NS format("{::s}", chars_vec), "[hello, world]");
+        }
+
+        {
+            std::vector<const wchar_t*> chars_vec{
+                L"hello",
+                L"world"
+            };
+
+            EXPECT_EQ(PAPILIO_NS format(L"{}", chars_vec), LR"(["hello", "world"])");
+            EXPECT_EQ(PAPILIO_NS format(L"{::s}", chars_vec), L"[hello, world]");
+        }
+    }
+
+    {
         std::vector<bool> bvec = {true, false, true};
 
         EXPECT_EQ(PAPILIO_NS format("{}", bvec), "[true, false, true]");
