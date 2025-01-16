@@ -1,4 +1,10 @@
+#ifndef PAPILIO_UTF_CODEPOINT_INL
+#define PAPILIO_UTF_CODEPOINT_INL
+
+#include "codepoint.hpp"
 #include <tuple> // std::tie
+
+#pragma once
 
 namespace papilio::utf
 {
@@ -235,3 +241,5 @@ constexpr codepoint_iterator<CharU> codepoint_end(std::basic_string_view<CharU> 
     }
 }
 } // namespace papilio::utf
+
+#endif

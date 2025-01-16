@@ -27,6 +27,18 @@ TEST(tuple_formatter, basic)
     }
 
     {
+        std::pair<int, int> p(1, 2);
+
+        EXPECT_EQ(PAPILIO_NS format("{:*<10}", p), "(1, 2)****");
+        EXPECT_EQ(PAPILIO_NS format("{:*^10}", p), "**(1, 2)**");
+        EXPECT_EQ(PAPILIO_NS format("{:*>10}", p), "****(1, 2)");
+
+        EXPECT_EQ(PAPILIO_NS format(L"{:*<10}", p), L"(1, 2)****");
+        EXPECT_EQ(PAPILIO_NS format(L"{:*^10}", p), L"**(1, 2)**");
+        EXPECT_EQ(PAPILIO_NS format(L"{:*>10}", p), L"****(1, 2)");
+    }
+
+    {
         std::pair<int, std::string> kv{1, "value"};
 
         EXPECT_EQ(PAPILIO_NS format("{:m}", kv), "1: value");

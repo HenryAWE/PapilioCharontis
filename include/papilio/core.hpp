@@ -2335,6 +2335,9 @@ public:
     using format_arg_type = format_arg;
     using format_args_type = typename Context::format_args_type;
 
+    template <typename T>
+    using formatter_type = typename Context::template formatter_type<T>;
+
     format_context_traits() = delete;
 
 private:

@@ -72,8 +72,10 @@ public:
     auto parse(ParseContext& ctx)
         -> typename ParseContext::iterator
     {
-        auto it = ctx.begin();
-        if(it == ctx.end()) [[unlikely]]
+        simple_formatter_parser<ParseContext> parser{};
+        auto [data, it] = parser.parse(ctx);
+        m_data = data;
+        if(it == ctx.end())
             return it;
 
         char32_t type = *it;
@@ -99,32 +101,13 @@ public:
     auto format(const Tuple& tp, FormatContext& ctx) const
         -> typename FormatContext::iterator
     {
-        using context_t = format_context_traits<FormatContext>;
-
-        context_t::append(ctx, m_opening);
-
-        bool first = true;
-        PAPILIO_NS tuple_for_each(
-            tp,
-            [&](const auto& v)
-            {
-                if(!first)
-                    context_t::append(ctx, m_sep);
-                first = false;
-
-                context_t::format_to(
-                    ctx,
-                    PAPILIO_TSTRING_VIEW(CharT, "{}"),
-                    v
-                );
-            }
-        );
-
-        context_t::append(ctx, m_closing);
-        return ctx.out();
+        string_formatter<CharT> fmt;
+        fmt.set_data(m_data);
+        return fmt.format(to_str(tp), ctx);
     }
 
 private:
+    simple_formatter_data m_data;
     string_view_type m_sep = my_base::default_sep();
     string_view_type m_opening = my_base::default_opening();
     string_view_type m_closing = my_base::default_closing();
@@ -132,6 +115,32 @@ private:
     void clear_brackets() noexcept
     {
         set_brackets(string_view_type(), string_view_type());
+    }
+
+    std::basic_string<CharT> to_str(const Tuple& tp) const
+    {
+        std::basic_string<CharT> result;
+
+        result += m_opening;
+
+        bool first = true;
+        PAPILIO_NS tuple_for_each(
+            tp,
+            [&]<typename T>(const T& v)
+            {
+                if(!first)
+                    result += m_sep;
+                first = false;
+
+                // TODO: Debug format
+
+                result += PAPILIO_NS format(PAPILIO_TSTRING_VIEW(CharT, "{}"), v);
+            }
+        );
+
+        result += m_closing;
+
+        return result;
     }
 };
 } // namespace papilio

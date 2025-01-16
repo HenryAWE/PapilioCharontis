@@ -4,7 +4,13 @@
  * @brief Implementation of the core module.
  */
 
+#ifndef PAPILIO_CORE_INL
+#define PAPILIO_CORE_INL
+
+#include "core.hpp"
 #include <sstream>
+
+#pragma once
 
 namespace papilio
 {
@@ -200,3 +206,5 @@ void format_context_traits<Context>::vformat_to(
     );
 }
 } // namespace papilio
+
+#endif
