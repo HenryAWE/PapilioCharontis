@@ -113,14 +113,14 @@ namespace detail
 
     template <typename U, typename Pointer, typename Element>
     concept optional_arr_ptr_helper =
-        std::is_same_v<Pointer, Element*> &&
+        std::same_as<Pointer, Element*> &&
         std::is_pointer_v<U> &&
         std::is_convertible_v<std::remove_pointer_t<U> (*)[], Element (*)[]>;
 
     template <typename U, typename Pointer, typename Element>
     concept optional_arr_ptr_acceptable =
-        std::is_same_v<U, Pointer> ||
-        std::is_same_v<U, std::nullptr_t> ||
+        std::same_as<U, Pointer> ||
+        std::same_as<U, std::nullptr_t> ||
         optional_arr_ptr_helper<U, Pointer, Element>;
 
     template <typename Derived, typename Element>

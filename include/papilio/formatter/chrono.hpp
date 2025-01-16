@@ -435,7 +435,7 @@ namespace detail
     template <typename ChronoType>
     consteval bool has_fractional_width()
     {
-        using std::is_same_v;
+        using std::same_as;
         using namespace std::chrono;
 
         if constexpr(is_specialization_of_v<ChronoType, time_point>)
@@ -575,7 +575,7 @@ private:
 
     static std::basic_string<CharT> default_impl(locale_ref loc, const ChronoType& val)
     {
-        using std::is_same_v;
+        using std::same_as;
         using namespace std::chrono;
 
         std::basic_string<CharT> result;

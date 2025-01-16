@@ -118,7 +118,7 @@ TYPED_TEST(float_formatter_suite, hex)
 {
     using namespace papilio;
 
-    if constexpr(!std::is_same_v<TypeParam, long double>)
+    if constexpr(!std::same_as<TypeParam, long double>)
     {
         TypeParam hex_pi = TypeParam(0x1.921fb6p1);
 

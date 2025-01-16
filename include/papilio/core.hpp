@@ -429,11 +429,11 @@ private:
         using namespace std;
         using arg_type = remove_cvref_t<T>;
 
-        if constexpr(is_same_v<arg_type, bool>)
+        if constexpr(same_as<arg_type, bool>)
         {
             return variant_type(in_place_type<bool>, arg);
         }
-        else if constexpr(is_same_v<arg_type, utf::codepoint>)
+        else if constexpr(same_as<arg_type, utf::codepoint>)
         {
             return variant_type(in_place_type<string_container_type>, 1, arg);
         }
@@ -663,27 +663,27 @@ private:
     template <typename Target, typename T>
     static Target as_impl(const T& v)
     {
-        using std::is_same_v;
+        using std::same_as;
 
-        if constexpr(is_same_v<Target, bool>)
+        if constexpr(same_as<Target, bool>)
         {
-            if constexpr(is_same_v<T, string_container_type>)
+            if constexpr(same_as<T, string_container_type>)
                 return !v.empty();
             else
                 return static_cast<bool>(v);
         }
         else if constexpr(std::is_arithmetic_v<Target>)
         {
-            if constexpr(is_same_v<T, string_container_type>)
+            if constexpr(same_as<T, string_container_type>)
                 throw_invalid_conversion();
             else // bool, int_type, and float_type
                 return static_cast<Target>(v);
         }
         else if constexpr(basic_string_like<Target, CharT>)
         {
-            if constexpr(is_same_v<T, string_container_type>)
+            if constexpr(same_as<T, string_container_type>)
             {
-                if constexpr(is_same_v<T, Target>)
+                if constexpr(same_as<T, Target>)
                     return v;
                 else if constexpr(std::is_constructible_v<Target, string_view_type>)
                     return Target(string_view_type(v));
@@ -776,10 +776,10 @@ private:
 
 PAPILIO_EXPORT template <typename T, typename CharT>
 concept basic_variable_storable =
-    std::is_same_v<T, bool> ||
-    std::is_same_v<T, variable::int_type> ||
-    std::is_same_v<T, variable::float_type> ||
-    std::is_same_v<T, utf::basic_string_container<CharT>>;
+    std::same_as<T, bool> ||
+    std::same_as<T, variable::int_type> ||
+    std::same_as<T, variable::float_type> ||
+    std::same_as<T, utf::basic_string_container<CharT>>;
 
 PAPILIO_EXPORT template <typename T, typename CharT>
 struct is_basic_variable_storable :
@@ -845,7 +845,7 @@ namespace detail
 {
     template <typename T>
     concept acceptable_integral =
-        !std::is_same_v<std::remove_cv_t<T>, bool> &&
+        !std::same_as<std::remove_cv_t<T>, bool> &&
         std::integral<std::remove_cv_t<T>> &&
         !char_like<T> &&
         sizeof(T) <= sizeof(unsigned long long int);
@@ -859,16 +859,16 @@ namespace detail
     // Acceptable floating point
     template <typename T>
     concept acceptable_fp =
-        std::is_same_v<std::remove_cv_t<T>, float> ||
-        std::is_same_v<std::remove_cv_t<T>, double> ||
-        std::is_same_v<std::remove_cv_t<T>, long double>;
+        std::same_as<std::remove_cv_t<T>, float> ||
+        std::same_as<std::remove_cv_t<T>, double> ||
+        std::same_as<std::remove_cv_t<T>, long double>;
 
     // Other user-defined types
     // Use a type-erased handle class
     template <typename T, typename CharT>
     concept use_handle =
-        !std::is_same_v<std::remove_cv_t<T>, bool> &&
-        !std::is_same_v<std::remove_cv_t<T>, utf::codepoint> &&
+        !std::same_as<std::remove_cv_t<T>, bool> &&
+        !std::same_as<std::remove_cv_t<T>, utf::codepoint> &&
         !char_like<T> &&
         !acceptable_integral<T> &&
         !acceptable_fp<T> &&
@@ -1269,7 +1269,7 @@ private:
     template <typename T>
     static consteval bool is_handle()
     {
-        return std::is_same_v<std::remove_cvref_t<T>, handle>;
+        return std::same_as<std::remove_cvref_t<T>, handle>;
     }
 
 public:
@@ -1295,7 +1295,7 @@ public:
 
     // Avoid accidentally mixing format arguments from different context
     template <typename AnotherContext>
-    requires(!std::is_same_v<AnotherContext, Context>)
+    requires(!std::same_as<AnotherContext, Context>)
     basic_format_arg(const basic_format_arg<AnotherContext>&) = delete;
 
     basic_format_arg(basic_format_arg&& other) noexcept
@@ -1505,7 +1505,7 @@ public:
     [[nodiscard]]
     friend const auto& get(const basic_format_arg& val)
     {
-        if constexpr(char_like<T> || std::is_same_v<std::remove_cvref_t<T>, utf::codepoint>)
+        if constexpr(char_like<T> || std::same_as<std::remove_cvref_t<T>, utf::codepoint>)
             return std::get<utf::codepoint>(val.m_val);
         else if constexpr(std::integral<T>)
             return std::get<detail::convert_int_t<T>>(val.m_val);
@@ -1609,14 +1609,14 @@ public:
         return idx.visit(
             [&]<typename T>(const T& v) -> const format_arg_type&
             {
-                if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
+                if constexpr(std::same_as<T, typename indexing_value_type::index_type>)
                 {
                     if(v < 0)
                         throw_index_out_of_range();
                     size_type i = static_cast<size_type>(v);
                     return get(i);
                 }
-                else if constexpr(std::is_same_v<T, string_container_type>)
+                else if constexpr(std::same_as<T, string_container_type>)
                 {
                     return get(string_view_type(v));
                 }
@@ -1655,13 +1655,13 @@ public:
         return idx.visit(
             [this]<typename T>(const T& v) -> bool
             {
-                if constexpr(std::is_same_v<T, typename indexing_value_type::index_type>)
+                if constexpr(std::same_as<T, typename indexing_value_type::index_type>)
                 {
                     if(v < 0)
                         return false;
                     return contains(static_cast<size_type>(v));
                 }
-                else if constexpr(std::is_same_v<T, string_container_type>)
+                else if constexpr(std::same_as<T, string_container_type>)
                 {
                     return contains(string_view_type(v));
                 }
@@ -1712,7 +1712,7 @@ class static_format_args final : public format_args_base<Context, CharT>
     using my_base = format_args_base<Context, CharT>;
 
 public:
-    static_assert(std::is_same_v<typename Context::char_type, CharT>);
+    static_assert(std::same_as<typename Context::char_type, CharT>);
 
     using char_type = CharT;
     using size_type = std::size_t;
@@ -1802,7 +1802,7 @@ private:
     }
 
     template <typename T>
-    requires(is_named_arg_v<T> && std::is_same_v<char_type, typename T::char_type>)
+    requires(is_named_arg_v<T> && std::same_as<char_type, typename T::char_type>)
     void emplace(T&& na) noexcept(std::is_nothrow_constructible_v<format_arg_type, typename T::value_type>)
     {
         m_named_args.insert_or_assign(
@@ -1818,7 +1818,7 @@ class basic_dynamic_format_args : public format_args_base<Context, CharT>
     using my_base = format_args_base<Context, CharT>;
 
 public:
-    static_assert(std::is_same_v<typename Context::char_type, CharT>);
+    static_assert(std::same_as<typename Context::char_type, CharT>);
 
     using char_type = CharT;
     using string_type = std::basic_string<char_type>;
@@ -1850,7 +1850,7 @@ public:
         if constexpr(is_named_arg_v<std::remove_cvref_t<T>>)
         {
             static_assert(
-                std::is_same_v<char_type, typename T::char_type>,
+                std::same_as<char_type, typename T::char_type>,
                 "Invalid char type"
             );
 
@@ -3613,7 +3613,7 @@ public:
     using parse_context = basic_format_parse_context<FormatContext>;
 
     using iterator = typename my_base::iterator;
-    static_assert(std::is_same_v<iterator, typename parse_context::iterator>);
+    static_assert(std::same_as<iterator, typename parse_context::iterator>);
 
     basic_interpreter() = default;
 
@@ -5868,7 +5868,7 @@ private:
  * @throw format_error If the integer value is to big for a Unicode code point for `c` type.
  */
 PAPILIO_EXPORT template <std::integral T, typename CharT>
-requires(!std::is_same_v<T, bool> && !char_like<T>)
+requires(!std::same_as<T, bool> && !char_like<T>)
 class formatter<T, CharT>
 {
 public:
@@ -6283,7 +6283,7 @@ namespace detail
         const basic_format_args_ref<Context>& args
     )
     {
-        static_assert(std::is_same_v<OutputIt, typename Context::iterator>);
+        static_assert(std::same_as<OutputIt, typename Context::iterator>);
 
         basic_format_parse_context<Context> parse_ctx(fmt, args);
         Context fmt_ctx(loc, out, args);

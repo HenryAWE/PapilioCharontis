@@ -339,7 +339,7 @@ public:
     }
 
     template <typename U>
-    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    requires std::same_as<std::remove_cvref_t<U>, target_type>
     static format_arg_type index(U&& object, index_type i)
     {
         if constexpr(!integer_index_available())
@@ -353,7 +353,7 @@ public:
     }
 
     template <typename U>
-    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    requires std::same_as<std::remove_cvref_t<U>, target_type>
     static format_arg_type index(U&& object, index_range s)
     {
         if constexpr(!range_index_available())
@@ -367,7 +367,7 @@ public:
     }
 
     template <typename U>
-    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    requires std::same_as<std::remove_cvref_t<U>, target_type>
     static format_arg_type index(U&& object, string_view_type str)
     {
         if constexpr(!string_index_available())
@@ -389,7 +389,7 @@ public:
     }
 
     template <typename U>
-    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    requires std::same_as<std::remove_cvref_t<U>, target_type>
     static format_arg_type attribute(U&& object, const attribute_name_type& attr)
     {
         if constexpr(attribute_available())
@@ -403,7 +403,7 @@ public:
     }
 
     template <typename U>
-    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    requires std::same_as<std::remove_cvref_t<U>, target_type>
     static format_arg_type access(U&& object, const indexing_value_type& idx)
     {
         return idx.visit(
@@ -413,7 +413,7 @@ public:
     }
 
     template <typename U>
-    requires std::is_same_v<std::remove_cvref_t<U>, target_type>
+    requires std::same_as<std::remove_cvref_t<U>, target_type>
     static format_arg_type access(U&& object, const attribute_name_type& attr)
     {
         return attribute(std::forward<U>(object), attr);

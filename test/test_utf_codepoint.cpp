@@ -105,7 +105,7 @@ TYPED_TEST(decoder_suite, size_bytes)
         EXPECT_EQ(decoder_t::size_bytes(test_data::cjk_4e00[0]), 3);
         EXPECT_EQ(decoder_t::size_bytes(test_data::peach_emoji[0]), 4);
     }
-    else if constexpr(std::is_same_v<TypeParam, char32_t>)
+    else if constexpr(std::same_as<TypeParam, char32_t>)
     {
         EXPECT_EQ(decoder_t::size_bytes(test_data::A), 1);
         EXPECT_EQ(decoder_t::size_bytes(test_data::A_diaeresis), 2);

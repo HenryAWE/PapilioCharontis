@@ -200,46 +200,46 @@ OutputIt copy_unit_suffix(OutputIt out, std::in_place_type_t<Period> = {})
     };
 
     using type = typename Period::type;
-    using std::is_same_v;
-    if constexpr(is_same_v<type, std::atto>)
+    using std::same_as;
+    if constexpr(same_as<type, std::atto>)
         return helper("as");
-    else if constexpr(is_same_v<type, std::femto>)
+    else if constexpr(same_as<type, std::femto>)
         return helper("fs");
-    else if constexpr(is_same_v<type, std::pico>)
+    else if constexpr(same_as<type, std::pico>)
         return helper("ps");
-    else if constexpr(is_same_v<type, std::nano>)
+    else if constexpr(same_as<type, std::nano>)
         return helper("ns");
-    else if constexpr(is_same_v<type, std::micro>)
+    else if constexpr(same_as<type, std::micro>)
         return helper("us");
-    else if constexpr(is_same_v<type, std::milli>)
+    else if constexpr(same_as<type, std::milli>)
         return helper("ms");
-    else if constexpr(is_same_v<type, std::centi>)
+    else if constexpr(same_as<type, std::centi>)
         return helper("cs");
-    else if constexpr(is_same_v<type, std::deci>)
+    else if constexpr(same_as<type, std::deci>)
         return helper("ds");
-    else if constexpr(is_same_v<type, std::ratio<1>>)
+    else if constexpr(same_as<type, std::ratio<1>>)
         return helper("s");
-    else if constexpr(is_same_v<type, std::deca>)
+    else if constexpr(same_as<type, std::deca>)
         return helper("das");
-    else if constexpr(is_same_v<type, std::hecto>)
+    else if constexpr(same_as<type, std::hecto>)
         return helper("hs");
-    else if constexpr(is_same_v<type, std::kilo>)
+    else if constexpr(same_as<type, std::kilo>)
         return helper("ks");
-    else if constexpr(is_same_v<type, std::mega>)
+    else if constexpr(same_as<type, std::mega>)
         return helper("Ms");
-    else if constexpr(is_same_v<type, std::giga>)
+    else if constexpr(same_as<type, std::giga>)
         return helper("Gs");
-    else if constexpr(is_same_v<type, std::tera>)
+    else if constexpr(same_as<type, std::tera>)
         return helper("Ts");
-    else if constexpr(is_same_v<type, std::peta>)
+    else if constexpr(same_as<type, std::peta>)
         return helper("Ps");
-    else if constexpr(is_same_v<type, std::exa>)
+    else if constexpr(same_as<type, std::exa>)
         return helper("Es");
-    else if constexpr(is_same_v<type, std::ratio<60>>)
+    else if constexpr(same_as<type, std::ratio<60>>)
         return helper("min");
-    else if constexpr(is_same_v<type, std::ratio<3600>>)
+    else if constexpr(same_as<type, std::ratio<3600>>)
         return helper("h");
-    else if constexpr(is_same_v<type, std::ratio<86400>>)
+    else if constexpr(same_as<type, std::ratio<86400>>)
         return helper("d");
     else if constexpr(Period::type::den == 1)
     {

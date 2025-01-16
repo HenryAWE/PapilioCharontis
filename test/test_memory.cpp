@@ -61,8 +61,8 @@ TEST(optional_unique_ptr, compatibility)
 
     {
         using ptr_t = optional_unique_ptr<void*, c_deleter>;
-        static_assert(std::is_same_v<ptr_t::pointer, c_deleter::pointer>);
-        static_assert(std::is_same_v<ptr_t::pointer, void*>);
+        static_assert(std::same_as<ptr_t::pointer, c_deleter::pointer>);
+        static_assert(std::same_as<ptr_t::pointer, void*>);
     }
 
     {
@@ -96,7 +96,7 @@ TEST(optional_unique_ptr, compatibility)
     {
         optional_unique_ptr opt_int = std::make_unique<int>(42);
 
-        static_assert(std::is_same_v<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
+        static_assert(std::same_as<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
 
         ASSERT_TRUE(opt_int.has_ownership());
         EXPECT_EQ(*opt_int, 42);
@@ -105,7 +105,7 @@ TEST(optional_unique_ptr, compatibility)
     {
         optional_unique_ptr opt_int = make_optional_unique<int>(42);
 
-        static_assert(std::is_same_v<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
+        static_assert(std::same_as<decltype(opt_int), optional_unique_ptr<int, std::default_delete<int>>>);
 
         ASSERT_TRUE(opt_int.has_ownership());
         EXPECT_EQ(*opt_int, 42);

@@ -353,12 +353,12 @@ struct chrono_traits<std::chrono::time_point<Clock, Duration>>
 
     static std::tm to_tm(const std::chrono::time_point<Clock, Duration>& t)
     {
-        if constexpr(std::is_same_v<Clock, std::chrono::file_clock>)
+        if constexpr(std::same_as<Clock, std::chrono::file_clock>)
         {
             auto sys = Clock::to_sys(t);
             return chrono_traits<decltype(sys)>::to_tm(sys);
         }
-        else if(std::is_same_v<Clock, std::chrono::local_t>)
+        else if(std::same_as<Clock, std::chrono::local_t>)
         {
             return chrono_traits<std::chrono::sys_time<Duration>>(
                 to_tm(std::chrono::sys_time<Duration>(t.time_since_epoch()))
@@ -576,7 +576,7 @@ concept chrono_type =
 PAPILIO_EXPORT template <chrono_type ChronoType>
 timezone_info get_timezone_info(const ChronoType& val)
 {
-    using std::is_same_v;
+    using std::same_as;
 
     using chrono_traits_type = chrono_traits<ChronoType>;
 

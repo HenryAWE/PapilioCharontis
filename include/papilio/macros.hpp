@@ -11,7 +11,7 @@
 
 #include <cassert>
 #include <version>
-#include <type_traits> // std::is_same_v
+#include <type_traits> // std::same_as
 #include <string_view>
 #include "detail/config.hpp"
 #include "detail/compat.hpp"

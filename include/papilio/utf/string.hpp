@@ -463,7 +463,7 @@ public:
         : m_str(str) {}
 
     template <std::contiguous_iterator Iterator, typename Sentinel>
-    requires(std::is_same_v<std::iter_value_t<Iterator>, CharT> && !std::is_convertible_v<Sentinel, size_type>)
+    requires(std::same_as<std::iter_value_t<Iterator>, CharT> && !std::is_convertible_v<Sentinel, size_type>)
     constexpr basic_string_ref(Iterator start, Sentinel stop)
         : m_str(string_view_type(start, stop))
     {}
@@ -599,7 +599,7 @@ public:
     [[nodiscard]]
     std::basic_string<To> to_string() const
     {
-        if constexpr(std::is_same_v<To, CharT>)
+        if constexpr(std::same_as<To, CharT>)
         {
             return std::basic_string<To>(get_view());
         }
@@ -748,9 +748,9 @@ private:
 // global functions
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(basic_string_ref<T> lhs, basic_string_ref<U> rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(basic_string_ref<T> lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
-    if constexpr(std::is_same_v<T, U>)
+    if constexpr(std::same_as<T, U>)
         return std::basic_string_view<T>(lhs) == std::basic_string_view<U>(rhs);
     else
     {
@@ -759,37 +759,37 @@ constexpr bool operator==(basic_string_ref<T> lhs, basic_string_ref<U> rhs) noex
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(basic_string_ref<T> lhs, const U* rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(basic_string_ref<T> lhs, const U* rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const T* lhs, basic_string_ref<U> rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const T* lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(basic_string_ref<T> lhs, std::basic_string_view<U> rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(basic_string_ref<T> lhs, std::basic_string_view<U> rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(std::basic_string_view<T> lhs, basic_string_ref<U> rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(std::basic_string_view<T> lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(basic_string_ref<T> lhs, const std::basic_string<U>& rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(basic_string_ref<T> lhs, const std::basic_string<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const std::basic_string<T>& lhs, basic_string_ref<U> rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const std::basic_string<T>& lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
@@ -954,7 +954,7 @@ public:
     }
 
     template <typename Iterator, std::sentinel_for<Iterator> Sentinel>
-    requires(std::is_same_v<std::iter_value_t<Iterator>, CharT>)
+    requires(std::same_as<std::iter_value_t<Iterator>, CharT>)
     basic_string_container(Iterator start, Sentinel stop)
         : m_data(std::in_place_type<string_type>, start, stop)
     {}
@@ -1613,55 +1613,55 @@ private:
 };
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const basic_string_container<T>& lhs, const basic_string_container<U>& rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const basic_string_container<T>& lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const basic_string_container<T>& lhs, basic_string_ref<U> rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const basic_string_container<T>& lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(basic_string_ref<T> lhs, const basic_string_container<U>& rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(basic_string_ref<T> lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const basic_string_container<T>& lhs, const U* rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const basic_string_container<T>& lhs, const U* rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const T* lhs, const basic_string_container<U>& rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const T* lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const basic_string_container<T>& lhs, std::basic_string_view<U> rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const basic_string_container<T>& lhs, std::basic_string_view<U> rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(std::basic_string_view<T> lhs, const basic_string_container<U>& rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(std::basic_string_view<T> lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const basic_string_container<T>& lhs, const std::basic_string<U>& rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const basic_string_container<T>& lhs, const std::basic_string<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
 PAPILIO_EXPORT template <char_like T, char_like U>
-constexpr bool operator==(const std::basic_string<T>& lhs, const basic_string_container<U>& rhs) noexcept(std::is_same_v<T, U>)
+constexpr bool operator==(const std::basic_string<T>& lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }

@@ -29,11 +29,11 @@ namespace papilio
 
 PAPILIO_EXPORT template <typename T>
 concept char_like =
-    std::is_same_v<std::remove_cv_t<T>, char> ||
-    std::is_same_v<std::remove_cv_t<T>, wchar_t> ||
-    std::is_same_v<std::remove_cv_t<T>, char16_t> ||
-    std::is_same_v<std::remove_cv_t<T>, char32_t> ||
-    std::is_same_v<std::remove_cv_t<T>, char8_t>;
+    std::same_as<std::remove_cv_t<T>, char> ||
+    std::same_as<std::remove_cv_t<T>, wchar_t> ||
+    std::same_as<std::remove_cv_t<T>, char16_t> ||
+    std::same_as<std::remove_cv_t<T>, char32_t> ||
+    std::same_as<std::remove_cv_t<T>, char8_t>;
 
 PAPILIO_EXPORT template <typename CharT>
 concept char8_like = char_like<CharT> && sizeof(CharT) == 1;
@@ -44,16 +44,16 @@ concept char32_like = char_like<CharT> && sizeof(CharT) == 4;
 
 PAPILIO_EXPORT template <typename T>
 concept xchar =
-    std::is_same_v<std::remove_cv_t<T>, char16_t> ||
-    std::is_same_v<std::remove_cv_t<T>, char32_t> ||
-    std::is_same_v<std::remove_cv_t<T>, char8_t>;
+    std::same_as<std::remove_cv_t<T>, char16_t> ||
+    std::same_as<std::remove_cv_t<T>, char32_t> ||
+    std::same_as<std::remove_cv_t<T>, char8_t>;
 
 PAPILIO_EXPORT template <typename T, typename CharT>
 concept basic_string_like =
-    std::is_same_v<std::decay_t<T>, CharT*> ||
-    std::is_same_v<std::decay_t<T>, const CharT*> ||
-    std::is_same_v<std::remove_cv_t<T>, std::basic_string<CharT>> ||
-    std::is_same_v<std::remove_cv_t<T>, std::basic_string_view<CharT>> ||
+    std::same_as<std::decay_t<T>, CharT*> ||
+    std::same_as<std::decay_t<T>, const CharT*> ||
+    std::same_as<std::remove_cv_t<T>, std::basic_string<CharT>> ||
+    std::same_as<std::remove_cv_t<T>, std::basic_string_view<CharT>> ||
     std::is_convertible_v<T, std::basic_string_view<CharT>>;
 
 PAPILIO_EXPORT template <typename T>
@@ -184,7 +184,7 @@ namespace detail
         {
             template <typename U = derived>
             static std::true_type test(decltype(std::declval<U>().c)*)
-                requires(std::is_same_v<decltype(std::declval<U>().c), container_type>);
+                requires(std::same_as<decltype(std::declval<U>().c), container_type>);
 
             template <typename U = derived>
             static std::false_type test(...);
@@ -483,7 +483,7 @@ namespace detail
         else
         {
             // both are empty
-            if constexpr(!std::is_same_v<first_type, second_type>)
+            if constexpr(!std::same_as<first_type, second_type>)
                 return 3; // T1 != T2
             else
                 return 1; // T1 == T2, fallback to implementation for only T1 is empty
@@ -1253,13 +1253,13 @@ namespace detail
         const char8_t* u8
     )
     {
-        if constexpr(::std::is_same_v<CharT, char>)
+        if constexpr(::std::same_as<CharT, char>)
             return narrow;
-        else if constexpr(::std::is_same_v<CharT, wchar_t>)
+        else if constexpr(::std::same_as<CharT, wchar_t>)
             return wide;
-        else if constexpr(::std::is_same_v<CharT, char32_t>)
+        else if constexpr(::std::same_as<CharT, char32_t>)
             return u32;
-        else if constexpr(::std::is_same_v<CharT, char16_t>)
+        else if constexpr(::std::same_as<CharT, char16_t>)
             return u16;
         else
             return u8;
@@ -1275,32 +1275,32 @@ namespace detail
         const char8_t* u8
     )
     {
-        if constexpr(::std::is_same_v<CharT, char>)
+        if constexpr(::std::same_as<CharT, char>)
             return std::string_view(narrow, len);
-        else if constexpr(::std::is_same_v<CharT, wchar_t>)
+        else if constexpr(::std::same_as<CharT, wchar_t>)
             return std::wstring_view(wide, len);
-        else if constexpr(::std::is_same_v<CharT, char32_t>)
+        else if constexpr(::std::same_as<CharT, char32_t>)
             return std::u32string_view(u32, len);
-        else if constexpr(::std::is_same_v<CharT, char16_t>)
+        else if constexpr(::std::same_as<CharT, char16_t>)
             return std::u16string_view(u16, len);
         else
             return std::u8string_view(u8, len);
     }
 } // namespace detail
 
-#define PAPILIO_TSTRING_ARRAY(char_t, str)                    \
-    []() noexcept -> decltype(auto)                           \
-    {                                                         \
-        if constexpr(::std::is_same_v<char_t, char>)          \
-            return str;                                       \
-        else if constexpr(::std::is_same_v<char_t, wchar_t>)  \
-            return L##str;                                    \
-        else if constexpr(::std::is_same_v<char_t, char8_t>)  \
-            return u8##str;                                   \
-        else if constexpr(::std::is_same_v<char_t, char32_t>) \
-            return U##str;                                    \
-        else if constexpr(::std::is_same_v<char_t, char16_t>) \
-            return u##str;                                    \
+#define PAPILIO_TSTRING_ARRAY(char_t, str)                  \
+    []() noexcept -> decltype(auto)                         \
+    {                                                       \
+        if constexpr(::std::same_as<char_t, char>)          \
+            return str;                                     \
+        else if constexpr(::std::same_as<char_t, wchar_t>)  \
+            return L##str;                                  \
+        else if constexpr(::std::same_as<char_t, char8_t>)  \
+            return u8##str;                                 \
+        else if constexpr(::std::same_as<char_t, char32_t>) \
+            return U##str;                                  \
+        else if constexpr(::std::same_as<char_t, char16_t>) \
+            return u##str;                                  \
     }()
 
 #define PAPILIO_TSTRING_CSTR(char_t, str)         \

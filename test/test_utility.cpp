@@ -156,7 +156,7 @@ TEST(independent_t, proxy)
         std::string str = "hello";
         auto str_proxy = independent(str);
 
-        static_assert(std::is_same_v<decltype(str_proxy), independent_proxy<std::string>>);
+        static_assert(std::same_as<decltype(str_proxy), independent_proxy<std::string>>);
 
         EXPECT_EQ(&str, &str_proxy.get());
     }
@@ -165,7 +165,7 @@ TEST(independent_t, proxy)
         std::string str = "hello";
         auto str_proxy = independent(std::as_const(str));
 
-        static_assert(std::is_same_v<decltype(str_proxy), independent_proxy<const std::string>>);
+        static_assert(std::same_as<decltype(str_proxy), independent_proxy<const std::string>>);
 
         EXPECT_EQ(&str, &str_proxy.get());
     }

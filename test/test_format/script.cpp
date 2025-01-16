@@ -26,14 +26,14 @@ TYPED_TEST(format_suite, script_bool_op)
     PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}? 'true'}", 1, "true");
     PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}? 'false'}", 0, "false");
 
-    if constexpr(std::is_same_v<TypeParam, char>)
+    if constexpr(std::same_as<TypeParam, char>)
     {
         PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}? 'true'}", "nonempty", "true");
         PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}? 'false'}", "", "false");
 
         PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {val}? 'true'}", "val"_a = 1, "true");
     }
-    else if constexpr(std::is_same_v<TypeParam, wchar_t>)
+    else if constexpr(std::same_as<TypeParam, wchar_t>)
     {
         PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ {}? 'true'}", L"nonempty", "true");
         PAPILIO_CHECK_SCRIPT_BOOL_OP("{$ !{}? 'false'}", L"", "false");

@@ -76,7 +76,7 @@ inline bool basic_format_arg<Context>::is_formattable() const noexcept
     return visit(
         []<typename T>(const T& v) -> bool
         {
-            if constexpr(std::is_same_v<T, handle>)
+            if constexpr(std::same_as<T, handle>)
             {
                 return v.is_formattable();
             }
@@ -94,7 +94,7 @@ void basic_format_arg<Context>::format(parse_context& parse_ctx, Context& out_ct
     visit(
         [&]<typename T>(const T& v)
         {
-            if constexpr(std::is_same_v<T, handle>)
+            if constexpr(std::same_as<T, handle>)
             {
                 v.format(parse_ctx, out_ctx);
             }
@@ -119,7 +119,7 @@ void basic_format_arg<Context>::skip_spec(parse_context& parse_ctx)
     visit(
         [&]<typename T>(const T& v)
         {
-            if constexpr(std::is_same_v<T, handle>)
+            if constexpr(std::same_as<T, handle>)
             {
                 v.skip_spec(parse_ctx);
             }

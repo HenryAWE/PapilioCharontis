@@ -60,7 +60,7 @@ TEST(formatter, filesystem_path)
 
 #ifdef PAPILIO_PLATFORM_WINDOWS
     {
-        static_assert(std::is_same_v<std::filesystem::path::value_type, wchar_t>);
+        static_assert(std::same_as<std::filesystem::path::value_type, wchar_t>);
         static_assert(std::filesystem::path::preferred_separator == L'\\');
 
         // Test Chinese path

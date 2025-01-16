@@ -9,7 +9,7 @@ namespace detail
     utf::string_container path_to_sc<char>(const std::filesystem::path& p, bool gen)
     {
 #ifndef PAPILIO_PLATFORM_WINDOWS
-        static_assert(std::is_same_v<std::filesystem::path::value_type, char>);
+        static_assert(std::same_as<std::filesystem::path::value_type, char>);
 
         if(gen)
             return p.generic_string();
@@ -17,7 +17,7 @@ namespace detail
             return p.native();
 
 #else
-        static_assert(std::is_same_v<std::filesystem::path::value_type, wchar_t>);
+        static_assert(std::same_as<std::filesystem::path::value_type, wchar_t>);
 
         utf::wstring_container wsc;
         if(gen)
@@ -32,7 +32,7 @@ namespace detail
     utf::wstring_container path_to_sc<wchar_t>(const std::filesystem::path& p, bool gen)
     {
 #ifndef PAPILIO_PLATFORM_WINDOWS
-        static_assert(std::is_same_v<std::filesystem::path::value_type, char>);
+        static_assert(std::same_as<std::filesystem::path::value_type, char>);
 
         if(gen)
             return p.generic_wstring();
@@ -40,7 +40,7 @@ namespace detail
             return p.wstring();
 
 #else
-        static_assert(std::is_same_v<std::filesystem::path::value_type, wchar_t>);
+        static_assert(std::same_as<std::filesystem::path::value_type, wchar_t>);
 
         if(gen)
             return p.generic_wstring();

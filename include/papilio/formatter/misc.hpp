@@ -109,7 +109,7 @@ public:
     {
         auto helper = [&val]()
         {
-            if constexpr(std::is_same_v<CharT, char>)
+            if constexpr(std::same_as<CharT, char>)
                 return std::to_string(val);
             else
                 return utf::string_ref(std::to_string(val)).to_string<CharT>();

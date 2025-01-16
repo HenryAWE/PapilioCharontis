@@ -121,7 +121,7 @@ struct accessor<std::span<T>, Context> :
 {};
 
 PAPILIO_EXPORT template <typename T, typename Allocator, typename Context>
-requires(!std::is_same_v<T, bool>) // Avoid std::vector<bool>
+requires(!std::same_as<T, bool>) // Avoid std::vector<bool>
 struct accessor<std::vector<T, Allocator>, Context> :
     public contiguous_range_accessor<std::vector<T, Allocator>, Context>
 {};
