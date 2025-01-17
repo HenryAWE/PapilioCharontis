@@ -1703,6 +1703,51 @@ PAPILIO_EXPORT template <typename T, typename Context = format_context>
 constexpr inline bool is_format_args_v = is_format_args<T, Context>::value;
 
 PAPILIO_EXPORT template <
+    typename Context,
+    typename CharT = typename Context::char_type>
+class basic_empty_format_args final : public format_args_base<Context, CharT>
+{
+public:
+    using char_type = CharT;
+    using size_type = std::size_t;
+    using string_view_type = std::basic_string_view<char_type>;
+    using format_arg_type = basic_format_arg<Context>;
+
+    basic_empty_format_args() = default;
+
+    const format_arg_type& get(size_type i) const override
+    {
+        (void)i;
+        this->throw_index_out_of_range();
+    }
+
+    const format_arg_type& get(string_view_type key) const override
+    {
+        (void)key;
+        this->throw_invalid_named_argument();
+    }
+
+    bool contains(string_view_type key) const noexcept override
+    {
+        (void)key;
+        return false;
+    }
+
+    size_type indexed_size() const noexcept override
+    {
+        return 0;
+    }
+
+    size_type named_size() const noexcept override
+    {
+        return 0;
+    }
+};
+
+PAPILIO_EXPORT template <typename Context>
+const inline basic_empty_format_args<Context> empty_format_args_for{};
+
+PAPILIO_EXPORT template <
     std::size_t IndexedArgumentCount,
     std::size_t NamedArgumentCount,
     typename Context = format_context,
@@ -2233,14 +2278,26 @@ namespace detail
     {
         using type = streamable_formatter<T, CharT>;
     };
+} // namespace detail
 
-    template <typename T, typename Context>
-    using select_formatter_t = typename select_formatter_impl<
-        get_formatter_tag<T, Context>(),
+/**
+ * @brief Select an appropriate formatter
+ *
+ * @tparam T Type to be formatted
+ * @tparam Context Format context
+ */
+template <typename T, typename Context>
+struct select_formatter
+{
+    using type = typename detail::select_formatter_impl<
+        PAPILIO_NS detail::get_formatter_tag<T, Context>(),
         T,
         Context,
         typename Context::char_type>::type;
-} // namespace detail
+};
+
+template <typename T, typename Context>
+using select_formatter_t = typename select_formatter<T, Context>::type;
 
 /**
  * @brief Format context
@@ -2261,8 +2318,19 @@ public:
     using indexing_value_type = basic_indexing_value<CharT>;
     using attribute_name_type = basic_attribute_name<CharT>;
 
+    /*
+     * @brief Rebind the context to a new output iterator type
+     *
+     * @tparam AnotherOutputIt New output iterator type
+     */
+    template <typename AnotherOutputIt>
+    struct rebind
+    {
+        using type = basic_format_context<AnotherOutputIt, CharT>;
+    };
+
     template <typename T>
-    using formatter_type = detail::select_formatter_t<T, basic_format_context>;
+    using formatter_type = select_formatter_t<T, basic_format_context>;
 
     basic_format_context(iterator it, format_args_type args)
         : m_out(std::move(it)), m_args(args), m_loc(nullptr) {}
@@ -2338,7 +2406,53 @@ public:
     template <typename T>
     using formatter_type = typename Context::template formatter_type<T>;
 
+    template <typename AnotherOutputIt>
+    static constexpr bool has_rebind() noexcept
+    {
+        return requires {
+            typename Context::template rebind<AnotherOutputIt>;
+        };
+    }
+
+    static constexpr bool use_locale() noexcept
+    {
+        return requires(context_type& ctx) {
+            { ctx.getloc() } -> std::convertible_to<std::locale>;
+        };
+    }
+
+    template <typename AnotherOutputIt>
+    requires(has_rebind<AnotherOutputIt>())
+    using rebind = typename Context::template rebind<AnotherOutputIt>;
+
     format_context_traits() = delete;
+
+    /**
+     * @brief Create a rebound context with empty format arguments
+     */
+    template <typename AnotherOutputIt>
+    requires(has_rebind<AnotherOutputIt>())
+    static auto rebind_context(context_type& ctx, AnotherOutputIt it)
+    {
+        using result_type = typename rebind<AnotherOutputIt>::type;
+        using result_traits = format_context_traits<result_type>;
+
+        if constexpr(result_traits::use_locale())
+        {
+            return result_type(
+                getloc_ref(ctx),
+                std::move(it),
+                empty_format_args_for<result_type>
+            );
+        }
+        else
+        {
+            return result_type(
+                std::move(it),
+                empty_format_args_for<result_type>
+            );
+        }
+    }
 
 private:
     static void append_hex_digits(context_type& ctx, int_type val, bool is_valid)
@@ -2422,6 +2536,24 @@ other_ch:
     }
 
 public:
+    [[nodiscard]]
+    static locale_ref getloc_ref(context_type& ctx)
+    {
+        if constexpr(!use_locale())
+            return locale_ref();
+        else
+        {
+            constexpr bool has_getloc_ref = requires() {
+                { ctx.getloc_ref() } -> std::same_as<locale_ref>;
+            };
+
+            if constexpr(has_getloc_ref)
+                return ctx.getloc_ref();
+            else
+                return ctx.getloc();
+        }
+    }
+
     /**
      * @brief Get the output iterator from the context.
      *

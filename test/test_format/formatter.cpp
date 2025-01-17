@@ -73,13 +73,13 @@ TEST(fundamental_formatter, bool)
     EXPECT_EQ(PAPILIO_NS format(L"{:#x}", true), L"0x1");
 
     {
-        std::locale loc = test_format::attach_yes_no<char>();
+        std::locale loc = papilio_test::attach_yes_no<char>();
         EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", true), "yes");
         EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", false), "no");
     }
 
     {
-        std::locale loc = test_format::attach_yes_no<wchar_t>();
+        std::locale loc = papilio_test::attach_yes_no<wchar_t>();
         EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", true), L"yes");
         EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", false), L"no");
     }
@@ -100,13 +100,13 @@ TEST(fundamental_formatter, bool)
         EXPECT_EQ(PAPILIO_NS format(L"{:#x}", bvec[1]), L"0x1");
 
         {
-            std::locale loc = test_format::attach_yes_no<char>();
+            std::locale loc = papilio_test::attach_yes_no<char>();
             EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", bvec[1]), "yes");
             EXPECT_EQ(PAPILIO_NS format(loc, "{:L}", bvec[0]), "no");
         }
 
         {
-            std::locale loc = test_format::attach_yes_no<wchar_t>();
+            std::locale loc = papilio_test::attach_yes_no<wchar_t>();
             EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", bvec[1]), L"yes");
             EXPECT_EQ(PAPILIO_NS format(loc, L"{:L}", bvec[0]), L"no");
         }

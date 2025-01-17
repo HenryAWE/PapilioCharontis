@@ -1,33 +1,10 @@
 #include <gtest/gtest.h>
 #include <papilio/core.hpp>
 #include <papilio/format.hpp>
+#include "test_core.hpp"
 #include <papilio_test/setup.hpp>
 
-template <typename CharT>
-class format_context_suite : public ::testing::Test
-{
-public:
-    using string_type = std::basic_string<CharT>;
-    using context_type = papilio::basic_format_context<
-        std::back_insert_iterator<string_type>,
-        CharT>;
-    using args_type = papilio::basic_dynamic_format_args<context_type>;
-
-    static context_type create_context(string_type& output)
-    {
-        return context_type{
-            std::back_inserter(output),
-            m_empty_args
-        };
-    }
-
-private:
-    // Shared placeholder
-    static const inline args_type m_empty_args{};
-};
-
-using char_types = ::testing::Types<char, wchar_t, char8_t, char16_t, char32_t>;
-TYPED_TEST_SUITE(format_context_suite, char_types);
+using namespace test_core;
 
 TYPED_TEST(format_context_suite, append)
 {

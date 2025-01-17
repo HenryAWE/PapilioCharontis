@@ -103,7 +103,7 @@ public:
     {
         string_formatter<CharT> fmt;
         fmt.set_data(m_data);
-        return fmt.format(to_str(tp), ctx);
+        return fmt.format(to_str(tp, ctx), ctx);
     }
 
 private:
@@ -117,28 +117,34 @@ private:
         set_brackets(string_view_type(), string_view_type());
     }
 
-    std::basic_string<CharT> to_str(const Tuple& tp) const
+    template <typename FormatContext>
+    std::basic_string<CharT> to_str(const Tuple& tp, FormatContext& ctx) const
     {
         std::basic_string<CharT> result;
+        using iter_t = decltype(std::back_inserter(result));
 
-        result += m_opening;
+        auto result_ctx = format_context_traits<FormatContext>::template rebind_context<iter_t>(
+            ctx, std::back_inserter(result)
+        );
+        using context_t = format_context_traits<decltype(result_ctx)>;
 
-        bool first = true;
+        context_t::append(result_ctx, m_opening);
+
         PAPILIO_NS tuple_for_each(
             tp,
-            [&]<typename T>(const T& v)
+            [this, &result_ctx, first = true]<typename T>(const T& v) mutable
             {
                 if(!first)
-                    result += m_sep;
+                    context_t::append(result_ctx, m_sep);
                 first = false;
 
                 // TODO: Debug format
 
-                result += PAPILIO_NS format(PAPILIO_TSTRING_VIEW(CharT, "{}"), v);
+                context_t::append_by_format(result_ctx, v);
             }
         );
 
-        result += m_closing;
+        context_t::append(result_ctx, m_closing);
 
         return result;
     }

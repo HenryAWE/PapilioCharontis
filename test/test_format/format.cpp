@@ -63,7 +63,7 @@ TYPED_TEST(format_suite, format_to)
     }
 
     {
-        std::locale loc = test_format::attach_yes_no<TypeParam>();
+        std::locale loc = papilio_test::attach_yes_no<TypeParam>();
 
         std::vector<TypeParam> result;
         auto it = PAPILIO_NS format_to(
@@ -77,7 +77,7 @@ TYPED_TEST(format_suite, format_to)
         EXPECT_EQ(result.size(), 4);
         EXPECT_STREQ(
             result.data(),
-            test_format::yes_no_numpunct<TypeParam>::yes_string
+            papilio_test::yes_no_numpunct<TypeParam>::yes_string
         );
     }
 }
@@ -101,7 +101,7 @@ TYPED_TEST(format_suite, formatted_size)
     }
 
     {
-        std::locale loc = test_format::attach_yes_no<TypeParam>();
+        std::locale loc = papilio_test::attach_yes_no<TypeParam>();
 
         string_view_type fmt = PAPILIO_TSTRING_VIEW(TypeParam, "{:L}");
         EXPECT_EQ(PAPILIO_NS formatted_size(loc, fmt, true), 3); // Size of "yes"
@@ -150,7 +150,7 @@ TYPED_TEST(format_suite, format_to_n)
     }
 
     {
-        std::locale loc = test_format::attach_yes_no<TypeParam>();
+        std::locale loc = papilio_test::attach_yes_no<TypeParam>();
 
         string_type str{};
         str.resize(4);

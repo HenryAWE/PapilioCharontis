@@ -199,7 +199,7 @@ void format_context_traits<Context>::vformat_to(
         ctx,
         PAPILIO_NS detail::vformat_to_impl<char_type, iterator, context_type>(
             ctx.out(),
-            ctx.getloc_ref(),
+            getloc_ref(ctx),
             fmt,
             args
         )

@@ -50,13 +50,13 @@ TEST(ranges, sequence)
         EXPECT_EQ(PAPILIO_NS format(L"{::d}", bvec), L"[1, 0, 1]");
 
         {
-            std::locale loc = test_format::attach_yes_no<char>();
+            std::locale loc = papilio_test::attach_yes_no<char>();
             EXPECT_EQ(PAPILIO_NS format(loc, "{::L}", bvec), "[yes, no, yes]");
             EXPECT_EQ(PAPILIO_NS format(loc, "{:n:L}", bvec), "yes, no, yes");
         }
 
         {
-            std::locale loc = test_format::attach_yes_no<wchar_t>();
+            std::locale loc = papilio_test::attach_yes_no<wchar_t>();
             EXPECT_EQ(PAPILIO_NS format(loc, L"{::L}", bvec), L"[yes, no, yes]");
             EXPECT_EQ(PAPILIO_NS format(loc, L"{:n:L}", bvec), L"yes, no, yes");
         }
@@ -93,13 +93,13 @@ TEST(ranges, set)
         EXPECT_EQ(PAPILIO_NS format(L"{:n}", s), L"false, true");
 
         {
-            std::locale loc = test_format::attach_yes_no<char>();
+            std::locale loc = papilio_test::attach_yes_no<char>();
             EXPECT_EQ(PAPILIO_NS format(loc, "{::L}", s), "{no, yes}");
             EXPECT_EQ(PAPILIO_NS format(loc, "{:n:L}", s), "no, yes");
         }
 
         {
-            std::locale loc = test_format::attach_yes_no<wchar_t>();
+            std::locale loc = papilio_test::attach_yes_no<wchar_t>();
             EXPECT_EQ(PAPILIO_NS format(loc, L"{::L}", s), L"{no, yes}");
             EXPECT_EQ(PAPILIO_NS format(loc, L"{:n:L}", s), L"no, yes");
         }

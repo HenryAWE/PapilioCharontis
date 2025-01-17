@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/core.hpp>
+#include <papilio/formatter/tuple.hpp>
 #include <papilio_test/setup.hpp>
 
 namespace test_core
@@ -54,24 +55,58 @@ public:
     }
 };
 
-class custom_context : public papilio::format_context
+template <typename OutputIt>
+class custom_context
 {
-    using my_base = papilio::format_context;
-
 public:
-    using iterator = my_base::iterator;
+    using char_type = char;
+    using iterator = OutputIt;
     using format_args_type = papilio::basic_format_args_ref<custom_context, char>;
+
+    template <typename AnotherOutputIt>
+    struct rebind
+    {
+        using type = custom_context<AnotherOutputIt>;
+    };
 
     template <typename T>
     using formatter_type = std::conditional_t<
         std::floating_point<T>,
         my_float_formatter<T>,
-        typename my_base::formatter_type<T>>;
-
-    using my_base::my_base;
+        papilio::select_formatter_t<T, custom_context>>;
 
     custom_context(papilio::locale_ref loc, iterator it, const format_args_type& args)
-        : my_base(loc, std::move(it), reinterpret_cast<const my_base::format_args_type&>(args)) {}
+        : m_loc(loc), m_it(std::move(it)), m_args(args) {}
+
+    iterator out() const
+    {
+        return m_it;
+    }
+
+    void advance_to(iterator it)
+    {
+        m_it = std::move(it);
+    }
+
+    const format_args_type& get_args() const noexcept
+    {
+        return m_args;
+    }
+
+    std::locale getloc() const
+    {
+        return m_loc;
+    }
+
+    papilio::locale_ref getloc_ref() const
+    {
+        return m_loc;
+    }
+
+private:
+    papilio::locale_ref m_loc;
+    iterator m_it;
+    format_args_type m_args;
 };
 } // namespace test_core
 
@@ -79,15 +114,18 @@ TEST(custom_context, custom_context)
 {
     using test_core::custom_context;
 
+    using custom_ctx_type = custom_context<std::back_insert_iterator<std::string>>;
+
+    // Redirected type (float)
     {
         std::string buf;
-        papilio::basic_dynamic_format_args<custom_context> args;
+        papilio::basic_dynamic_format_args<custom_ctx_type> args;
 
-        custom_context ctx(papilio::locale_ref{}, std::back_inserter(buf), args);
+        custom_ctx_type ctx(papilio::locale_ref{}, std::back_inserter(buf), args);
 
-        using context_t = papilio::format_context_traits<test_core::custom_context>;
+        using context_t = papilio::format_context_traits<custom_ctx_type>;
 
-        static_assert(papilio::formattable_with<float, custom_context>);
+        static_assert(papilio::formattable_with<float, custom_ctx_type>);
 
         context_t::format_to(
             ctx,
@@ -112,5 +150,55 @@ TEST(custom_context, custom_context)
         );
 
         EXPECT_EQ(buf, "*3.14*, *+∞*, *-∞*, *NaN*");
+    }
+
+    // Ordinary types
+    {
+        std::string buf;
+        papilio::basic_dynamic_format_args<custom_ctx_type> args;
+
+        custom_ctx_type ctx(papilio::locale_ref{}, std::back_inserter(buf), args);
+
+        using context_t = papilio::format_context_traits<custom_ctx_type>;
+
+        static_assert(papilio::formattable_with<int, custom_ctx_type>);
+        static_assert(papilio::formattable_with<papilio::utf::string_container, custom_ctx_type>);
+
+        context_t::format_to(
+            ctx,
+            "{}",
+            1013
+        );
+        EXPECT_EQ(buf, "1013");
+
+        buf.clear();
+
+        context_t::format_to(
+            ctx,
+            "{:*^9}",
+            "hello"
+        );
+        EXPECT_EQ(buf, "**hello**");
+    }
+
+    // Nested formatter
+    {
+        std::string buf;
+        papilio::basic_dynamic_format_args<custom_ctx_type> args;
+
+        custom_ctx_type ctx(papilio::locale_ref{}, std::back_inserter(buf), args);
+
+        using context_t = papilio::format_context_traits<custom_ctx_type>;
+
+        static_assert(papilio::formattable_with<std::pair<float, float>, custom_ctx_type>);
+
+        using limits_t = std::numeric_limits<float>;
+        context_t::format_to(
+            ctx,
+            "{}",
+            std::pair<float, float>(limits_t::infinity(), limits_t::quiet_NaN())
+        );
+
+        EXPECT_EQ(buf, "(+∞, NaN)");
     }
 }

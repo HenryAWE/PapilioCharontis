@@ -2,6 +2,35 @@
 #include <papilio/papilio.hpp>
 #include <papilio_test/setup.hpp>
 
+TEST(format_args, empty)
+{
+    using namespace papilio;
+
+    {
+        std::string buf;
+        format_context ctx(
+            std::back_inserter(buf),
+            empty_format_args_for<format_context>
+        );
+
+        EXPECT_EQ(ctx.get_args().indexed_size(), 0);
+        EXPECT_EQ(ctx.get_args().named_size(), 0);
+        EXPECT_FALSE(ctx.get_args().contains("test"));
+    }
+
+    {
+        std::wstring buf;
+        wformat_context ctx(
+            std::back_inserter(buf),
+            empty_format_args_for<wformat_context>
+        );
+
+        EXPECT_EQ(ctx.get_args().indexed_size(), 0);
+        EXPECT_EQ(ctx.get_args().named_size(), 0);
+        EXPECT_FALSE(ctx.get_args().contains(L"test"));
+    }
+}
+
 TEST(format_args, dynamic)
 {
     using namespace papilio;

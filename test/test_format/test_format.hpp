@@ -6,34 +6,11 @@
 #include <locale>
 #include <papilio/format.hpp>
 #include <gtest/gtest.h>
+#include <papilio_test/locale_helper.hpp>
 #include <papilio_test/prefix.hpp>
 
 namespace test_format
 {
-template <typename CharT>
-class yes_no_numpunct : public std::numpunct<CharT>
-{
-    using my_base = std::numpunct<CharT>;
-
-public:
-    using string_type = typename my_base::string_type;
-
-    static constexpr CharT yes_string[] = {'y', 'e', 's', '\0'};
-
-    static constexpr CharT no_string[] = {'n', 'o', '\0'};
-
-protected:
-    string_type do_truename() const override
-    {
-        return yes_string;
-    }
-
-    string_type do_falsename() const override
-    {
-        return no_string;
-    }
-};
-
 class stream_only
 {
 public:
@@ -52,12 +29,6 @@ public:
         return os;
     }
 };
-
-template <typename CharT = char>
-std::locale attach_yes_no(const std::locale& loc = std::locale::classic())
-{
-    return std::locale(loc, new yes_no_numpunct<CharT>());
-}
 } // namespace test_format
 
 namespace papilio
