@@ -1581,10 +1581,10 @@ public:
     using indexing_value_type = basic_indexing_value<CharT>;
     using size_type = std::size_t;
 
-    format_args_base() noexcept = default;
-    format_args_base(const format_args_base&) noexcept = default;
+    constexpr format_args_base() noexcept = default;
+    constexpr format_args_base(const format_args_base&) noexcept = default;
 
-    virtual ~format_args_base() = default;
+    virtual constexpr ~format_args_base() = default;
 
     [[nodiscard]]
     virtual const format_arg_type& get(size_type i) const = 0;
@@ -1713,7 +1713,7 @@ public:
     using string_view_type = std::basic_string_view<char_type>;
     using format_arg_type = basic_format_arg<Context>;
 
-    basic_empty_format_args() = default;
+    basic_empty_format_args() noexcept = default;
 
     const format_arg_type& get(size_type i) const override
     {
@@ -1745,7 +1745,11 @@ public:
 };
 
 PAPILIO_EXPORT template <typename Context>
-const inline basic_empty_format_args<Context> empty_format_args_for{};
+const basic_empty_format_args<Context>& empty_format_args_for() noexcept
+{
+    static basic_empty_format_args<Context> args;
+    return args;
+}
 
 PAPILIO_EXPORT template <
     std::size_t IndexedArgumentCount,
@@ -2442,14 +2446,14 @@ public:
             return result_type(
                 getloc_ref(ctx),
                 std::move(it),
-                empty_format_args_for<result_type>
+                empty_format_args_for<result_type>()
             );
         }
         else
         {
             return result_type(
                 std::move(it),
-                empty_format_args_for<result_type>
+                empty_format_args_for<result_type>()
             );
         }
     }
@@ -2894,6 +2898,13 @@ public:
         const char_type fmt[2] = {char_type('{'), char_type('}')};
         format_to(ctx, string_view_type(fmt, 2), std::forward<T>(val));
     }
+
+    template <typename T>
+    static void append_by_formatter(
+        context_type& ctx,
+        T&& val,
+        bool try_debug_format = false
+    );
 };
 
 /// @}
@@ -6313,6 +6324,14 @@ class formatter<CharT*, CharT> : public formatter<utf::basic_string_container<Ch
 
 PAPILIO_EXPORT template <typename CharT>
 class formatter<const CharT*, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
+{};
+
+PAPILIO_EXPORT template <typename CharT>
+class formatter<std::basic_string<CharT>, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
+{};
+
+PAPILIO_EXPORT template <typename CharT>
+class formatter<std::basic_string_view<CharT>, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
 {};
 
 /**

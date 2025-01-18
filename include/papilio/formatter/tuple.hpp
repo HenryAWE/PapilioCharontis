@@ -138,9 +138,7 @@ private:
                     context_t::append(result_ctx, m_sep);
                 first = false;
 
-                // TODO: Debug format
-
-                context_t::append_by_format(result_ctx, v);
+                context_t::append_by_formatter(result_ctx, v, true);
             }
         );
 

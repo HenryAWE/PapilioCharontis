@@ -10,7 +10,7 @@ TEST(format_args, empty)
         std::string buf;
         format_context ctx(
             std::back_inserter(buf),
-            empty_format_args_for<format_context>
+            empty_format_args_for<format_context>()
         );
 
         EXPECT_EQ(ctx.get_args().indexed_size(), 0);
@@ -22,7 +22,7 @@ TEST(format_args, empty)
         std::wstring buf;
         wformat_context ctx(
             std::back_inserter(buf),
-            empty_format_args_for<wformat_context>
+            empty_format_args_for<wformat_context>()
         );
 
         EXPECT_EQ(ctx.get_args().indexed_size(), 0);

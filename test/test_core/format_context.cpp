@@ -69,6 +69,14 @@ TYPED_TEST(format_context_suite, format_to)
 
     result.clear();
     {
+        context_t::append_by_formatter(ctx, TypeParam('\''), true);
+
+        const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "'\\''");
+        EXPECT_EQ(result, expected_str);
+    }
+
+    result.clear();
+    {
         context_t::format_to(ctx, PAPILIO_TSTRING_VIEW(TypeParam, "({:+})"), 1);
 
         const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "(+1)");

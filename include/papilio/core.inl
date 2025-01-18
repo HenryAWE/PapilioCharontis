@@ -205,6 +205,23 @@ void format_context_traits<Context>::vformat_to(
         )
     );
 }
+
+template <typename Context>
+template <typename T>
+void format_context_traits<Context>::append_by_formatter(
+    context_type& ctx,
+    T&& val,
+    bool try_debug_format
+)
+{
+    formatter_type<std::remove_cvref_t<T>> fmt{};
+    using fmt_t = formatter_traits<decltype(fmt)>;
+
+    if(try_debug_format)
+        fmt_t::try_set_debug_format(fmt);
+
+    fmt.format(val, ctx);
+}
 } // namespace papilio
 
 #endif

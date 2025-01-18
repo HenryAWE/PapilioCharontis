@@ -18,19 +18,14 @@ public:
     using context_type = papilio::basic_format_context<
         std::back_insert_iterator<string_type>,
         CharT>;
-    using args_type = papilio::basic_dynamic_format_args<context_type>;
 
     static context_type create_context(string_type& output)
     {
         return context_type{
             std::back_inserter(output),
-            m_empty_args
+            papilio::empty_format_args_for<context_type>()
         };
     }
-
-private:
-    // Shared placeholder
-    static const inline args_type m_empty_args{};
 };
 
 using format_context_char_types = ::testing::Types<char, wchar_t, char8_t, char16_t, char32_t>;
