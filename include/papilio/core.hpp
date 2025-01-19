@@ -3246,7 +3246,7 @@ namespace detail
         typename Formatter,
         typename FormatContext,
         typename ParseContext>
-    concept check_format_method_combined = requires(const Formatter& cf, T&& val, FormatContext fmt_ctx, ParseContext parse_ctx) {
+    concept check_format_method_combined = requires(const Formatter& cf, T&& val, FormatContext& fmt_ctx, ParseContext& parse_ctx) {
         {
             cf.format(val, parse_ctx, fmt_ctx)
         } -> std::same_as<typename FormatContext::iterator>;
@@ -5795,11 +5795,9 @@ public:
     using char_type = CharT;
 
     using underlying_type = std::remove_cvref_t<std::ranges::range_value_t<R>>;
-    using underlying_formatter_type = formatter<underlying_type, CharT>;
     using string_view_type = std::basic_string_view<CharT>;
 
     range_formatter()
-        : m_underlying()
     {
         switch(get_kind())
         {
@@ -5830,8 +5828,7 @@ public:
 
     void set_brackets(string_view_type opening, string_view_type closing) noexcept
     {
-        m_opening = opening;
-        m_closing = closing;
+        set_brackets_internal(opening, closing);
     }
 
     void set_debug_format() noexcept
@@ -5839,42 +5836,50 @@ public:
         m_debug = true;
     }
 
-    template <typename ParseContext>
-    auto parse(ParseContext& ctx)
-        -> typename ParseContext::iterator
+    template <typename ParseContext, typename FormatContext>
+    auto format(const R& rng, ParseContext& parse_ctx, FormatContext& fmt_ctx) const
+        -> typename FormatContext::iterator
     {
-        auto it = ctx.begin();
-        if(it == ctx.end())
-            return it;
+        using context_t = format_context_traits<FormatContext>;
 
+        using underlying_formatter_type = typename context_t::template formatter_type<underlying_type>;
+        underlying_formatter_type underlying_fmt{};
+        using fmt_t = formatter_traits<underlying_formatter_type>;
+
+        auto it = parse_ctx.begin();
         bool set_underlying_debug = true;
+        if(it == parse_ctx.end()) [[unlikely]]
+            goto end_parse;
+
         if(char32_t ch = *it; ch == U'n')
         {
-            m_type = U'n';
             clear_brackets();
             ++it;
         }
         else if(ch == U'm')
         {
-            m_type = U'm';
             use_set_brackets();
+            fmt_t::try_set_brackets(underlying_fmt, string_view_type(), string_view_type());
+            fmt_t::try_set_separator(underlying_fmt, PAPILIO_TSTRING_VIEW(CharT, ": "));
             ++it;
         }
         else if(ch == U'?')
         {
-            set_debug_format();
+            m_debug = true;
             ++it;
-            if(it == ctx.end() || *it != U's')
+            if(it == parse_ctx.end() || *it != U's')
                 throw format_error("invalid range format");
-            set_underlying_debug = false;
-            m_type = U's';
             ++it;
+            parse_ctx.advance_to(it);
+            as_string(rng, fmt_ctx, m_debug);
+            return fmt_ctx.out();
         }
         else if(ch == U's')
         {
-            set_underlying_debug = false;
-            m_type = U's';
             ++it;
+            parse_ctx.advance_to(it);
+            as_string(rng, fmt_ctx, m_debug);
+            return fmt_ctx.out();
         }
         else if(ch != U':')
         {
@@ -5882,61 +5887,23 @@ public:
             goto end_parse;
         }
 
-        if(it != ctx.end() && *it == U':')
+        if(it != parse_ctx.end() && *it == U':')
         {
             ++it;
-            ctx.advance_to(it);
-            it = m_underlying.parse(ctx);
+            parse_ctx.advance_to(it);
+            it = underlying_fmt.parse(parse_ctx);
             set_underlying_debug = false;
-        }
-
-        using fmt_t = formatter_traits<underlying_formatter_type>;
-        if(m_type == U'm')
-        {
-            fmt_t::try_set_brackets(m_underlying, string_view_type(), string_view_type());
-            fmt_t::try_set_separator(m_underlying, PAPILIO_TSTRING_VIEW(CharT, ": "));
         }
 
 end_parse:
         if(set_underlying_debug)
-            fmt_t::try_set_debug_format(m_underlying);
+            fmt_t::try_set_debug_format(underlying_fmt);
 
-        return it;
-    }
+        parse_ctx.advance_to(it);
 
-    template <typename Context>
-    auto format(const R& rng, Context& ctx) const
-        -> typename Context::iterator
-    {
-        using context_t = format_context_traits<Context>;
+        // Being formatting
 
-        if(m_type == U's')
-        {
-            constexpr bool is_string_like_range =
-                std::convertible_to<std::ranges::range_reference_t<R>, CharT> ||
-                std::convertible_to<std::ranges::range_reference_t<R>, utf::codepoint>;
-
-            if constexpr(!is_string_like_range)
-                throw format_error("invalid range format");
-            else
-            {
-                utf::basic_string_container<CharT> str;
-                str.assign_range(rng);
-
-                if(m_debug)
-                {
-                    context_t::append(ctx, CharT('"'));
-                    context_t::append_escaped(ctx, str);
-                    context_t::append(ctx, CharT('"'));
-                }
-                else
-                    context_t::append(ctx, str);
-
-                return context_t::out(ctx);
-            }
-        }
-
-        context_t::append(ctx, m_opening);
+        context_t::append(fmt_ctx, m_opening);
 
         // Possible implicit conversion when forwarding range values to the underlying formatter.
         // Suppress related compiler warnings.
@@ -5950,11 +5917,11 @@ end_parse:
         {
             if(!first)
             {
-                context_t::append(ctx, m_sep);
+                context_t::append(fmt_ctx, m_sep);
             }
             first = false;
 
-            context_t::advance_to(ctx, m_underlying.format(i, ctx));
+            context_t::advance_to(fmt_ctx, underlying_fmt.format(i, fmt_ctx));
         }
 
 
@@ -5962,37 +5929,68 @@ end_parse:
 #    pragma clang diagnostic pop
 #endif
 
-        context_t::append(ctx, m_closing);
+        context_t::append(fmt_ctx, m_closing);
 
-        return context_t::out(ctx);
+        return context_t::out(fmt_ctx);
     }
 
 private:
-    char32_t m_type = U'\0';
-    underlying_formatter_type m_underlying;
-    string_view_type m_sep = PAPILIO_TSTRING_VIEW(CharT, ", ");
-    string_view_type m_opening;
-    string_view_type m_closing;
-    bool m_debug = false;
+    mutable string_view_type m_sep = PAPILIO_TSTRING_VIEW(CharT, ", ");
+    mutable string_view_type m_opening;
+    mutable string_view_type m_closing;
+    mutable bool m_debug = false;
+
+    template <typename FormatContext>
+    static void as_string(const R& rng, FormatContext& ctx, bool debug_format)
+    {
+        using context_t = format_context_traits<FormatContext>;
+
+        constexpr bool is_string_like_range =
+            std::convertible_to<std::ranges::range_reference_t<R>, CharT> ||
+            std::convertible_to<std::ranges::range_reference_t<R>, utf::codepoint>;
+
+        if constexpr(!is_string_like_range)
+            throw format_error("invalid range format");
+        else
+        {
+            utf::basic_string_container<CharT> str;
+            str.assign_range(rng);
+
+            if(debug_format)
+            {
+                context_t::append(ctx, CharT('"'));
+                context_t::append_escaped(ctx, str);
+                context_t::append(ctx, CharT('"'));
+            }
+            else
+                context_t::append(ctx, str);
+        }
+    }
 
     static constexpr range_format get_kind()
     {
         return format_kind<std::remove_cvref_t<R>>;
     }
 
-    void clear_brackets() noexcept
+    void set_brackets_internal(string_view_type opening, string_view_type closing) const noexcept
     {
-        set_brackets(string_view_type(), string_view_type());
+        m_opening = opening;
+        m_closing = closing;
     }
 
-    void use_set_brackets()
+    void clear_brackets() const noexcept
     {
-        set_brackets(PAPILIO_TSTRING_VIEW(CharT, "{"), PAPILIO_TSTRING_VIEW(CharT, "}"));
+        set_brackets_internal(string_view_type(), string_view_type());
     }
 
-    void use_seq_brackets()
+    void use_set_brackets() const
     {
-        set_brackets(PAPILIO_TSTRING_VIEW(CharT, "["), PAPILIO_TSTRING_VIEW(CharT, "]"));
+        set_brackets_internal(PAPILIO_TSTRING_VIEW(CharT, "{"), PAPILIO_TSTRING_VIEW(CharT, "}"));
+    }
+
+    void use_seq_brackets() const
+    {
+        set_brackets_internal(PAPILIO_TSTRING_VIEW(CharT, "["), PAPILIO_TSTRING_VIEW(CharT, "]"));
     }
 };
 

@@ -181,7 +181,7 @@ TEST(custom_context, custom_context)
         EXPECT_EQ(buf, "**hello**");
     }
 
-    // Nested formatter
+    // Nested formatter (pair)
     {
         std::string buf;
         papilio::basic_dynamic_format_args<custom_ctx_type> args;
@@ -200,5 +200,28 @@ TEST(custom_context, custom_context)
         );
 
         EXPECT_EQ(buf, "(+∞, NaN)");
+    }
+
+    // Nested formatter (range)
+    {
+        std::string buf;
+        papilio::basic_dynamic_format_args<custom_ctx_type> args;
+
+        custom_ctx_type ctx(papilio::locale_ref{}, std::back_inserter(buf), args);
+
+        using context_t = papilio::format_context_traits<custom_ctx_type>;
+
+        static_assert(papilio::formattable_with<std::pair<float, float>, custom_ctx_type>);
+
+        using limits_t = std::numeric_limits<float>;
+        std::vector<float> vec{limits_t::infinity(), limits_t::quiet_NaN()};
+
+        context_t::format_to(
+            ctx,
+            "{}",
+            vec
+        );
+
+        EXPECT_EQ(buf, "[+∞, NaN]");
     }
 }

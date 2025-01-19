@@ -15,12 +15,13 @@ class container_adaptor_formatter :
     using my_base = range_formatter<typename Adaptor::container_type, CharT>;
 
 public:
-    template <typename Context>
-    auto format(const Adaptor& adaptor, Context& ctx) const
+    template <typename ParseContext, typename FormatContext>
+    auto format(const Adaptor& adaptor, ParseContext& parse_ctx, FormatContext& fmt_ctx) const
     {
         return my_base::format(
             adaptor_extractor<Adaptor>::get(adaptor),
-            ctx
+            parse_ctx,
+            fmt_ctx
         );
     }
 };

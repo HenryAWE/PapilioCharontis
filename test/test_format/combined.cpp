@@ -9,6 +9,9 @@ namespace test_format
 {
 struct test_combined
 {
+    test_combined(int v)
+        : val(v) {}
+
     int val = 0;
 };
 } // namespace test_format
