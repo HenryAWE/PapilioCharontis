@@ -78,13 +78,13 @@ TEST(format_args, static)
         EXPECT_EQ(empty.named_size(), 0);
     }
 
+    [](const auto& args)
     {
-        static_format_args<1, 0> args{182375};
         EXPECT_EQ(args.indexed_size(), 1);
         EXPECT_EQ(args.named_size(), 0);
-    }
+    }(make_format_args(182375));
 
-    [](auto args)
+    [](const auto& args)
     {
         EXPECT_EQ(args.indexed_size(), 2);
         EXPECT_EQ(args.named_size(), 1);
@@ -180,7 +180,7 @@ TEST(format_args, ref)
         EXPECT_EQ(get<std::string>(new_ref.get("named")), "value");
     }
 
-    [](auto underlying_fmt_args)
+    [](const auto& underlying_fmt_args)
     {
         format_args_ref args_ref(underlying_fmt_args);
 
@@ -231,6 +231,7 @@ TEST(format_parse_context, char)
         EXPECT_EQ(ctx.current_arg_id(), 0);
         EXPECT_EQ(ctx.next_arg_id(), 1);
         ctx.check_arg_id(0);
+        ctx.check_arg_id("value");
         EXPECT_THROW((void)ctx.current_arg_id(), format_error);
     }
 }

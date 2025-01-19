@@ -42,9 +42,11 @@ TEST(tuple_formatter, basic)
         std::pair<int, std::string> kv{1, "value"};
 
         EXPECT_EQ(PAPILIO_NS format("{:m}", kv), R"(1: "value")");
+        EXPECT_EQ(PAPILIO_NS format("{:*^14m}", kv), R"(**1: "value"**)");
 
         std::pair<int, std::wstring> wkv{1, L"value"};
 
         EXPECT_EQ(PAPILIO_NS format(L"{:m}", wkv), LR"(1: "value")");
+        EXPECT_EQ(PAPILIO_NS format(L"{:*^14m}", wkv), LR"(**1: "value"**)");
     }
 }

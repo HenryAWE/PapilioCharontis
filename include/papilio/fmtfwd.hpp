@@ -86,9 +86,6 @@ class basic_dynamic_format_args;
 PAPILIO_EXPORT using dynamic_format_args = basic_dynamic_format_args<format_context, char>;
 PAPILIO_EXPORT using wdynamic_format_args = basic_dynamic_format_args<wformat_context, wchar_t>;
 
-PAPILIO_EXPORT template <typename Context, typename CharT>
-class basic_format_args_ref;
-
 PAPILIO_EXPORT template <typename Context, typename CharT = typename Context::char_type>
 class basic_format_args_ref;
 
