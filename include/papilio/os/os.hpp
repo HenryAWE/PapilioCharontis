@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <papilio/detail/prefix.hpp>
+#include "../detail/prefix.hpp"
 #include <string_view>
 #include <system_error>
 #include <cstdio>
@@ -52,6 +52,6 @@ void output_nonconv(
 /// @}
 } // namespace papilio::os
 
-#include <papilio/detail/suffix.hpp>
+#include "../detail/suffix.hpp"
 
 #endif

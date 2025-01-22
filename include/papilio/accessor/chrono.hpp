@@ -1,6 +1,8 @@
 #ifndef PAPILIO_ACCESSOR_CHRONO_HPP
 #define PAPILIO_ACCESSOR_CHRONO_HPP
 
+#pragma once
+
 #include <ctime>
 #include <chrono>
 #include "../access.hpp"

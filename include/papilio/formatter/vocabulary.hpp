@@ -7,6 +7,8 @@
 #ifndef PAPILIO_FORMATTER_VOCABULARY_HPP
 #define PAPILIO_FORMATTER_VOCABULARY_HPP
 
+#pragma once
+
 #include <optional>
 #include <variant>
 #include "../detail/config.hpp"

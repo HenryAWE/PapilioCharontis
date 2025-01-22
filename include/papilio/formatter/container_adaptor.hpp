@@ -1,6 +1,8 @@
 #ifndef PAPILIO_FORMATTER_CONTAINER_ADAPTOR_HPP
 #define PAPILIO_FORMATTER_CONTAINER_ADAPTOR_HPP
 
+#pragma once
+
 #include <stack>
 #include <queue>
 #include "../format.hpp"

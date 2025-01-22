@@ -1,10 +1,10 @@
 #ifndef PAPILIO_UTF_CODEPOINT_INL
 #define PAPILIO_UTF_CODEPOINT_INL
 
+#pragma once
+
 #include "codepoint.hpp"
 #include <tuple> // std::tie
-
-#pragma once
 
 namespace papilio::utf
 {
