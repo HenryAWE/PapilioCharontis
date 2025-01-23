@@ -3127,11 +3127,9 @@ struct formatter_traits
      * @param fmt_ctx Format context
      */
     template <typename T, typename ParseContext, typename FormatContext>
-    static void format(T&& val, ParseContext& parse_ctx, FormatContext& fmt_ctx)
+    static void format(Formatter& fmt, T&& val, ParseContext& parse_ctx, FormatContext& fmt_ctx)
     {
         using context_t = format_context_traits<FormatContext>;
-
-        Formatter fmt{};
 
         if constexpr(!parsable<ParseContext>())
         {
@@ -3144,6 +3142,42 @@ struct formatter_traits
         {
             parse_ctx.advance_to(fmt.parse(parse_ctx));
 
+            context_t::advance_to(
+                fmt_ctx,
+                fmt.format(std::forward<T>(val), fmt_ctx)
+            );
+        }
+    }
+
+    /**
+     * @brief Format the value directly
+     *
+     * It will construct an empty parse context if it is necessary.
+     *
+     * @param val The value
+     * @param fmt_ctx Format context
+     */
+    template <typename T, typename FormatContext>
+    static void format(Formatter& fmt, T&& val, FormatContext& fmt_ctx)
+    {
+        using context_t = format_context_traits<FormatContext>;
+
+        using parse_context = basic_format_parse_context<FormatContext>;
+
+        if constexpr(!parsable<parse_context>())
+        {
+            parse_context parse_ctx(
+                std::basic_string_view<char_type>(),
+                empty_format_args_for<FormatContext>()
+            );
+
+            context_t::advance_to(
+                fmt_ctx,
+                fmt.format(std::forward<T>(val), parse_ctx, fmt_ctx)
+            );
+        }
+        else
+        {
             context_t::advance_to(
                 fmt_ctx,
                 fmt.format(std::forward<T>(val), fmt_ctx)
@@ -5890,8 +5924,11 @@ public:
         if(it != parse_ctx.end() && *it == U':')
         {
             ++it;
-            parse_ctx.advance_to(it);
-            it = underlying_fmt.parse(parse_ctx);
+            if constexpr(fmt_t::parsable())
+            {
+                parse_ctx.advance_to(it);
+                it = underlying_fmt.parse(parse_ctx);
+            }
             set_underlying_debug = false;
         }
 
@@ -5921,7 +5958,7 @@ end_parse:
             }
             first = false;
 
-            context_t::advance_to(fmt_ctx, underlying_fmt.format(i, fmt_ctx));
+            fmt_t::format(underlying_fmt, i, fmt_ctx);
         }
 
 

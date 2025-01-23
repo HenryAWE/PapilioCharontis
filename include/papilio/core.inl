@@ -43,8 +43,9 @@ void basic_format_arg<Context>::handle_impl_ptr<T>::format(parse_context& parse_
     if constexpr(formattable_with<value_type, Context>)
     {
         using formatter_t = typename Context::template formatter_type<value_type>;
+        formatter_t fmt{};
         formatter_traits<formatter_t>::format(
-            *m_ptr, parse_ctx, out_ctx
+            fmt, *m_ptr, parse_ctx, out_ctx
         );
     }
     else
@@ -60,8 +61,9 @@ void basic_format_arg<Context>::handle_impl_soo<T>::format(parse_context& parse_
     if constexpr(formattable_with<value_type, Context>)
     {
         using formatter_t = typename Context::template formatter_type<value_type>;
+        formatter_t fmt{};
         formatter_traits<formatter_t>::format(
-            m_val, parse_ctx, out_ctx
+            fmt, m_val, parse_ctx, out_ctx
         );
     }
     else
@@ -101,8 +103,9 @@ void basic_format_arg<Context>::format(parse_context& parse_ctx, Context& out_ct
             else if constexpr(formattable_with<T, Context>)
             {
                 using formatter_t = typename Context::template formatter_type<T>;
+                formatter_t fmt{};
                 formatter_traits<formatter_t>::format(
-                    v, parse_ctx, out_ctx
+                    fmt, v, parse_ctx, out_ctx
                 );
             }
             else

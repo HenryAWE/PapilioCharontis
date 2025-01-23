@@ -164,3 +164,21 @@ TEST(ranges, string_like)
         EXPECT_EQ(PAPILIO_NS format(L"{:?s}", ls), L"\"a\\\"b\"");
     }
 }
+
+TEST(ranges, nested)
+{
+    using namespace papilio;
+
+    {
+        std::vector<std::vector<int>> v{
+            {1, 2},
+            {3, 4, 5},
+            {6}
+        };
+
+        static_assert(formattable<decltype(v)>);
+
+        EXPECT_EQ(PAPILIO_NS format("{}", v), "[[1, 2], [3, 4, 5], [6]]");
+        EXPECT_EQ(PAPILIO_NS format(L"{}", v), L"[[1, 2], [3, 4, 5], [6]]");
+    }
+}
