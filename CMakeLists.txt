@@ -79,11 +79,16 @@ if(${papilio_build_lib})
     add_library(papilio::papilio ALIAS papilio)
 
     # Enable warnings for development
-    target_compile_options(papilio PRIVATE
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-        $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
-        $<$<CXX_COMPILER_ID:Clang>:-Weverything>
-    )
+    option(papilio_all_warnings "enable warnings for development" ON)
+    mark_as_advanced(papilio_all_warnings)
+    if(${papilio_all_warnings})
+        target_compile_options(papilio PRIVATE
+            $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
+            $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
+            $<$<CXX_COMPILER_ID:Clang>:-Weverything>
+        )
+    endif()
+
     if(${papilio_build_module})
         file(GLOB_RECURSE papilio_modules_src "modules/*.cppm")
         target_sources(

@@ -11,6 +11,7 @@
 
 #include <utility>
 #include <cstddef>
+#include <bit>
 #include <limits>
 #include <type_traits>
 #include <concepts>
@@ -994,6 +995,13 @@ using woiterstream = basic_oiterstream<wchar_t, Iterator>;
 /// - Otherwise, this macro is not defined, which means current compiler does not have required extensions.
 /// @{
 
+#if defined PAPILIO_COMPILER_CLANG
+#    pragma clang diagnostic push
+#    if __clang_major__ >= 16 && __clang_major__ < 20
+#        pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
+#    endif
+#endif
+
 namespace detail
 {
     template <auto Value>
@@ -1016,7 +1024,7 @@ namespace detail
         std::size_t end = std::min(name.find(';', start), name.find_last_of(']'));
 #    endif
 
-        return std::string_view(name.data() + start, end - start);
+        name = std::string_view(name.data() + start, end - start);
 
 #elif defined PAPILIO_COMPILER_MSVC
 #    define PAPILIO_HAS_ENUM_NAME "__FUNCSIG__"
@@ -1024,22 +1032,24 @@ namespace detail
         name = __FUNCSIG__;
         std::size_t start = name.find("static_enum_name_impl<") + 22;
         std::size_t end = name.find_last_of('>');
-        return std::string_view(name.data() + start, end - start);
+        name = std::string_view(name.data() + start, end - start);
 
 #else
         static_assert(false, "unsupported compiler");
 
-        return name; // placeholder
 #endif
+
+        // Remove qualifier
+        std::size_t qual_end = name.rfind("::");
+        if(qual_end != std::string_view::npos)
+        {
+            qual_end += 2; // skip "::"
+            return name.substr(qual_end);
+        }
+
+        return name;
     }
 } // namespace detail
-
-#if defined PAPILIO_COMPILER_CLANG
-#    pragma clang diagnostic push
-#    if __clang_major__ >= 16
-#        pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
-#    endif
-#endif
 
 /**
  * @brief Convert an enum value to string at compile time.
@@ -1053,17 +1063,7 @@ namespace detail
 PAPILIO_EXPORT template <auto Value>
 constexpr std::string_view static_enum_name()
 {
-    constexpr std::string_view name = detail::static_enum_name_impl<Value>();
-
-    // Remove qualifier
-    std::size_t qual_end = name.rfind("::");
-    if(qual_end != std::string_view::npos)
-    {
-        qual_end += 2; // skip "::"
-        return name.substr(qual_end);
-    }
-
-    return name;
+    return detail::static_enum_name_impl<Value>();
 }
 
 /**
@@ -1080,12 +1080,13 @@ PAPILIO_EXPORT template <typename T>
 requires std::is_enum_v<T>
 constexpr std::string_view enum_name(T value) noexcept
 {
-    auto names = [=]<std::size_t... Is>(std::index_sequence<Is...>)
+    auto names = [=]<ssize_t... Is>(std::integer_sequence<ssize_t, Is...>)
     {
+        using underlying_t = std::underlying_type_t<T>;
         return std::array<std::string_view, 256>{
-            static_enum_name<static_cast<T>(static_cast<ssize_t>(Is) - 128)>()...
+            detail::static_enum_name_impl<std::bit_cast<T>(underlying_t(Is - 128))>()...
         };
-    }(std::make_index_sequence<256>());
+    }(std::make_integer_sequence<ssize_t, 256>());
 
     return names[static_cast<std::size_t>(value) + 128];
 }
