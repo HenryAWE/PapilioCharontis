@@ -35,7 +35,7 @@ public:
 
         if(val.has_value())
         {
-            context_t::format_to(fmt_ctx, PAPILIO_TSTRING_VIEW(CharT, "{}"), *val);
+            context_t::append_by_formatter(fmt_ctx, *val);
         }
         else
         {
@@ -71,13 +71,13 @@ public:
         using context_t = format_context_traits<FormatContext>;
 
         std::visit(
-            [&](auto&& v)
+            [&](const auto& v)
             {
                 using type = std::decay_t<decltype(v)>;
                 if constexpr(std::same_as<type, std::monostate>)
                     context_t::append(fmt_ctx, PAPILIO_TSTRING_VIEW(CharT, "monostate"));
                 else
-                    context_t::format_to(fmt_ctx, PAPILIO_TSTRING_VIEW(CharT, "{}"), v);
+                    context_t::append_by_formatter(fmt_ctx, v);
             },
             val
         );
@@ -110,11 +110,11 @@ public:
 
         if(val.has_value())
         {
-            context_t::format_to(fmt_ctx, PAPILIO_TSTRING_VIEW(CharT, "{}"), *val);
+            context_t::append_by_formatter(fmt_ctx, *val);
         }
         else
         {
-            context_t::format_to(fmt_ctx, PAPILIO_TSTRING_VIEW(CharT, "{}"), val.error());
+            context_t::append_by_formatter(fmt_ctx, val.error());
         }
 
         return fmt_ctx.out();
