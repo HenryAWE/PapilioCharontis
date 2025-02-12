@@ -41,7 +41,7 @@ public:
 
     format_error(const format_error&) = default;
 
-    ~format_error();
+    ~format_error() override;
 };
 
 /**
@@ -804,6 +804,10 @@ PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
 {
 public:
     using bad_cast::bad_cast;
+
+    bad_handle_cast(const bad_handle_cast&) = default;
+
+    ~bad_handle_cast() override;
 
     const char* what() const noexcept override
     {

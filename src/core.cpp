@@ -5,6 +5,8 @@ namespace papilio
 {
 format_error::~format_error() = default;
 
+bad_handle_cast::~bad_handle_cast() = default;
+
 namespace detail
 {
     static std::string_view script_ec_to_sv(script_error_code ec) noexcept

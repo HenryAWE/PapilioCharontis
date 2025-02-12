@@ -392,16 +392,12 @@ namespace detail
 
         named_arg_proxy& operator=(const named_arg_proxy&) = delete;
 
-        // clang-format off
-
         template <typename T>
         [[nodiscard]]
         constexpr auto operator=(T&& value) noexcept
         {
             return PAPILIO_NS arg(name, std::forward<T>(value));
         }
-
-        // clang-format on
     };
 } // namespace detail
 
@@ -436,8 +432,6 @@ PAPILIO_EXPORT struct independent_t
     template <typename T>
     using proxy = independent_proxy<T>;
 
-    // clang-format off
-
     template <typename T>
     [[nodiscard]]
     constexpr proxy<T> operator()(T& v) const noexcept
@@ -458,8 +452,6 @@ PAPILIO_EXPORT struct independent_t
     {
         return proxy<const T>(v);
     }
-
-    // clang-format on
 };
 
 PAPILIO_EXPORT inline constexpr independent_t independent{};
@@ -1317,25 +1309,22 @@ namespace detail
 /// @}
 } // namespace papilio
 
-namespace std
-{
 template <typename T1, typename T2>
-struct tuple_element<0, ::papilio::compressed_pair<T1, T2>>
+struct std::tuple_element<0, ::papilio::compressed_pair<T1, T2>>
 {
     using type = T1;
 };
 
 template <typename T1, typename T2>
-struct tuple_element<1, ::papilio::compressed_pair<T1, T2>>
+struct std::tuple_element<1, ::papilio::compressed_pair<T1, T2>>
 {
     using type = T2;
 };
 
 template <typename T1, typename T2>
-struct tuple_size<::papilio::compressed_pair<T1, T2>> :
+struct std::tuple_size<::papilio::compressed_pair<T1, T2>> :
     integral_constant<size_t, 2>
 {};
-} // namespace std
 
 #include "detail/suffix.hpp"
 
