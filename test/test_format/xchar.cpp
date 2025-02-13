@@ -13,6 +13,11 @@ TEST(xchar, char8_t)
 {
     using namespace papilio;
 
+    {
+        using context_t = format_context_traits<u8format_context>;
+        static_assert(!context_t::use_locale());
+    }
+
     EXPECT_EQ(PAPILIO_NS format(u8"{}", true), u8"true");
     EXPECT_EQ(PAPILIO_NS formatted_size(u8"{}", true), 4);
 
@@ -31,6 +36,11 @@ TEST(xchar, char16_t)
 {
     using namespace papilio;
 
+    {
+        using context_t = format_context_traits<u16format_context>;
+        static_assert(!context_t::use_locale());
+    }
+
     EXPECT_EQ(PAPILIO_NS format(u"{}", true), u"true");
     EXPECT_EQ(PAPILIO_NS formatted_size(u"{}", true), 4);
 
@@ -48,6 +58,11 @@ TEST(xchar, char16_t)
 TEST(xchar, char32_t)
 {
     using namespace papilio;
+
+    {
+        using context_t = format_context_traits<u32format_context>;
+        static_assert(!context_t::use_locale());
+    }
 
     EXPECT_EQ(PAPILIO_NS format(U"{}", true), U"true");
     EXPECT_EQ(PAPILIO_NS formatted_size(U"{}", true), 4);

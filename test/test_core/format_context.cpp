@@ -12,6 +12,12 @@ TYPED_TEST(format_context_suite, append)
 
     using context_type = typename TestFixture::context_type;
 
+    if constexpr(std::same_as<TypeParam, char> || std::same_as<TypeParam, wchar_t>)
+    {
+        using context_t = format_context_traits<context_type>;
+        static_assert(context_t::use_locale());
+    }
+
     typename TestFixture::string_type result{};
     context_type ctx = TestFixture::create_context(result);
 

@@ -2341,13 +2341,19 @@ public:
     using formatter_type = select_formatter_t<T, basic_format_context>;
 
     basic_format_context(iterator it, format_args_type args)
-        : m_out(std::move(it)), m_args(args), m_loc(nullptr) {}
+        : m_out(std::move(it)), m_data(args) {}
 
-    basic_format_context(const std::locale& loc, iterator it, format_args_type args)
-        : m_out(std::move(it)), m_args(args), m_loc(loc) {}
+    basic_format_context(
+        const std::locale& loc, iterator it, format_args_type args
+    )
+        : m_out(std::move(it)), m_data(args, loc)
+    {}
 
-    basic_format_context(locale_ref loc, iterator it, format_args_type args)
-        : m_out(std::move(it)), m_args(args), m_loc(loc) {}
+    basic_format_context(
+        locale_ref loc, iterator it, format_args_type args
+    )
+        : m_out(std::move(it)), m_data(args, loc)
+    {}
 
     [[nodiscard]]
     iterator out()
@@ -2368,25 +2374,53 @@ public:
     [[nodiscard]]
     const format_args_type& get_args() const noexcept
     {
-        return m_args;
+        return m_data.args;
     }
 
     [[nodiscard]]
-    std::locale getloc() const
+    std::locale getloc() const requires(!xchar<CharT>)
     {
-        return m_loc.get();
+        return getloc_ref().get();
     }
 
     [[nodiscard]]
-    locale_ref getloc_ref() const noexcept
+    locale_ref getloc_ref() const noexcept requires(!xchar<CharT>)
     {
-        return m_loc;
+        return m_data.loc;
     }
 
 private:
     iterator m_out;
-    format_args_type m_args;
-    locale_ref m_loc;
+
+    struct data
+    {
+        format_args_type args;
+        locale_ref loc;
+
+        data(format_args_type args_, locale_ref loc_)
+            : args(std::move(args_)), loc(loc_) {}
+
+        data(format_args_type args_)
+            : args(std::move(args_)), loc() {}
+    };
+
+    struct data_no_loc
+    {
+        format_args_type args;
+
+        template <typename... Ignored>
+        data_no_loc(format_args_type args_, Ignored&&...)
+            : args(std::move(args_))
+        {}
+    };
+
+    // locale is only for char and wchar_t
+    using data_t = std::conditional_t<
+        xchar<CharT>,
+        data_no_loc,
+        data>;
+
+    data_t m_data;
 };
 
 /**
@@ -2422,6 +2456,9 @@ public:
         };
     }
 
+    /**
+     * @brief Check if context supports locale
+     */
     static constexpr bool use_locale() noexcept
     {
         return requires(context_type& ctx) {
@@ -4938,7 +4975,9 @@ public:
     auto format(T val, FormatContext& ctx) const
         -> typename FormatContext::iterator
     {
-        if constexpr(!xchar<CharT>)
+        using context_t = format_context_traits<FormatContext>;
+
+        if constexpr(context_t::use_locale())
         {
             if(data().use_locale)
             {
@@ -4973,8 +5012,6 @@ public:
                 val /= static_cast<T>(base);
             } while(val);
         }
-
-        using context_t = format_context_traits<FormatContext>;
 
         std::size_t used = buf_size;
         if(data().alternate_form)
@@ -5124,24 +5161,13 @@ private:
         }
     }
 
-    const std::numpunct<CharT>* use_facet_ptr(locale_ref loc) const
-    {
-        if constexpr(!xchar<CharT>)
-        {
-            if(data().use_locale)
-                return std::addressof(std::use_facet<facet_type>(loc));
-        }
-
-        return nullptr;
-    }
-
     template <typename Context>
-    auto format_by_facet(T val, Context& ctx) const requires(!xchar<CharT>)
+    auto format_by_facet(T val, Context& ctx) const
     {
         using context_t = format_context_traits<Context>;
 
         small_vector<CharT, 256> buf;
-        const facet_type& facet = std::use_facet<facet_type>(ctx.getloc());
+        const facet_type& facet = std::use_facet<facet_type>(context_t::getloc_ref(ctx));
 
         auto [base, uppercase] = parse_type_ch(data().type);
 
@@ -5327,7 +5353,7 @@ public:
         val = std::abs(val);
 
         bool use_locale = false;
-        if constexpr(!xchar<CharT>)
+        if constexpr(context_t::use_locale())
         {
             if(data().use_locale)
             {
@@ -5518,7 +5544,7 @@ private:
 
     // Output in reversed order for easier implementation of locale support
     template <typename OutputIt>
-    std::pair<OutputIt, std::size_t> float_to_chars_reversed(locale_ref loc, OutputIt out, T val) const requires(!xchar<CharT>)
+    std::pair<OutputIt, std::size_t> float_to_chars_reversed(locale_ref loc, OutputIt out, T val) const
     {
         using namespace std::literals;
 
@@ -6265,9 +6291,11 @@ public:
         }
         else
         {
+            using context_t = format_context_traits<FormatContext>;
+
             string_formatter<CharT> fmt;
             fmt.set_data(m_data);
-            const auto str = get_str(val, ctx.getloc_ref());
+            const auto str = get_str(val, context_t::getloc_ref(ctx));
             return fmt.format(str, ctx);
         }
     }
