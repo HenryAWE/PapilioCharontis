@@ -11,8 +11,8 @@
 
 #include <cassert>
 #include <version>
-#include "detail/config.hpp"
-#include "detail/compat.hpp"
+#include "detail/config.hpp" // IWYU pragma: export
+#include "detail/compat.hpp" // IWYU pragma: export
 
 // clang-format off: Used by CMakeLists.txt for parsing version
 

@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "macros.hpp"
 #include "fmtfwd.hpp"
 #include "core.hpp"
 #include "detail/prefix.hpp"

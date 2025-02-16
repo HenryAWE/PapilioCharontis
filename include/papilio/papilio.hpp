@@ -26,12 +26,16 @@
 
 #pragma once
 
+// IWYU pragma: begin_exports
+
 #include <tuple>
 #include "macros.hpp"
 #include "core.hpp"
 #include "format.hpp"
 #include "print.hpp"
 #include "detail/prefix.hpp"
+
+// IWYU pragma: end_exports
 
 /**
  * @brief The main namespace of Papilio Charontis

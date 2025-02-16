@@ -12,7 +12,6 @@
 #pragma once
 
 #include "format.hpp"
-#include "locale.hpp" // For workaround
 #include "detail/prefix.hpp"
 
 namespace papilio

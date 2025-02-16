@@ -10,7 +10,7 @@
 #pragma once
 
 #include <cstdint>
-#include "format.hpp"
+#include "format.hpp" // IWYU pragma: export
 #include "detail/prefix.hpp"
 
 namespace papilio

@@ -11,7 +11,7 @@
 
 #include <string>
 #include <iterator>
-#include "macros.hpp"
+#include "macros.hpp" // IWYU pragma: export
 #include "detail/prefix.hpp"
 
 namespace papilio

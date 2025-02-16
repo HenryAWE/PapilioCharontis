@@ -20,7 +20,7 @@
 #include <iterator>
 #include <iostream>
 #include "macros.hpp"
-#include "detail/compat.hpp"
+#include "detail/compat.hpp" // IWYU pragma: export
 #include "detail/prefix.hpp"
 
 namespace papilio

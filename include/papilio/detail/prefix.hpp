@@ -1,6 +1,6 @@
 // NOTE: This header intentionally does not contain a header guard!
 
-#include "config.hpp"
+#include "config.hpp" // IWYU pragma: export
 
 #ifdef PAPILIO_COMPILER_CLANG
 #    pragma clang diagnostic push

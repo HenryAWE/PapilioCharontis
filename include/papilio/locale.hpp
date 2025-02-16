@@ -10,7 +10,7 @@
 #pragma once
 
 #include <locale>
-#include "macros.hpp"
+#include "fmtfwd.hpp"
 #include "detail/prefix.hpp"
 
 namespace papilio

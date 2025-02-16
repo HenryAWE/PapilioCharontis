@@ -3,9 +3,13 @@
 
 #pragma once
 
+// IWYU pragma: begin_exports
+
 #include "stralgo.hpp"
 #include "codepoint.hpp"
 #include "string.hpp"
+
+// IWYU pragma: end_exports
 
 namespace papilio
 {
