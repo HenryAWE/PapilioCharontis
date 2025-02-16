@@ -6295,7 +6295,9 @@ public:
 
             string_formatter<CharT> fmt;
             fmt.set_data(m_data);
-            const auto str = get_str(val, context_t::getloc_ref(ctx));
+            const auto str = this->get_str<context_t::use_locale()>(
+                val, context_t::getloc_ref(ctx)
+            );
             return fmt.format(str, ctx);
         }
     }
@@ -6303,6 +6305,7 @@ public:
 private:
     std_formatter_data m_data;
 
+    template <bool ContextUseLocale>
     utf::basic_string_container<CharT> get_str(bool val, locale_ref loc) const
     {
         std::basic_string_view<CharT> true_name = PAPILIO_TSTRING_VIEW(CharT, "true");
@@ -6314,7 +6317,7 @@ private:
         }
         else
         {
-            if constexpr(xchar<CharT>)
+            if constexpr(!ContextUseLocale)
             {
                 return val ? true_name : false_name;
             }
