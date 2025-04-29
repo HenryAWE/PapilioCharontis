@@ -72,6 +72,12 @@ namespace detail
 
 #ifdef PAPILIO_IMPL_INT128_EXT__INT128
 
+#    ifdef PAPILIO_COMPILER_GCC
+#        pragma GCC diagnostic push
+// Ignoring "ISO C++ does not support '__int128' for 'type name'"
+#        pragma GCC diagnostic ignored "-Wpedantic"
+#    endif
+
 using int128_t = __int128;
 using uint128_t = unsigned __int128;
 
@@ -112,6 +118,10 @@ namespace detail
         return static_cast<std::uint64_t>(val & (~0uLL));
     }
 } // namespace detail
+
+#    ifdef PAPILIO_COMPILER_GCC
+#        pragma GCC diagnostic pop
+#    endif
 
 #endif
 

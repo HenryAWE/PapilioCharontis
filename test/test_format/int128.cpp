@@ -8,6 +8,11 @@
 
 #ifdef PAPILIO_HAS_INT128
 
+#    ifdef PAPILIO_COMPILER_GCC
+// Ignoring "ISO C++ does not support '__int128' for 'type name'"
+#        pragma GCC diagnostic ignored "-Wpedantic"
+#    endif
+
 namespace test_format
 {
 #    ifdef PAPILIO_IMPL_INT128_MSVC_STL
