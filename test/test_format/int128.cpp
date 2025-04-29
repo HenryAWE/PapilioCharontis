@@ -30,6 +30,27 @@ static constexpr papilio::int128_t i128_data_b()
 }
 
 #    endif
+
+#    ifdef PAPILIO_IMPL_INT128_EXT__INT128
+
+// == UINT64_MAX
+static constexpr papilio::int128_t i128_data_a()
+{
+    return static_cast<__int128>(
+        std::numeric_limits<std::uint64_t>::max()
+    );
+}
+
+// == UINT64_MAX + 1
+static constexpr papilio::int128_t i128_data_b()
+{
+    auto tmp = static_cast<__int128>(
+        std::numeric_limits<std::uint64_t>::max()
+    );
+    return tmp + 1;
+}
+
+#    endif
 } // namespace test_format
 
 TEST(int128_formatter, int128)
@@ -37,6 +58,7 @@ TEST(int128_formatter, int128)
     using namespace test_format;
     using namespace papilio;
 
+    static_assert(papilio::integral_128bit<papilio::int128_t>);
     static_assert(formattable<papilio::int128_t>);
 
     // UINT64_MAX
@@ -82,6 +104,27 @@ static constexpr papilio::uint128_t u128_data_b()
 }
 
 #    endif
+
+#    ifdef PAPILIO_IMPL_INT128_EXT__INT128
+
+// == UINT64_MAX
+static constexpr papilio::uint128_t u128_data_a()
+{
+    return static_cast<unsigned __int128>(
+        std::numeric_limits<std::uint64_t>::max()
+    );
+}
+
+// == UINT64_MAX + 1
+static constexpr papilio::uint128_t u128_data_b()
+{
+    auto tmp = static_cast<unsigned __int128>(
+        std::numeric_limits<std::uint64_t>::max()
+    );
+    return tmp + 1;
+}
+
+#    endif
 } // namespace test_format
 
 TEST(int128_formatter, uint128)
@@ -89,6 +132,7 @@ TEST(int128_formatter, uint128)
     using namespace test_format;
     using namespace papilio;
 
+    static_assert(papilio::integral_128bit<papilio::uint128_t>);
     static_assert(formattable<papilio::uint128_t>);
 
     // UINT64_MAX

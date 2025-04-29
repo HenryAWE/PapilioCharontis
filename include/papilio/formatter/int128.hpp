@@ -8,8 +8,17 @@
 
 #ifdef PAPILIO_STDLIB_MSVC_STL
 #    define PAPILIO_IMPL_INT128_MSVC_STL
-#    define PAPILIO_HAS_INT128 1
+#    define PAPILIO_HAS_INT128 "std::_Unsigned128/_Signed128"
+// 128-bit integer provided by MSVC STL
 #    include <__msvc_int128.hpp>
+#endif
+
+#ifndef PAPILIO_HAS_INT128
+#    ifdef __SIZEOF_INT128__
+// Built-in __int128 provided by GCC/Clang extension
+#        define PAPILIO_IMPL_INT128_EXT__INT128
+#        define PAPILIO_HAS_INT128 "(unsigned) __int128"
+#    endif
 #endif
 
 #include "../detail/prefix.hpp"
@@ -56,6 +65,51 @@ namespace detail
     constexpr std::uint64_t u128_low64bit(const std::_Unsigned128& val) noexcept
     {
         return val._Word[0];
+    }
+} // namespace detail
+
+#endif
+
+#ifdef PAPILIO_IMPL_INT128_EXT__INT128
+
+using int128_t = __int128;
+using uint128_t = unsigned __int128;
+
+namespace detail
+{
+    template <typename Int128>
+    struct int128_is_unsigned;
+
+    template <>
+    struct int128_is_unsigned<unsigned __int128> : std::false_type
+    {};
+
+    template <>
+    struct int128_is_unsigned<__int128> : std::true_type
+    {};
+
+    // Check if val < 0
+    constexpr bool i128_signbit(const __int128& val) noexcept
+    {
+        return static_cast<bool>(val >> 127);
+    }
+
+    constexpr __int128 i128_abs(const __int128& val) noexcept
+    {
+        if(PAPILIO_NS detail::i128_signbit(val))
+            return -val;
+        else
+            return val;
+    }
+
+    constexpr std::uint64_t i128_low64bit(const __int128& val) noexcept
+    {
+        return static_cast<std::uint64_t>(val & (~0uLL));
+    }
+
+    constexpr std::uint64_t u128_low64bit(const unsigned __int128& val) noexcept
+    {
+        return static_cast<std::uint64_t>(val & (~0uLL));
     }
 } // namespace detail
 
