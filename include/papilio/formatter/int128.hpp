@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "../detail/config.hpp"
-#include "../format.hpp"
+#include "../detail/config.hpp" // IWYU pragma: exports
+#include "../core.hpp"
 
 #ifdef PAPILIO_STDLIB_MSVC_STL
 #    define PAPILIO_IMPL_INT128_MSVC_STL

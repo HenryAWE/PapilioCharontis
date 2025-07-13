@@ -130,6 +130,11 @@ static constexpr papilio::uint128_t u128_data_b()
 }
 
 #    endif
+
+static papilio::uint128_t uint128_max()
+{
+    return ~papilio::uint128_t(0);
+}
 } // namespace test_format
 
 TEST(int128_formatter, uint128)
@@ -158,6 +163,24 @@ TEST(int128_formatter, uint128)
     EXPECT_EQ(
         PAPILIO_NS format(L"{:d}", u128_data_b()),
         L"18446744073709551616"
+    );
+
+    // UINT128_MAX
+    EXPECT_EQ(
+        PAPILIO_NS format("{}", uint128_max()),
+        "340282366920938463463374607431768211455"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format(L"{}", uint128_max()),
+        L"340282366920938463463374607431768211455"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format("{:x}", uint128_max()),
+        "ffffffffffffffffffffffffffffffff"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format(L"{:x}", uint128_max()),
+        L"ffffffffffffffffffffffffffffffff"
     );
 }
 
