@@ -4951,7 +4951,10 @@ inline constexpr std::basic_string_view<CharT> nan_name_upper = PAPILIO_TSTRING_
  * - none: Same as `d`.
  */
 template <std::integral T, typename CharT>
-requires(!char_like<T>)
+requires(
+    !char_like<T> &&
+    sizeof(T) <= sizeof(std::uintmax_t) // No extension like __int128
+)
 class int_formatter : public std_formatter_base
 {
 public:
@@ -6076,7 +6079,10 @@ private:
  * @throw format_error If the integer value is to big for a Unicode code point for `c` type.
  */
 PAPILIO_EXPORT template <std::integral T, typename CharT>
-requires(!std::same_as<T, bool> && !char_like<T>)
+requires(
+    !std::same_as<T, bool> && !char_like<T> &&
+    sizeof(T) <= sizeof(std::uintmax_t) // No extension like __int128
+)
 class formatter<T, CharT>
 {
 public:

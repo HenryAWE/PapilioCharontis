@@ -2,6 +2,7 @@
 #include "test_format.hpp"
 #include <papilio/print.hpp>
 #include <papilio/chrono/chrono_utility.hpp>
+#include <papilio/formatter/int128.hpp>
 #include <papilio_test/setup.hpp>
 
 namespace test_format
@@ -22,6 +23,10 @@ std::wostream& operator<<(std::wostream& os, const stream_only&)
 int main(int argc, char* argv[])
 {
     testing::InitGoogleTest(&argc, argv);
+
+#ifdef PAPILIO_HAS_INT128
+    papilio::println(std::cerr, "PAPILIO_HAS_INT128 = {:?}", PAPILIO_HAS_INT128);
+#endif
 
 #ifdef PAPILIO_HAS_LIB_STACKTRACE
     papilio::println(std::cerr, "PAPILIO_HAS_LIB_STACKTRACE = {:d}L", PAPILIO_HAS_LIB_STACKTRACE);
