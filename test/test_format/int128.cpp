@@ -56,6 +56,16 @@ static constexpr papilio::int128_t i128_data_b()
 }
 
 #    endif
+
+static papilio::int128_t i128_min()
+{
+    return std::numeric_limits<papilio::int128_t>::min();
+}
+
+static papilio::int128_t i128_max()
+{
+    return std::numeric_limits<papilio::int128_t>::max();
+}
 } // namespace test_format
 
 TEST(int128_formatter, int128)
@@ -84,6 +94,42 @@ TEST(int128_formatter, int128)
     EXPECT_EQ(
         PAPILIO_NS format(L"{:d}", i128_data_b()),
         L"18446744073709551616"
+    );
+
+    // INT128_MIN
+    EXPECT_EQ(
+        PAPILIO_NS format("{}", i128_min()),
+        "-170141183460469231731687303715884105728"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format(L"{}", i128_min()),
+        L"-170141183460469231731687303715884105728"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format("{:x}", i128_min()),
+        "-80000000000000000000000000000000"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format(L"{:x}", i128_min()),
+        L"-80000000000000000000000000000000"
+    );
+
+    // INT128_MAX
+    EXPECT_EQ(
+        PAPILIO_NS format("{}", i128_max()),
+        "170141183460469231731687303715884105727"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format(L"{}", i128_max()),
+        L"170141183460469231731687303715884105727"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format("{:x}", i128_max()),
+        "7fffffffffffffffffffffffffffffff"
+    );
+    EXPECT_EQ(
+        PAPILIO_NS format(L"{:x}", i128_max()),
+        L"7fffffffffffffffffffffffffffffff"
     );
 }
 

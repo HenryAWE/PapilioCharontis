@@ -87,11 +87,11 @@ namespace detail
     struct int128_is_unsigned;
 
     template <>
-    struct int128_is_unsigned<unsigned __int128> : std::false_type
+    struct int128_is_unsigned<unsigned __int128> : std::true_type
     {};
 
     template <>
-    struct int128_is_unsigned<__int128> : std::true_type
+    struct int128_is_unsigned<__int128> : std::false_type
     {};
 
     // Check if val < 0
