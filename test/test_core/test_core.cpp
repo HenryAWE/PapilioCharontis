@@ -1,3 +1,4 @@
+#include "papilio/print.hpp"
 #include <gtest/gtest.h>
 #include <papilio/papilio.hpp>
 #include <papilio_test/setup.hpp>
@@ -247,6 +248,19 @@ int main(int argc, char* argv[])
         papilio::get_version(),
         PAPILIO_CPLUSPLUS
     );
+
+#ifdef PAPILIO_PLATFORM_WINDOWS
+    papilio::println(std::cerr, "PAPILIO_PLATFORM_WINDOWS defined");
+#endif
+#ifdef PAPILIO_PLATFORM_EMSCRIPTEN
+    papilio::println(std::cerr, "PAPILIO_PLATFORM_EMSCRIPTEN defined");
+#endif
+#ifdef PAPILIO_PLATFORM_LINUX
+    papilio::println(std::cerr, "PAPILIO_PLATFORM_LINUX defined");
+#endif
+#ifdef PAPILIO_PLATFORM_MACOSX
+    papilio::println(std::cerr, "PAPILIO_PLATFORM_MACOSX defined");
+#endif
 
     return RUN_ALL_TESTS();
 }

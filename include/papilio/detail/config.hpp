@@ -17,6 +17,8 @@
 #    define PAPILIO_PLATFORM_EMSCRIPTEN 1
 #elif defined(__linux__) || defined(__gnu_linux__)
 #    define PAPILIO_PLATFORM_LINUX 1
+#elif defined(__OSX__) || defined(__APPLE__)
+#    define PAPILIO_PLATFORM_MACOSX 1
 #endif
 
 #ifdef __GLIBCXX__
