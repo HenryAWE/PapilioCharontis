@@ -8,7 +8,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            gcc: [12, 13, 14]
+            gcc: [13, 14]
 
         name: GCC-${{matrix.gcc}}
 
