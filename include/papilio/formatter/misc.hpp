@@ -15,7 +15,7 @@
 
 namespace papilio
 {
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::thread::id, CharT>
 {
 public:
@@ -47,7 +47,7 @@ private:
 
 #ifdef PAPILIO_HAS_LIB_STACKTRACE
 
-PAPILIO_EXPORT template <typename Alloc, typename CharT>
+template <typename Alloc, typename CharT>
 class formatter<std::basic_stacktrace<Alloc>, CharT>
 {
 public:
@@ -88,7 +88,7 @@ public:
     }
 };
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::stacktrace_entry, CharT>
 {
 public:

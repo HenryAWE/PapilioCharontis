@@ -140,17 +140,6 @@ papilio::format(U"{}", true);  // 返回 U"true"
 ```
 注意：C++ 新标准添加的 `char8_t`、`char16_t`、`char32_t` 的支持需要包含单独的头文件 `<papilio/xchar.hpp>`。此外，这些字符类型不支持特定于本地环境（locale-specific）的格式化。
 
-### C++ 20 模块（Modules）支持
-```c++
-import papilio;
-
-int main()
-{
-    papilio::print("Hello world from imported module!");
-}
-```
-注意：这个特性需要将 `papilio_build_module` 设置为 `ON` 来编译库。详细信息请参阅 [自定义构建](doc/zh-CN/custom_build.md)。
-
 ## 文档
 1. [构建](doc/zh-CN/build.md)：如何构建项目
 2. [常见问题（FAQ）](doc/zh-CN/faq.md)

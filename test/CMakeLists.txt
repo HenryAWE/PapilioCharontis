@@ -35,11 +35,6 @@ papilio_simple_test(test_utf_codepoint)
 
 papilio_simple_test(test_utf_string)
 
-if(${papilio_build_module})
-    papilio_simple_test(test_modules)
-    target_compile_options(test_modules PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/wd5050>)
-endif()
-
 add_subdirectory(test_core)
 
 add_subdirectory(test_access)

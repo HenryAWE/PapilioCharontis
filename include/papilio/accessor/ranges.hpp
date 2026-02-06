@@ -13,7 +13,7 @@
 
 namespace papilio
 {
-PAPILIO_EXPORT template <typename Context>
+template <typename Context>
 struct accessor<utf::basic_string_container<typename Context::char_type>, Context>
 {
     using char_type = typename Context::char_type;
@@ -58,7 +58,7 @@ struct accessor<utf::basic_string_container<typename Context::char_type>, Contex
     }
 };
 
-PAPILIO_EXPORT template <std::ranges::contiguous_range Range, typename Context>
+template <std::ranges::contiguous_range Range, typename Context>
 struct contiguous_range_accessor
 {
     using char_type = typename Context::char_type;
@@ -115,29 +115,29 @@ struct contiguous_range_accessor
     }
 };
 
-PAPILIO_EXPORT template <typename T, typename Context>
+template <typename T, typename Context>
 struct accessor<std::span<T>, Context> :
     public contiguous_range_accessor<std::span<T>, Context>
 {};
 
-PAPILIO_EXPORT template <typename T, typename Allocator, typename Context>
+template <typename T, typename Allocator, typename Context>
 requires(!std::same_as<T, bool>) // Avoid std::vector<bool>
 struct accessor<std::vector<T, Allocator>, Context> :
     public contiguous_range_accessor<std::vector<T, Allocator>, Context>
 {};
 
-PAPILIO_EXPORT template <typename T, std::size_t Capacity, typename Context>
+template <typename T, std::size_t Capacity, typename Context>
 struct accessor<fixed_vector<T, Capacity>, Context> :
     public contiguous_range_accessor<fixed_vector<T, Capacity>, Context>
 {};
 
-PAPILIO_EXPORT template <typename T, std::size_t Capacity, typename Allocator, typename Context>
+template <typename T, std::size_t Capacity, typename Allocator, typename Context>
 struct accessor<small_vector<T, Capacity, Allocator>, Context> :
     public contiguous_range_accessor<small_vector_base<T, Allocator>, Context>
 {};
 
 // Specialization for std::vector<bool>
-PAPILIO_EXPORT template <typename Allocator, typename Context>
+template <typename Allocator, typename Context>
 struct accessor<std::vector<bool, Allocator>, Context>
 {
     using char_type = typename Context::char_type;
@@ -273,12 +273,12 @@ struct map_accessor
     }
 };
 
-PAPILIO_EXPORT template <typename Key, typename T, typename Compare, typename Allocator, typename Context>
+template <typename Key, typename T, typename Compare, typename Allocator, typename Context>
 struct accessor<std::map<Key, T, Compare, Allocator>, Context> :
     public map_accessor<std::map<Key, T, Compare, Allocator>, Context>
 {};
 
-PAPILIO_EXPORT template <typename Key, typename T, std::size_t Capacity, typename Compare, typename Context>
+template <typename Key, typename T, std::size_t Capacity, typename Compare, typename Context>
 struct accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context> :
     public map_accessor<fixed_flat_map<Key, T, Capacity, Compare>, Context>
 {};

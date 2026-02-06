@@ -19,12 +19,12 @@ namespace papilio
 /// @ingroup PrintTerminal
 /// @{
 
-PAPILIO_EXPORT class text_style;
+class text_style;
 
 /**
  * @brief Terminal output color
  */
-PAPILIO_EXPORT enum class color : std::uint8_t
+enum class color : std::uint8_t
 {
     none = 0,
     black = 30,
@@ -40,7 +40,7 @@ PAPILIO_EXPORT enum class color : std::uint8_t
 /**
  * @brief Terminal output style
  */
-PAPILIO_EXPORT enum class style : std::uint8_t
+enum class style : std::uint8_t
 {
     none = 0,
     bold = 1,
@@ -55,7 +55,7 @@ PAPILIO_EXPORT enum class style : std::uint8_t
  * @param col Color
  * @return text_style Text style data
  */
-PAPILIO_EXPORT text_style fg(color col) noexcept;
+text_style fg(color col) noexcept;
 
 /**
  * @brief Set the background color.
@@ -63,12 +63,12 @@ PAPILIO_EXPORT text_style fg(color col) noexcept;
  * @param col Color
  * @return text_style Text style data
  */
-PAPILIO_EXPORT text_style bg(color col) noexcept;
+text_style bg(color col) noexcept;
 
 /**
  * @brief Terminal output text style
  */
-PAPILIO_EXPORT class text_style
+class text_style
 {
 public:
     constexpr text_style(style st = style::none) noexcept
@@ -228,7 +228,7 @@ namespace detail
     };
 } // namespace detail
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 requires(formattable<T>)
 class formatter<detail::styled_arg<T>, char> : public formatter<T>
 {
@@ -264,7 +264,7 @@ public:
  * @param st Test style data
  * @param val Value to output
  */
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 auto styled(text_style st, const T& val)
 {
     return detail::styled_arg<std::remove_const_t<T>>(st, val);

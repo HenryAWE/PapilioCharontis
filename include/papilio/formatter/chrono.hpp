@@ -163,7 +163,7 @@ namespace detail
 /**
  * @brief Formatter data of chrono types.
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 struct chrono_formatter_data
 {
     using string_container_type = utf::basic_string_container<CharT>;
@@ -175,7 +175,7 @@ struct chrono_formatter_data
 /**
  * @brief Parser for chrono format specification.
  */
-PAPILIO_EXPORT template <typename ParseContext>
+template <typename ParseContext>
 class chrono_formatter_parser : private detail::chrono_fmt_parser_base
 {
 public:
@@ -312,7 +312,7 @@ public:
  * If the specification is empty, it will format the time like `std::asctime` but without the trailing newline.
  * If the specification is not empty, it will pass the time value to `std::put_time` for converting it to string.
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::tm, CharT>
 {
 public:
@@ -526,7 +526,7 @@ namespace detail
  * @tparam ChronoType The chrono type
  * @tparam CharT Character type
  */
-PAPILIO_EXPORT template <typename ChronoType, typename CharT = char>
+template <typename ChronoType, typename CharT = char>
 class chrono_formatter
 {
 public:
@@ -974,93 +974,93 @@ private:
 #    pragma clang diagnostic pop
 #endif
 
-PAPILIO_EXPORT template <typename Duration, typename CharT>
+template <typename Duration, typename CharT>
 class formatter<std::chrono::sys_time<Duration>, CharT> :
     public chrono_formatter<std::chrono::sys_time<Duration>, CharT>
 {};
 
 #ifndef PAPILIO_CHRONO_NO_UTC_TIME
 
-PAPILIO_EXPORT template <typename Duration, typename CharT>
+template <typename Duration, typename CharT>
 class formatter<std::chrono::utc_time<Duration>, CharT> :
     public chrono_formatter<std::chrono::utc_time<Duration>, CharT>
 {};
 
 #endif
 
-PAPILIO_EXPORT template <typename Rep, typename Period, typename CharT>
+template <typename Rep, typename Period, typename CharT>
 class formatter<std::chrono::duration<Rep, Period>, CharT> :
     public chrono_formatter<std::chrono::duration<Rep, Period>, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::year_month, CharT> :
     public chrono_formatter<std::chrono::year_month, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::month_day, CharT> :
     public chrono_formatter<std::chrono::month_day, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::month_day_last, CharT> :
     public chrono_formatter<std::chrono::month_day_last, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::year_month_day, CharT> :
     public chrono_formatter<std::chrono::year_month_day, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::year_month_day_last, CharT> :
     public chrono_formatter<std::chrono::year_month_day_last, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::year, CharT> :
     public chrono_formatter<std::chrono::year, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::month, CharT> :
     public chrono_formatter<std::chrono::month, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::day, CharT> :
     public chrono_formatter<std::chrono::day, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::weekday, CharT> :
     public chrono_formatter<std::chrono::weekday, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::weekday_indexed, CharT> :
     public chrono_formatter<std::chrono::weekday_indexed, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::weekday_last, CharT> :
     public chrono_formatter<std::chrono::weekday_last, CharT>
 {};
 
-PAPILIO_EXPORT template <typename Duration, typename CharT>
+template <typename Duration, typename CharT>
 class formatter<std::chrono::hh_mm_ss<Duration>, CharT> :
     public chrono_formatter<std::chrono::hh_mm_ss<Duration>, CharT>
 {};
 
 #ifndef PAPILIO_CHRONO_NO_TIMEZONE
 
-PAPILIO_EXPORT template <typename Duration, typename TimeZonePtr, typename CharT>
+template <typename Duration, typename TimeZonePtr, typename CharT>
 class formatter<std::chrono::zoned_time<Duration, TimeZonePtr>, CharT> :
     public chrono_formatter<std::chrono::zoned_time<Duration, TimeZonePtr>, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::chrono::sys_info, CharT> :
     public chrono_formatter<std::chrono::sys_info, CharT>
 {};

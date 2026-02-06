@@ -21,7 +21,7 @@ namespace papilio
  *
  * @tparam CharT Character type
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class basic_indexing_value
 {
 public:
@@ -124,7 +124,7 @@ private:
  *
  * @tparam CharT Character type
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class basic_attribute_name
 {
 public:
@@ -202,7 +202,7 @@ private:
 /**
  * @brief Base of invalid attribute name.
  */
-PAPILIO_EXPORT class invalid_attribute_base : public std::invalid_argument
+class invalid_attribute_base : public std::invalid_argument
 {
 public:
     invalid_attribute_base(const invalid_attribute_base&) = default;
@@ -219,7 +219,7 @@ protected:
  *
  * @tparam CharT Character type
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class basic_invalid_attribute : public invalid_attribute_base
 {
 public:
@@ -246,7 +246,7 @@ private:
  *
  * @throw basic_invalid_attribute The exception in specified character type
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 [[noreturn]]
 void throw_invalid_attribute(const basic_attribute_name<CharT>& attr)
 {
@@ -261,7 +261,7 @@ void throw_invalid_attribute(const basic_attribute_name<CharT>& attr)
  *
  * @ingroup Accessor
  */
-PAPILIO_EXPORT template <typename T, typename Context = format_context>
+template <typename T, typename Context = format_context>
 struct accessor
 {};
 
@@ -299,7 +299,7 @@ namespace detail
  * @tparam T Type to access.
  * @tparam Context Format context type @sa FormatContext
  */
-PAPILIO_EXPORT template <typename T, typename Context = format_context>
+template <typename T, typename Context = format_context>
 class accessor_traits : public detail::accessor_traits_base
 {
 public:

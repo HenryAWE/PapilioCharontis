@@ -425,7 +425,7 @@ private:
 /**
  * @brief Reference to a string without ownership, similar to `std::string_view`
  */
-PAPILIO_EXPORT template <char_like CharT>
+template <char_like CharT>
 class basic_string_ref<CharT> : public implement_string<CharT, basic_string_ref<CharT>>
 {
     using my_base = implement_string<CharT, basic_string_ref<CharT>>;
@@ -747,7 +747,7 @@ private:
 
 // global functions
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(basic_string_ref<T> lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     if constexpr(std::same_as<T, U>)
@@ -758,121 +758,121 @@ constexpr bool operator==(basic_string_ref<T> lhs, basic_string_ref<U> rhs) noex
     }
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(basic_string_ref<T> lhs, const U* rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const T* lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(basic_string_ref<T> lhs, std::basic_string_view<U> rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(std::basic_string_view<T> lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(basic_string_ref<T> lhs, const std::basic_string<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const std::basic_string<T>& lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(basic_string_ref<T> lhs, basic_string_ref<U> rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(basic_string_ref<T> lhs, const U* rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const T* lhs, basic_string_ref<U> rhs) noexcept
 {
     return basic_string_ref(lhs).compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(basic_string_ref<T> lhs, std::basic_string_view<U> rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(std::basic_string_view<T> lhs, basic_string_ref<U> rhs) noexcept
 {
     return basic_string_ref(lhs).compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(basic_string_ref<T> lhs, const std::basic_string<U>& rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const std::basic_string<T>& lhs, basic_string_ref<U> rhs) noexcept
 {
     return basic_string_ref(lhs).compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT using string_ref = basic_string_ref<char>;
-PAPILIO_EXPORT using u8string_ref = basic_string_ref<char8_t>;
-PAPILIO_EXPORT using u16string_ref = basic_string_ref<char16_t>;
-PAPILIO_EXPORT using u32string_ref = basic_string_ref<char32_t>;
-PAPILIO_EXPORT using wstring_ref = basic_string_ref<wchar_t>;
+using string_ref = basic_string_ref<char>;
+using u8string_ref = basic_string_ref<char8_t>;
+using u16string_ref = basic_string_ref<char16_t>;
+using u32string_ref = basic_string_ref<char32_t>;
+using wstring_ref = basic_string_ref<wchar_t>;
 
 inline namespace literals
 {
-    PAPILIO_EXPORT constexpr string_ref operator""_sr(
+    constexpr string_ref operator""_sr(
         const char* str, std::size_t size
     ) noexcept
     {
         return string_ref(str, size);
     }
 
-    PAPILIO_EXPORT constexpr u8string_ref operator""_sr(
+    constexpr u8string_ref operator""_sr(
         const char8_t* str, std::size_t size
     ) noexcept
     {
         return u8string_ref(str, size);
     }
 
-    PAPILIO_EXPORT constexpr u16string_ref operator""_sr(
+    constexpr u16string_ref operator""_sr(
         const char16_t* str, std::size_t size
     ) noexcept
     {
         return u16string_ref(str, size);
     }
 
-    PAPILIO_EXPORT constexpr u32string_ref operator""_sr(
+    constexpr u32string_ref operator""_sr(
         const char32_t* str, std::size_t size
     ) noexcept
     {
         return u32string_ref(str, size);
     }
 
-    PAPILIO_EXPORT constexpr wstring_ref operator""_sr(
+    constexpr wstring_ref operator""_sr(
         const wchar_t* str, std::size_t size
     ) noexcept
     {
@@ -886,7 +886,7 @@ inline namespace literals
  * This string class not only can refer to a string without owning it,
  * but also has ability to obtain ownership when necessary.
  */
-PAPILIO_EXPORT template <char_like CharT>
+template <char_like CharT>
 class basic_string_container<CharT> : public implement_string<CharT, basic_string_container<CharT>>
 {
     using my_base = implement_string<CharT, basic_string_container<CharT>>;
@@ -1612,142 +1612,142 @@ private:
     }
 };
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const basic_string_container<T>& lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const basic_string_container<T>& lhs, basic_string_ref<U> rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(basic_string_ref<T> lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const basic_string_container<T>& lhs, const U* rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const T* lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const basic_string_container<T>& lhs, std::basic_string_view<U> rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(std::basic_string_view<T> lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const basic_string_container<T>& lhs, const std::basic_string<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return lhs == basic_string_ref<U>(rhs);
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr bool operator==(const std::basic_string<T>& lhs, const basic_string_container<U>& rhs) noexcept(std::same_as<T, U>)
 {
     return basic_string_ref<T>(lhs) == rhs;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const basic_string_container<T>& lhs, const basic_string_container<U>& rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const basic_string_container<T>& lhs, const U* rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const T* lhs, const basic_string_container<U>& rhs) noexcept
 {
     return basic_string_ref(lhs).compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const basic_string_container<T>& lhs, std::basic_string_view<U> rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(std::basic_string_view<T> lhs, const basic_string_container<U>& rhs) noexcept
 {
     return basic_string_ref(lhs).compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const basic_string_container<T>& lhs, const std::basic_string<U>& rhs) noexcept
 {
     return lhs.compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT template <char_like T, char_like U>
+template <char_like T, char_like U>
 constexpr std::strong_ordering operator<=>(const std::basic_string<T>& lhs, const basic_string_container<U>& rhs) noexcept
 {
     return basic_string_ref(lhs).compare(rhs) <=> 0;
 }
 
-PAPILIO_EXPORT using string_container = basic_string_container<char>;
-PAPILIO_EXPORT using u8string_container = basic_string_container<char8_t>;
-PAPILIO_EXPORT using u16string_container = basic_string_container<char16_t>;
-PAPILIO_EXPORT using u32string_container = basic_string_container<char32_t>;
-PAPILIO_EXPORT using wstring_container = basic_string_container<wchar_t>;
+using string_container = basic_string_container<char>;
+using u8string_container = basic_string_container<char8_t>;
+using u16string_container = basic_string_container<char16_t>;
+using u32string_container = basic_string_container<char32_t>;
+using wstring_container = basic_string_container<wchar_t>;
 
-PAPILIO_EXPORT std::istream& operator>>(std::istream& is, string_container& str);
-PAPILIO_EXPORT std::wistream& operator>>(std::wistream& is, wstring_container& str);
+std::istream& operator>>(std::istream& is, string_container& str);
+std::wistream& operator>>(std::wistream& is, wstring_container& str);
 
 inline namespace literals
 {
-    PAPILIO_EXPORT inline string_container operator""_sc(
+    inline string_container operator""_sc(
         const char* str, std::size_t size
     ) noexcept
     {
         return string_container(str, size);
     }
 
-    PAPILIO_EXPORT inline u8string_container operator""_sc(
+    inline u8string_container operator""_sc(
         const char8_t* str, std::size_t size
     ) noexcept
     {
         return u8string_container(str, size);
     }
 
-    PAPILIO_EXPORT inline u16string_container operator""_sc(
+    inline u16string_container operator""_sc(
         const char16_t* str, std::size_t size
     ) noexcept
     {
         return u16string_container(str, size);
     }
 
-    PAPILIO_EXPORT inline u32string_container operator""_sc(
+    inline u32string_container operator""_sc(
         const char32_t* str, std::size_t size
     ) noexcept
     {
         return u32string_container(str, size);
     }
 
-    PAPILIO_EXPORT inline wstring_container operator""_sc(
+    inline wstring_container operator""_sc(
         const wchar_t* str, std::size_t size
     ) noexcept
     {

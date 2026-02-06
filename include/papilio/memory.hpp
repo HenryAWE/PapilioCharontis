@@ -22,7 +22,7 @@ namespace papilio
  * @tparam Capacity Maximum size of storage in bytes
  * @tparam Align Alignment of storage
  */
-PAPILIO_EXPORT template <
+template <
     std::size_t Capacity,
     std::size_t Align = alignof(std::max_align_t)>
 class static_storage
@@ -56,7 +56,7 @@ private:
 /**
  * @brief Specialization of `static_storage` for zero capacity.
  */
-PAPILIO_EXPORT template <std::size_t Align>
+template <std::size_t Align>
 class static_storage<0, Align>
 {
 public:
@@ -149,7 +149,7 @@ namespace detail
  * @tparam T Element type
  * @tparam Deleter Deleter
  */
-PAPILIO_EXPORT template <
+template <
     typename T,
     typename Deleter = std::default_delete<T>>
 class optional_unique_ptr : public detail::optional_ptr_base<optional_unique_ptr<T, Deleter>, T>
@@ -333,7 +333,7 @@ private:
     compressed_pair<Deleter, bool> m_control;
 };
 
-PAPILIO_EXPORT template <
+template <
     typename T,
     typename Deleter>
 class optional_unique_ptr<T[], Deleter>
@@ -501,17 +501,17 @@ private:
     compressed_pair<Deleter, bool> m_control;
 };
 
-PAPILIO_EXPORT template <typename T, typename Deleter>
+template <typename T, typename Deleter>
 optional_unique_ptr(std::unique_ptr<T, Deleter>&&) -> optional_unique_ptr<T, Deleter>;
 
-PAPILIO_EXPORT template <typename T, typename... Args>
+template <typename T, typename... Args>
 requires(!std::is_array_v<T>)
 optional_unique_ptr<T> make_optional_unique(Args&&... args)
 {
     return optional_unique_ptr<T>(new T(std::forward<Args>(args)...), true);
 }
 
-PAPILIO_EXPORT template <typename T, typename... Args>
+template <typename T, typename... Args>
 requires(std::is_array_v<T> && std::extent_v<T> == 0)
 optional_unique_ptr<T> make_optional_unique(std::size_t n)
 {
@@ -519,7 +519,7 @@ optional_unique_ptr<T> make_optional_unique(std::size_t n)
     return optional_unique_ptr<T>(new element_type[n](), true);
 }
 
-PAPILIO_EXPORT template <typename T, typename... Args>
+template <typename T, typename... Args>
 requires(std::is_array_v<T> && std::extent_v<T> != 0)
 optional_unique_ptr<T> make_optional_unique(std::size_t n) = delete;
 } // namespace papilio

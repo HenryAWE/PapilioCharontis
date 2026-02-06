@@ -28,7 +28,7 @@ namespace papilio
 /// @defgroup Utility Utilities
 /// @{
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept char_like =
     std::same_as<std::remove_cv_t<T>, char> ||
     std::same_as<std::remove_cv_t<T>, wchar_t> ||
@@ -36,20 +36,20 @@ concept char_like =
     std::same_as<std::remove_cv_t<T>, char32_t> ||
     std::same_as<std::remove_cv_t<T>, char8_t>;
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 concept char8_like = char_like<CharT> && sizeof(CharT) == 1;
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 concept char16_like = char_like<CharT> && sizeof(CharT) == 2;
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 concept char32_like = char_like<CharT> && sizeof(CharT) == 4;
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept xchar =
     std::same_as<std::remove_cv_t<T>, char16_t> ||
     std::same_as<std::remove_cv_t<T>, char32_t> ||
     std::same_as<std::remove_cv_t<T>, char8_t>;
 
-PAPILIO_EXPORT template <typename T, typename CharT>
+template <typename T, typename CharT>
 concept basic_string_like =
     std::same_as<std::decay_t<T>, CharT*> ||
     std::same_as<std::decay_t<T>, const CharT*> ||
@@ -57,15 +57,15 @@ concept basic_string_like =
     std::same_as<std::remove_cv_t<T>, std::basic_string_view<CharT>> ||
     std::is_convertible_v<T, std::basic_string_view<CharT>>;
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept string_like = basic_string_like<T, char>;
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept u8string_like = basic_string_like<T, char8_t>;
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept u16string_like = basic_string_like<T, char16_t>;
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept u32string_like = basic_string_like<T, char32_t>;
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept wstring_like = basic_string_like<T, wchar_t>;
 
 namespace detail
@@ -75,7 +75,7 @@ namespace detail
                                   requires(T ptr, std::size_t i) { ptr[i]; };
 } // namespace detail
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept pointer_like =
     requires(T ptr) { static_cast<bool>(ptr); } &&
     (std::is_pointer_v<T> || detail::pointer_like_helper<T>);
@@ -86,13 +86,13 @@ concept pointer_like =
  * @param p The pointer-like object
  * @return The raw pointer
  */
-PAPILIO_EXPORT template <pointer_like T>
+template <pointer_like T>
 constexpr const void* ptr(const T& p) noexcept(noexcept(std::to_address(p)))
 {
     return std::to_address(p);
 }
 
-PAPILIO_EXPORT constexpr const void* ptr(std::nullptr_t) noexcept
+constexpr const void* ptr(std::nullptr_t) noexcept
 {
     return nullptr;
 }
@@ -119,9 +119,9 @@ namespace detail
         std::tuple_size<T>::value == 2;
 } // namespace detail
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept tuple_like = detail::tuple_like_helper<std::remove_cvref_t<T>>;
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 concept pair_like = detail::pair_like_helper<std::remove_cvref_t<T>>;
 
 namespace detail
@@ -145,21 +145,21 @@ namespace detail
         };
 } // namespace detail
 
-PAPILIO_EXPORT template <typename MapType>
+template <typename MapType>
 concept map_like = detail::map_like_impl<
     std::remove_cv_t<MapType>,
     typename MapType::key_type,
     typename MapType::mapped_type>;
 
-PAPILIO_EXPORT template <typename T, template <typename...> typename Template>
+template <typename T, template <typename...> typename Template>
 struct is_specialization_of : public std::false_type
 {};
 
-PAPILIO_EXPORT template <template <typename...> typename Template, typename... Args>
+template <template <typename...> typename Template, typename... Args>
 struct is_specialization_of<Template<Args...>, Template> : public std::true_type
 {};
 
-PAPILIO_EXPORT template <typename T, template <typename...> typename Template>
+template <typename T, template <typename...> typename Template>
 inline constexpr bool is_specialization_of_v = is_specialization_of<T, Template>::value;
 
 namespace detail
@@ -225,17 +225,17 @@ public:
 
 // ^^^ concepts ^^^ / vvv tags vvv
 
-PAPILIO_EXPORT struct reverse_index_t
+struct reverse_index_t
 {};
 
-PAPILIO_EXPORT constexpr reverse_index_t reverse_index = {};
+constexpr reverse_index_t reverse_index = {};
 
 // ^^^ tags ^^^ / vvv auxiliary types vvv
 
 /**
  * @brief Signed size type
  */
-PAPILIO_EXPORT using ssize_t = std::make_signed_t<std::size_t>;
+using ssize_t = std::make_signed_t<std::size_t>;
 
 /**
  * @brief `[begin, end)` range.
@@ -243,7 +243,7 @@ PAPILIO_EXPORT using ssize_t = std::make_signed_t<std::size_t>;
  * Negative value means reverse index like Python.
  * For example, -1 refers to the last element, and -2 refers to the second to last element.
  */
-PAPILIO_EXPORT class index_range : public std::pair<ssize_t, ssize_t>
+class index_range : public std::pair<ssize_t, ssize_t>
 {
 public:
     using size_type = std::size_t;
@@ -310,7 +310,7 @@ public:
 /**
  * @brief Proxy of named argument.
  */
-PAPILIO_EXPORT template <typename CharT, typename T>
+template <typename CharT, typename T>
 struct basic_named_arg
 {
     static_assert(!std::is_reference_v<T>, "T cannot be a reference");
@@ -345,9 +345,9 @@ struct basic_named_arg
     }
 };
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 using named_arg = basic_named_arg<char, T>;
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 using wnamed_arg = basic_named_arg<wchar_t, T>;
 
 namespace detail
@@ -356,20 +356,20 @@ namespace detail
     concept is_named_arg_helper = requires() { typename T::named_arg_tag; };
 } // namespace detail
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 struct is_named_arg : public std::bool_constant<detail::is_named_arg_helper<T>>
 {};
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 constexpr inline bool is_named_arg_v = is_named_arg<T>::value;
 
-PAPILIO_EXPORT template <typename CharT, typename T>
+template <typename CharT, typename T>
 constexpr auto arg(const CharT* name, T&& value) noexcept
 {
     return basic_named_arg<CharT, std::remove_reference_t<T>>(name, value);
 }
 
-PAPILIO_EXPORT template <typename CharT, typename T>
+template <typename CharT, typename T>
 constexpr auto arg(const std::basic_string_view<CharT> name, T&& value) noexcept
 {
     return basic_named_arg<CharT, std::remove_reference_t<T>>(name, value);
@@ -405,14 +405,14 @@ inline namespace literals
 {
     inline namespace named_arg_literals
     {
-        PAPILIO_EXPORT constexpr auto operator""_a(
+        constexpr auto operator""_a(
             const char* name, std::size_t size
         ) noexcept
         {
             return PAPILIO_NS detail::named_arg_proxy<char>(name, size);
         }
 
-        PAPILIO_EXPORT constexpr auto operator""_a(
+        constexpr auto operator""_a(
             const wchar_t* name, std::size_t size
         ) noexcept
         {
@@ -421,13 +421,13 @@ inline namespace literals
     } // namespace named_arg_literals
 } // namespace literals
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 struct independent_proxy : public std::reference_wrapper<T>
 {
     using std::reference_wrapper<T>::reference_wrapper;
 };
 
-PAPILIO_EXPORT struct independent_t
+struct independent_t
 {
     template <typename T>
     using proxy = independent_proxy<T>;
@@ -454,7 +454,7 @@ PAPILIO_EXPORT struct independent_t
     }
 };
 
-PAPILIO_EXPORT inline constexpr independent_t independent{};
+inline constexpr independent_t independent{};
 
 namespace detail
 {
@@ -768,7 +768,7 @@ namespace detail
  * @tparam T1 First type
  * @tparam T2 Second type
  */
-PAPILIO_EXPORT template <typename T1, typename T2>
+template <typename T1, typename T2>
 class compressed_pair :
     public detail::compressed_pair_impl<T1, T2, detail::get_cp_impl_id<T1, T2>()>
 {
@@ -864,7 +864,7 @@ namespace detail
  * @tparam CharT Character type
  * @tparam Iterator Input or output iterator
  */
-PAPILIO_EXPORT template <
+template <
     typename CharT,
     std::input_or_output_iterator Iterator>
 class basic_iterbuf :
@@ -939,12 +939,12 @@ private:
     }
 };
 
-PAPILIO_EXPORT template <std::input_or_output_iterator Iterator>
+template <std::input_or_output_iterator Iterator>
 using iterbuf = basic_iterbuf<char, Iterator>;
-PAPILIO_EXPORT template <std::input_or_output_iterator Iterator>
+template <std::input_or_output_iterator Iterator>
 using witerbuf = basic_iterbuf<wchar_t, Iterator>;
 
-PAPILIO_EXPORT template <
+template <
     typename CharT,
     std::output_iterator<CharT> Iterator>
 class basic_oiterstream : public std::basic_ostream<CharT>
@@ -969,9 +969,9 @@ private:
     basic_iterbuf<CharT, Iterator> m_buf;
 };
 
-PAPILIO_EXPORT template <std::output_iterator<char> Iterator>
+template <std::output_iterator<char> Iterator>
 using oiterstream = basic_oiterstream<char, Iterator>;
-PAPILIO_EXPORT template <std::output_iterator<wchar_t> Iterator>
+template <std::output_iterator<wchar_t> Iterator>
 using woiterstream = basic_oiterstream<wchar_t, Iterator>;
 
 /// @}
@@ -1052,7 +1052,7 @@ namespace detail
  * - For multiple enum with same value, the result will be one of them, depending on the compiler.
  * - For invalid enum value, the result is undefined.
  */
-PAPILIO_EXPORT template <auto Value>
+template <auto Value>
 constexpr std::string_view static_enum_name()
 {
     return detail::static_enum_name_impl<Value>();
@@ -1068,7 +1068,7 @@ constexpr std::string_view static_enum_name()
  *
  * @sa static_enum_name
  */
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 requires std::is_enum_v<T>
 constexpr std::string_view enum_name(T value) noexcept
 {
@@ -1116,7 +1116,7 @@ namespace detail
  * // ss.str() == "c 1 1.1 "
  * @endcode
  */
-PAPILIO_EXPORT template <tuple_like Tuple, typename Func>
+template <tuple_like Tuple, typename Func>
 constexpr void tuple_for_each(Tuple&& tp, Func&& func)
 {
     constexpr std::size_t tp_size = std::tuple_size_v<std::remove_cvref_t<Tuple>>;
@@ -1147,7 +1147,7 @@ namespace detail
 /// @defgroup Join String joiner
 /// @{
 
-PAPILIO_EXPORT template <std::ranges::range R, typename CharT = char>
+template <std::ranges::range R, typename CharT = char>
 class joiner : public detail::joiner_base<CharT>
 {
     using my_base = detail::joiner_base<CharT>;
@@ -1206,19 +1206,19 @@ private:
     string_view_type m_sep;
 };
 
-PAPILIO_EXPORT template <typename CharT = char, std::ranges::range R>
+template <typename CharT = char, std::ranges::range R>
 auto join(R& rng)
 {
     return joiner<R, CharT>(rng);
 }
 
-PAPILIO_EXPORT template <typename CharT = char, std::ranges::range R>
+template <typename CharT = char, std::ranges::range R>
 auto join(R& rng, std::basic_string_view<CharT> sep)
 {
     return joiner<R, CharT>(rng, sep);
 }
 
-PAPILIO_EXPORT template <typename CharT = char, std::ranges::range R>
+template <typename CharT = char, std::ranges::range R>
 auto join(R& rng, const CharT* sep)
 {
     return joiner<R, CharT>(rng, sep);

@@ -34,7 +34,7 @@ namespace papilio
  *
  * @ingroup Format
  */
-PAPILIO_EXPORT class format_error : public std::runtime_error
+class format_error : public std::runtime_error
 {
 public:
     using runtime_error::runtime_error;
@@ -50,7 +50,7 @@ public:
  *
  * @ingroup Format
  */
-PAPILIO_EXPORT enum class format_align : std::uint8_t
+enum class format_align : std::uint8_t
 {
     /** Actual alignment depends on the type to be formatted. */
     default_align = 0,
@@ -67,7 +67,7 @@ PAPILIO_EXPORT enum class format_align : std::uint8_t
  *
  * @ingroup Format
  */
-PAPILIO_EXPORT enum class format_sign : std::uint8_t
+enum class format_sign : std::uint8_t
 {
     /** Actual meaning depends on the type to be formatted. */
     default_sign = 0,
@@ -89,7 +89,7 @@ PAPILIO_EXPORT enum class format_sign : std::uint8_t
  *
  * @ingroup Format
  */
-PAPILIO_EXPORT enum class range_format
+enum class range_format
 {
     /** Disallows range default formatter to format range. */
     disabled = 0,
@@ -155,7 +155,7 @@ constexpr inline range_format format_kind<R> = []
  *
  * @ingroup Format
  */
-PAPILIO_EXPORT template <typename CharT, typename... Args>
+template <typename CharT, typename... Args>
 class basic_format_string
 {
 public:
@@ -192,7 +192,7 @@ private:
  *
  * @ingroup Script
  */
-PAPILIO_EXPORT enum class script_error_code : int
+enum class script_error_code : int
 {
     /** No error */
     no_error = 0,
@@ -244,7 +244,7 @@ std::wostream& operator<<(std::wostream& os, script_error_code ec);
  * @brief Formatter data for standard format specification
  * @ingroup Formatter
  */
-PAPILIO_EXPORT struct std_formatter_data
+struct std_formatter_data
 {
     using size_type = std::size_t;
 
@@ -303,7 +303,7 @@ PAPILIO_EXPORT struct std_formatter_data
  * @ingroup Formatter
  * @sa std_formatter_data
  */
-PAPILIO_EXPORT struct simple_formatter_data
+struct simple_formatter_data
 {
     using size_type = std::size_t;
 
@@ -350,7 +350,7 @@ PAPILIO_EXPORT struct simple_formatter_data
  *
  * @ingroup Variable
  */
-PAPILIO_EXPORT class bad_variable_access : public std::bad_variant_access
+class bad_variable_access : public std::bad_variant_access
 {
 public:
     using bad_variant_access::bad_variant_access;
@@ -363,7 +363,7 @@ public:
 /**
  * @brief Invalid conversion error
  */
-PAPILIO_EXPORT class invalid_conversion : public std::invalid_argument
+class invalid_conversion : public std::invalid_argument
 {
 public:
     using invalid_argument::invalid_argument;
@@ -380,7 +380,7 @@ public:
 /**
  * @brief Base of script variable
  */
-PAPILIO_EXPORT class variable_base
+class variable_base
 {
 public:
     using int_type = std::int64_t;
@@ -403,7 +403,7 @@ protected:
 /**
  * @brief Script variable
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class basic_variable : public variable_base
 {
     using my_base = variable_base;
@@ -774,25 +774,25 @@ private:
     }
 };
 
-PAPILIO_EXPORT template <typename T, typename CharT>
+template <typename T, typename CharT>
 concept basic_variable_storable =
     std::same_as<T, bool> ||
     std::same_as<T, variable::int_type> ||
     std::same_as<T, variable::float_type> ||
     std::same_as<T, utf::basic_string_container<CharT>>;
 
-PAPILIO_EXPORT template <typename T, typename CharT>
+template <typename T, typename CharT>
 struct is_basic_variable_storable :
     public std::bool_constant<basic_variable_storable<T, CharT>>
 {};
 
-PAPILIO_EXPORT template <typename T, typename CharT>
+template <typename T, typename CharT>
 inline constexpr bool is_basic_variable_storable_v =
     is_basic_variable_storable<T, CharT>::value;
 
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 using is_variable_storable = is_basic_variable_storable<T, char>;
-PAPILIO_EXPORT template <typename T>
+template <typename T>
 inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 
 /// @}
@@ -800,7 +800,7 @@ inline constexpr bool is_variable_storable_v = is_variable_storable<T>::value;
 /**
  * @brief Bad handle cast
  */
-PAPILIO_EXPORT class bad_handle_cast : public std::bad_cast
+class bad_handle_cast : public std::bad_cast
 {
 public:
     using bad_cast::bad_cast;
@@ -818,7 +818,7 @@ public:
 /**
  * @brief Default formatter. It does nothing.
  */
-PAPILIO_EXPORT template <typename T, typename CharT>
+template <typename T, typename CharT>
 class formatter
 {
 public:
@@ -835,7 +835,7 @@ public:
  *
  * Derive your formatter from this class to explicitly prevent a type from being formatted
  */
-PAPILIO_EXPORT class disabled_formatter
+class disabled_formatter
 {
     disabled_formatter() = delete;
     disabled_formatter(const disabled_formatter&) = delete;
@@ -891,7 +891,7 @@ namespace detail
 /**
  * @brief Format argument
  */
-PAPILIO_EXPORT template <typename Context>
+template <typename Context>
 class basic_format_arg
 {
 public:
@@ -1699,14 +1699,14 @@ protected:
     }
 };
 
-PAPILIO_EXPORT template <typename T, typename Context = format_context>
+template <typename T, typename Context = format_context>
 struct is_format_args : public std::is_base_of<format_args_base<Context>, T>
 {};
 
-PAPILIO_EXPORT template <typename T, typename Context = format_context>
+template <typename T, typename Context = format_context>
 constexpr inline bool is_format_args_v = is_format_args<T, Context>::value;
 
-PAPILIO_EXPORT template <
+template <
     typename Context,
     typename CharT = typename Context::char_type>
 class basic_empty_format_args final : public format_args_base<Context, CharT>
@@ -1748,14 +1748,14 @@ public:
     }
 };
 
-PAPILIO_EXPORT template <typename Context>
+template <typename Context>
 const basic_empty_format_args<Context>& empty_format_args_for() noexcept
 {
     static basic_empty_format_args<Context> args;
     return args;
 }
 
-PAPILIO_EXPORT template <
+template <
     std::size_t IndexedArgumentCount,
     std::size_t NamedArgumentCount,
     typename Context = format_context,
@@ -1865,7 +1865,7 @@ private:
     }
 };
 
-PAPILIO_EXPORT template <typename Context, typename CharT>
+template <typename Context, typename CharT>
 class basic_dynamic_format_args : public format_args_base<Context, CharT>
 {
     using my_base = format_args_base<Context, CharT>;
@@ -1994,7 +1994,7 @@ private:
 /**
  * @brief Type-erased reference to format arguments.
  */
-PAPILIO_EXPORT template <typename Context, typename CharT>
+template <typename Context, typename CharT>
 class basic_format_args_ref final : public format_args_base<Context, CharT>
 {
     using my_base = format_args_base<Context, CharT>;
@@ -2079,20 +2079,20 @@ namespace detail
 
 } // namespace detail
 
-PAPILIO_EXPORT template <
+template <
     typename T,
     typename FormatContext = format_context>
 struct has_member_format :
     public std::bool_constant<detail::check_member_format<T, FormatContext>>
 {};
 
-PAPILIO_EXPORT template <
+template <
     typename T,
     typename FormatContext = format_context>
 inline constexpr bool has_member_format_v =
     has_member_format<T, FormatContext>::value;
 
-PAPILIO_EXPORT template <typename T, typename FormatContext = format_context>
+template <typename T, typename FormatContext = format_context>
 class member_format_adaptor
 {
 public:
@@ -2152,20 +2152,20 @@ namespace detail
     }
 } // namespace detail
 
-PAPILIO_EXPORT template <
+template <
     typename T,
     typename FormatContext = format_context>
 struct has_adl_format :
     public std::bool_constant<detail::check_adl_format<T, FormatContext>>
 {};
 
-PAPILIO_EXPORT template <
+template <
     typename T,
     typename FormatContext = format_context>
 inline constexpr bool has_adl_format_v =
     has_adl_format<T, FormatContext>::value;
 
-PAPILIO_EXPORT template <typename T, typename FormatContext = format_context>
+template <typename T, typename FormatContext = format_context>
 class adl_format_adaptor
 {
 public:
@@ -2192,7 +2192,7 @@ concept streamable =
         } -> std::convertible_to<std::basic_ostream<CharT>&>;
     };
 
-PAPILIO_EXPORT template <typename T, typename CharT>
+template <typename T, typename CharT>
 requires streamable<T, CharT>
 class streamable_formatter
 {
@@ -2315,7 +2315,7 @@ using select_formatter_t = typename select_formatter<T, Context>::type;
  * @tparam OutputIt Output iterator
  * @tparam CharT Char type
  */
-PAPILIO_EXPORT template <typename OutputIt, typename CharT>
+template <typename OutputIt, typename CharT>
 class basic_format_context
 {
 public:
@@ -2432,7 +2432,7 @@ private:
  *
  * @tparam Context Context type
  */
-PAPILIO_EXPORT template <typename Context>
+template <typename Context>
 class format_context_traits
 {
 public:
@@ -2953,14 +2953,14 @@ public:
 /// @addtogroup Format
 ///@{
 
-PAPILIO_EXPORT template <typename Context = format_context, typename... Args>
+template <typename Context = format_context, typename... Args>
 auto make_format_args(Args&&... args)
 {
     using context_t = format_context_traits<Context>;
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 auto make_wformat_args(Args&&... args)
 {
     using context_t = format_context_traits<wformat_context>;
@@ -2977,7 +2977,7 @@ auto make_wformat_args(Args&&... args)
 /**
  * @brief Format parse context
  */
-PAPILIO_EXPORT template <typename FormatContext>
+template <typename FormatContext>
 class basic_format_parse_context
 {
 public:
@@ -3145,7 +3145,7 @@ namespace detail
 /**
  * @brief Traits for formatters
  */
-PAPILIO_EXPORT template <typename Formatter>
+template <typename Formatter>
 struct formatter_traits
 {
     using char_type = typename detail::formatter_traits_helper<Formatter>::char_type;
@@ -3346,12 +3346,12 @@ namespace detail
         check_format_method<T, Formatter, Context, basic_format_parse_context<Context>>;
 } // namespace detail
 
-PAPILIO_EXPORT template <typename T, typename Context>
+template <typename T, typename Context>
 concept formattable_with = detail::formattable_with_impl<
     std::remove_const_t<T>,
     Context>;
 
-PAPILIO_EXPORT template <typename T, typename CharT = char>
+template <typename T, typename CharT = char>
 concept formattable = formattable_with<
     std::remove_const_t<T>,
     basic_format_context<format_iterator_for<CharT>, CharT>>;
@@ -3363,7 +3363,7 @@ concept formattable = formattable_with<
 /**
  * @brief Base class containing script interpreter APIs that are not related to a specific character type.
  */
-PAPILIO_EXPORT class script_base
+class script_base
 {
 public:
     static constexpr char32_t script_start = U'$';
@@ -3447,7 +3447,7 @@ protected:
 #endif
 };
 
-PAPILIO_EXPORT template <typename CharT, bool Debug>
+template <typename CharT, bool Debug>
 class basic_interpreter_base : public script_base
 {
     using my_base = script_base;
@@ -3813,7 +3813,7 @@ protected:
  * @tparam FormatContext Format context @ref basic_format_context
  * @tparam Debug Enable debug options which can produce more precise error information.
  */
-PAPILIO_EXPORT template <typename FormatContext, bool Debug>
+template <typename FormatContext, bool Debug>
 class basic_interpreter :
     public basic_interpreter_base<typename FormatContext::char_type, Debug>
 {
@@ -4637,7 +4637,7 @@ namespace detail
     };
 } // namespace detail
 
-PAPILIO_EXPORT template <typename ParseContext, bool UseLocale = false>
+template <typename ParseContext, bool UseLocale = false>
 class simple_formatter_parser :
     detail::fmt_parser_base,
     detail::fmt_parser_utils<ParseContext>
@@ -4725,7 +4725,7 @@ parse_end:
  * @tparam ParseContext The parsing context.
  * @tparam EnablePrecision Enable parsing of precision.
 */
-PAPILIO_EXPORT template <typename ParseContext, bool EnablePrecision = false>
+template <typename ParseContext, bool EnablePrecision = false>
 class std_formatter_parser :
     detail::std_fmt_parser_base,
     detail::fmt_parser_utils<ParseContext>
@@ -6078,7 +6078,7 @@ private:
  *
  * @throw format_error If the integer value is to big for a Unicode code point for `c` type.
  */
-PAPILIO_EXPORT template <std::integral T, typename CharT>
+template <std::integral T, typename CharT>
 requires(
     !std::same_as<T, bool> && !char_like<T> &&
     sizeof(T) <= sizeof(std::uintmax_t) // No extension like __int128
@@ -6135,7 +6135,7 @@ private:
  * Accepted format types are: none, `f`, `F`, `g`, `G`, `e`, `E`, `a`, and `A`.
  * @sa float_formatter
  */
-PAPILIO_EXPORT template <std::floating_point T, typename CharT>
+template <std::floating_point T, typename CharT>
 class formatter<T, CharT>
 {
 public:
@@ -6178,7 +6178,7 @@ private:
  * - none, `c`, `?`: Format as a Unicode code point. @sa codepoint_formatter
  * - `b`,`B`,`x`,`X`,`o`,`d`: Format as integer. @sa int_formatter
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<utf::codepoint, CharT>
 {
 public:
@@ -6236,7 +6236,7 @@ private:
  * - none, `c`, `?`: Format as a Unicode code point. @sa codepoint_formatter
  * - `b`,`B`,`x`,`X`,`o`,`d`: Format as integer. @sa int_formatter
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<CharT, CharT> : public formatter<utf::codepoint, CharT>
 {
     using my_base = formatter<utf::codepoint, CharT>;
@@ -6266,7 +6266,7 @@ public:
  * If the locale flag (`L`) is set, `truename()` and `falsename()` of `std::numpunct` will be used.
  * @sa locale_ref
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<bool, CharT>
 {
 public:
@@ -6341,7 +6341,7 @@ private:
  *
  * This formatter will forward the value to bool formatter.
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::vector<bool>::reference, CharT> : public formatter<bool, CharT>
 {};
 
@@ -6355,7 +6355,7 @@ class formatter<std::vector<bool>::reference, CharT> : public formatter<bool, Ch
  * Accepted format types are: none, `s`, `?`.
  * @sa string_formatter
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<utf::basic_string_container<CharT>, CharT>
 {
 public:
@@ -6394,19 +6394,19 @@ private:
     std_formatter_data m_data;
 };
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<CharT*, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<const CharT*, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::basic_string<CharT>, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
 {};
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<std::basic_string_view<CharT>, CharT> : public formatter<utf::basic_string_container<CharT>, CharT>
 {};
 
@@ -6420,7 +6420,7 @@ class formatter<std::basic_string_view<CharT>, CharT> : public formatter<utf::ba
  *   then format as integer in hexadecimal format with alternate form enabled. @sa int_formatter
  * - `P`: Same as `p`, but with `0X` prefix.
  */
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class formatter<const void*, CharT>
 {
 public:
@@ -6522,7 +6522,7 @@ namespace detail
     }
 } // namespace detail
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::string_view fmt,
@@ -6538,7 +6538,7 @@ OutputIt vformat_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
@@ -6555,7 +6555,7 @@ OutputIt vformat_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::wstring_view fmt,
@@ -6571,7 +6571,7 @@ OutputIt vformat_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,

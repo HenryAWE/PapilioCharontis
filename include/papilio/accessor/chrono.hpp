@@ -11,7 +11,7 @@
 
 namespace papilio
 {
-PAPILIO_EXPORT template <typename Context>
+template <typename Context>
 struct accessor<std::tm, Context>
 {
     using char_type = typename Context::char_type;

@@ -14,7 +14,7 @@
 
 namespace papilio
 {
-PAPILIO_EXPORT template <typename T, typename Context>
+template <typename T, typename Context>
 struct accessor<std::optional<T>, Context>
 {
     using char_type = typename Context::char_type;
@@ -37,7 +37,7 @@ struct accessor<std::optional<T>, Context>
     }
 };
 
-PAPILIO_EXPORT template <typename... Ts, typename Context>
+template <typename... Ts, typename Context>
 struct accessor<std::variant<Ts...>, Context>
 {
     using char_type = typename Context::char_type;
@@ -101,7 +101,7 @@ private:
 
 #ifdef PAPILIO_HAS_LIB_EXPECTED
 
-PAPILIO_EXPORT template <typename T, typename E, typename Context>
+template <typename T, typename E, typename Context>
 struct accessor<std::expected<T, E>, Context>
 {
     using char_type = typename Context::char_type;

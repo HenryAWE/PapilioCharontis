@@ -19,7 +19,7 @@ namespace papilio::utf
 {
 // vvv decoders vvv
 
-PAPILIO_EXPORT template <>
+template <>
 class decoder<char32_t>
 {
 public:
@@ -31,7 +31,7 @@ public:
     static constexpr std::pair<char32_t, std::uint8_t> from_codepoint(codepoint cp) noexcept;
 };
 
-PAPILIO_EXPORT template <>
+template <>
 class decoder<char8_t>
 {
 public:
@@ -40,7 +40,7 @@ public:
     static constexpr std::pair<codepoint, std::uint8_t> to_codepoint(std::u8string_view ch);
 };
 
-PAPILIO_EXPORT template <>
+template <>
 class decoder<char16_t>
 {
 public:
@@ -76,7 +76,7 @@ public:
     static constexpr auto from_codepoint(codepoint cp) -> from_codepoint_result;
 };
 
-PAPILIO_EXPORT template <>
+template <>
 class decoder<char>
 {
 public:
@@ -85,7 +85,7 @@ public:
     static std::pair<codepoint, std::uint8_t> to_codepoint(std::string_view ch);
 };
 
-PAPILIO_EXPORT template <>
+template <>
 class decoder<wchar_t>
 {
 public:
@@ -132,7 +132,7 @@ public:
 #    pragma GCC diagnostic ignored "-Wstringop-overflow="
 #endif
 
-PAPILIO_EXPORT class codepoint
+class codepoint
 {
 public:
     using value_type = char8_t;
@@ -478,7 +478,7 @@ private:
 
 inline namespace literals
 {
-    PAPILIO_EXPORT constexpr codepoint operator""_cp(char32_t ch) noexcept
+    constexpr codepoint operator""_cp(char32_t ch) noexcept
     {
         return decoder<char32_t>::to_codepoint(ch).first;
     }
@@ -718,7 +718,7 @@ namespace detail
     };
 } // namespace detail
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 class codepoint_iterator : public detail::cp_iter_impl<CharT>
 {
 private:

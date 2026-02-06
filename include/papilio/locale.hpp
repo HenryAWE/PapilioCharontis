@@ -18,7 +18,7 @@ namespace papilio
 /**
  * @brief Reference to a locale object.
  */
-PAPILIO_EXPORT class locale_ref
+class locale_ref
 {
 public:
     locale_ref() noexcept = default;

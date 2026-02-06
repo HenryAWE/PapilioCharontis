@@ -49,7 +49,7 @@ namespace detail
     };
 } // namespace detail
 
-PAPILIO_EXPORT template <tuple_like Tuple, typename CharT>
+template <tuple_like Tuple, typename CharT>
 class formatter<Tuple, CharT> : public detail::tuple_fmt_base<CharT>
 {
     using my_base = detail::tuple_fmt_base<CharT>;

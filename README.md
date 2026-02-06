@@ -140,17 +140,6 @@ papilio::format(U"{}", true);  // Returns U"true"
 ```
 NOTE: Support for `char8_t`, `char16_t`, and `char32_t` added by newer C++ standard needs to include the separated header `<papilio/xchar.hpp>`. Besides, these character types don't support locale-specific formatting.
 
-### C++ 20 Modules Support
-```c++
-import papilio;
-
-int main()
-{
-    papilio::print("Hello world from imported module!");
-}
-```
-NOTE: This feature requires you to compile the library with `papilio_build_module` set to `ON`. See [Custom Build](doc/en/custom_build.md) for more information.
-
 ## Documentation
 1. [Build](doc/en/build.md): How to build the project.
 2. [Frequently Asked Questions](doc/en/faq.md)

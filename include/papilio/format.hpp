@@ -147,23 +147,19 @@ formatted_range(std::basic_string_view<CharT> str, Args&& args) -> formatted_ran
 template <typename CharT, typename Args>
 formatted_range(const std::basic_string<CharT>& str, Args&& args) -> formatted_range<CharT>;
 
-PAPILIO_EXPORT
 [[nodiscard]]
 std::string vformat(std::string_view fmt, const format_args_ref& args);
 
-PAPILIO_EXPORT
 [[nodiscard]]
 std::string vformat(const std::locale& loc, std::string_view fmt, const format_args_ref& args);
 
-PAPILIO_EXPORT
 [[nodiscard]]
 std::wstring vformat(std::wstring_view fmt, const wformat_args_ref& args);
 
-PAPILIO_EXPORT
 [[nodiscard]]
 std::wstring vformat(const std::locale& loc, std::wstring_view fmt, const wformat_args_ref& args);
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 OutputIt format_to(OutputIt out, format_string<Args...> fmt, Args&&... args)
 {
     using context_type = basic_format_context<OutputIt, char>;
@@ -174,7 +170,7 @@ OutputIt format_to(OutputIt out, format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     std::locale& loc,
@@ -191,7 +187,7 @@ OutputIt format_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     wformat_string<Args...> fmt,
@@ -206,7 +202,7 @@ OutputIt format_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     std::locale& loc,
@@ -223,7 +219,7 @@ OutputIt format_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 struct format_to_n_result
 {
     OutputIt out;
@@ -334,7 +330,7 @@ namespace detail
     }
 } // namespace detail
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -351,7 +347,7 @@ format_to_n_result<OutputIt> format_to_n(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -369,7 +365,7 @@ format_to_n_result<OutputIt> format_to_n(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -386,7 +382,7 @@ format_to_n_result<OutputIt> format_to_n(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -496,7 +492,7 @@ namespace detail
     }
 } // namespace detail
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     format_string<Args...> fmt,
@@ -510,7 +506,7 @@ std::size_t formatted_size(
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     const std::locale& loc,
@@ -525,7 +521,7 @@ std::size_t formatted_size(
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     wformat_string<Args...> fmt,
@@ -539,7 +535,7 @@ std::size_t formatted_size(
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     const std::locale& loc,
@@ -554,7 +550,7 @@ std::size_t formatted_size(
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::string format(format_string<Args...> fmt, Args&&... args)
 {
@@ -563,7 +559,7 @@ std::string format(format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::string format(const std::locale& loc, format_string<Args...> fmt, Args&&... args)
 {
@@ -572,7 +568,7 @@ std::string format(const std::locale& loc, format_string<Args...> fmt, Args&&...
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::wstring format(wformat_string<Args...> fmt, Args&&... args)
 {
@@ -581,7 +577,7 @@ std::wstring format(wformat_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&... args)
 {
@@ -595,7 +591,7 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
 /// @addtogroup Formatter
 /// @{
 
-PAPILIO_EXPORT template <typename R, typename CharT>
+template <typename R, typename CharT>
 class formatter<joiner<R, CharT>, CharT>
 {
 public:

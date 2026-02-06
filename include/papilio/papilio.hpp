@@ -42,16 +42,15 @@
  */
 namespace papilio
 {
-PAPILIO_EXPORT inline constexpr int version_major = PAPILIO_VERSION_MAJOR;
-PAPILIO_EXPORT inline constexpr int version_minor = PAPILIO_VERSION_MINOR;
-PAPILIO_EXPORT inline constexpr int version_patch = PAPILIO_VERSION_PATCH;
+inline constexpr int version_major = PAPILIO_VERSION_MAJOR;
+inline constexpr int version_minor = PAPILIO_VERSION_MINOR;
+inline constexpr int version_patch = PAPILIO_VERSION_PATCH;
 
 /**
  * @brief Get the version number of library.
  *
  * @return std::tuple<int, int, int> The version number
  */
-PAPILIO_EXPORT
 [[nodiscard]]
 constexpr inline std::tuple<int, int, int> get_version() noexcept
 {

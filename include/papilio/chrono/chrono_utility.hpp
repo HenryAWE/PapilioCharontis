@@ -29,7 +29,7 @@
  */
 namespace papilio::chrono
 {
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 constexpr CharT weekday_names_short[7][3] = {
     {'S', 'u', 'n'},
     {'M', 'o', 'n'},
@@ -40,7 +40,7 @@ constexpr CharT weekday_names_short[7][3] = {
     {'S', 'a', 't'}
 };
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 inline constexpr std::basic_string_view<CharT> weekday_names_full[7] = {
     PAPILIO_TSTRING_VIEW(CharT, "Sunday"),
     PAPILIO_TSTRING_VIEW(CharT, "Monday"),
@@ -60,7 +60,7 @@ inline constexpr std::basic_string_view<CharT> weekday_names_full[7] = {
  *
  * @note If the weekday is invalid, the output will be `weekday({})`, e.g. `weekday(8)`.
  */
-PAPILIO_EXPORT template <typename CharT = char, typename OutputIt>
+template <typename CharT = char, typename OutputIt>
 OutputIt copy_weekday_name(OutputIt out, const std::chrono::weekday& wd, bool fullname = false)
 {
     if(!wd.ok()) [[unlikely]]
@@ -85,7 +85,7 @@ OutputIt copy_weekday_name(OutputIt out, const std::chrono::weekday& wd, bool fu
     }
 }
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 inline constexpr CharT month_names_short[12][3] = {
     {'J', 'a', 'n'},
     {'F', 'e', 'b'},
@@ -101,7 +101,7 @@ inline constexpr CharT month_names_short[12][3] = {
     {'D', 'e', 'c'}
 };
 
-PAPILIO_EXPORT template <typename CharT>
+template <typename CharT>
 inline constexpr std::basic_string_view<CharT> month_names_full[12] = {
     PAPILIO_TSTRING_VIEW(CharT, "January"),
     PAPILIO_TSTRING_VIEW(CharT, "February"),
@@ -126,7 +126,7 @@ inline constexpr std::basic_string_view<CharT> month_names_full[12] = {
  *
  * @note If the month is invalid, the output will be `month({})`, e.g. `month(13)`.
  */
-PAPILIO_EXPORT template <typename CharT = char, typename OutputIt>
+template <typename CharT = char, typename OutputIt>
 OutputIt copy_month_name(OutputIt out, const std::chrono::month& m, bool fullname = false)
 {
     if(!m.ok()) [[unlikely]]
@@ -159,7 +159,7 @@ OutputIt copy_month_name(OutputIt out, const std::chrono::month& m, bool fullnam
  * @param out Output iterator
  * @param t Time value
  */
-PAPILIO_EXPORT template <typename CharT = char, typename OutputIt>
+template <typename CharT = char, typename OutputIt>
 OutputIt copy_asctime(OutputIt out, const std::tm& t)
 {
     int wday = std::clamp(t.tm_wday, 0, 6);
@@ -191,7 +191,7 @@ OutputIt copy_asctime(OutputIt out, const std::tm& t)
  *
  * @param out Output iterator
  */
-PAPILIO_EXPORT template <typename CharT = char, typename Period, typename OutputIt>
+template <typename CharT = char, typename Period, typename OutputIt>
 OutputIt copy_unit_suffix(OutputIt out, std::in_place_type_t<Period> = {})
 {
     auto helper = [&out](std::string_view sv) -> OutputIt
@@ -262,7 +262,7 @@ OutputIt copy_unit_suffix(OutputIt out, std::in_place_type_t<Period> = {})
  *
  * @param out Output iterator
  */
-PAPILIO_EXPORT template <typename CharT = char, typename ChronoType, typename OutputIt>
+template <typename CharT = char, typename ChronoType, typename OutputIt>
 requires(is_specialization_of_v<ChronoType, std::chrono::duration>)
 OutputIt copy_count(OutputIt out, const ChronoType& val)
 {
@@ -276,7 +276,7 @@ OutputIt copy_count(OutputIt out, const ChronoType& val)
 /**
 * @brief Time zone information needed for formatting.
 */
-PAPILIO_EXPORT struct timezone_info
+struct timezone_info
 {
     /** Time zone abbreviation. */
     std::string abbrev;

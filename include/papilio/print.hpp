@@ -38,9 +38,9 @@ namespace detail
 /// @defgroup PrintFile Print to file
 /// @{
 
-PAPILIO_EXPORT void println(std::FILE* file);
+void println(std::FILE* file);
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void print(std::FILE* file, format_string<Args...> fmt, Args&&... args)
 {
     detail::vprint_impl(
@@ -52,7 +52,7 @@ void print(std::FILE* file, format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void println(std::FILE* file, format_string<Args...> fmt, Args&&... args)
 {
     detail::vprint_impl(
@@ -72,15 +72,15 @@ void println(std::FILE* file, format_string<Args...> fmt, Args&&... args)
 /// @sa os::output_conv
 /// @{
 
-PAPILIO_EXPORT void println();
+void println();
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void print(format_string<Args...> fmt, Args&&... args)
 {
     PAPILIO_NS print(stdout, fmt, std::forward<Args>(args)...);
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void print(text_style st, format_string<Args...> fmt, Args&&... args)
 {
     detail::vprint_impl(
@@ -93,13 +93,13 @@ void print(text_style st, format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void println(format_string<Args...> fmt, Args&&... args)
 {
     PAPILIO_NS println(stdout, fmt, std::forward<Args>(args)...);
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void println(text_style st, format_string<Args...> fmt, Args&&... args)
 {
     detail::vprint_impl(
@@ -117,7 +117,7 @@ void println(text_style st, format_string<Args...> fmt, Args&&... args)
 /// @defgroup PrintStream Print to output stream
 /// @{
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void print(std::ostream& os, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = std::ostream_iterator<char>;
@@ -130,9 +130,9 @@ void print(std::ostream& os, format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT void println(std::ostream& os);
+void println(std::ostream& os);
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 void println(std::ostream& os, format_string<Args...> fmt, Args&&... args)
 {
     PAPILIO_NS print(os, fmt.get(), std::forward<Args>(args)...);

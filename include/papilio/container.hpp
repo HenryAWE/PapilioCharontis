@@ -50,7 +50,7 @@ namespace detail
  * @tparam T Type of the elements
  * @tparam Allocator The allocator for dynamically allocating memory
  */
-PAPILIO_EXPORT template <typename T, typename Allocator = std::allocator<T>>
+template <typename T, typename Allocator = std::allocator<T>>
 class small_vector_base : public detail::small_vector_impl
 {
 public:
@@ -250,7 +250,7 @@ protected:
  * @tparam StaticCapacity Static capacity of the small vector
  * @tparam Allocator The allocator for dynamically allocating memory
  */
-PAPILIO_EXPORT template <
+template <
     typename T,
     std::size_t StaticCapacity,
     typename Allocator = std::allocator<T>>
@@ -889,7 +889,7 @@ namespace detail
 #    pragma warning(disable : 26495)
 #endif
 
-PAPILIO_EXPORT template <typename T, std::size_t Capacity>
+template <typename T, std::size_t Capacity>
 class fixed_vector : public detail::fixed_vector_impl
 {
 public:
@@ -1200,15 +1200,15 @@ namespace detail
 /**
  * @brief Check if a comparator is transparent, i.e. supporting heterogeneous compare.
  */
-PAPILIO_EXPORT template <typename Compare>
+template <typename Compare>
 struct is_transparent :
     public std::bool_constant<detail::is_transparent_helper<Compare>>
 {};
 
-PAPILIO_EXPORT template <typename Compare>
+template <typename Compare>
 inline constexpr bool is_transparent_v = is_transparent<Compare>::value;
 
-PAPILIO_EXPORT template <
+template <
     typename Key,
     typename T,
     std::size_t Capacity,

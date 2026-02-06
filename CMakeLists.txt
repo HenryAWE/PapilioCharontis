@@ -8,7 +8,6 @@ option(papilio_build_lib "build the library" ON)
 mark_as_advanced(papilio_build_lib)
 
 option(papilio_build_example "build examples" OFF)
-option(papilio_build_module "build module (experimental)" OFF)
 option(papilio_build_doc "build documents" OFF)
 
 file(STRINGS "include/papilio/macros.hpp" papilio_version_major_line REGEX "^#define PAPILIO_VERSION_MAJOR [0-9]+$")
@@ -54,18 +53,10 @@ if(${papilio_build_lib})
     set(glob_expr "src/*.cpp" "include/*.hpp" "include/*.inl")
     file(GLOB_RECURSE papilio_src ${glob_expr})
 
-    if(${papilio_build_module})
-        set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-    endif()
-
     include(GNUInstallDirs)
 
     add_library(papilio ${papilio_src})
-    if(${papilio_build_module})
-        target_compile_features(papilio PUBLIC cxx_std_23)
-    else()
-        target_compile_features(papilio PUBLIC cxx_std_20)
-    endif()
+    target_compile_features(papilio PUBLIC cxx_std_20)
     set_target_properties(papilio PROPERTIES
         CXX_STANDARD_REQUIRED ON
     )
@@ -89,35 +80,13 @@ if(${papilio_build_lib})
         )
     endif()
 
-    if(${papilio_build_module})
-        file(GLOB_RECURSE papilio_modules_src "modules/*.cppm")
-        target_sources(
-            papilio
-            PUBLIC
-                FILE_SET papilio_modules TYPE CXX_MODULES FILES
-                ${papilio_modules_src}
-        )
-        target_compile_options(papilio PRIVATE
-            $<$<CXX_COMPILER_ID:Clang>:-Wno-unsafe-buffer-usage -Wno-padded>
-        )
-
-        install(
-            TARGETS papilio
-            EXPORT PapilioTargets
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            FILE_SET papilio_modules DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        )
-    else()
-        install(
-            TARGETS papilio
-            EXPORT PapilioTargets
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        )
-    endif()
+    install(
+        TARGETS papilio
+        EXPORT PapilioTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
 
     install(
         DIRECTORY ${PROJECT_SOURCE_DIR}/include/

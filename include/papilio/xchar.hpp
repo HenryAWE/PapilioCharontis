@@ -20,19 +20,19 @@ namespace papilio
 /// @brief Support for `char8_t`, `char16_t`, and `char32_t`.
 /// @{
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 using u8format_string = basic_format_string<char8_t, std::type_identity_t<Args>...>;
-PAPILIO_EXPORT using u8format_context = basic_format_context<format_iterator_for<char8_t>, char8_t>;
-PAPILIO_EXPORT using u8format_args_ref = basic_format_args_ref<u8format_context, char8_t>;
+using u8format_context = basic_format_context<format_iterator_for<char8_t>, char8_t>;
+using u8format_args_ref = basic_format_args_ref<u8format_context, char8_t>;
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 auto make_u8format_args(Args&&... args)
 {
     using context_t = format_context_traits<u8format_context>;
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::u8string_view fmt,
@@ -48,7 +48,7 @@ OutputIt vformat_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     u8format_string<Args...> fmt,
@@ -64,11 +64,10 @@ OutputIt format_to(
     );
 }
 
-PAPILIO_EXPORT
 [[nodiscard]]
 std::u8string vformat(std::u8string_view fmt, const u8format_args_ref& args);
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::u8string format(u8format_string<Args...> fmt, Args&&... args)
 {
@@ -77,7 +76,7 @@ std::u8string format(u8format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -103,7 +102,7 @@ namespace detail
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     u8format_string<Args...> fmt,
@@ -117,19 +116,19 @@ std::size_t formatted_size(
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 using u16format_string = basic_format_string<char16_t, std::type_identity_t<Args>...>;
-PAPILIO_EXPORT using u16format_context = basic_format_context<format_iterator_for<char16_t>, char16_t>;
-PAPILIO_EXPORT using u16format_args_ref = basic_format_args_ref<u16format_context, char16_t>;
+using u16format_context = basic_format_context<format_iterator_for<char16_t>, char16_t>;
+using u16format_args_ref = basic_format_args_ref<u16format_context, char16_t>;
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 auto make_u16format_args(Args&&... args)
 {
     using context_t = format_context_traits<u16format_context>;
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::u16string_view fmt,
@@ -145,7 +144,7 @@ OutputIt vformat_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     u16format_string<Args...> fmt,
@@ -161,11 +160,10 @@ OutputIt format_to(
     );
 }
 
-PAPILIO_EXPORT
 [[nodiscard]]
 std::u16string vformat(std::u16string_view fmt, const u16format_args_ref& args);
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::u16string format(u16format_string<Args...> fmt, Args&&... args)
 {
@@ -174,7 +172,7 @@ std::u16string format(u16format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -200,7 +198,7 @@ namespace detail
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     u16format_string<Args...> fmt,
@@ -214,20 +212,20 @@ std::size_t formatted_size(
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 using u32format_string = basic_format_string<char32_t, std::type_identity_t<Args>...>;
 
-PAPILIO_EXPORT using u32format_context = basic_format_context<format_iterator_for<char32_t>, char32_t>;
-PAPILIO_EXPORT using u32format_args_ref = basic_format_args_ref<u32format_context, char32_t>;
+using u32format_context = basic_format_context<format_iterator_for<char32_t>, char32_t>;
+using u32format_args_ref = basic_format_args_ref<u32format_context, char32_t>;
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 auto make_u32format_args(Args&&... args)
 {
     using context_t = format_context_traits<u32format_context>;
     return context_t::make_format_args(std::forward<Args>(args)...);
 }
 
-PAPILIO_EXPORT template <typename OutputIt>
+template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::u32string_view fmt,
@@ -243,7 +241,7 @@ OutputIt vformat_to(
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 OutputIt format_to(
     OutputIt out,
     u32format_string<Args...> fmt,
@@ -259,11 +257,10 @@ OutputIt format_to(
     );
 }
 
-PAPILIO_EXPORT
 [[nodiscard]]
 std::u32string vformat(std::u32string_view fmt, const u32format_args_ref& args);
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::u32string format(u32format_string<Args...> fmt, Args&&... args)
 {
@@ -272,7 +269,7 @@ std::u32string format(u32format_string<Args...> fmt, Args&&... args)
     );
 }
 
-PAPILIO_EXPORT template <typename OutputIt, typename... Args>
+template <typename OutputIt, typename... Args>
 format_to_n_result<OutputIt> format_to_n(
     OutputIt out,
     std::iter_difference_t<OutputIt> n,
@@ -298,7 +295,7 @@ namespace detail
     );
 }
 
-PAPILIO_EXPORT template <typename... Args>
+template <typename... Args>
 [[nodiscard]]
 std::size_t formatted_size(
     u32format_string<Args...> fmt,

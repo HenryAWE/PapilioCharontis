@@ -23,7 +23,7 @@ namespace papilio
  *
  * The marco `PAPILIO_HAS_UNREACHABLE` contains how this function is implemented.
  */
-PAPILIO_EXPORT [[noreturn]]
+[[noreturn]]
 inline void unreachable()
 {
 #ifdef __cpp_lib_unreachable
@@ -44,7 +44,7 @@ inline void unreachable()
 /**
  * @brief C++23 `forward_like()`
  */
-PAPILIO_EXPORT template <class T, class U>
+template <class T, class U>
 [[nodiscard]]
 constexpr auto&& forward_like(U&& x) noexcept
 {
@@ -70,7 +70,7 @@ constexpr auto&& forward_like(U&& x) noexcept
 /**
  * @brief C++23 `std::to_underlying()`
  */
-PAPILIO_EXPORT template <typename Enum>
+template <typename Enum>
 [[nodiscard]]
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
 {

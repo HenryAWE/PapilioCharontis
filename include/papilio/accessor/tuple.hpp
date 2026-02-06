@@ -9,7 +9,7 @@
 
 namespace papilio
 {
-PAPILIO_EXPORT template <
+template <
     tuple_like Tuple,
     typename Context,
     bool PairLike = pair_like<Tuple>>
@@ -81,17 +81,17 @@ private:
     }
 };
 
-PAPILIO_EXPORT template <typename Context, typename... Ts>
+template <typename Context, typename... Ts>
 struct accessor<std::tuple<Ts...>, Context> :
     public tuple_accessor<std::tuple<Ts...>, Context, std::tuple_size_v<std::tuple<Ts...>> == 2>
 {};
 
-PAPILIO_EXPORT template <typename Context, typename T1, typename T2>
+template <typename Context, typename T1, typename T2>
 struct accessor<std::pair<T1, T2>, Context> :
     public tuple_accessor<std::pair<T1, T2>, Context, true>
 {};
 
-PAPILIO_EXPORT template <typename Context, typename T1, typename T2>
+template <typename Context, typename T1, typename T2>
 struct accessor<compressed_pair<T1, T2>, Context> :
     public tuple_accessor<compressed_pair<T1, T2>, Context, true>
 {};
