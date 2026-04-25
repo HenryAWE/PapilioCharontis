@@ -3,7 +3,7 @@
 #include <list>
 #include <papilio_test/setup.hpp>
 
-TEST(small_vector, emplace)
+TEST(SmallVector, Emplace)
 {
     using papilio::small_vector;
 
@@ -58,7 +58,7 @@ TEST(small_vector, emplace)
     }
 }
 
-TEST(small_vector, emplace_back)
+TEST(SmallVector, EmplaceBack)
 {
     using papilio::small_vector;
 
@@ -110,7 +110,7 @@ TEST(small_vector, emplace_back)
         EXPECT_EQ(sv[i], i);
 }
 
-TEST(small_vector, iterator)
+TEST(SmallVector, Iterator)
 {
     using papilio::small_vector;
 
@@ -124,7 +124,7 @@ TEST(small_vector, iterator)
     EXPECT_TRUE(std::equal(sv.crbegin(), sv.crend(), il.rbegin(), il.rend()));
 }
 
-TEST(small_vector, dynamic_allocated)
+TEST(SmallVector, DynamicAllocated)
 {
     using papilio::small_vector;
 
@@ -165,7 +165,7 @@ TEST(small_vector, dynamic_allocated)
     EXPECT_EQ(sv.capacity(), sv.static_capacity());
 }
 
-TEST(small_vector, constructor)
+TEST(SmallVector, Constructor)
 {
     using papilio::small_vector;
 
@@ -204,7 +204,7 @@ TEST(small_vector, constructor)
     EXPECT_EQ(sv_5.at(0), "one");
 }
 
-TEST(small_vector, swap)
+TEST(SmallVector, Swap)
 {
     using papilio::small_vector;
 

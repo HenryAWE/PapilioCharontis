@@ -2,7 +2,7 @@
 #include <papilio/container.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(fixed_vector, push_back_int)
+TEST(FixedVector, PushBackInt)
 {
     using papilio::fixed_vector;
 
@@ -42,7 +42,7 @@ TEST(fixed_vector, push_back_int)
     EXPECT_THROW(fv.push_back(2), std::length_error);
 }
 
-TEST(fixed_vector, push_back_string)
+TEST(FixedVector, PushBackString)
 {
     using papilio::fixed_vector;
 
@@ -85,7 +85,7 @@ TEST(fixed_vector, push_back_string)
     EXPECT_THROW(fv.push_back("third"), std::length_error);
 }
 
-TEST(fixed_vector, insert)
+TEST(FixedVector, Insert)
 {
     using papilio::fixed_vector;
 
@@ -111,7 +111,7 @@ TEST(fixed_vector, insert)
     EXPECT_THROW(fv.insert(fv.end(), "overflow"), std::length_error);
 }
 
-TEST(fixed_vector, zero_capacity)
+TEST(FixedVector, ZeroCapacity)
 {
     using papilio::fixed_vector;
 

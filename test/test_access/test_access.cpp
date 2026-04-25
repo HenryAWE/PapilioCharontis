@@ -4,7 +4,7 @@
 #include <papilio/format.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(indexing_value, constructor)
+TEST(IndexingValue, Constructor)
 {
     using namespace papilio;
 
@@ -57,7 +57,7 @@ TEST(indexing_value, constructor)
     }
 }
 
-TEST(attribute_name, compare)
+TEST(AttributeName, Compare)
 {
     using namespace std::literals;
     using papilio::attribute_name;
@@ -76,7 +76,7 @@ TEST(attribute_name, compare)
     EXPECT_NE("{name}", attr);
 }
 
-TEST(accessor, string)
+TEST(Accessor, String)
 {
     using namespace papilio;
 
@@ -84,7 +84,7 @@ TEST(accessor, string)
     EXPECT_EQ(PAPILIO_NS format("{.length}", "hello"), "5");
 }
 
-TEST(accessor, tuple)
+TEST(Accessor, Tuple)
 {
     using namespace papilio;
 
@@ -124,7 +124,7 @@ TEST(accessor, tuple)
     }
 }
 
-TEST(accessor, contiguous_range)
+TEST(Accessor, ContiguousRange)
 {
     using namespace papilio;
 
@@ -172,7 +172,7 @@ TEST(accessor, contiguous_range)
     }
 }
 
-TEST(accessor, map)
+TEST(Accessor, Map)
 {
     using namespace papilio;
 
@@ -253,7 +253,7 @@ TEST(accessor, map)
     }
 }
 
-TEST(accessor, type_info)
+TEST(Accessor, TypeInfo)
 {
     using namespace papilio;
 
@@ -274,7 +274,7 @@ TEST(accessor, type_info)
     }
 }
 
-TEST(accessor, vector_bool)
+TEST(Accessor, VectorBool)
 {
     using namespace papilio;
 
@@ -287,7 +287,7 @@ TEST(accessor, vector_bool)
     EXPECT_EQ(PAPILIO_NS format(L"{0[0]} {0[-2]}", vec), L"true false");
 }
 
-TEST(accessor, optional)
+TEST(Accessor, Optional)
 {
     using namespace papilio;
 
@@ -333,7 +333,7 @@ TEST(accessor, optional)
     }
 }
 
-TEST(accessor, variant)
+TEST(Accessor, Variant)
 {
     using namespace papilio;
 
@@ -372,7 +372,7 @@ TEST(accessor, variant)
 
 #ifdef PAPILIO_HAS_LIB_EXPECTED
 
-TEST(accessor, expected)
+TEST(Accessor, Expected)
 {
     using namespace papilio;
 
@@ -410,9 +410,3 @@ TEST(accessor, expected)
 }
 
 #endif
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

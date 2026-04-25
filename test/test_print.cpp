@@ -10,9 +10,9 @@
 #endif
 #include <papilio_test/setup.hpp>
 
-#if defined PAPILIO_PLATFORM_LINUX
+#if defined PAPILIO_PLATFORM_LINUX || defined PAPILIO_PLATFORM_MACOS
 
-TEST(print, file_descriptor_linux)
+TEST(Print, FileDescriptor)
 {
     int fd = memfd_create("test_print", MFD_CLOEXEC);
     if(fd == -1) // Workaround for WSL 1
@@ -40,7 +40,7 @@ TEST(print, file_descriptor_linux)
 
 #endif
 
-TEST(print, tmpfile)
+TEST(Print, Tmpfile)
 {
     using namespace papilio;
 
@@ -62,7 +62,7 @@ TEST(print, tmpfile)
     EXPECT_EQ(std::string_view(buf, 10), "test\ntest\n");
 }
 
-TEST(print, file_stdout)
+TEST(Print, FileStdout)
 {
     using namespace papilio;
 
@@ -82,7 +82,7 @@ TEST(print, file_stdout)
     );
 }
 
-TEST(print, file_stderr)
+TEST(Print, FileStderr)
 {
     using namespace papilio;
 
@@ -102,7 +102,7 @@ TEST(print, file_stderr)
     );
 }
 
-TEST(print, stream)
+TEST(Print, Stream)
 {
     using namespace papilio;
 
@@ -114,7 +114,7 @@ TEST(print, stream)
     EXPECT_EQ(os.str(), "stream:\nval=1\n");
 }
 
-TEST(print, styled)
+TEST(Print, Styled)
 {
     using namespace papilio;
 
@@ -167,10 +167,4 @@ TEST(print, styled)
             "\x1B[1m\x1B[33;47mWARNING\x1B[0m\n"
         );
     }
-}
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

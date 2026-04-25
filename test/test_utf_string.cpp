@@ -80,7 +80,7 @@ void test_string_ref_interoperability(papilio::utf::basic_string_ref<CharT> ref)
 }
 } // namespace test_utf_string
 
-TEST(basic_string_ref, u8string_ref)
+TEST(BasicStringRef, U8StringRef)
 {
     using namespace papilio;
     using namespace utf;
@@ -174,7 +174,7 @@ TEST(basic_string_ref, u8string_ref)
     }
 }
 
-TEST(basic_string_ref, u16string_ref)
+TEST(BasicStringRef, U16StringRef)
 {
     using namespace papilio;
     using namespace utf;
@@ -196,7 +196,7 @@ TEST(basic_string_ref, u16string_ref)
     }
 }
 
-TEST(basic_string_ref, u32string_ref)
+TEST(BasicStringRef, U32StringRef)
 {
     using namespace papilio;
     using namespace utf;
@@ -218,7 +218,7 @@ TEST(basic_string_ref, u32string_ref)
     }
 }
 
-TEST(basic_string_ref, wstring_ref)
+TEST(BasicStringRef, WStringRef)
 {
     using namespace papilio;
     using namespace utf;
@@ -243,7 +243,7 @@ TEST(basic_string_ref, wstring_ref)
     }
 }
 
-TEST(basic_string_ref, substr_index_range)
+TEST(BasicStringRef, SubstrIndexRange)
 {
     using namespace papilio;
     using namespace utf;
@@ -274,7 +274,7 @@ TEST(basic_string_ref, substr_index_range)
     }
 }
 
-TEST(basic_string_container, string_container)
+TEST(BasicStringContainer, StringContainer)
 {
     using namespace papilio;
     using namespace utf;
@@ -477,7 +477,7 @@ TEST(basic_string_container, string_container)
     }
 }
 
-TEST(basic_string_container, wstring_container)
+TEST(BasicStringContainer, WStringContainer)
 {
     using namespace papilio;
     using namespace utf;
@@ -531,7 +531,7 @@ TEST(basic_string_container, wstring_container)
     }
 }
 
-TEST(basic_string_container, push_back)
+TEST(BasicStringContainer, PushBack)
 {
     using namespace papilio;
     using namespace utf;
@@ -576,7 +576,7 @@ TEST(basic_string_container, push_back)
     }
 }
 
-TEST(basic_string_container, istream)
+TEST(BasicStringContainer, IStream)
 {
     using namespace papilio;
     using namespace utf;
@@ -598,7 +598,7 @@ TEST(basic_string_container, istream)
     }
 }
 
-TEST(basic_string_container, resize_and_overwrite)
+TEST(BasicStringContainer, ResizeAndOverwrite)
 {
     using namespace papilio;
     using namespace utf;
@@ -638,15 +638,4 @@ TEST(basic_string_container, resize_and_overwrite)
         EXPECT_EQ(sc.size(), 5);
         EXPECT_EQ(sc, "hello");
     }
-}
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-
-#ifdef PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT
-    papilio::println(std::cerr, "PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT = {:d}L", PAPILIO_HAS_MULTIDIMENSIONAL_SUBSCRIPT);
-#endif
-
-    return RUN_ALL_TESTS();
 }

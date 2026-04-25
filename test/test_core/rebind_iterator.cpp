@@ -7,7 +7,7 @@
 
 using namespace test_core;
 
-TYPED_TEST(format_context_suite, rebind)
+TYPED_TEST(format_context_suite, Rebind)
 {
     using namespace papilio;
 

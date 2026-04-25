@@ -49,7 +49,7 @@ static_assert(papilio::is_specialization_of_v<std::vector<int>, std::vector>);
 static_assert(papilio::is_specialization_of_v<std::vector<float>, std::vector>);
 static_assert(!papilio::is_specialization_of_v<papilio::small_vector<float, 12>, std::vector>);
 
-TEST(ptr, convert)
+TEST(Ptr, Convert)
 {
     {
         EXPECT_EQ(papilio::ptr(nullptr), nullptr);
@@ -69,7 +69,7 @@ TEST(ptr, convert)
     }
 }
 
-TEST(index_range, index_range)
+TEST(IndexRange, IndexRange)
 {
     using namespace papilio;
 
@@ -125,7 +125,7 @@ TEST(index_range, index_range)
     }
 }
 
-TEST(named_arg, named_arg)
+TEST(NamedArg, NamedArg)
 {
     {
         using namespace papilio;
@@ -148,7 +148,7 @@ TEST(named_arg, named_arg)
     }
 }
 
-TEST(independent_t, proxy)
+TEST(IndependentT, Proxy)
 {
     using namespace papilio;
 
@@ -186,7 +186,7 @@ TEST(independent_t, proxy)
     }
 }
 
-TEST(compressed_pair, normal)
+TEST(CompressedPair, Normal)
 {
     using namespace papilio;
 
@@ -233,7 +233,7 @@ class empty_2
 {};
 } // namespace test_utility
 
-TEST(compressed_pair, optimized)
+TEST(CompressedPair, Optimized)
 {
     using namespace papilio;
     using namespace test_utility;
@@ -293,7 +293,7 @@ void test_iter_buf_input()
 }
 } // namespace test_utility
 
-TEST(basic_iter_buf, input)
+TEST(BasicIterBuf, Input)
 {
     using test_utility::test_iter_buf_input;
 
@@ -324,7 +324,7 @@ void test_iter_buf_output()
 }
 } // namespace test_utility
 
-TEST(basic_iter_buf, output)
+TEST(BasicIterBuf, Output)
 {
     using test_utility::test_iter_buf_output;
 
@@ -356,7 +356,7 @@ void test_oiterstream()
 }
 } // namespace test_utility
 
-TEST(basic_oiterstream, output)
+TEST(BasicOiterstream, Output)
 {
     using test_utility::test_oiterstream;
 
@@ -366,7 +366,7 @@ TEST(basic_oiterstream, output)
 
 #ifdef PAPILIO_HAS_ENUM_NAME
 
-TEST(enum_name, enum_name)
+TEST(EnumName, EnumName)
 {
     using namespace papilio;
 
@@ -394,7 +394,7 @@ TEST(enum_name, enum_name)
 
 #endif
 
-TEST(tuple_for_each, tuple_for_each)
+TEST(TupleForEach, TupleForEach)
 {
     using namespace papilio;
 
@@ -439,7 +439,7 @@ TEST(tuple_for_each, tuple_for_each)
     }
 }
 
-TEST(join, ostream)
+TEST(Join, OStream)
 {
     {
         std::stringstream ss;
@@ -469,10 +469,4 @@ TEST(join, ostream)
 
         EXPECT_EQ(ss.str(), "1-2-3-4");
     }
-}
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

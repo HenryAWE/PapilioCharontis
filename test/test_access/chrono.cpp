@@ -5,7 +5,7 @@
 #include <papilio_test/chrono_helper.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(accessor, chrono)
+TEST(Accessor, Chrono)
 {
     using namespace papilio;
     using namespace std::chrono_literals;

@@ -10,7 +10,7 @@ static_assert(papilio::is_transparent_v<ffm_t::value_compare>);
 static_assert(std::is_empty_v<ffm_t::value_compare>);
 } // namespace test_container
 
-TEST(fixed_flat_map, emplace)
+TEST(FixedFlatMap, Emplace)
 {
     using papilio::fixed_flat_map;
 
@@ -61,7 +61,7 @@ TEST(fixed_flat_map, emplace)
     EXPECT_FALSE(fm.contains(5));
 }
 
-TEST(fixed_flat_map, insert_or_assign)
+TEST(FixedFlatMap, InsertOrAssign)
 {
     using papilio::fixed_flat_map;
 
@@ -72,7 +72,7 @@ TEST(fixed_flat_map, insert_or_assign)
     EXPECT_EQ(fm.at(1), "one");
 }
 
-TEST(fixed_flat_map, zero_capacity)
+TEST(FixedFlatMap, ZeroCapacity)
 {
     using papilio::fixed_flat_map;
 

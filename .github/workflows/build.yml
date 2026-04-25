@@ -3,107 +3,101 @@ name: Build
 on: [push, pull_request]
 
 jobs:
-    GCC:
-        runs-on: ubuntu-24.04
-        strategy:
-          fail-fast: false
-          matrix:
-            gcc: [13, 14]
+  GCC:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        gcc: [13, 14]
 
-        name: GCC-${{matrix.gcc}}
+    name: GCC-${{matrix.gcc}}
 
-        steps:
-        - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-        - name: Install Dependencies
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y cmake ninja-build gcc-${{matrix.gcc}} g++-${{matrix.gcc}}
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build gcc-${{matrix.gcc}} g++-${{matrix.gcc}}
 
-        - name: Build
-          run: >
-            ./build.sh
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_C_COMPILER=gcc-${{matrix.gcc}}
-            -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
-            -Dpapilio_build_unit_test=1
-            -Dpapilio_build_example=1
+      - name: Build
+        run: >
+          ./build.sh
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=gcc-${{matrix.gcc}}
+          -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
+          -Dpapilio_build_unit_test=1
+          -Dpapilio_build_example=1
 
-        - name: Test
-          working-directory: ${{github.workspace}}/build
-          run: ctest
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest
 
-        - name: Display Infomation
-          working-directory: ${{github.workspace}}/build/example
-          run: ./info
+      - name: Display Infomation
+        working-directory: ${{github.workspace}}/build/example
+        run: ./info
 
-        - name: Install
-          working-directory: ${{github.workspace}}/build
-          run: sudo cmake --install .
+      - name: Install
+        working-directory: ${{github.workspace}}/build
+        run: sudo cmake --install .
 
-        - name: Test Installation
-          run: |
-            cmake -GNinja -S test/test_install/ -B build/papilio_test_install -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
-            cmake --build build/papilio_test_install
-            build/papilio_test_install/papilio_test_install
+      - name: Test Installation
+        run: |
+          cmake -GNinja -S ci/test_install/ -B build/papilio_test_install -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
+          cmake --build build/papilio_test_install
+          build/papilio_test_install/papilio_test_install
 
-        - name: Test add_subdirectory
-          run: |
-            cmake -GNinja -S test/test_subdir/ -B build/papilio_test_subdir -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-${{matrix.gcc}}
-            cmake --build build/papilio_test_subdir
-            build/papilio_test_subdir/papilio_test_subdir
+  Clang:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        clang: [15, 16, 17, 18]
+        stdlib: ["libstdc++", "libc++"]
+        exclude:
+          # Clang 15 does not fully support some features used by libstdc++
+          - clang: 15
+            stdlib: "libstdc++"
 
-    Clang:
-        runs-on: ubuntu-24.04
-        strategy:
-          fail-fast: false
-          matrix:
-            clang: [15, 16, 17, 18]
-            stdlib: ["libstdc++", "libc++"]
-            exclude:
-              # Clang 15 does not fully support some features used by libstdc++
-              - clang: 15
-                stdlib: "libstdc++"
+    name: Clang-${{matrix.clang}} ${{matrix.stdlib}}
 
-        name: Clang-${{matrix.clang}} ${{matrix.stdlib}}
+    steps:
+      - uses: actions/checkout@v4
 
-        steps:
-        - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang-${{matrix.clang}}
 
-        - name: Install Dependencies
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y cmake ninja-build clang-${{matrix.clang}}
+      - name: Install libc++
+        if: ${{matrix.stdlib == 'libc++'}}
+        run: |
+          sudo apt-get install -y libc++-${{matrix.clang}}-dev libc++abi-${{matrix.clang}}-dev
 
-        - name: Install libc++
-          if: ${{matrix.stdlib == 'libc++'}}
-          run: |
-            sudo apt-get install -y libc++-${{matrix.clang}}-dev libc++abi-${{matrix.clang}}-dev
+      - name: Build
+        run: >
+          ./build.sh
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=clang-${{matrix.clang}}
+          -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang}}
+          -Dpapilio_build_unit_test=1
+          -Dpapilio_build_example=1
+          ${{matrix.stdlib == 'libc++' && '-Dpapilio_use_libcpp=1'}}
 
-        - name: Build
-          run: >
-            ./build.sh
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_C_COMPILER=clang-${{matrix.clang}}
-            -DCMAKE_CXX_COMPILER=clang++-${{matrix.clang}}
-            -Dpapilio_build_unit_test=1
-            -Dpapilio_build_example=1
-            ${{matrix.stdlib == 'libc++' && '-Dpapilio_use_libcpp=1'}}
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest
 
-        - name: Test
-          working-directory: ${{github.workspace}}/build
-          run: ctest
+      - name: Display Infomation
+        working-directory: ${{github.workspace}}/build/example
+        run: ./info
 
-        - name: Display Infomation
-          working-directory: ${{github.workspace}}/build/example
-          run: ./info
+  MSVC:
+    runs-on: windows-2022
 
-    MSVC:
-      runs-on: windows-2022
+    name: MSVC
 
-      name: MSVC
-
-      steps:
+    steps:
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -124,12 +118,12 @@ jobs:
         working-directory: ${{github.workspace}}/build/example
         run: .\info.exe
 
-    ClangCl:
-      runs-on: windows-2022
+  ClangCl:
+    runs-on: windows-2022
 
-      name: ClangCl
+    name: ClangCl
 
-      steps:
+    steps:
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -157,11 +151,11 @@ jobs:
         working-directory: ${{github.workspace}}/build/example
         run: .\info.exe
 
-    Doxygen:
-      needs: [GCC, Clang]
-      runs-on: ubuntu-24.04
+  Doxygen:
+    needs: [GCC, Clang]
+    runs-on: ubuntu-24.04
 
-      steps:
+    steps:
       - uses: actions/checkout@v4
 
       - name: Install Dependencies
@@ -181,17 +175,16 @@ jobs:
           name: papilio-doc
           path: ${{github.workspace}}/build/doxygen_output
 
-    ASan:
-      needs: Clang
-      runs-on: ubuntu-24.04
+  ASan:
+    needs: Clang
+    runs-on: ubuntu-24.04
 
-      env:
-        ASAN_SYMBOLIZER_PATH=: "/usr/bin/llvm-symbolizer-18"
-        ASAN_OPTIONS: "detect_leaks=1"
+    env:
+      ASAN_SYMBOLIZER_PATH=: "/usr/bin/llvm-symbolizer-18"
+      ASAN_OPTIONS: "detect_leaks=1"
 
-      steps:
+    steps:
       - uses: actions/checkout@v4
-
 
       - name: Install Dependencies
         run: |
