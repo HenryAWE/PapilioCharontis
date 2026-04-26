@@ -9,7 +9,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TYPED_TEST(format_suite, plain_text)
+TYPED_TEST(FormatSuite, plain_text)
 {
     using namespace papilio;
 
@@ -44,7 +44,7 @@ TYPED_TEST(format_suite, plain_text)
     }
 }
 
-TYPED_TEST(format_suite, format_to)
+TYPED_TEST(FormatSuite, format_to)
 {
     using namespace papilio;
 
@@ -82,7 +82,7 @@ TYPED_TEST(format_suite, format_to)
     }
 }
 
-TYPED_TEST(format_suite, formatted_size)
+TYPED_TEST(FormatSuite, formatted_size)
 {
     using namespace papilio;
 
@@ -108,7 +108,7 @@ TYPED_TEST(format_suite, formatted_size)
     }
 }
 
-TYPED_TEST(format_suite, format_to_n)
+TYPED_TEST(FormatSuite, format_to_n)
 {
     using namespace papilio;
 
@@ -171,7 +171,7 @@ TYPED_TEST(format_suite, format_to_n)
     }
 }
 
-TYPED_TEST(format_suite, exception)
+TYPED_TEST(FormatSuite, exception)
 {
     using namespace papilio;
 
@@ -192,7 +192,7 @@ TYPED_TEST(format_suite, exception)
     }
 }
 
-TYPED_TEST(format_suite, formatted_range)
+TYPED_TEST(FormatSuite, formatted_range)
 {
     using namespace papilio;
 

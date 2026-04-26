@@ -9,7 +9,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(formatter, filesystem_path)
+TEST(Formatter, FilesystemPath)
 {
     using namespace papilio;
 

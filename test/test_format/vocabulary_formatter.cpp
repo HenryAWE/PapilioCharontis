@@ -3,7 +3,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(vocabulary_formatter, optional)
+TEST(VocabularyFormatter, Optional)
 {
     using namespace papilio;
 
@@ -29,7 +29,7 @@ TEST(vocabulary_formatter, optional)
     }
 }
 
-TEST(vocabulary_formatter, variant)
+TEST(VocabularyFormatter, Variant)
 {
     using namespace papilio;
 
@@ -63,7 +63,7 @@ TEST(vocabulary_formatter, variant)
 
 #ifdef PAPILIO_HAS_LIB_EXPECTED
 
-TEST(vocabulary_formatter, expected)
+TEST(VocabularyFormatter, Expected)
 {
     using namespace papilio;
 

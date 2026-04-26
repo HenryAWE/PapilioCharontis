@@ -2,7 +2,7 @@
 #include <papilio/format.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(tuple_formatter, basic)
+TEST(TupleFormatter, Basic)
 {
     using namespace papilio;
 

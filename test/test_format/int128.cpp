@@ -68,7 +68,7 @@ static papilio::int128_t i128_max()
 }
 } // namespace test_format
 
-TEST(int128_formatter, int128)
+TEST(Int128Formatter, Int128)
 {
     using namespace test_format;
     using namespace papilio;
@@ -183,7 +183,7 @@ static papilio::uint128_t uint128_max()
 }
 } // namespace test_format
 
-TEST(int128_formatter, uint128)
+TEST(Int128Formatter, UInt128)
 {
     using namespace test_format;
     using namespace papilio;

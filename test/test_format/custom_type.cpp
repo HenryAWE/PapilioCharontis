@@ -107,7 +107,7 @@ private:
 };
 } // namespace papilio
 
-TEST(format, custom_type)
+TEST(Format, CustomType)
 {
     using namespace papilio;
     using namespace test_format;
@@ -207,7 +207,7 @@ private:
 };
 } // namespace test_format
 
-TEST(format, adl_format)
+TEST(Format, ADLFormat)
 {
     using namespace papilio;
 
@@ -290,7 +290,7 @@ private:
 };
 } // namespace papilio
 
-TEST(format, complex_spec)
+TEST(Format, ComplexSpec)
 {
     using test_format::complex_spec;
     using namespace papilio;
@@ -346,7 +346,7 @@ public:
 };
 } // namespace test_format
 
-TEST(format, member_format)
+TEST(Format, MemberFormat)
 {
     using namespace papilio;
     using test_format::member_fmt;
@@ -397,7 +397,7 @@ struct accessor<test_format::person, Context>
 };
 } // namespace papilio
 
-TEST(format, attributes)
+TEST(Format, Attributes)
 {
     using test_format::person;
     using namespace papilio;

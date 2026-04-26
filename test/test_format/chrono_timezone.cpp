@@ -10,7 +10,7 @@
 
 #ifndef PAPILIO_CHRONO_NO_TIMEZONE
 
-TEST(chrono_formatter, time_zone)
+TEST(ChronoFormatter, TimeZone)
 {
     using namespace papilio;
 

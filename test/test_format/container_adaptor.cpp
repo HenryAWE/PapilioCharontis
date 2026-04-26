@@ -5,7 +5,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(container_adaptor, stack)
+TEST(ContainerAdaptor, Stack)
 {
     using namespace papilio;
 
@@ -21,7 +21,7 @@ TEST(container_adaptor, stack)
     }
 }
 
-TEST(container_adaptor, queue)
+TEST(ContainerAdaptor, Queue)
 {
     using namespace papilio;
 
@@ -37,7 +37,7 @@ TEST(container_adaptor, queue)
     }
 }
 
-TEST(container_adaptor, priority_queue)
+TEST(ContainerAdaptor, PriorityQueue)
 {
     using namespace papilio;
 

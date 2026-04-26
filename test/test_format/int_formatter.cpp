@@ -8,7 +8,7 @@
 #include <papilio_test/setup.hpp>
 
 template <typename T>
-class int_formatter_suite : public ::testing::Test
+class IntFormatterSuite : public ::testing::Test
 {};
 
 using int_types = ::testing::Types<
@@ -20,9 +20,9 @@ using int_types = ::testing::Types<
     unsigned int,
     long long int,
     unsigned long long int>;
-TYPED_TEST_SUITE(int_formatter_suite, int_types);
+TYPED_TEST_SUITE(IntFormatterSuite, int_types);
 
-TYPED_TEST(int_formatter_suite, basic)
+TYPED_TEST(IntFormatterSuite, Basic)
 {
     using namespace papilio;
 
@@ -44,7 +44,7 @@ TYPED_TEST(int_formatter_suite, basic)
     }
 }
 
-TYPED_TEST(int_formatter_suite, random)
+TYPED_TEST(IntFormatterSuite, Random)
 {
     if constexpr(sizeof(TypeParam) >= sizeof(short))
     {
@@ -75,7 +75,7 @@ TYPED_TEST(int_formatter_suite, random)
     }
 }
 
-TYPED_TEST(int_formatter_suite, extreme_value)
+TYPED_TEST(IntFormatterSuite, ExtremeValue)
 {
     using namespace papilio;
 
@@ -128,7 +128,7 @@ TYPED_TEST(int_formatter_suite, extreme_value)
     }
 }
 
-TYPED_TEST(int_formatter_suite, fill_and_align)
+TYPED_TEST(IntFormatterSuite, FillAndAlign)
 {
     using namespace papilio;
 
@@ -190,7 +190,7 @@ std::locale attach_my_int_sep()
 }
 } // namespace test_format
 
-TEST(int_formatter, locale)
+TEST(IntFormatter, Locale)
 {
     using namespace papilio;
 

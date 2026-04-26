@@ -54,7 +54,7 @@ public:
     }
 };
 
-TEST(format, combined_formatter)
+TEST(Format, CombinedFormatter)
 {
     using namespace papilio;
     using test_format::test_combined;

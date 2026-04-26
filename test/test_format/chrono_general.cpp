@@ -9,7 +9,7 @@
 #include <papilio_test/chrono_helper.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(chrono_formatter, tm)
+TEST(ChronoFormatter, Tm)
 {
     using namespace papilio;
 
@@ -31,7 +31,7 @@ TEST(chrono_formatter, tm)
     );
 }
 
-TEST(chrono_formatter, general)
+TEST(ChronoFormatter, General)
 {
     using std::chrono::system_clock;
     using namespace std::chrono_literals;
