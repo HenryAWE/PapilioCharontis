@@ -2,7 +2,7 @@
 #include <papilio/core.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(format_arg, constructor)
+TEST(FormatArg, Constructor)
 {
     using namespace papilio;
 
@@ -149,7 +149,7 @@ TEST(format_arg, constructor)
     }
 }
 
-TEST(format_arg, swap)
+TEST(FormatArg, Swap)
 {
     // Not using namespace papilio to test ADL
     using papilio::utf::codepoint;
@@ -176,7 +176,7 @@ TEST(format_arg, swap)
     }
 }
 
-TEST(format_arg, access)
+TEST(FormatArg, Access)
 {
     using namespace papilio;
 

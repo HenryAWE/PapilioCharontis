@@ -6,7 +6,7 @@
 
 using namespace test_core;
 
-TYPED_TEST(format_context_suite, append)
+TYPED_TEST(FormatContextSuite, Append)
 {
     using namespace papilio;
 
@@ -47,7 +47,7 @@ TYPED_TEST(format_context_suite, append)
     }
 }
 
-TYPED_TEST(format_context_suite, format_to)
+TYPED_TEST(FormatContextSuite, FormatTo)
 {
     using namespace papilio;
 
@@ -90,7 +90,7 @@ TYPED_TEST(format_context_suite, format_to)
     }
 }
 
-TYPED_TEST(format_context_suite, append_escaped)
+TYPED_TEST(FormatContextSuite, AppendEscaped)
 {
     using namespace papilio;
 

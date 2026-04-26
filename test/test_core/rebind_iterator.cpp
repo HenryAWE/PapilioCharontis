@@ -7,7 +7,7 @@
 
 using namespace test_core;
 
-TYPED_TEST(format_context_suite, Rebind)
+TYPED_TEST(FormatContextSuite, Rebind)
 {
     using namespace papilio;
 
@@ -41,7 +41,7 @@ TYPED_TEST(format_context_suite, Rebind)
     }
 }
 
-TEST(format_context, rebind_locale)
+TEST(FormatContext, RebindLocale)
 {
     using namespace papilio;
 

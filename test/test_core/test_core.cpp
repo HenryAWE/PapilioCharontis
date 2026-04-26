@@ -157,7 +157,7 @@ TEST(FormatArgs, Custom)
     EXPECT_EQ(get<std::size_t>(args_ref["argc"]), 3);
 }
 
-TEST(format_args, ref)
+TEST(FormatArgs, Ref)
 {
     using namespace papilio;
     using namespace std::literals;
