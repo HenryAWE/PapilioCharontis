@@ -14,6 +14,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Install Dependencies
         run: |
@@ -63,6 +65,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+            submodules: true
 
       - name: Install Dependencies
         run: |
@@ -125,6 +129,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: amd64
@@ -185,6 +191,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - name: Install Dependencies
         run: |

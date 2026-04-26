@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <iomanip>
 #include <papilio/format.hpp>
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>

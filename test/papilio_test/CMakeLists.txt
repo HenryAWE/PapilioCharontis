@@ -1,3 +1,9 @@
+set(BUILD_GMOCK OFF)
+set(INSTALL_GTEST OFF)
+set(CMAKE_CXX_STANDARD 20) # For char8_t-related stuffs
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_subdirectory(googletest EXCLUDE_FROM_ALL)
+
 add_library(papilio_test INTERFACE)
 target_include_directories(papilio_test INTERFACE include)
 target_link_libraries(papilio_test INTERFACE papilio)

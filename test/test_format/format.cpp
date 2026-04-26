@@ -5,6 +5,7 @@
 #include <papilio/format.hpp>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <ranges>
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>

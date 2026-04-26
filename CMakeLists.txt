@@ -163,22 +163,6 @@ if(${papilio_build_example})
     add_subdirectory(example)
 endif()
 if(${papilio_build_unit_test})
-    message(STATUS "Fetching GoogleTest v1.14.0 from GitHub")
-
-    include(FetchContent)
-
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG v1.14.0
-        EXCLUDE_FROM_ALL
-    )
-    set(BUILD_GMOCK OFF)
-    set(INSTALL_GTEST OFF)
-    set(CMAKE_CXX_STANDARD 20)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    FetchContent_MakeAvailable(googletest)
-
     enable_testing()
     add_subdirectory(test)
 endif()
