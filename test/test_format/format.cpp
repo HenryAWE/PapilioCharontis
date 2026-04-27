@@ -109,7 +109,7 @@ TYPED_TEST(FormatSuite, FormattedSize)
     }
 }
 
-TYPED_TEST(FormatSuite, format_to_n)
+TYPED_TEST(FormatSuite, FormatToN)
 {
     using namespace papilio;
 

@@ -4,7 +4,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TYPED_TEST(FormatSuite, script_bool_op)
+TYPED_TEST(FormatSuite, ScriptBoolOp)
 {
     using namespace papilio;
 
@@ -43,7 +43,7 @@ TYPED_TEST(FormatSuite, script_bool_op)
     }
 }
 
-TYPED_TEST(FormatSuite, script_cmp_op)
+TYPED_TEST(FormatSuite, ScriptCmpOp)
 {
     using namespace papilio;
 
@@ -95,7 +95,7 @@ TYPED_TEST(FormatSuite, script_cmp_op)
     PAPILIO_CHECK_SCRIPT_GE_OP(1, 1);
 }
 
-TYPED_TEST(FormatSuite, script_branch)
+TYPED_TEST(FormatSuite, ScriptBranch)
 {
     using namespace papilio;
 
@@ -130,7 +130,7 @@ TYPED_TEST(FormatSuite, script_branch)
     }
 }
 
-TYPED_TEST(FormatSuite, script_composite)
+TYPED_TEST(FormatSuite, ScriptComposite)
 {
     using namespace papilio;
 

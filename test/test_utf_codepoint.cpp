@@ -92,7 +92,7 @@ using char_types = ::testing::Types<char, wchar_t, char16_t, char32_t, char8_t>;
 TYPED_TEST_SUITE(DecoderSuite, char_types);
 TYPED_TEST_SUITE(CodepointSuite, char_types);
 
-TYPED_TEST(DecoderSuite, size_bytes)
+TYPED_TEST(DecoderSuite, SizeBytes)
 {
     using namespace papilio;
     using test_data = typename TestFixture::test_data;
@@ -227,7 +227,7 @@ TYPED_TEST(CodepointSuite, AppendTo)
     }
 }
 
-TYPED_TEST(CodepointSuite, iterator)
+TYPED_TEST(CodepointSuite, Iterator)
 {
     using namespace papilio;
     using namespace utf;
