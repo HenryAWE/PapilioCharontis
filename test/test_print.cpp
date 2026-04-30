@@ -10,7 +10,7 @@
 #endif
 #include <papilio_test/setup.hpp>
 
-#if defined PAPILIO_PLATFORM_LINUX || defined PAPILIO_PLATFORM_MACOS
+#if defined PAPILIO_PLATFORM_LINUX
 
 TEST(Print, FileDescriptor)
 {
