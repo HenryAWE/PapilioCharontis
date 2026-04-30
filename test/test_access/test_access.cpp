@@ -151,11 +151,9 @@ TEST(Accessor, ContiguousRange)
         std::array<int, 4> arr = {0, 1, 2, 3};
 
         EXPECT_EQ(PAPILIO_NS format("{.size}", arr), "4");
-        EXPECT_EQ(PAPILIO_NS format("{.size}", arr), "4");
         EXPECT_EQ(PAPILIO_NS format("{[1:4].size}", arr), "3");
         EXPECT_EQ(PAPILIO_NS format("{0[0]},{0[1]},{0[2]},{0[3]}", arr), "0,1,2,3");
 
-        EXPECT_EQ(PAPILIO_NS format(L"{.size}", arr), L"4");
         EXPECT_EQ(PAPILIO_NS format(L"{.size}", arr), L"4");
         EXPECT_EQ(PAPILIO_NS format(L"{[1:4].size}", arr), L"3");
         EXPECT_EQ(PAPILIO_NS format(L"{0[0]},{0[1]},{0[2]},{0[3]}", arr), L"0,1,2,3");

@@ -81,7 +81,7 @@ TYPED_TEST(IntFormatterSuite, ExtremeValue)
 
     if constexpr(std::is_unsigned_v<TypeParam>)
     {
-        constexpr std::uint64_t val = std::numeric_limits<TypeParam>::max();
+        constexpr TypeParam val = std::numeric_limits<TypeParam>::max();
         EXPECT_EQ(PAPILIO_NS format("{}", val), std::to_string(val));
         EXPECT_EQ(PAPILIO_NS format(L"{}", val), std::to_wstring(val));
 
@@ -97,7 +97,7 @@ TYPED_TEST(IntFormatterSuite, ExtremeValue)
     else
     {
         {
-            constexpr std::int64_t val = std::numeric_limits<TypeParam>::max();
+            constexpr TypeParam val = std::numeric_limits<TypeParam>::max();
             EXPECT_EQ(PAPILIO_NS format("{}", val), std::to_string(val));
             EXPECT_EQ(PAPILIO_NS format(L"{}", val), std::to_wstring(val));
 
@@ -111,7 +111,7 @@ TYPED_TEST(IntFormatterSuite, ExtremeValue)
         }
 
         {
-            constexpr std::int64_t val = std::numeric_limits<TypeParam>::min();
+            constexpr TypeParam val = std::numeric_limits<TypeParam>::min();
             EXPECT_EQ(PAPILIO_NS format("{}", val), std::to_string(val));
             EXPECT_EQ(PAPILIO_NS format(L"{}", val), std::to_wstring(val));
 

@@ -137,7 +137,7 @@ TEST(SmallVector, DynamicAllocated)
     EXPECT_FALSE(sv.dynamic_allocated());
 
     sv.assign({"first", "second"});
-    EXPECT_NE(sv.front(), "one");
+    EXPECT_EQ(sv.front(), "first");
 
     EXPECT_FALSE(sv.dynamic_allocated());
     sv.push_back("third");

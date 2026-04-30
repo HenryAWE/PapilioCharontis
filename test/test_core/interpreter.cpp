@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <papilio/core.hpp>
 #include <papilio/format.hpp>
 #include <papilio_test/setup.hpp>
@@ -352,7 +353,7 @@ auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
     {
         (void)PAPILIO_NS format(fmt, std::forward<Args>(args)...);
 
-        throw;
+        throw std::logic_error("expected script_base::error");
     }
     catch(const script_base::error& e)
     {

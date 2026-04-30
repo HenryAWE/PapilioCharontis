@@ -64,7 +64,6 @@ TEST(ChronoFormatter, General)
         EXPECT_EQ(PAPILIO_NS format("{}", std::chrono::January), "Jan");
         EXPECT_EQ(PAPILIO_NS format("{}", std::chrono::December), "Dec");
         EXPECT_EQ(PAPILIO_NS format("{}", std::chrono::month(13)), "month(13)");
-        EXPECT_EQ(PAPILIO_NS format("{}", std::chrono::month(13)), "month(13)");
     }
 
     // day
