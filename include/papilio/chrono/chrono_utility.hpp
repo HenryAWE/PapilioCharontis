@@ -16,12 +16,8 @@
 #    define PAPILIO_CHRONO_NO_UTC_TIME
 #endif
 
-#ifdef PAPILIO_STDLIB_LIBCPP
+#if __cpp_lib_chrono < 201907L
 #    define PAPILIO_CHRONO_NO_TIMEZONE
-#elif defined(PAPILIO_STDLIB_LIBSTDCPP)
-#    if __GLIBCXX__ < 20240412
-#        define PAPILIO_CHRONO_NO_TIMEZONE
-#    endif
 #endif
 
 /**
