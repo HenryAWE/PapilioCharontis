@@ -35,7 +35,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: ctest
 
-      - name: Display Infomation
+      - name: Display Information
         working-directory: ${{github.workspace}}/build/example
         run: ./info
 
@@ -92,7 +92,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: ctest
 
-      - name: Display Infomation
+      - name: Display Information
         working-directory: ${{github.workspace}}/build/example
         run: ./info
 
@@ -120,9 +120,44 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: ctest
 
-      - name: Display Infomation
+      - name: Display Information
         working-directory: ${{github.workspace}}/build/example
         run: .\info.exe
+
+  AppleClang:
+    runs-on: macos-15
+
+    name: AppleClang
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install Dependencies
+        run: |
+            brew install ninja
+            brew install cmake
+
+      - name: Build
+        run: >
+          ./build.sh
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_CXX_COMPILER=clang++
+          -Dpapilio_build_unit_test=1
+          -Dpapilio_build_example=1
+
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest --output-on-failure
+
+      - name: Display Information
+        working-directory: ${{github.workspace}}/build/example
+        run: ./info
 
   ClangCl:
     runs-on: windows-2022
@@ -155,7 +190,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: ctest
 
-      - name: Display Infomation
+      - name: Display Information
         working-directory: ${{github.workspace}}/build/example
         run: .\info.exe
 
