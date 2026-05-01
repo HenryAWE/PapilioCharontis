@@ -136,7 +136,7 @@ bool script_base::is_field_name_ch(char32_t ch, bool first) noexcept
         return false;
 
     return digit ||
-           (U'A' <= ch && ch <= U'A') ||
+           (U'A' <= ch && ch <= U'Z') ||
            (U'a' <= ch && ch <= U'z') ||
            ch == U'_' ||
            ch >= 128;

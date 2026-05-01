@@ -963,6 +963,7 @@ public:
     {
         string_type& str = to_str();
         str.assign(count, ch);
+        return *this;
     }
 
     basic_string_container& assign(size_type count, codepoint cp)

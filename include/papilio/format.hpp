@@ -62,14 +62,15 @@ public:
         using iterator_category = std::input_iterator_tag;
 
         const_iterator(const_iterator&& other) noexcept
-            : m_fmt_ctx(std::back_inserter(m_buf), other.m_intp_ctx.input_context().get_args()),
+            : m_buf(std::move(other.m_buf)),
+              m_fmt_ctx(std::back_inserter(m_buf), other.m_intp_ctx.input_context().get_args()),
               m_intp(),
               m_intp_ctx(m_intp.create_context(other.m_intp_ctx.input_context(), m_fmt_ctx)),
-              m_buf(std::move(other.m_buf)),
               m_offset(std::exchange(other.m_offset, 0)) {}
 
         const_iterator(parse_context& ictx)
-            : m_fmt_ctx(std::back_inserter(m_buf), ictx.get_args()),
+            : m_buf(),
+              m_fmt_ctx(std::back_inserter(m_buf), ictx.get_args()),
               m_intp(),
               m_intp_ctx(m_intp.create_context(ictx, m_fmt_ctx)) {}
 
@@ -79,6 +80,7 @@ public:
             m_intp_ctx = m_intp.create_context(rhs.m_intp_ctx.input_context(), m_fmt_ctx);
             m_buf = std::move(rhs.m_buf);
             m_offset = std::exchange(rhs.m_offset, 0);
+            return *this;
         }
 
         bool operator==(sentinel_t) const
@@ -112,10 +114,10 @@ public:
         }
 
     private:
+        mutable std::basic_string<CharT> m_buf;
         mutable format_context_type m_fmt_ctx;
         mutable intp_t m_intp;
         mutable intp_ctx_t m_intp_ctx;
-        mutable std::basic_string<CharT> m_buf;
         std::size_t m_offset = 0;
     };
 

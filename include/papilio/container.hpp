@@ -1378,6 +1378,8 @@ public:
     iterator find(const Key& k)
     {
         auto it = lower_bound(k);
+        if(it == end())
+            return end();
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
     }
 
@@ -1385,6 +1387,8 @@ public:
     iterator find(const K& k) requires is_transparent_v<Compare>
     {
         auto it = lower_bound(k);
+        if(it == end())
+            return end();
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
     }
 
@@ -1392,6 +1396,8 @@ public:
     const_iterator find(const Key& k) const
     {
         auto it = lower_bound(k);
+        if(it == end())
+            return end();
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
     }
 
@@ -1399,6 +1405,8 @@ public:
     const_iterator find(const K& k) const requires is_transparent_v<Compare>
     {
         auto it = lower_bound(k);
+        if(it == end())
+            return end();
         return is_equal(it->first, k, get_comp().as_key_comp()) ? it : end();
     }
 

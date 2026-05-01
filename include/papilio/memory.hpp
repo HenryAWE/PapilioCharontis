@@ -171,7 +171,7 @@ public:
 
     template <typename D>
     optional_unique_ptr(const optional_unique_ptr<T, D>& other)
-        : m_ptr(other.m_ptr)
+        : m_ptr(other.m_ptr), m_control(other.m_control)
     {}
 
     optional_unique_ptr(optional_unique_ptr&& other) noexcept(std::is_nothrow_default_constructible_v<Deleter>)

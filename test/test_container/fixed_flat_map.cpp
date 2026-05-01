@@ -80,3 +80,24 @@ TEST(FixedFlatMap, ZeroCapacity)
 
     EXPECT_THROW(fm.try_emplace(0, "overflow"), std::length_error);
 }
+
+TEST(FixedFlatMap, Empty)
+{
+    using papilio::fixed_flat_map;
+
+    fixed_flat_map<int, std::string, 4> fm;
+
+    EXPECT_TRUE(fm.empty());
+    EXPECT_EQ(fm.size(), 0);
+    EXPECT_EQ(fm.begin(), fm.end());
+
+    EXPECT_EQ(fm.find(1), fm.end());
+    EXPECT_EQ(std::as_const(fm).find(1), fm.end());
+    EXPECT_FALSE(fm.contains(1));
+
+    EXPECT_EQ(fm.lower_bound(1), fm.end());
+    EXPECT_EQ(std::as_const(fm).lower_bound(1), fm.end());
+
+    EXPECT_THROW(fm.at(1), std::out_of_range);
+    EXPECT_THROW(std::as_const(fm).at(1), std::out_of_range);
+}
