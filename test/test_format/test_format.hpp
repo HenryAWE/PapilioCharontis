@@ -39,7 +39,7 @@ struct formatter<test_format::format_disabled, CharT> : public disabled_formatte
 } // namespace papilio
 
 template <typename CharT>
-class format_suite : public ::testing::Test
+class FormatSuite : public ::testing::Test
 {
 public:
     using char_type = CharT;
@@ -47,8 +47,8 @@ public:
     using string_view_type = std::basic_string_view<CharT>;
 };
 
-using char_types = ::testing::Types<char, wchar_t>;
-TYPED_TEST_SUITE(format_suite, char_types);
+using basic_char_types = ::testing::Types<char, wchar_t>;
+TYPED_TEST_SUITE(FormatSuite, basic_char_types);
 
 #include <papilio_test/suffix.hpp>
 

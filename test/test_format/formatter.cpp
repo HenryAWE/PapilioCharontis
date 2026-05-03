@@ -7,7 +7,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(fundamental_formatter, codepoint)
+TEST(FundamentalFormatter, Codepoint)
 {
     using namespace papilio;
 
@@ -21,7 +21,7 @@ TEST(fundamental_formatter, codepoint)
     EXPECT_EQ(PAPILIO_NS format(L"{:?} {:?}", '\'', '"'), LR"('\'' '"')");
 }
 
-TEST(fundamental_formatter, string)
+TEST(FundamentalFormatter, String)
 {
     using namespace papilio;
 
@@ -58,7 +58,7 @@ TEST(fundamental_formatter, string)
     EXPECT_EQ(PAPILIO_NS format(L"{:*>8.5}", L"hello!"), L"***hello");
 }
 
-TEST(fundamental_formatter, bool)
+TEST(FundamentalFormatter, Bool)
 {
     using namespace papilio;
 
@@ -113,7 +113,7 @@ TEST(fundamental_formatter, bool)
     }
 }
 
-TEST(fundamental_formatter, pointer)
+TEST(FundamentalFormatter, Pointer)
 {
     using namespace papilio;
 
@@ -170,7 +170,7 @@ TEST(fundamental_formatter, pointer)
     }
 }
 
-TEST(fundamental_formatter, magic_enum)
+TEST(FundamentalFormatter, MagicEnum)
 {
     using namespace papilio;
 

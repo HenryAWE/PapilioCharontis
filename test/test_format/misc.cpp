@@ -5,7 +5,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(stream_adaptor, stream_adaptor)
+TEST(StreamAdaptor, StreamAdaptor)
 {
     using namespace papilio;
     using test_format::stream_only;
@@ -34,7 +34,7 @@ TEST(stream_adaptor, stream_adaptor)
 }
 
 // Reported by KKoishi_
-TEST(stream_adaptor, bad_spec)
+TEST(StreamAdaptor, BadSpec)
 {
     using namespace papilio;
     using test_format::stream_only;
@@ -51,7 +51,7 @@ TEST(stream_adaptor, bad_spec)
     }
 }
 
-TEST(misc_formatter, join)
+TEST(MiscFormatter, Join)
 {
     using namespace papilio;
 
@@ -96,7 +96,7 @@ TEST(misc_formatter, join)
     }
 }
 
-TEST(misc_formatter, thread_id)
+TEST(MiscFormatter, ThreadId)
 {
     using namespace papilio;
 
@@ -142,7 +142,7 @@ TEST(misc_formatter, thread_id)
 
 #ifdef PAPILIO_HAS_LIB_STACKTRACE
 
-TEST(misc_formatter, stacktrace)
+TEST(MiscFormatter, Stacktrace)
 {
     using namespace papilio;
 

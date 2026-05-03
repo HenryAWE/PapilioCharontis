@@ -7,7 +7,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(ranges, sequence)
+TEST(Ranges, Sequence)
 {
     std::vector<int> vec{1, 2, 3};
 
@@ -71,7 +71,7 @@ TEST(ranges, sequence)
 #endif
 }
 
-TEST(ranges, set)
+TEST(Ranges, Set)
 {
     {
         std::set<int> s{1, 2, 3};
@@ -106,7 +106,7 @@ TEST(ranges, set)
     }
 }
 
-TEST(ranges, map)
+TEST(Ranges, Map)
 {
     std::map<int, float> m{
         {1, 1.0f},
@@ -123,7 +123,7 @@ TEST(ranges, map)
     EXPECT_EQ(PAPILIO_NS format(L"{:m}", m), L"{1: 1, 2: 2, 3: 3}");
 }
 
-TEST(ranges, string_like)
+TEST(Ranges, StringLike)
 {
     using namespace papilio;
 
@@ -165,7 +165,7 @@ TEST(ranges, string_like)
     }
 }
 
-TEST(ranges, nested)
+TEST(Ranges, Nested)
 {
     using namespace papilio;
 

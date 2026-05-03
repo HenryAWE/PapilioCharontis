@@ -10,7 +10,7 @@
 namespace test_core
 {
 template <typename CharT>
-class format_context_suite : public ::testing::Test
+class FormatContextSuite : public ::testing::Test
 {
 public:
     using char_type = CharT;
@@ -29,7 +29,7 @@ public:
 };
 
 using format_context_char_types = ::testing::Types<char, wchar_t, char8_t, char16_t, char32_t>;
-TYPED_TEST_SUITE(format_context_suite, format_context_char_types);
+TYPED_TEST_SUITE(FormatContextSuite, format_context_char_types);
 } // namespace test_core
 
 #include <papilio_test/suffix.hpp>

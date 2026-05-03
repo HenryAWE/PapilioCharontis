@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <papilio/core.hpp>
 #include <papilio/format.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(variable, constructor)
+TEST(Variable, Constructor)
 {
     using namespace papilio;
 
@@ -96,7 +97,7 @@ TEST(variable, constructor)
     }
 }
 
-TEST(variable, compare)
+TEST(Variable, Compare)
 {
     using namespace papilio;
 
@@ -119,7 +120,7 @@ TEST(variable, compare)
     }
 }
 
-TEST(variable, equal)
+TEST(Variable, Equal)
 {
     using namespace papilio;
 
@@ -166,7 +167,7 @@ TEST(variable, equal)
     }
 }
 
-TEST(variable, access)
+TEST(Variable, Access)
 {
     using namespace papilio;
 
@@ -227,7 +228,7 @@ TEST(variable, access)
     }
 }
 
-TEST(variable, wchar_t)
+TEST(Variable, WideChar)
 {
     using namespace papilio;
 
@@ -259,7 +260,7 @@ auto test_access(std::string_view fmt, Args&&... args)
 }
 } // namespace test_script_interpreter
 
-TEST(interpreter, access)
+TEST(Interpreter, Access)
 {
     using namespace papilio;
     using namespace test_script_interpreter;
@@ -323,7 +324,7 @@ TEST(interpreter, access)
     }
 }
 
-TEST(interpreter, format)
+TEST(Interpreter, Format)
 {
     using namespace papilio;
 
@@ -352,7 +353,7 @@ auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
     {
         (void)PAPILIO_NS format(fmt, std::forward<Args>(args)...);
 
-        throw;
+        throw std::logic_error("expected script_base::error");
     }
     catch(const script_base::error& e)
     {
@@ -361,7 +362,7 @@ auto get_err(papilio::format_string<Args...> fmt, Args&&... args)
 }
 } // namespace test_script_interpreter
 
-TEST(interpreter, exception)
+TEST(Interpreter, Exception)
 {
     using namespace papilio;
     using enum script_error_code;
@@ -374,7 +375,7 @@ TEST(interpreter, exception)
     EXPECT_EQ(get_err("{$ 'str'? 'incomplete}").error_code(), end_of_string);
 }
 
-TEST(interpreter, debug)
+TEST(Interpreter, Debug)
 {
     using namespace papilio;
     using enum script_error_code;
@@ -414,4 +415,6 @@ TEST(interpreter, debug)
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'}", invalid_condition, 8);
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'?}", invalid_string, 9);
     PAPILIO_TEST_INTERPRETER_DEBUG("{$ 'str'==={0}?'s'}", invalid_condition, 10);
+
+#undef PAPILIO_TEST_INTERPRETER_DEBUG
 }

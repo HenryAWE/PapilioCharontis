@@ -27,7 +27,7 @@ static std::string bool_to_string(bool value, const std::locale& loc)
 };
 } // namespace test_locale
 
-TEST(locale, locale_ref)
+TEST(Locale, LocaleRef)
 {
     using namespace papilio;
     using namespace test_locale;
@@ -55,8 +55,3 @@ TEST(locale, locale_ref)
     }
 }
 
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

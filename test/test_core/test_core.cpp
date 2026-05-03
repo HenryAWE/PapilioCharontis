@@ -3,7 +3,7 @@
 #include <papilio/papilio.hpp>
 #include <papilio_test/setup.hpp>
 
-TEST(format_args, empty)
+TEST(FormatArgs, Empty)
 {
     using namespace papilio;
 
@@ -32,7 +32,7 @@ TEST(format_args, empty)
     }
 }
 
-TEST(format_args, dynamic)
+TEST(FormatArgs, Dynamic)
 {
     using namespace papilio;
 
@@ -69,7 +69,7 @@ TEST(format_args, dynamic)
     }
 }
 
-TEST(format_args, static)
+TEST(FormatArgs, Static)
 {
     using namespace papilio;
 
@@ -139,7 +139,7 @@ private:
 };
 } // namespace test_core
 
-TEST(format_args, custom)
+TEST(FormatArgs, Custom)
 {
     using namespace papilio;
 
@@ -157,7 +157,7 @@ TEST(format_args, custom)
     EXPECT_EQ(get<std::size_t>(args_ref["argc"]), 3);
 }
 
-TEST(format_args, ref)
+TEST(FormatArgs, Ref)
 {
     using namespace papilio;
     using namespace std::literals;
@@ -193,7 +193,7 @@ TEST(format_args, ref)
     }(make_format_args(182375, 182376, "name"_a = "scene"s));
 }
 
-TEST(format_parse_context, char)
+TEST(FormatParseContext, Char)
 {
     using namespace papilio;
 

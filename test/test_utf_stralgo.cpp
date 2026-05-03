@@ -11,7 +11,7 @@ static_assert(std::size(PAPILIO_TSTRING_ARRAY(wchar_t, "hello")) == 6);
 static_assert(PAPILIO_TSTRING_VIEW(wchar_t, "hello") == L"hello");
 static_assert(PAPILIO_TSTRING_VIEW(wchar_t, "hello") == PAPILIO_TSTRING_CSTR(wchar_t, "hello"));
 
-TEST(strlen, char8_t)
+TEST(Strlen, Char8)
 {
     using namespace papilio;
     using namespace utf;
@@ -52,7 +52,7 @@ TEST(strlen, char8_t)
     }
 }
 
-TEST(index_offset, char8_t)
+TEST(IndexOffset, Char8)
 {
     using namespace papilio;
     using namespace std::literals;
@@ -70,7 +70,7 @@ TEST(index_offset, char8_t)
     EXPECT_EQ(utf::index_offset(reverse_index, 1, u8"\U0001f351A"sv), 0);
 }
 
-TEST(index_offset, char16_t)
+TEST(IndexOffset, Char16)
 {
     using namespace papilio;
     using namespace std::literals;
@@ -88,7 +88,7 @@ TEST(index_offset, char16_t)
     EXPECT_EQ(utf::index_offset(reverse_index, 1, u"\U0001f351A"sv), 0);
 }
 
-TEST(index_offset, char32_t)
+TEST(IndexOffset, Char32)
 {
     using namespace papilio;
     using namespace std::literals;
@@ -104,10 +104,4 @@ TEST(index_offset, char32_t)
     EXPECT_EQ(utf::index_offset(reverse_index, 1, U"A"sv), utf::npos);
     EXPECT_EQ(utf::index_offset(reverse_index, 1, U"\u00c4A"sv), 0);
     EXPECT_EQ(utf::index_offset(reverse_index, 1, U"\U0001f351A"sv), 0);
-}
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

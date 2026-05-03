@@ -10,7 +10,7 @@ static_assert(papilio::is_transparent_v<ffm_t::value_compare>);
 static_assert(std::is_empty_v<ffm_t::value_compare>);
 } // namespace test_container
 
-TEST(fixed_flat_map, emplace)
+TEST(FixedFlatMap, Emplace)
 {
     using papilio::fixed_flat_map;
 
@@ -61,7 +61,7 @@ TEST(fixed_flat_map, emplace)
     EXPECT_FALSE(fm.contains(5));
 }
 
-TEST(fixed_flat_map, insert_or_assign)
+TEST(FixedFlatMap, InsertOrAssign)
 {
     using papilio::fixed_flat_map;
 
@@ -72,11 +72,32 @@ TEST(fixed_flat_map, insert_or_assign)
     EXPECT_EQ(fm.at(1), "one");
 }
 
-TEST(fixed_flat_map, zero_capacity)
+TEST(FixedFlatMap, ZeroCapacity)
 {
     using papilio::fixed_flat_map;
 
     fixed_flat_map<int, std::string, 0> fm;
 
     EXPECT_THROW(fm.try_emplace(0, "overflow"), std::length_error);
+}
+
+TEST(FixedFlatMap, Empty)
+{
+    using papilio::fixed_flat_map;
+
+    fixed_flat_map<int, std::string, 4> fm;
+
+    EXPECT_TRUE(fm.empty());
+    EXPECT_EQ(fm.size(), 0);
+    EXPECT_EQ(fm.begin(), fm.end());
+
+    EXPECT_EQ(fm.find(1), fm.end());
+    EXPECT_EQ(std::as_const(fm).find(1), fm.end());
+    EXPECT_FALSE(fm.contains(1));
+
+    EXPECT_EQ(fm.lower_bound(1), fm.end());
+    EXPECT_EQ(std::as_const(fm).lower_bound(1), fm.end());
+
+    EXPECT_THROW(fm.at(1), std::out_of_range);
+    EXPECT_THROW(std::as_const(fm).at(1), std::out_of_range);
 }

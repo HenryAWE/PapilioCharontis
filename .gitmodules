@@ -1,0 +1,3 @@
+[submodule "test/papilio_test/googletest"]
+	path = test/papilio_test/googletest
+	url = https://github.com/google/googletest.git

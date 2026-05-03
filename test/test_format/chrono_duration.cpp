@@ -9,7 +9,7 @@
 #include <papilio_test/setup.hpp>
 
 
-TEST(chrono_formatter, duration)
+TEST(ChronoFormatter, Duration)
 {
     using namespace std::chrono_literals;
     using namespace papilio;

@@ -26,7 +26,7 @@ public:
 };
 } // namespace test_memory
 
-TEST(optional_unique_ptr, ownership)
+TEST(OptionalUniquePtr, Ownership)
 {
     using namespace papilio;
     using namespace test_memory;
@@ -54,7 +54,7 @@ TEST(optional_unique_ptr, ownership)
     }
 }
 
-TEST(optional_unique_ptr, compatibility)
+TEST(OptionalUniquePtr, Compatibility)
 {
     using namespace papilio;
     using namespace test_memory;
@@ -147,10 +147,4 @@ TEST(optional_unique_ptr, compatibility)
         for(std::size_t i = 0; i < 4; ++i)
             EXPECT_EQ(opt_int_arr[i], 0);
     }
-}
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

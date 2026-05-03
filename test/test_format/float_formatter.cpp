@@ -8,7 +8,7 @@
 #include <papilio_test/setup.hpp>
 
 template <typename T>
-class float_formatter_suite : public ::testing::Test
+class FloatFormatterSuite : public ::testing::Test
 {
 public:
     static T create_inf() noexcept
@@ -23,9 +23,9 @@ public:
 };
 
 using float_types = ::testing::Types<float, double, long double>;
-TYPED_TEST_SUITE(float_formatter_suite, float_types);
+TYPED_TEST_SUITE(FloatFormatterSuite, float_types);
 
-TYPED_TEST(float_formatter_suite, basic)
+TYPED_TEST(FloatFormatterSuite, Basic)
 {
     using namespace papilio;
 
@@ -48,7 +48,7 @@ TYPED_TEST(float_formatter_suite, basic)
     EXPECT_EQ(PAPILIO_NS format(L"{}", TypeParam(1.0e10L)), L"1e+10");
 }
 
-TYPED_TEST(float_formatter_suite, inf_and_nan)
+TYPED_TEST(FloatFormatterSuite, InfAndNan)
 {
     EXPECT_EQ(PAPILIO_NS format("{}", TestFixture::create_inf()), "inf");
     EXPECT_EQ(PAPILIO_NS format(L"{}", TestFixture::create_inf()), L"inf");
@@ -83,7 +83,7 @@ TYPED_TEST(float_formatter_suite, inf_and_nan)
     EXPECT_EQ(PAPILIO_NS format(L"{:E}", TestFixture::create_nan()), L"NAN");
 }
 
-TYPED_TEST(float_formatter_suite, scientific)
+TYPED_TEST(FloatFormatterSuite, Scientific)
 {
     using namespace papilio;
 
@@ -114,7 +114,7 @@ TYPED_TEST(float_formatter_suite, scientific)
     }
 }
 
-TYPED_TEST(float_formatter_suite, hex)
+TYPED_TEST(FloatFormatterSuite, Hex)
 {
     using namespace papilio;
 
@@ -130,7 +130,7 @@ TYPED_TEST(float_formatter_suite, hex)
     }
 }
 
-TYPED_TEST(float_formatter_suite, fill_and_align)
+TYPED_TEST(FloatFormatterSuite, FillAndAlign)
 {
     {
         const TypeParam pi = TypeParam(3.14L);
@@ -213,7 +213,7 @@ std::locale attach_my_float_sep()
 }
 } // namespace test_format
 
-TEST(float_formatter, locale)
+TEST(FloatFormatter, Locale)
 {
     {
         std::locale loc = test_format::attach_my_float_sep();

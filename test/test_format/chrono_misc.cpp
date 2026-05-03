@@ -10,7 +10,7 @@
 #include <papilio_test/setup.hpp>
 
 // %Q and %q
-TEST(chrono_formatter, count)
+TEST(ChronoFormatter, Count)
 {
     using namespace std::chrono_literals;
     using namespace papilio;
@@ -86,7 +86,7 @@ TEST(chrono_formatter, count)
     );
 }
 
-TEST(chrono_formatter, misc)
+TEST(ChronoFormatter, Misc)
 {
     using namespace std::chrono_literals;
     using namespace papilio;

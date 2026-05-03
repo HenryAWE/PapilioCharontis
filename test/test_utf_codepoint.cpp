@@ -77,7 +77,7 @@ struct decoder_test_data<wchar_t>
 } // namespace test_utf_codepoint
 
 template <typename CharT>
-class decoder_suite : public ::testing::Test
+class DecoderSuite : public ::testing::Test
 {
 public:
     using test_data = test_utf_codepoint::decoder_test_data<CharT>;
@@ -85,14 +85,14 @@ public:
 };
 
 template <typename CharT>
-class codepoint_suite : public ::testing::Test
+class CodepointSuite : public ::testing::Test
 {};
 
 using char_types = ::testing::Types<char, wchar_t, char16_t, char32_t, char8_t>;
-TYPED_TEST_SUITE(decoder_suite, char_types);
-TYPED_TEST_SUITE(codepoint_suite, char_types);
+TYPED_TEST_SUITE(DecoderSuite, char_types);
+TYPED_TEST_SUITE(CodepointSuite, char_types);
 
-TYPED_TEST(decoder_suite, size_bytes)
+TYPED_TEST(DecoderSuite, SizeBytes)
 {
     using namespace papilio;
     using test_data = typename TestFixture::test_data;
@@ -118,7 +118,7 @@ TYPED_TEST(decoder_suite, size_bytes)
     }
 }
 
-TYPED_TEST(decoder_suite, to_codepoint)
+TYPED_TEST(DecoderSuite, ToCodepoint)
 {
     using namespace papilio;
     using decoder_t = typename TestFixture::decoder_t;
@@ -165,7 +165,7 @@ TYPED_TEST(decoder_suite, to_codepoint)
         EXPECT_EQ(processed_size, 1);
 }
 
-TEST(codepoint, estimate_width)
+TEST(Codepoint, EstimateWidth)
 {
     using namespace papilio;
     using namespace utf;
@@ -183,7 +183,7 @@ TEST(codepoint, estimate_width)
     }
 }
 
-TYPED_TEST(codepoint_suite, ostream)
+TYPED_TEST(CodepointSuite, Ostream)
 {
     using namespace papilio;
     using namespace utf;
@@ -197,7 +197,7 @@ TYPED_TEST(codepoint_suite, ostream)
     EXPECT_EQ(ss.str(), expected_str);
 }
 
-TYPED_TEST(codepoint_suite, append_to)
+TYPED_TEST(CodepointSuite, AppendTo)
 {
     using namespace papilio;
     using namespace utf;
@@ -227,7 +227,7 @@ TYPED_TEST(codepoint_suite, append_to)
     }
 }
 
-TYPED_TEST(codepoint_suite, iterator)
+TYPED_TEST(CodepointSuite, Iterator)
 {
     using namespace papilio;
     using namespace utf;
@@ -260,7 +260,7 @@ TYPED_TEST(codepoint_suite, iterator)
     EXPECT_EQ(stop - start, 5);
 }
 
-TYPED_TEST(codepoint_suite, iterator_swap)
+TYPED_TEST(CodepointSuite, IteratorSwap)
 {
     using namespace papilio;
 
@@ -276,10 +276,4 @@ TYPED_TEST(codepoint_suite, iterator_swap)
 
     EXPECT_EQ(*a, U'p');
     EXPECT_EQ(*b, U's');
-}
-
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

@@ -5,11 +5,12 @@
 #include <papilio/format.hpp>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <ranges>
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TYPED_TEST(format_suite, plain_text)
+TYPED_TEST(FormatSuite, PlainText)
 {
     using namespace papilio;
 
@@ -44,7 +45,7 @@ TYPED_TEST(format_suite, plain_text)
     }
 }
 
-TYPED_TEST(format_suite, format_to)
+TYPED_TEST(FormatSuite, FormatTo)
 {
     using namespace papilio;
 
@@ -82,7 +83,7 @@ TYPED_TEST(format_suite, format_to)
     }
 }
 
-TYPED_TEST(format_suite, formatted_size)
+TYPED_TEST(FormatSuite, FormattedSize)
 {
     using namespace papilio;
 
@@ -108,7 +109,7 @@ TYPED_TEST(format_suite, formatted_size)
     }
 }
 
-TYPED_TEST(format_suite, format_to_n)
+TYPED_TEST(FormatSuite, FormatToN)
 {
     using namespace papilio;
 
@@ -171,7 +172,7 @@ TYPED_TEST(format_suite, format_to_n)
     }
 }
 
-TYPED_TEST(format_suite, exception)
+TYPED_TEST(FormatSuite, Exception)
 {
     using namespace papilio;
 
@@ -192,7 +193,7 @@ TYPED_TEST(format_suite, exception)
     }
 }
 
-TYPED_TEST(format_suite, formatted_range)
+TYPED_TEST(FormatSuite, FormattedRange)
 {
     using namespace papilio;
 

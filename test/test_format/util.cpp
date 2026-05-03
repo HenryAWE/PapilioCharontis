@@ -2,7 +2,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(disabled_formatter, disable_format)
+TEST(DisabledFormatter, DisableFormat)
 {
     using namespace papilio;
     using test_format::format_disabled;

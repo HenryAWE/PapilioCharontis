@@ -9,7 +9,7 @@
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
 
-TEST(xchar, char8_t)
+TEST(XChar, Char8)
 {
     using namespace papilio;
 
@@ -32,7 +32,7 @@ TEST(xchar, char8_t)
     }
 }
 
-TEST(xchar, char16_t)
+TEST(XChar, Char16)
 {
     using namespace papilio;
 
@@ -55,7 +55,7 @@ TEST(xchar, char16_t)
     }
 }
 
-TEST(xchar, char32_t)
+TEST(XChar, Char32)
 {
     using namespace papilio;
 
