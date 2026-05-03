@@ -20,9 +20,9 @@ unset(papilio_version_major_line)
 unset(papilio_version_minor_line)
 unset(papilio_version_patch_line)
 
-message("Papilio Charontis v${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}")
+message("libPapilio v${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}")
 project(
-    "Papilio Charontis"
+    "libPapilio"
     VERSION ${papilio_version_major}.${papilio_version_minor}.${papilio_version_patch}
 )
 if(${papilio_build_lib})

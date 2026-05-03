@@ -1,6 +1,6 @@
 其他语言：[English](README.md)
-# 🦋 引蝶座（Papilio Charontis）
-[![Build](https://github.com/HenryAWE/PapilioCharontis/actions/workflows/build.yml/badge.svg)](https://github.com/HenryAWE/PapilioCharontis/actions/workflows/build.yml)
+# 🦋 libPapilio
+[![Build](https://github.com/HenryAWE/libPapilio/actions/workflows/build.yml/badge.svg)](https://github.com/HenryAWE/libPapilio/actions/workflows/build.yml)
 
 功能灵活的 C++ 格式化库，主要为国际化（i18n）场景设计。同时，它也可以作为 `printf`、`<iostream>` 和 `std::format` 的替代品。
 

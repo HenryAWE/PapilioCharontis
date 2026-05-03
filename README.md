@@ -1,6 +1,6 @@
 Other language: [中文](README.zh-CN.md)
-# 🦋 Papilio Charontis
-[![Build](https://github.com/HenryAWE/PapilioCharontis/actions/workflows/build.yml/badge.svg)](https://github.com/HenryAWE/PapilioCharontis/actions/workflows/build.yml)
+# 🦋 libPapilio
+[![Build](https://github.com/HenryAWE/libPapilio/actions/workflows/build.yml/badge.svg)](https://github.com/HenryAWE/libPapilio/actions/workflows/build.yml)
 
 A flexible C++ formatting library, mainly designed for internationalization (i18n) scenarios. 
 It can also be used as a replacement for `printf`, `<iostream>` and `std::format`.

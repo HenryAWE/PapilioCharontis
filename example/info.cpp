@@ -5,7 +5,7 @@ int main()
 {
     using namespace papilio;
 
-    papilio::println("Papilio Charontis version {0[0]}.{0[1]}.{0[2]}", get_version());
+    papilio::println("libPapilio version {0[0]}.{0[1]}.{0[2]}", get_version());
     papilio::println();
 
     papilio::println("Is terminal: {}", os::is_terminal(stdout));

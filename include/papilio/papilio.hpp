@@ -8,15 +8,15 @@
  */
 
 /**
- * @mainpage Papilio Charontis
+ * @mainpage libPapilio
  * A flexible C++ formatting library designed for internationalization (i18n).
  *
  * Please open an issue at the project repository on GitHub
  * if you encounter any problems when using this library.
  *
- * Project repository: https://github.com/HenryAWE/PapilioCharontis
+ * Project repository: https://github.com/HenryAWE/libPapilio
  *
- * Mirror repository: https://gitee.com/HenryAWE/PapilioCharontis
+ * Mirror repository: https://gitee.com/HenryAWE/libPapilio
  *
  * This project is licensed under the MIT license.
  */
@@ -38,7 +38,7 @@
 // IWYU pragma: end_exports
 
 /**
- * @brief The main namespace of Papilio Charontis
+ * @brief The main namespace of libPapilio
  */
 namespace papilio
 {

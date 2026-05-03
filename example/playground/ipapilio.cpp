@@ -64,7 +64,7 @@ void ipapilio::mainloop()
 
 void ipapilio::print_info()
 {
-    papilio::println("Papilio Charontis {0[0]}.{0[1]}.{0[2]}", papilio::get_version());
+    papilio::println("libPapilio {0[0]}.{0[1]}.{0[2]}", papilio::get_version());
 }
 
 void ipapilio::build_cmd()
