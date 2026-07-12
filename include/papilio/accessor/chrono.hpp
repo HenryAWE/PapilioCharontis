@@ -81,8 +81,7 @@ struct accessor<ChronoType, Context>
             if(attr == PAPILIO_TSTRING_VIEW(char_type, "weekday"))
                 return val.weekday();
         }
-        else if constexpr(std::is_constructible_v<std::chrono::weekday, const ChronoType&> &&
-                          !std::same_as<ChronoType, std::chrono::weekday>)
+        else if constexpr(std::is_constructible_v<std::chrono::weekday, const ChronoType&> && !std::same_as<ChronoType, std::chrono::weekday>)
         {
             if(attr == PAPILIO_TSTRING_VIEW(char_type, "weekday"))
                 return std::chrono::weekday(val);

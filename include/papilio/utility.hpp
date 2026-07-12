@@ -645,7 +645,7 @@ namespace detail
 
         template <typename U1, typename U2>
         constexpr compressed_pair_impl(U1&& v1, U2&& v2)
-            : T2(std::forward<U1>(v2)), m_first(std::forward<U2>(v1))
+            : T2(std::forward<U2>(v2)), m_first(std::forward<U1>(v1))
         {}
 
 

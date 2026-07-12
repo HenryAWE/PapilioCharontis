@@ -7,10 +7,10 @@
 #ifndef PAPILIO_CORE_INL
 #define PAPILIO_CORE_INL
 
+#pragma once
+
 #include "core.hpp"
 #include <sstream>
-
-#pragma once
 
 namespace papilio
 {

@@ -8,7 +8,6 @@
 #include <papilio/formatter/chrono.hpp>
 #include <papilio_test/setup.hpp>
 
-
 TEST(ChronoFormatter, Duration)
 {
     using namespace std::chrono_literals;

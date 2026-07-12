@@ -45,7 +45,7 @@ constexpr components operator|(components lhs, components rhs) noexcept
 
 constexpr components operator&(components lhs, components rhs) noexcept
 {
-    return components(PAPILIO_NS to_underlying(lhs)& PAPILIO_NS to_underlying(rhs));
+    return components(PAPILIO_NS to_underlying(lhs) & PAPILIO_NS to_underlying(rhs));
 }
 
 constexpr bool operator!(components val) noexcept

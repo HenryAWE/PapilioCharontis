@@ -1830,7 +1830,7 @@ public:
 
 private:
     template <typename... Args>
-    void construct(Args&&... args) noexcept
+    void construct(Args&&... args)
     {
         static_assert(
             detail::get_indexed_arg_count<Args...>() == IndexedArgumentCount,
@@ -1907,10 +1907,12 @@ public:
                 "Invalid char type"
             );
 
-            m_named_args.emplace(std::make_pair(
-                PAPILIO_NS forward_like<T>(val.name),
-                PAPILIO_NS forward_like<T>(val.value)
-            ));
+            m_named_args.emplace(
+                std::make_pair(
+                    PAPILIO_NS forward_like<T>(val.name),
+                    PAPILIO_NS forward_like<T>(val.value)
+                )
+            );
         }
         else
         {
@@ -2752,11 +2754,7 @@ private:
                 {
                     append_as_esc_seq<true, false>(ctx, str[i]);
                 }
-                else if(std::all_of(
-                            str.begin() + i + 1,
-                            str.begin() + i + size_bytes,
-                            &utf::is_trailing_byte
-                        ))
+                else if(std::all_of(str.begin() + i + 1, str.begin() + i + size_bytes, &utf::is_trailing_byte))
                 {
                     append(
                         ctx,
@@ -5476,6 +5474,9 @@ private:
         const std::u32string_view use_default_precision = U"fFeEgG";
 
         int precision = static_cast<int>(data().precision);
+        // TODO: (Marked by AI) precision==0 is ambiguous — it means both "no precision specified"
+        // (-> use default 6 for fFeEgG) and explicit "{:.0f}" (-> should be 0).
+        // std::format distinguishes these cases; evaluate whether to align behavior.
         if(precision == 0 &&
            use_default_precision.find(data().type) != std::u32string_view::npos)
         {

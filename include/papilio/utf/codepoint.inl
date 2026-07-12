@@ -105,7 +105,7 @@ constexpr std::pair<char32_t, std::uint8_t> decoder<char32_t>::from_codepoint(co
         result <<= 6;
         result |= bytes[3] & 0b0011'1111;
 
-        return std::make_pair(result, std::uint8_t(3));
+        return std::make_pair(result, std::uint8_t(4));
     }
 
     return std::make_pair(U'\0', std::uint8_t(0));

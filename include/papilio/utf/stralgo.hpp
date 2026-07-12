@@ -86,7 +86,7 @@ constexpr inline std::uint8_t byte_count(std::uint8_t leading_byte) noexcept
 [[nodiscard]]
 constexpr inline bool is_high_surrogate(std::uint16_t ch) noexcept
 {
-    return 0xD7FF <= ch && ch <= 0xE000;
+    return 0xD800 <= ch && ch <= 0xDBFF;
 }
 
 [[nodiscard]]

@@ -44,7 +44,7 @@ if(${papilio_build_lib})
     endif()
 
     option(papilio_usan "enable undefined behavior sanitizer" OFF)
-    mark_as_advanced(papilio_asan)
+    mark_as_advanced(papilio_usan)
     if(${papilio_usan})
         add_compile_options(-fsanitize=undefined)
         add_link_options(-fsanitize=undefined)
@@ -70,7 +70,7 @@ if(${papilio_build_lib})
     add_library(papilio::papilio ALIAS papilio)
 
     # Enable warnings for development
-    option(papilio_all_warnings "enable warnings for development" ON)
+    option(papilio_all_warnings "enable warnings for development" OFF)
     mark_as_advanced(papilio_all_warnings)
     if(${papilio_all_warnings})
         target_compile_options(papilio PRIVATE

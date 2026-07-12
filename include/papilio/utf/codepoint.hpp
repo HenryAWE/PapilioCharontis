@@ -55,7 +55,7 @@ public:
         constexpr from_codepoint_result() noexcept = default;
         constexpr from_codepoint_result(const from_codepoint_result&) noexcept = default;
 
-        constexpr from_codepoint_result& operator=(from_codepoint_result&) noexcept = default;
+        constexpr from_codepoint_result& operator=(const from_codepoint_result&) noexcept = default;
 
         char16_t chars[2] = {};
         std::uint8_t size = 0;
@@ -96,7 +96,7 @@ public:
         constexpr from_codepoint_result() noexcept = default;
         constexpr from_codepoint_result(const from_codepoint_result&) noexcept = default;
 
-        constexpr from_codepoint_result& operator=(from_codepoint_result&) noexcept = default;
+        constexpr from_codepoint_result& operator=(const from_codepoint_result&) noexcept = default;
 
         wchar_t chars[sizeof(wchar_t) == sizeof(char16_t) ? 2 : 1] = {};
         std::uint8_t size = 0;

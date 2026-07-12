@@ -54,4 +54,3 @@ TEST(Locale, LocaleRef)
         EXPECT_EQ(bool_to_string(false, custom_ref), "F");
     }
 }
-
