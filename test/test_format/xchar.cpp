@@ -3,11 +3,13 @@
 #    include <format> // Test ADL-proof
 #endif
 #include <papilio/format.hpp>
-#include <papilio/xchar.hpp>
 #include <vector>
 #include <iostream>
 #include "test_format.hpp"
 #include <papilio_test/setup.hpp>
+
+#ifdef PAPILIO_ENABLE_XCHAR
+#    include <papilio/xchar.hpp>
 
 TEST(XChar, Char8)
 {
@@ -77,3 +79,5 @@ TEST(XChar, Char32)
         EXPECT_EQ(str, U"18");
     }
 }
+
+#endif

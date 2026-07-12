@@ -14,6 +14,8 @@
 #include "format.hpp"
 #include "detail/prefix.hpp"
 
+#ifdef PAPILIO_ENABLE_XCHAR
+
 namespace papilio
 {
 /// @defgroup XChar Format support for external character types
@@ -311,6 +313,8 @@ std::size_t formatted_size(
 
 // @}
 } // namespace papilio
+
+#endif
 
 #include "detail/suffix.hpp"
 
