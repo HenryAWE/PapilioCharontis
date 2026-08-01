@@ -101,6 +101,51 @@ TEST(OptionalUniquePtr, SwapMixedOwnership)
     }
 }
 
+TEST(OptionalUniquePtr, CopyWithDifferentDeleter)
+{
+    using namespace papilio;
+
+    static int deleted = 0;
+    deleted = 0;
+
+    struct counting_deleter
+    {
+        void operator()(int* p) const noexcept
+        {
+            ++deleted;
+            delete p;
+        }
+    };
+
+    struct convertible_deleter
+    {
+        convertible_deleter() = default;
+        convertible_deleter(const counting_deleter&) {}
+
+        void operator()(int*) const noexcept {}
+    };
+
+    {
+        auto up = std::unique_ptr<int, counting_deleter>(
+            new int(42),
+            counting_deleter{}
+        );
+        optional_unique_ptr<int, counting_deleter> src(std::move(up));
+        ASSERT_TRUE(src.has_ownership());
+
+        // Converting to a different deleter must produce a non-owning copy
+        optional_unique_ptr<int, convertible_deleter> copy(src);
+        EXPECT_EQ(*copy, 42);
+        EXPECT_FALSE(copy.has_ownership());
+
+        copy.reset();
+        EXPECT_EQ(deleted, 0); // The copy did not delete
+
+        src.reset();
+        EXPECT_EQ(deleted, 1); // The source deleted exactly once
+    }
+}
+
 TEST(OptionalUniquePtr, Compatibility)
 {
     using namespace papilio;

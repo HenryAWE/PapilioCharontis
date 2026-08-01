@@ -151,7 +151,7 @@ public:
                 it = set_style(it, 4);
         }
 
-        if(has_foreground())
+        if(has_foreground() || has_background())
         {
             it = set_color(it, to_underlying(m_fg), to_underlying(m_bg));
         }
@@ -163,7 +163,7 @@ public:
     Iterator reset(Iterator it) const
     {
         constexpr char esc[] = "\033[0m";
-        if(has_style() || has_foreground())
+        if(has_style() || has_foreground() || has_background())
             it = std::copy_n(esc, 4, it);
         return it;
     }
@@ -191,10 +191,12 @@ private:
     {
         if(bg_val)
         {
-            PAPILIO_ASSERT(fg_val != 0);
             bg_val += 10;
 
-            return PAPILIO_NS format_to(it, "\033[{};{}m", fg_val, bg_val);
+            if(fg_val)
+                return PAPILIO_NS format_to(it, "\033[{};{}m", fg_val, bg_val);
+            else
+                return PAPILIO_NS format_to(it, "\033[{}m", bg_val);
         }
         else
         {

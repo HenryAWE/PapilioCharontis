@@ -1824,8 +1824,10 @@ public:
     [[nodiscard]]
     size_type named_size() const noexcept override
     {
-        PAPILIO_ASSERT(m_named_args.size() == NamedArgumentCount);
-        return NamedArgumentCount;
+        // Duplicate names collapse into one entry, so the actual size may be
+        // smaller than the compile-time argument count.
+        PAPILIO_ASSERT(m_named_args.size() <= NamedArgumentCount);
+        return m_named_args.size();
     }
 
 private:
@@ -1907,11 +1909,10 @@ public:
                 "Invalid char type"
             );
 
-            m_named_args.emplace(
-                std::make_pair(
-                    PAPILIO_NS forward_like<T>(val.name),
-                    PAPILIO_NS forward_like<T>(val.value)
-                )
+            // A later named argument overrides an earlier one with the same name
+            m_named_args.insert_or_assign(
+                string_type(PAPILIO_NS forward_like<T>(val.name)),
+                PAPILIO_NS forward_like<T>(val.value)
             );
         }
         else
@@ -5419,7 +5420,9 @@ public:
             PAPILIO_UNREACHABLE();
         }
 
-        auto [left, right] = fill_size(used);
+        auto [left, right] = data().fill_zero ?
+                                 std::make_pair<std::size_t, std::size_t>(0, 0) :
+                                 fill_size(used);
 
         fill(ctx, left);
 
@@ -5441,6 +5444,18 @@ public:
 
         default:
             PAPILIO_UNREACHABLE();
+        }
+
+        if(data().fill_zero)
+        {
+            if(used < data().width)
+            {
+                context_t::append(
+                    ctx,
+                    static_cast<CharT>('0'),
+                    data().width - used
+                );
+            }
         }
 
         if(use_locale)

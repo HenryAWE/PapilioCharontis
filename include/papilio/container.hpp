@@ -700,6 +700,8 @@ private:
         }
         catch(...)
         {
+            // Destroy the original elements to avoid leaking them
+            std::destroy_n(tmp_ptr, tmp_size);
             std::allocator_traits<Allocator>::deallocate(
                 get_alloc(), tmp_ptr, tmp_capacity
             );

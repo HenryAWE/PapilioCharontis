@@ -168,3 +168,42 @@ TEST(Print, Styled)
         );
     }
 }
+
+TEST(TextStyle, EscapeCodes)
+{
+    using namespace papilio;
+
+    std::string out;
+    auto it = std::back_inserter(out);
+
+    {
+        // Background-only styling must emit a background escape sequence
+        bg(color::red).set(it);
+        bg(color::red).reset(it);
+        EXPECT_EQ(out, "\033[41m\033[0m");
+    }
+
+    out.clear();
+    {
+        // Foreground and background combined
+        (fg(color::red) | bg(color::blue)).set(it);
+        (fg(color::red) | bg(color::blue)).reset(it);
+        EXPECT_EQ(out, "\033[31;44m\033[0m");
+    }
+
+    out.clear();
+    {
+        // Foreground only
+        fg(color::green).set(it);
+        fg(color::green).reset(it);
+        EXPECT_EQ(out, "\033[32m\033[0m");
+    }
+
+    out.clear();
+    {
+        // Style and foreground
+        (style::bold | fg(color::cyan)).set(it);
+        (style::bold | fg(color::cyan)).reset(it);
+        EXPECT_EQ(out, "\033[1m\033[36m\033[0m");
+    }
+}

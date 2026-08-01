@@ -67,6 +67,19 @@ TEST(FormatArgs, Dynamic)
         EXPECT_EQ(get<utf::codepoint>(args["c"]), U'c');
         EXPECT_EQ(get<utf::codepoint>(args["d"]), U'd');
     }
+
+    {
+        // A later named argument overrides an earlier one with the same name
+        dynamic_format_args args;
+        args.append("x"_a = 1, "x"_a = 2);
+
+        EXPECT_EQ(args.named_size(), 1);
+        EXPECT_EQ(get<int>(args["x"]), 2);
+
+        args.append("x"_a = 3);
+        EXPECT_EQ(args.named_size(), 1);
+        EXPECT_EQ(get<int>(args["x"]), 3);
+    }
 }
 
 TEST(FormatArgs, Static)
@@ -93,6 +106,13 @@ TEST(FormatArgs, Static)
 
         EXPECT_EQ(get<std::string>(args.get("name")), "scene");
     }(make_format_args(182375, 182376, "name"_a = "scene"));
+
+    [](const auto& args)
+    {
+        // A later named argument overrides an earlier one with the same name
+        EXPECT_EQ(args.named_size(), 1);
+        EXPECT_EQ(get<int>(args.get("x")), 2);
+    }(make_format_args("x"_a = 1, "x"_a = 2));
 }
 
 namespace test_core

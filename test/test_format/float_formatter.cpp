@@ -143,6 +143,14 @@ TYPED_TEST(FloatFormatterSuite, FillAndAlign)
 
         EXPECT_EQ(PAPILIO_NS format("{:10.5f}", pi), "   3.14000");
         EXPECT_EQ(PAPILIO_NS format(L"{:10.5f}", pi), L"   3.14000");
+
+        // The zero-fill flag pads between the sign and the digits
+        EXPECT_EQ(PAPILIO_NS format("{:08.2f}", pi), "00003.14");
+        EXPECT_EQ(PAPILIO_NS format(L"{:08.2f}", pi), L"00003.14");
+        EXPECT_EQ(PAPILIO_NS format("{:08.2f}", -pi), "-0003.14");
+        EXPECT_EQ(PAPILIO_NS format(L"{:08.2f}", -pi), L"-0003.14");
+        EXPECT_EQ(PAPILIO_NS format("{:010.2f}", pi), "0000003.14");
+        EXPECT_EQ(PAPILIO_NS format(L"{:010.2f}", pi), L"0000003.14");
     }
 
     {
@@ -165,6 +173,11 @@ TYPED_TEST(FloatFormatterSuite, FillAndAlign)
             PAPILIO_NS format(L"{0:},{0:+},{0:-},{0: }", -inf),
             L"-inf,-inf,-inf,-inf"
         );
+
+        EXPECT_EQ(PAPILIO_NS format("{:08}", inf), "00000inf");
+        EXPECT_EQ(PAPILIO_NS format(L"{:08}", inf), L"00000inf");
+        EXPECT_EQ(PAPILIO_NS format("{:08}", -inf), "-0000inf");
+        EXPECT_EQ(PAPILIO_NS format(L"{:08}", -inf), L"-0000inf");
     }
 
     {

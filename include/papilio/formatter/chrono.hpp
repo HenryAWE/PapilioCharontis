@@ -596,6 +596,17 @@ private:
 
         const auto sentinel = spec.end();
 
+        // Negative durations are formatted with the sign applied to each
+        // time-of-day field (like the standard library).
+        constexpr bool is_duration = PAPILIO_NS is_specialization_of_v<ChronoType, std::chrono::duration>;
+        const bool negative = [&]() constexpr
+        {
+            if constexpr(is_duration)
+                return val < ChronoType(0);
+            else
+                return false;
+        }();
+
         std::basic_stringstream<CharT> ss;
         if(use_locale)
             ss.imbue(loc);
@@ -754,6 +765,8 @@ private:
                     call_put_time();
                 else
                 {
+                    if(negative)
+                        ss << static_cast<CharT>('-');
                     detail::put_hour<CharT>(
                         std::ostreambuf_iterator<CharT>(ss),
                         t.tm_hour,
@@ -767,6 +780,8 @@ private:
                     call_put_time();
                 else
                 {
+                    if(negative)
+                        ss << static_cast<CharT>('-');
                     PAPILIO_NS
                     format_to(
                         std::ostreambuf_iterator<CharT>(ss),
@@ -781,6 +796,8 @@ private:
                     call_put_time();
                 else
                 {
+                    if(negative)
+                        ss << static_cast<CharT>('-');
                     PAPILIO_NS
                     format_to(
                         std::ostreambuf_iterator<CharT>(ss),
@@ -805,6 +822,8 @@ private:
                 continue;
 
             case U'R':
+                if(negative)
+                    ss << static_cast<CharT>('-');
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
                     PAPILIO_TSTRING_VIEW(CharT, "{:02d}:{:02d}"),
@@ -822,6 +841,8 @@ private:
                 }
                 [[fallthrough]];
             case U'T':
+                if(negative)
+                    ss << static_cast<CharT>('-');
                 PAPILIO_NS format_to(
                     std::ostreambuf_iterator<CharT>(ss),
                     PAPILIO_TSTRING_VIEW(CharT, "{:02d}:{:02d}:{:02d}"),
@@ -845,6 +866,8 @@ private:
                     continue;
                 }
 
+                if(negative)
+                    ss << static_cast<CharT>('-');
                 detail::put_hour<CharT>(
                     std::ostreambuf_iterator<CharT>(ss),
                     t.tm_hour,

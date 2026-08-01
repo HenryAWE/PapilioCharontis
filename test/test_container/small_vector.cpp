@@ -251,3 +251,63 @@ TEST(SmallVector, Swap)
     EXPECT_EQ(sv_1.at(1), "b");
     EXPECT_EQ(sv_1.size(), 2);
 }
+
+namespace test_small_vector
+{
+struct throwing_move_obj
+{
+    static inline int live_count = 0;
+    static inline int throw_after = -1;
+
+    int value;
+
+    explicit throwing_move_obj(int v) : value(v)
+    {
+        ++live_count;
+    }
+
+    throwing_move_obj(const throwing_move_obj& other) : value(other.value)
+    {
+        ++live_count;
+    }
+
+    throwing_move_obj(throwing_move_obj&& other) : value(other.value)
+    {
+        if(throw_after == 0)
+            throw std::runtime_error("move failed");
+        if(throw_after > 0)
+            --throw_after;
+        ++live_count;
+    }
+
+    ~throwing_move_obj()
+    {
+        --live_count;
+    }
+};
+} // namespace test_small_vector
+
+TEST(SmallVector, ShrinkToFitExceptionSafety)
+{
+    using namespace papilio;
+    using test_small_vector::throwing_move_obj;
+
+    throwing_move_obj::live_count = 0;
+    throwing_move_obj::throw_after = 0; // Throw on the first move
+
+    {
+        small_vector<throwing_move_obj, 4> vec;
+        vec.reserve(10); // Dynamically allocated while the size fits the static buffer
+        vec.emplace_back(1);
+
+        ASSERT_EQ(vec.size(), 1);
+        ASSERT_TRUE(vec.dynamic_allocated());
+
+        EXPECT_THROW(vec.shrink_to_fit(), std::runtime_error);
+
+        // No element may leak when the move constructor throws
+        EXPECT_EQ(throwing_move_obj::live_count, 0);
+    }
+
+    EXPECT_EQ(throwing_move_obj::live_count, 0);
+}

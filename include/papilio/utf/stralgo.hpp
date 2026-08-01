@@ -257,6 +257,7 @@ constexpr std::size_t strlen(
     else
     {
         bool prev_is_high = false;
+        std::uint16_t high = 0;
         for(std::size_t i = 0; i < max_chars && str[i] != CharT(0); ++i)
         {
             std::uint16_t ch = static_cast<std::uint16_t>(str[i]);
@@ -273,14 +274,44 @@ constexpr std::size_t strlen(
                 }
 
                 prev_is_high = true;
+                high = ch;
             }
-            else
+            else if(PAPILIO_NS utf::is_low_surrogate(ch))
             {
-                PAPILIO_ASSERT(PAPILIO_NS utf::is_low_surrogate(ch));
+                if(!prev_is_high) [[unlikely]]
+                {
+                    // Lone low surrogate
+                    if constexpr(OnInvalid == strlen_behavior::stop)
+                        return result;
+                    else
+                        throw invalid_surrogate(ch);
+                }
 
                 prev_is_high = false;
                 ++result;
             }
+            else
+            {
+                if(prev_is_high) [[unlikely]]
+                {
+                    // High surrogate not followed by a low surrogate
+                    if constexpr(OnInvalid == strlen_behavior::stop)
+                        return result;
+                    else
+                        throw invalid_surrogate(ch);
+                }
+
+                ++result;
+            }
+        }
+
+        if(prev_is_high) [[unlikely]]
+        {
+            // Trailing high surrogate at the end of the string
+            if constexpr(OnInvalid == strlen_behavior::stop)
+                return result;
+            else
+                throw invalid_surrogate(high);
         }
     }
 
@@ -317,6 +348,8 @@ constexpr inline std::size_t strlen(const CharT* str, std::size_t max_chars) noe
         if(str[i] == CharT(0))
             return i;
     }
+
+    return max_chars;
 }
 
 template <
@@ -475,7 +508,7 @@ constexpr inline std::size_t index_offset(
 ) noexcept
 {
     (void)str;
-    if(idx > max_chars - 1)
+    if(max_chars == 0 || idx >= max_chars)
         return npos;
     return max_chars - 1 - idx;
 }

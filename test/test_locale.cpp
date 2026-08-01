@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <papilio/locale.hpp>
+#include <papilio/format.hpp>
 #include <papilio_test/setup.hpp>
 
 namespace test_locale
@@ -53,4 +54,31 @@ TEST(Locale, LocaleRef)
         EXPECT_EQ(bool_to_string(true, custom_ref), "T");
         EXPECT_EQ(bool_to_string(false, custom_ref), "F");
     }
+}
+
+TEST(Locale, Grouping)
+{
+    using namespace papilio;
+
+    // The classic locale has no grouping: no separators may be inserted
+    EXPECT_EQ(PAPILIO_NS format(std::locale::classic(), "{:L}", 1234567), "1234567");
+    EXPECT_EQ(PAPILIO_NS format(std::locale::classic(), L"{:L}", 1234567), L"1234567");
+
+    // A locale with grouping must still insert separators
+    struct grouped_numpunct : public std::numpunct<char>
+    {
+    protected:
+        string_type do_grouping() const override
+        {
+            return "\3";
+        }
+
+        char do_thousands_sep() const override
+        {
+            return ',';
+        }
+    };
+
+    std::locale grouped(std::locale::classic(), new grouped_numpunct);
+    EXPECT_EQ(PAPILIO_NS format(grouped, "{:L}", 1234567), "1,234,567");
 }

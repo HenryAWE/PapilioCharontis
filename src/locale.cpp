@@ -1,4 +1,5 @@
 #include <papilio/locale.hpp>
+#include <limits>
 #include <papilio/detail/prefix.hpp>
 
 namespace papilio
@@ -13,7 +14,7 @@ std::locale locale_ref::get() const
 char index_grouping(const std::string& grouping, std::size_t idx)
 {
     if(grouping.empty()) [[unlikely]]
-        return '\0';
+        return std::numeric_limits<char>::max(); // No grouping
 
     if(idx >= grouping.size())
         return grouping.back();

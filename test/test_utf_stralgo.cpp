@@ -121,4 +121,49 @@ TEST(IndexOffset, Char32)
     EXPECT_EQ(utf::index_offset(reverse_index, 1, U"A"sv), utf::npos);
     EXPECT_EQ(utf::index_offset(reverse_index, 1, U"\u00c4A"sv), 0);
     EXPECT_EQ(utf::index_offset(reverse_index, 1, U"\U0001f351A"sv), 0);
+
+    // Reverse indexing on an empty string or out-of-range indices
+    EXPECT_EQ(utf::index_offset(reverse_index, 0, U""sv), utf::npos);
+    EXPECT_EQ(utf::index_offset(reverse_index, 1, U""sv), utf::npos);
+    EXPECT_EQ(utf::index_offset(reverse_index, 2, U"AB"sv), utf::npos);
+    EXPECT_EQ(utf::index_offset(reverse_index, 1, U"AB"sv), 0);
+}
+
+TEST(Strlen, Char32Pointer)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    // No NUL terminator within max_chars: returns max_chars
+    EXPECT_EQ(utf::strlen(U"abc", 3), 3);
+    EXPECT_EQ(utf::strlen(U"", 5), 0);
+    // Stops at the NUL terminator
+    EXPECT_EQ(utf::strlen(U"ab\0c", 4), 2);
+}
+
+TEST(Strlen, Char16Surrogates)
+{
+    using namespace papilio;
+    using namespace utf;
+    using enum strlen_behavior;
+
+    // A valid surrogate pair is counted as one character
+    constexpr char16_t ok[] = {u'A', static_cast<char16_t>(0xD800), static_cast<char16_t>(0xDC00), u'B', 0};
+    EXPECT_EQ(utf::strlen<stop>(ok, 4), 3);
+    EXPECT_EQ(utf::strlen<exception>(ok, 4), 3);
+
+    // A high surrogate not followed by a low surrogate is invalid
+    constexpr char16_t bad_high[] = {u'A', static_cast<char16_t>(0xD800), u'B', 0};
+    EXPECT_EQ(utf::strlen<stop>(bad_high, 3), 1);
+    EXPECT_THROW((void)utf::strlen<exception>(bad_high, 3), invalid_surrogate);
+
+    // A lone low surrogate is invalid
+    constexpr char16_t bad_low[] = {static_cast<char16_t>(0xDC00), 0};
+    EXPECT_EQ(utf::strlen<stop>(bad_low, 1), 0);
+    EXPECT_THROW((void)utf::strlen<exception>(bad_low, 1), invalid_surrogate);
+
+    // A trailing high surrogate at the end of the string is invalid
+    constexpr char16_t bad_trail[] = {u'A', static_cast<char16_t>(0xD800), 0};
+    EXPECT_EQ(utf::strlen<stop>(bad_trail, 2), 1);
+    EXPECT_THROW((void)utf::strlen<exception>(bad_trail, 2), invalid_surrogate);
 }

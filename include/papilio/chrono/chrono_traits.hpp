@@ -385,12 +385,16 @@ struct chrono_traits<std::chrono::duration<Rep, Period>>
 
         std::tm result = PAPILIO_NS chrono::detail::init_tm();
 
+        // Use the absolute value so that negative durations produce non-negative
+        // time-of-day fields. The sign is handled by the formatter.
         std::int64_t sec = chrono::duration_cast<chrono::seconds>(d).count();
-        sec %= 24 * 3600;
-        result.tm_hour = static_cast<int>(sec / 3600);
-        sec %= 3600;
-        result.tm_min = static_cast<int>(sec / 60);
-        result.tm_sec = static_cast<int>(sec % 60);
+        std::uint64_t abs_sec = sec < 0 ?
+                                    -static_cast<std::uint64_t>(sec) :
+                                    static_cast<std::uint64_t>(sec);
+        abs_sec %= 24 * 3600;
+        result.tm_hour = static_cast<int>(abs_sec / 3600);
+        result.tm_min = static_cast<int>((abs_sec % 3600) / 60);
+        result.tm_sec = static_cast<int>(abs_sec % 60);
 
         return result;
     }
