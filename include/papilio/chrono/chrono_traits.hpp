@@ -389,7 +389,7 @@ struct chrono_traits<std::chrono::duration<Rep, Period>>
         // time-of-day fields. The sign is handled by the formatter.
         std::int64_t sec = chrono::duration_cast<chrono::seconds>(d).count();
         std::uint64_t abs_sec = sec < 0 ?
-                                    -static_cast<std::uint64_t>(sec) :
+                                    static_cast<std::uint64_t>(-(sec + 1)) + 1 :
                                     static_cast<std::uint64_t>(sec);
         abs_sec %= 24 * 3600;
         result.tm_hour = static_cast<int>(abs_sec / 3600);

@@ -119,7 +119,6 @@ TEST(OptionalUniquePtr, CopyWithDifferentDeleter)
 
     struct convertible_deleter
     {
-        convertible_deleter() = default;
         convertible_deleter(const counting_deleter&) {}
 
         void operator()(int*) const noexcept {}
