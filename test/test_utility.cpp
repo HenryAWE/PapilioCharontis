@@ -123,6 +123,29 @@ TEST(IndexRange, IndexRange)
         EXPECT_EQ(normalized_s.end(), 15);
         EXPECT_EQ(normalized_s.length(), 2);
     }
+
+    {
+        // Out-of-range indices are clamped like Python slices.
+        index_range s{-100, index_range::npos};
+        index_range normalized_s = s.normalize(3);
+        EXPECT_EQ(normalized_s.begin(), 0);
+        EXPECT_EQ(normalized_s.end(), 3);
+
+        index_range s_2{100, 200};
+        index_range normalized_s_2 = s_2.normalize(3);
+        EXPECT_EQ(normalized_s_2.begin(), 3);
+        EXPECT_EQ(normalized_s_2.end(), 3);
+
+        index_range s_3{0, 100};
+        index_range normalized_s_3 = s_3.normalize(3);
+        EXPECT_EQ(normalized_s_3.begin(), 0);
+        EXPECT_EQ(normalized_s_3.end(), 3);
+
+        index_range s_4{-100, -50};
+        index_range normalized_s_4 = s_4.normalize(3);
+        EXPECT_EQ(normalized_s_4.begin(), 0);
+        EXPECT_EQ(normalized_s_4.end(), 0);
+    }
 }
 
 TEST(NamedArg, NamedArg)
@@ -390,6 +413,24 @@ TEST(EnumName, EnumName)
     EXPECT_EQ(enum_name(second), "second");
     EXPECT_EQ(enum_name(my_enum_class::one), "one");
     EXPECT_EQ(enum_name(my_enum_class::two), "two");
+}
+
+TEST(EnumName, Range)
+{
+    using namespace papilio;
+
+    enum ranged : int
+    {
+        low = -128,
+        high = 128
+    };
+
+    EXPECT_EQ(enum_name(low), "low");
+    EXPECT_EQ(enum_name(high), "high");
+
+    // Out-of-range values return the fallback instead of reading out of bounds.
+    EXPECT_EQ(enum_name(static_cast<ranged>(-129)), "?");
+    EXPECT_EQ(enum_name(static_cast<ranged>(129)), "?");
 }
 
 #endif

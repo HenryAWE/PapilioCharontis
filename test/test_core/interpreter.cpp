@@ -372,7 +372,34 @@ TEST(Interpreter, Exception)
     EXPECT_EQ(get_err("{$ 'str'}").error_code(), invalid_condition);
     EXPECT_EQ(get_err("{$ 'str'?}").error_code(), invalid_string);
     EXPECT_EQ(get_err("{$ 'str'? 'incomplete\\").error_code(), invalid_string);
-    EXPECT_EQ(get_err("{$ 'str'? 'incomplete}").error_code(), end_of_string);
+    EXPECT_EQ(get_err("{$ 'str'? 'incomplete}").error_code(), invalid_string);
+
+    // Unterminated string literal in a branch.
+    EXPECT_EQ(get_err("{$1?'abc}", 1).error_code(), invalid_string);
+    // Indexing value at the end of the format string.
+    EXPECT_EQ(get_err("{0[1", std::string("abc")).error_code(), end_of_string);
+    // Missing closing bracket of the indexing value.
+    EXPECT_EQ(get_err("{0[1}", std::string("abc")).error_code(), invalid_index);
+}
+
+TEST(Interpreter, IntegerOverflow)
+{
+    using namespace papilio;
+
+    // Overflowing integer literals must throw instead of overflowing.
+    EXPECT_THROW((void)PAPILIO_NS format("{$9223372036854775808?'T':'F'}", 1), std::out_of_range);
+    EXPECT_THROW((void)PAPILIO_NS format("{$-9223372036854775809?'T':'F'}", 1), std::out_of_range);
+    EXPECT_THROW((void)PAPILIO_NS format("{0[99999999999999999999]}", std::string("abc")), std::out_of_range);
+
+    // Boundary values are still accepted.
+    EXPECT_EQ(PAPILIO_NS format("{$9223372036854775807?'T':'F'}", 1), "T");
+    EXPECT_EQ(PAPILIO_NS format("{$-9223372036854775808?'T':'F'}", 1), "T");
+
+    // A huge fractional part must not overflow; leftover digits are rejected.
+    EXPECT_THROW(
+        (void)PAPILIO_NS format("{$0.123456789012345678901?'T':'F'}", 1),
+        script_base::error
+    );
 }
 
 TEST(Interpreter, Debug)

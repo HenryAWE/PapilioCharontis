@@ -285,7 +285,7 @@ public:
     {
         using std::swap;
         swap(m_ptr, other.m_ptr);
-        swap(m_control.second(), m_control.second());
+        swap(m_control.second(), other.m_control.second());
     }
 
     // observers

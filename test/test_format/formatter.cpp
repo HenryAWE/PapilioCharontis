@@ -36,6 +36,13 @@ TEST(FundamentalFormatter, String)
 
     EXPECT_EQ(PAPILIO_NS format("{:?}", std::string("\xc3\x28", 2)), "\"\\x{c3}(\"");
 
+    // Invalid and truncated UTF-8 must not read out of bounds.
+    EXPECT_EQ(PAPILIO_NS format("{}", std::string("\xFF", 1)), std::string("\xFF", 1));
+    EXPECT_EQ(PAPILIO_NS format("{:?}", std::string("\xFF", 1)), "\"\\x{ff}\"");
+
+    EXPECT_EQ(PAPILIO_NS format("{}", std::string("\xF0\x9F", 2)), std::string("\xF0\x9F", 2));
+    EXPECT_EQ(PAPILIO_NS format("{:?}", std::string("\xF0\x9F", 2)), "\"\\x{f0}\\x{9f}\"");
+
     EXPECT_EQ(PAPILIO_NS format("{:s}", "hello"), "hello");
     EXPECT_EQ(PAPILIO_NS format(L"{:s}", L"hello"), L"hello");
 

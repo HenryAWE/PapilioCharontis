@@ -53,6 +53,15 @@ TEST(XChar, Char16)
         EXPECT_EQ(it, str.end());
         EXPECT_EQ(str, u"18");
     }
+
+    {
+        // An unpaired high surrogate followed by a normal character:
+        // the following character must not be dropped by the escaped formatting.
+        std::u16string str(1, static_cast<char16_t>(0xD800));
+        str.push_back(u'A');
+
+        EXPECT_EQ(PAPILIO_NS format(u"{:?}", str), u"\"\\x{d800}A\"");
+    }
 }
 
 TEST(XChar, Char32)

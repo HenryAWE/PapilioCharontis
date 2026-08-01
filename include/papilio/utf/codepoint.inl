@@ -121,6 +121,11 @@ constexpr std::pair<codepoint, std::uint8_t> decoder<char8_t>::to_codepoint(std:
     if(ch.empty()) [[unlikely]]
         return std::make_pair(codepoint(), std::uint8_t(0));
     std::uint8_t len = size_bytes(ch[0]);
+    if(ch.size() < len) [[unlikely]]
+    {
+        // Truncated UTF-8 sequence. Replace it with U+FFFD to avoid reading out of bounds.
+        return std::make_pair(decoder<char32_t>::to_codepoint(U'\uFFFD').first, len);
+    }
     return std::make_pair(codepoint(ch.data(), len), len);
 }
 

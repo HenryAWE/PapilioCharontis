@@ -129,4 +129,20 @@ TYPED_TEST(FormatContextSuite, AppendEscaped)
             EXPECT_EQ(result, expected_str);
         }
     }
+
+    if constexpr(char16_like<TypeParam>)
+    {
+        result.clear();
+        {
+            // An unpaired high surrogate followed by a normal character:
+            // the following character must not be dropped.
+            std::basic_string<TypeParam> s(1, static_cast<TypeParam>(0xD800));
+            s.push_back(static_cast<TypeParam>(u'A'));
+
+            context_t::append_escaped(ctx, s);
+
+            const auto expected_str = PAPILIO_TSTRING_ARRAY(TypeParam, "\\x{d800}A");
+            EXPECT_EQ(result, expected_str);
+        }
+    }
 }

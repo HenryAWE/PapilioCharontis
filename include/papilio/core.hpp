@@ -2754,6 +2754,11 @@ private:
                 {
                     append_as_esc_seq<true, false>(ctx, str[i]);
                 }
+                else if(size_bytes == 1 && static_cast<std::uint8_t>(str[i]) >= 0x80)
+                {
+                    // Invalid UTF-8 lead byte (0xF8 - 0xFF), escaped as a single byte.
+                    append_hex_digits(ctx, static_cast<std::uint8_t>(str[i]), false);
+                }
                 else if(std::all_of(str.begin() + i + 1, str.begin() + i + size_bytes, &utf::is_trailing_byte))
                 {
                     append(
@@ -2813,13 +2818,13 @@ private:
                 else if(!PAPILIO_NS utf::is_low_surrogate(str[i + 1]))
                 {
                     append_hex_digits(ctx, ch, false);
+                    ++i; // Only consume the unpaired surrogate. The following unit is a separate character.
                 }
                 else
                 {
                     append(ctx, str.begin() + i, str.begin() + i + 2);
+                    i += 2;
                 }
-
-                i += 2;
             }
             else
             {
@@ -3622,7 +3627,8 @@ protected:
         if(start == stop) [[unlikely]]
             throw_end_of_string();
 
-        T value = 0;
+        using unsigned_type = std::make_unsigned_t<T>;
+        unsigned_type value = 0;
         bool negative = false;
         if(*start == U'-')
         {
@@ -3630,26 +3636,46 @@ protected:
             ++start;
         }
 
+        constexpr unsigned_type max_value = static_cast<unsigned_type>(std::numeric_limits<T>::max());
+        // The magnitude of the most negative value is one greater than |max| for signed types.
+        constexpr unsigned_type max_magnitude = []() constexpr
+        {
+            if constexpr(std::is_signed_v<T>)
+                return max_value + unsigned_type(1);
+            else
+                return max_value;
+        }();
+
         while(start != stop)
         {
             char32_t ch = *start;
             if(!utf::is_digit(ch))
                 break;
 
-            value *= 10;
-            value += ch - U'0';
+            const unsigned_type digit = static_cast<unsigned_type>(ch - U'0');
+            // Positive values are limited to |max|, negative values may reach |min|.
+            const unsigned_type limit = negative ? max_magnitude : max_value;
+            if(value > (limit - digit) / 10)
+                throw std::out_of_range("integer value out of range");
+
+            value = value * 10 + digit;
             ++start;
         }
 
         if(negative)
         {
             if constexpr(std::is_signed_v<T>)
-                value = -value;
+            {
+                // Avoid signed overflow when the value is exactly |min|.
+                if(value == max_magnitude)
+                    return std::make_pair(std::numeric_limits<T>::min(), start);
+                return std::make_pair(-static_cast<T>(value), start);
+            }
             else
                 throw std::out_of_range("integer value out of range");
         }
 
-        return std::make_pair(value, start);
+        return std::make_pair(static_cast<T>(value), start);
     }
 
     static iterator skip_string(iterator start, iterator stop) noexcept
@@ -3734,6 +3760,9 @@ protected:
             }
         }
 
+        if(it == stop) [[unlikely]]
+            throw_error(script_error_code::invalid_string, it);
+
         return std::make_pair(
             string_container_type(start, it),
             std::next(it) // +1 to skip '\''
@@ -3759,7 +3788,7 @@ protected:
                 start, stop
             );
 
-            if(*next_it == U':')
+            if(next_it != stop && *next_it == U':')
             {
                 ++next_it;
                 if(next_it == stop) [[unlikely]]
@@ -4288,6 +4317,10 @@ private:
                 for(; float_end != stop; ++float_end)
                 {
                     if(!PAPILIO_NS utf::is_digit(*float_end))
+                        break;
+                    // Stop consuming digits if the denominator would overflow.
+                    // The remaining digits are left for the caller to reject.
+                    if(pow10_val > (std::numeric_limits<int_type>::max() - 9) / 10)
                         break;
                     pow10_val *= 10;
                 }

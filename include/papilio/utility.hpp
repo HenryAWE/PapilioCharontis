@@ -270,10 +270,18 @@ public:
 
         if(first < 0)
             first = slen + first;
+        if(first < 0)
+            first = 0;
+        else if(first > slen)
+            first = slen;
 
         if(second < 0)
             second = slen + second;
+        if(second < 0)
+            second = 0;
         else if(second == npos)
+            second = slen;
+        else if(second > slen)
             second = slen;
     }
 
@@ -300,9 +308,10 @@ public:
     [[nodiscard]]
     constexpr size_type length() const noexcept
     {
-        PAPILIO_ASSERT(first > 0);
-        PAPILIO_ASSERT(second > 0);
+        PAPILIO_ASSERT(first >= 0);
+        PAPILIO_ASSERT(second >= 0);
         PAPILIO_ASSERT(second != npos);
+        PAPILIO_ASSERT(first <= second);
         return static_cast<size_type>(second - first);
     }
 };
@@ -1065,6 +1074,7 @@ constexpr std::string_view static_enum_name()
  *
  * @warning This function has some limitations.
  * - It can only convert valid enum values ranging from -128 to 128.
+ * - For values outside this range, the fallback string `"?"` is returned.
  *
  * @sa static_enum_name
  */
@@ -1072,15 +1082,34 @@ template <typename T>
 requires std::is_enum_v<T>
 constexpr std::string_view enum_name(T value) noexcept
 {
+    using underlying_t = std::underlying_type_t<T>;
+
+    constexpr std::size_t table_size = 257; // values from -128 to 128
+    constexpr ssize_t table_begin = -128;
+    constexpr ssize_t table_end = 128;
+
     auto names = [=]<ssize_t... Is>(std::integer_sequence<ssize_t, Is...>)
     {
-        using underlying_t = std::underlying_type_t<T>;
-        return std::array<std::string_view, 256>{
-            detail::static_enum_name_impl<std::bit_cast<T>(underlying_t(Is - 128))>()...
+        return std::array<std::string_view, table_size>{
+            detail::static_enum_name_impl<std::bit_cast<T>(underlying_t(Is + table_begin))>()...
         };
-    }(std::make_integer_sequence<ssize_t, 256>());
+    }(std::make_integer_sequence<ssize_t, table_size>());
 
-    return names[static_cast<std::size_t>(value) + 128];
+    if constexpr(std::is_signed_v<underlying_t>)
+    {
+        const underlying_t v = static_cast<underlying_t>(value);
+        if(v < static_cast<underlying_t>(table_begin) ||
+           v > static_cast<underlying_t>(table_end))
+            return "?";
+        return names[static_cast<std::size_t>(v - static_cast<underlying_t>(table_begin))];
+    }
+    else
+    {
+        const underlying_t v = static_cast<underlying_t>(value);
+        if(v > static_cast<underlying_t>(table_end))
+            return "?";
+        return names[static_cast<std::size_t>(v) + static_cast<std::size_t>(table_end)];
+    }
 }
 
 #if defined PAPILIO_COMPILER_CLANG

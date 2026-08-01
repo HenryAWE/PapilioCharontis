@@ -79,8 +79,11 @@ constexpr inline std::uint8_t byte_count(std::uint8_t leading_byte) noexcept
         return 3;
     else if((leading_byte & 0b1111'1000) == 0b1111'0000)
         return 4;
-
-    PAPILIO_UNREACHABLE();
+    else [[unlikely]]
+    {
+        // Invalid leading byte (0xF8 - 0xFF): treat it as a single byte.
+        return 1;
+    }
 }
 
 [[nodiscard]]

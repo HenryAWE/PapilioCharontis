@@ -167,6 +167,15 @@ TEST(Accessor, ContiguousRange)
 
         EXPECT_EQ(PAPILIO_NS format("{0[0]},{0[1]}", vi), "0,1");
         EXPECT_EQ(PAPILIO_NS format(L"{0[0]},{0[1]}", vi), L"0,1");
+
+        // Negative and out-of-range slices are clamped like Python slices.
+        EXPECT_EQ(PAPILIO_NS format("{0[-2:]}", vi), "[0, 1]");
+        EXPECT_EQ(PAPILIO_NS format("{0[-1:]}", vi), "[1]");
+        EXPECT_EQ(PAPILIO_NS format("{0[-10:]}", vi), "[0, 1]");
+        EXPECT_EQ(PAPILIO_NS format("{0[:10]}", vi), "[0, 1]");
+        // A slice clamped to an empty range yields an empty format argument.
+        EXPECT_THROW((void)PAPILIO_NS format("{0[10:]}", vi), papilio::format_error);
+        EXPECT_THROW((void)PAPILIO_NS format("{0[-10:-5]}", vi), papilio::format_error);
     }
 }
 

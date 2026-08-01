@@ -183,6 +183,20 @@ TEST(Codepoint, EstimateWidth)
     }
 }
 
+TEST(DecoderChar8, TruncatedSequence)
+{
+    using namespace papilio;
+
+    // A 4-byte lead byte followed by fewer continuation bytes.
+    // The decoder must not read out of bounds and replaces the sequence with U+FFFD.
+    std::array<char8_t, 2> bytes{0xF0, 0x9F};
+    std::u8string_view truncated(bytes.data(), bytes.size());
+
+    auto [cp, processed_size] = utf::decoder<char8_t>::to_codepoint(truncated);
+    EXPECT_EQ(cp, U'\uFFFD');
+    EXPECT_EQ(processed_size, 4);
+}
+
 TYPED_TEST(CodepointSuite, Ostream)
 {
     using namespace papilio;

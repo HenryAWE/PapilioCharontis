@@ -54,6 +54,53 @@ TEST(OptionalUniquePtr, Ownership)
     }
 }
 
+TEST(OptionalUniquePtr, SwapMixedOwnership)
+{
+    using namespace papilio;
+
+    {
+        int stack_val = 7;
+        optional_unique_ptr<int> owning = make_optional_unique<int>(1);
+        optional_unique_ptr<int> borrowed(&stack_val, false);
+
+        ASSERT_TRUE(owning.has_ownership());
+        ASSERT_FALSE(borrowed.has_ownership());
+
+        owning.swap(borrowed);
+
+        // The pointers and the ownership flags must be swapped together.
+        EXPECT_EQ(*owning, 7);
+        EXPECT_FALSE(owning.has_ownership());
+        EXPECT_EQ(*borrowed, 1);
+        EXPECT_TRUE(borrowed.has_ownership());
+        // Destruction must delete the heap object once and must not touch the stack object.
+    }
+
+    {
+        // Swapping two owning pointers keeps both sides owning.
+        optional_unique_ptr<int> a = make_optional_unique<int>(1);
+        optional_unique_ptr<int> b = make_optional_unique<int>(2);
+        a.swap(b);
+        EXPECT_EQ(*a, 2);
+        EXPECT_TRUE(a.has_ownership());
+        EXPECT_EQ(*b, 1);
+        EXPECT_TRUE(b.has_ownership());
+    }
+
+    {
+        // Swapping two borrowed pointers keeps both sides borrowed.
+        int x = 1;
+        int y = 2;
+        optional_unique_ptr<int> a(&x, false);
+        optional_unique_ptr<int> b(&y, false);
+        a.swap(b);
+        EXPECT_EQ(*a, 2);
+        EXPECT_FALSE(a.has_ownership());
+        EXPECT_EQ(*b, 1);
+        EXPECT_FALSE(b.has_ownership());
+    }
+}
+
 TEST(OptionalUniquePtr, Compatibility)
 {
     using namespace papilio;

@@ -52,6 +52,23 @@ TEST(Strlen, Char8)
     }
 }
 
+TEST(Strlen, InvalidBytes)
+{
+    using namespace papilio;
+    using namespace utf;
+
+    // 0xF8 - 0xFF are not valid UTF-8 lead bytes.
+    // They are treated as single bytes instead of triggering undefined behavior.
+    static_assert(utf::byte_count(0xF8u) == 1);
+    static_assert(utf::byte_count(0xFBu) == 1);
+    static_assert(utf::byte_count(0xFFu) == 1);
+
+    constexpr char8_t s[] = {'a', static_cast<char8_t>(0xFF), 'b', '\0'};
+    static_assert(utf::strlen(s) == 3);
+
+    EXPECT_EQ(utf::strlen(std::u8string_view(s, 3)), 3);
+}
+
 TEST(IndexOffset, Char8)
 {
     using namespace papilio;

@@ -394,7 +394,7 @@ protected:
         if constexpr(char8_like<CharT>)
         {
             std::uint8_t ch_size = ch_size_for_cp(str[off]);
-            return codepoint(str.data() + off, ch_size);
+            return decoder<CharT>::to_codepoint(str.substr(off, ch_size)).first;
         }
         else if constexpr(char16_like<CharT>)
         {
