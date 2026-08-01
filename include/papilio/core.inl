@@ -157,38 +157,16 @@ requires streamable<T, CharT>
 template <typename Context>
 auto streamable_formatter<T, CharT>::format(const T& val, Context& ctx) const
 {
-    using os_t = basic_oiterstream<
-        CharT,
-        typename Context::iterator>;
+    std::basic_ostringstream<CharT> ss;
 
-    const bool use_iter_stream =
-        m_data.align == format_align::default_align &&
-        m_data.width == 0 &&
-        m_data.has_fill();
+    setup_locale(ss, ctx);
 
-    if(use_iter_stream)
-    {
-        os_t os(ctx.out());
+    ss << val;
 
-        setup_locale(os, ctx);
+    string_formatter<CharT> fmt;
+    fmt.set_data(m_data);
 
-        os << val;
-
-        return os.base();
-    }
-    else
-    {
-        std::basic_stringstream<CharT> ss;
-
-        setup_locale(ss, ctx);
-
-        ss << val;
-
-        string_formatter<CharT> fmt;
-        fmt.set_data(m_data);
-
-        return fmt.format(std::move(ss).str(), ctx);
-    }
+    return fmt.format(std::move(ss).str(), ctx);
 }
 
 template <typename Context>

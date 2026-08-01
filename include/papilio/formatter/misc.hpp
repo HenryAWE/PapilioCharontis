@@ -33,7 +33,7 @@ public:
     template <typename FormatContext>
     auto format(const std::thread::id& id, FormatContext& ctx) const
     {
-        std::basic_stringstream<CharT> ss;
+        std::basic_ostringstream<CharT> ss;
         ss << id;
 
         string_formatter<CharT> fmt;

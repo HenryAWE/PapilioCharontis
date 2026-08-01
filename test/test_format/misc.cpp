@@ -105,7 +105,7 @@ TEST(MiscFormatter, ThreadId)
     {
         const std::string expected_str = [&]()
         {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << id;
             return std::move(ss).str();
         }();
@@ -116,7 +116,7 @@ TEST(MiscFormatter, ThreadId)
     {
         const std::string expected_str = [&]()
         {
-            std::stringstream ss;
+            std::ostringstream ss;
             ss << id;
             return PAPILIO_NS format("{:*^20}", std::move(ss).str());
         }();
@@ -131,7 +131,7 @@ TEST(MiscFormatter, ThreadId)
     {
         const std::wstring wexpected_str = [&]()
         {
-            std::wstringstream ss;
+            std::wostringstream ss;
             ss << id;
             return std::move(ss).str();
         }();

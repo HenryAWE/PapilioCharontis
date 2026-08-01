@@ -469,7 +469,7 @@ TEST(TupleForEach, TupleForEach)
     {
         std::tuple<char, int, float> tp{'c', 1, 1.1f};
 
-        std::stringstream ss;
+        std::ostringstream ss;
         tuple_for_each(
             tp,
             [&](auto&& v)
@@ -483,7 +483,7 @@ TEST(TupleForEach, TupleForEach)
 TEST(Join, OStream)
 {
     {
-        std::stringstream ss;
+        std::ostringstream ss;
 
         int arr[4] = {1, 2, 3, 4};
         ss << papilio::join(arr);
@@ -494,7 +494,7 @@ TEST(Join, OStream)
     {
         using namespace std::literals;
 
-        std::stringstream ss;
+        std::ostringstream ss;
 
         int arr[4] = {1, 2, 3, 4};
         ss << papilio::join(arr, " | "sv);
@@ -503,7 +503,7 @@ TEST(Join, OStream)
     }
 
     {
-        std::stringstream ss;
+        std::ostringstream ss;
 
         int arr[4] = {1, 2, 3, 4};
         ss << papilio::join(arr, "-");

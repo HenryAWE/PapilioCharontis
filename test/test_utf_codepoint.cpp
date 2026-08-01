@@ -205,7 +205,7 @@ TYPED_TEST(CodepointSuite, Ostream)
     const codepoint a = U'a'_cp;
     constexpr TypeParam expected_str[2]{TypeParam('a'), TypeParam('\0')};
 
-    std::basic_stringstream<TypeParam> ss;
+    std::basic_ostringstream<TypeParam> ss;
     ss << a;
 
     EXPECT_EQ(ss.str(), expected_str);
@@ -224,7 +224,7 @@ TYPED_TEST(CodepointSuite, AppendTo)
         a.append_to(result);
         EXPECT_EQ(result, expected_str);
 
-        std::basic_stringstream<TypeParam> ss;
+        std::basic_ostringstream<TypeParam> ss;
         a.append_to(ss);
         EXPECT_EQ(ss.str(), expected_str);
     }

@@ -345,7 +345,7 @@ public:
         }
         else
         {
-            std::basic_stringstream<CharT> ss;
+            std::basic_ostringstream<CharT> ss;
             if(m_data.basic.use_locale)
                 ss.imbue(ctx.getloc());
             else
@@ -365,7 +365,7 @@ private:
 namespace detail
 {
     template <typename CharT>
-    void format_century(std::basic_stringstream<CharT>& ss, int year)
+    void format_century(std::basic_ostringstream<CharT>& ss, int year)
     {
         PAPILIO_NS format_to(
             std::ostreambuf_iterator<CharT>(ss),
@@ -375,7 +375,7 @@ namespace detail
     }
 
     template <typename CharT>
-    void format_year(std::basic_stringstream<CharT>& ss, int year, bool full)
+    void format_year(std::basic_ostringstream<CharT>& ss, int year, bool full)
     {
         if(full)
         {
@@ -396,7 +396,7 @@ namespace detail
     }
 
     template <typename CharT>
-    void format_weekday(std::basic_stringstream<CharT>& ss, int tm_wday, bool iso)
+    void format_weekday(std::basic_ostringstream<CharT>& ss, int tm_wday, bool iso)
     {
         int day = iso ?
                       tm_wday == 0 ? 7 : tm_wday : // 1-7, 1 is Monday
@@ -607,7 +607,7 @@ private:
                 return false;
         }();
 
-        std::basic_stringstream<CharT> ss;
+        std::basic_ostringstream<CharT> ss;
         if(use_locale)
             ss.imbue(loc);
         const std::time_put<CharT>* facet = use_locale ?
