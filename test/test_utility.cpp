@@ -415,6 +415,37 @@ TEST(EnumName, EnumName)
     EXPECT_EQ(enum_name(my_enum_class::two), "two");
 }
 
+TEST(EnumName, NegativeValues)
+{
+    using namespace papilio;
+
+    enum negative : int
+    {
+        neg_three = -3,
+        neg_one = -1,
+        zero = 0,
+        pos_two = 2
+    };
+    enum class scoped_negative : int
+    {
+        minus_five = -5,
+        plus_five = 5
+    };
+
+    static_assert(static_enum_name<neg_three>() == "neg_three");
+    static_assert(static_enum_name<neg_one>() == "neg_one");
+    static_assert(static_enum_name<scoped_negative::minus_five>() == "minus_five");
+
+    // Regression: on MSVC, __FUNCSIG__ does not resolve negative values back
+    // to enumerator names when the lookup table was built with std::bit_cast
+    EXPECT_EQ(enum_name(neg_three), "neg_three");
+    EXPECT_EQ(enum_name(neg_one), "neg_one");
+    EXPECT_EQ(enum_name(zero), "zero");
+    EXPECT_EQ(enum_name(pos_two), "pos_two");
+    EXPECT_EQ(enum_name(scoped_negative::minus_five), "minus_five");
+    EXPECT_EQ(enum_name(scoped_negative::plus_five), "plus_five");
+}
+
 TEST(EnumName, Range)
 {
     using namespace papilio;
@@ -428,7 +459,7 @@ TEST(EnumName, Range)
     EXPECT_EQ(enum_name(low), "low");
     EXPECT_EQ(enum_name(high), "high");
 
-    // Out-of-range values return the fallback instead of reading out of bounds.
+    // Out-of-range values return the fallback instead of reading out of bounds
     EXPECT_EQ(enum_name(static_cast<ranged>(-129)), "?");
     EXPECT_EQ(enum_name(static_cast<ranged>(129)), "?");
 }

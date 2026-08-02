@@ -1091,7 +1091,13 @@ constexpr std::string_view enum_name(T value) noexcept
     auto names = [=]<ssize_t... Is>(std::integer_sequence<ssize_t, Is...>)
     {
         return std::array<std::string_view, table_size>{
+#if defined PAPILIO_COMPILER_MSVC
+            // MSVC's __FUNCSIG__ fails to resolve negative values back to
+            // enumerator names when the argument is spelled with std::bit_cast
+            detail::static_enum_name_impl<static_cast<T>(underlying_t(Is + table_begin))>()...
+#else
             detail::static_enum_name_impl<std::bit_cast<T>(underlying_t(Is + table_begin))>()...
+#endif
         };
     }(std::make_integer_sequence<ssize_t, table_size>());
 
