@@ -1,5 +1,6 @@
 #include <papilio/xchar.hpp>
-#include <papilio/detail/prefix.hpp>
+#ifdef PAPILIO_ENABLE_XCHAR
+#    include <papilio/detail/prefix.hpp>
 
 namespace papilio
 {
@@ -84,5 +85,7 @@ namespace detail
     }
 } // namespace detail
 } // namespace papilio
+
+#endif
 
 #include <papilio/detail/suffix.hpp>

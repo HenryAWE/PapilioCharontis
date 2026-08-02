@@ -9,6 +9,7 @@ mark_as_advanced(papilio_build_lib)
 
 option(papilio_build_example "build examples" OFF)
 option(papilio_build_doc "build documents" OFF)
+option(papilio_enable_xchar "Enable xchar (char8_t, char16_t, char32_t) format support" ON)
 
 file(STRINGS "include/papilio/macros.hpp" papilio_version_major_line REGEX "^#define PAPILIO_VERSION_MAJOR [0-9]+$")
 file(STRINGS "include/papilio/macros.hpp" papilio_version_minor_line REGEX "^#define PAPILIO_VERSION_MINOR [0-9]+$")
@@ -65,6 +66,10 @@ if(${papilio_build_lib})
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     )
+
+    if(papilio_enable_xchar)
+        target_compile_definitions(papilio PUBLIC PAPILIO_ENABLE_XCHAR)
+    endif()
 
     # Add an ALIAS target for using the library by add_subdirectory()
     add_library(papilio::papilio ALIAS papilio)
