@@ -34,7 +34,7 @@ jobs:
 
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest
+        run: ctest --output-on-failure
 
       - name: Display Information
         working-directory: ${{github.workspace}}/build/example
@@ -92,7 +92,7 @@ jobs:
 
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest
+        run: ctest --output-on-failure
 
       - name: Display Information
         working-directory: ${{github.workspace}}/build/example
@@ -121,7 +121,7 @@ jobs:
 
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest
+        run: ctest --output-on-failure
 
       - name: Display Information
         working-directory: ${{github.workspace}}/build/example
@@ -193,7 +193,7 @@ jobs:
 
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest
+        run: ctest --output-on-failure
 
       - name: Display Information
         working-directory: ${{github.workspace}}/build/example
@@ -253,4 +253,4 @@ jobs:
 
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest
+        run: ctest --output-on-failure
