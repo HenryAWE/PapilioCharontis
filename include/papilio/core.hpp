@@ -1186,7 +1186,7 @@ public:
         }
 
         [[nodiscard]]
-        std::type_info type()
+        const std::type_info& type() const noexcept
         {
             return ptr()->type();
         }
@@ -3103,12 +3103,80 @@ public:
         advance_to(it);
     }
 
+    /**
+     * @brief Get the format string normalized to `char32_t`.
+     *
+     * The normalization is performed lazily and is shared by the
+     * character-type-independent parser core of the interpreter.
+     *
+     * @note This is an internal API. It is used by `basic_interpreter`.
+     */
+    [[nodiscard]]
+    std::u32string_view u32_view() const
+    {
+        ensure_u32();
+        return std::u32string_view(m_u32_buf.data(), m_u32_buf.size());
+    }
+
+    /**
+     * @brief Convert an iterator into the codepoint index of the normalized string.
+     *
+     * @note This is an internal API.
+     */
+    [[nodiscard]]
+    std::size_t to_u32_index(const_iterator it) const
+    {
+        ensure_u32();
+
+        std::size_t off = static_cast<std::size_t>(it.base() - m_ref.data());
+        auto ub = std::upper_bound(m_u32_offs.begin(), m_u32_offs.end(), off);
+
+        return static_cast<std::size_t>(ub - m_u32_offs.begin()) - 1;
+    }
+
+    /**
+     * @brief Convert a codepoint index of the normalized string into an iterator.
+     *
+     * @note This is an internal API.
+     */
+    [[nodiscard]]
+    const_iterator at_u32(std::size_t idx) const
+    {
+        ensure_u32();
+
+        std::size_t off = m_u32_offs[idx];
+        return utf::codepoint_begin<char_type>(
+            std::basic_string_view<char_type>(m_ref.data() + off, m_ref.size() - off)
+        );
+    }
+
 private:
     string_ref_type m_ref;
     iterator m_it;
     format_args_type m_args;
     size_type m_default_arg_idx = 0;
     mutable bool m_manual_indexing = false;
+
+    // Lazily-built normalization of the format string for the
+    // character-type-independent parser core.
+    mutable small_vector<char32_t, 64> m_u32_buf;
+    mutable small_vector<std::size_t, 65> m_u32_offs;
+    mutable bool m_u32_ready = false;
+
+    void ensure_u32() const
+    {
+        if(m_u32_ready)
+            return;
+        m_u32_ready = true;
+
+        m_u32_offs.reserve(m_ref.size() + 1);
+        for(auto it = m_ref.begin(); it != m_ref.end(); ++it)
+        {
+            m_u32_offs.push_back(static_cast<std::size_t>(it.base() - m_ref.data()));
+            m_u32_buf.push_back(static_cast<char32_t>(*it));
+        }
+        m_u32_offs.push_back(m_ref.size());
+    }
 
     void enable_manual_indexing() const noexcept
     {
@@ -3451,10 +3519,302 @@ protected:
 #endif
 };
 
-template <typename CharT, bool Debug>
-class basic_interpreter_base : public script_base
+/**
+ * @brief Character-type-independent parser core of the script interpreter.
+ *
+ * The format string is normalized to `char32_t` by `basic_format_parse_context`,
+ * so these parsing functions are instantiated only once for all character types.
+ * Positions are codepoint indices of the normalized string.
+ */
+class script_parser_base : public script_base
 {
-    using my_base = script_base;
+protected:
+    using str_view = std::u32string_view;
+    using string_container_type = utf::basic_string_container<char32_t>;
+    using indexing_value_type = basic_indexing_value<char32_t>;
+
+    /**
+     * @brief Error with the position of the failure, in code points.
+     */
+    class pos_error : public error
+    {
+    public:
+        pos_error(script_error_code ec, std::size_t pos)
+            : error(ec), m_pos(pos) {}
+
+        [[nodiscard]]
+        std::size_t pos() const noexcept
+        {
+            return m_pos;
+        }
+
+    private:
+        std::size_t m_pos;
+    };
+
+    [[noreturn]]
+    static void throw_pos_error(script_error_code ec, std::size_t pos)
+    {
+        throw pos_error(ec, pos);
+    }
+
+    static std::pair<op_id, std::size_t> parse_op(str_view str, std::size_t start)
+    {
+        if(start == str.size()) [[unlikely]]
+            throw_end_of_string();
+
+        char32_t first_ch = str[start];
+        if(first_ch == U'=')
+        {
+            ++start;
+            if(start != str.size())
+            {
+                if(str[start] != U'=')
+                    throw_pos_error(script_error_code::invalid_operator, start);
+                ++start;
+            }
+
+            return std::make_pair(op_id::equal, start);
+        }
+        else if(first_ch == U'!')
+        {
+            ++start;
+            if(start == str.size())
+                throw_end_of_string();
+            if(str[start] != U'=') [[unlikely]]
+                throw_pos_error(script_error_code::invalid_operator, start);
+            ++start;
+            return std::make_pair(op_id::not_equal, start);
+        }
+        else if(first_ch == U'>' || first_ch == U'<')
+        {
+            ++start;
+            if(start != str.size() && str[start] == U'=')
+            {
+                ++start;
+                if(first_ch == U'>')
+                    return std::make_pair(op_id::greater_equal, start);
+                if(first_ch == U'<')
+                    return std::make_pair(op_id::less_equal, start);
+                PAPILIO_UNREACHABLE();
+            }
+            else
+            {
+                if(first_ch == U'>')
+                    return std::make_pair(op_id::greater, start);
+                if(first_ch == U'<')
+                    return std::make_pair(op_id::less, start);
+                PAPILIO_UNREACHABLE();
+            }
+        }
+
+        throw_pos_error(script_error_code::invalid_operator, start);
+    }
+
+    // Parses integer value
+    template <std::integral T>
+    static std::pair<T, std::size_t> parse_integer(str_view str, std::size_t start)
+    {
+        if(start == str.size()) [[unlikely]]
+            throw_end_of_string();
+
+        using unsigned_type = std::make_unsigned_t<T>;
+        unsigned_type value = 0;
+        bool negative = false;
+        if(str[start] == U'-')
+        {
+            negative = true;
+            ++start;
+        }
+
+        constexpr unsigned_type max_value = static_cast<unsigned_type>(std::numeric_limits<T>::max());
+        // The magnitude of the most negative value is one greater than |max| for signed types.
+        constexpr unsigned_type max_magnitude = []() constexpr
+        {
+            if constexpr(std::is_signed_v<T>)
+                return max_value + unsigned_type(1);
+            else
+                return max_value;
+        }();
+
+        while(start != str.size())
+        {
+            char32_t ch = str[start];
+            if(!utf::is_digit(ch))
+                break;
+
+            const unsigned_type digit = static_cast<unsigned_type>(ch - U'0');
+            // Positive values are limited to |max|, negative values may reach |min|.
+            const unsigned_type limit = negative ? max_magnitude : max_value;
+            if(value > (limit - digit) / 10)
+                throw std::out_of_range("integer value out of range");
+
+            value = value * 10 + digit;
+            ++start;
+        }
+
+        if(negative)
+        {
+            if constexpr(std::is_signed_v<T>)
+            {
+                // Avoid signed overflow when the value is exactly |min|.
+                if(value == max_magnitude)
+                    return std::make_pair(std::numeric_limits<T>::min(), start);
+                return std::make_pair(-static_cast<T>(value), start);
+            }
+            else
+                throw std::out_of_range("integer value out of range");
+        }
+
+        return std::make_pair(static_cast<T>(value), start);
+    }
+
+    static std::size_t skip_string(str_view str, std::size_t start) noexcept
+    {
+        bool esc = false;
+        while(start != str.size())
+        {
+            char32_t ch = str[start];
+            ++start;
+
+            if(esc)
+            {
+                esc = false;
+                continue;
+            }
+            if(ch == U'\'')
+                break;
+            if(ch == '\\')
+                esc = true;
+        }
+
+        return start;
+    }
+
+    static std::pair<string_container_type, std::size_t> parse_string(str_view str, std::size_t start)
+    {
+        std::size_t it = start;
+        for(; it != str.size(); ++it)
+        {
+            char32_t ch = str[it];
+
+            // Turn to another mode for parsing escape sequence
+            if(ch == U'\\')
+            {
+                string_container_type result(str.substr(start, it - start));
+
+                ++it;
+                if(it == str.size()) [[unlikely]]
+                    throw_pos_error(script_error_code::invalid_string, it);
+
+                result.push_back(get_esc_ch(str[it++]));
+
+                for(; it != str.size(); ++it)
+                {
+                    ch = str[it];
+                    if(ch == U'\\')
+                    {
+                        ++it;
+                        if(it == str.size()) [[unlikely]]
+                            throw_pos_error(script_error_code::invalid_string, it);
+
+                        result.push_back(get_esc_ch(str[it]));
+                    }
+                    else if(ch == U'\'')
+                    {
+                        ++it; // skip '\''
+                        break;
+                    }
+                    else
+                    {
+                        result.push_back(ch);
+                    }
+                }
+
+                return std::make_pair(std::move(result), it);
+            }
+            else if(ch == U'\'')
+            {
+                break;
+            }
+        }
+
+        if(it == str.size()) [[unlikely]]
+            throw_pos_error(script_error_code::invalid_string, it);
+
+        return std::make_pair(
+            string_container_type(str.substr(start, it - start)),
+            it + 1 // +1 to skip '\''
+        );
+    }
+
+    static std::pair<indexing_value_type, std::size_t> parse_indexing_value(str_view str, std::size_t start)
+    {
+        if(start == str.size()) [[unlikely]]
+            throw_end_of_string();
+
+        char32_t first_ch = str[start];
+        if(first_ch == U'\'')
+        {
+            ++start;
+            auto [str_result, next_pos] = parse_string(str, start);
+
+            return std::make_pair(indexing_value_type(std::move(str_result)), next_pos);
+        }
+        else if(first_ch == U'-' || utf::is_digit(first_ch))
+        {
+            auto [idx, next_pos] = parse_integer<ssize_t>(
+                str, start
+            );
+
+            if(next_pos != str.size() && str[next_pos] == U':')
+            {
+                ++next_pos;
+                if(next_pos == str.size()) [[unlikely]]
+                    throw_end_of_string();
+
+                char32_t next_ch = str[next_pos];
+                ssize_t next_idx = index_range::npos;
+                if(next_ch == U'-' || utf::is_digit(next_ch))
+                {
+                    std::tie(next_idx, next_pos) = parse_integer<ssize_t>(
+                        str, next_pos
+                    );
+                }
+
+                return std::make_pair(index_range(idx, next_idx), next_pos);
+            }
+
+            return std::make_pair(idx, next_pos);
+        }
+        else if(first_ch == U':')
+        {
+            ++start;
+            if(start == str.size()) [[unlikely]]
+                throw_end_of_string();
+
+            char32_t next_ch = str[start];
+            if(next_ch == U'-' || PAPILIO_NS utf::is_digit(next_ch))
+            {
+                auto [idx, next_pos] = parse_integer<ssize_t>(
+                    str, start
+                );
+                return std::make_pair(index_range(0, idx), next_pos);
+            }
+            else
+            {
+                return std::make_pair(index_range(), start);
+            }
+        }
+
+        throw_pos_error(script_error_code::invalid_index, start);
+    }
+};
+
+template <typename CharT, bool Debug>
+class basic_interpreter_base : public script_parser_base
+{
+    using my_base = script_parser_base;
 
 public:
     using char_type = CharT;
@@ -3546,59 +3906,6 @@ protected:
         return start;
     }
 
-    static std::pair<op_id, iterator> parse_op(iterator start, iterator stop)
-    {
-        if(start == stop) [[unlikely]]
-            throw_end_of_string();
-
-        char32_t first_ch = *start;
-        if(first_ch == U'=')
-        {
-            ++start;
-            if(start != stop)
-            {
-                if(*start != U'=')
-                    throw_error(script_error_code::invalid_operator, start);
-                ++start;
-            }
-
-            return std::make_pair(op_id::equal, start);
-        }
-        else if(first_ch == U'!')
-        {
-            ++start;
-            if(start == stop)
-                throw_end_of_string();
-            if(*start != U'=') [[unlikely]]
-                throw_error(script_error_code::invalid_operator, start);
-            ++start;
-            return std::make_pair(op_id::not_equal, start);
-        }
-        else if(first_ch == U'>' || first_ch == '<')
-        {
-            ++start;
-            if(start != stop && *start == U'=')
-            {
-                ++start;
-                if(first_ch == U'>')
-                    return std::make_pair(op_id::greater_equal, start);
-                if(first_ch == U'<')
-                    return std::make_pair(op_id::less_equal, start);
-                PAPILIO_UNREACHABLE();
-            }
-            else
-            {
-                if(first_ch == U'>')
-                    return std::make_pair(op_id::greater, start);
-                if(first_ch == U'<')
-                    return std::make_pair(op_id::less, start);
-                PAPILIO_UNREACHABLE();
-            }
-        }
-
-        throw_error(script_error_code::invalid_operator, start);
-    }
-
     static bool execute_op(op_id op, const variable_type& lhs, const variable_type& rhs)
     {
         switch(op)
@@ -3619,217 +3926,6 @@ protected:
         default:
             PAPILIO_UNREACHABLE();
         }
-    }
-
-    // Parses integer value
-    template <std::integral T>
-    static std::pair<T, iterator> parse_integer(iterator start, iterator stop)
-    {
-        if(start == stop) [[unlikely]]
-            throw_end_of_string();
-
-        using unsigned_type = std::make_unsigned_t<T>;
-        unsigned_type value = 0;
-        bool negative = false;
-        if(*start == U'-')
-        {
-            negative = true;
-            ++start;
-        }
-
-        constexpr unsigned_type max_value = static_cast<unsigned_type>(std::numeric_limits<T>::max());
-        // The magnitude of the most negative value is one greater than |max| for signed types.
-        constexpr unsigned_type max_magnitude = []() constexpr
-        {
-            if constexpr(std::is_signed_v<T>)
-                return max_value + unsigned_type(1);
-            else
-                return max_value;
-        }();
-
-        while(start != stop)
-        {
-            char32_t ch = *start;
-            if(!utf::is_digit(ch))
-                break;
-
-            const unsigned_type digit = static_cast<unsigned_type>(ch - U'0');
-            // Positive values are limited to |max|, negative values may reach |min|.
-            const unsigned_type limit = negative ? max_magnitude : max_value;
-            if(value > (limit - digit) / 10)
-                throw std::out_of_range("integer value out of range");
-
-            value = value * 10 + digit;
-            ++start;
-        }
-
-        if(negative)
-        {
-            if constexpr(std::is_signed_v<T>)
-            {
-                // Avoid signed overflow when the value is exactly |min|.
-                if(value == max_magnitude)
-                    return std::make_pair(std::numeric_limits<T>::min(), start);
-                return std::make_pair(-static_cast<T>(value), start);
-            }
-            else
-                throw std::out_of_range("integer value out of range");
-        }
-
-        return std::make_pair(static_cast<T>(value), start);
-    }
-
-    static iterator skip_string(iterator start, iterator stop) noexcept
-    {
-        bool esc = false;
-        while(start != stop)
-        {
-            char32_t ch = *start;
-            ++start;
-
-            if(esc)
-            {
-                esc = false;
-                continue;
-            }
-            if(ch == U'\'')
-                break;
-            if(ch == '\\')
-                esc = true;
-        }
-
-        return start;
-    }
-
-    static std::pair<string_container_type, iterator> parse_string(iterator start, iterator stop)
-    {
-        iterator it = start;
-        for(; it != stop; ++it)
-        {
-            char32_t ch = *it;
-
-            // Turn to another mode for parsing escape sequence
-            if(ch == U'\\')
-            {
-                string_container_type result(start, it);
-
-                ++it;
-                if(it == stop) [[unlikely]]
-                    throw_error(script_error_code::invalid_string, it);
-
-                auto push_back_impl = [&result](char32_t val)
-                {
-                    if constexpr(char32_like<char_type>)
-                    {
-                        result.push_back(static_cast<char_type>(val));
-                    }
-                    else
-                    {
-                        result.push_back(utf::codepoint(val));
-                    }
-                };
-
-                push_back_impl(get_esc_ch(*it++));
-
-                for(; it != stop; ++it)
-                {
-                    ch = *it;
-                    if(ch == U'\\')
-                    {
-                        ++it;
-                        if(it == stop) [[unlikely]]
-                            throw_error(script_error_code::invalid_string, it);
-
-                        push_back_impl(get_esc_ch(*it));
-                    }
-                    else if(ch == U'\'')
-                    {
-                        ++it; // skip '\''
-                        break;
-                    }
-                    else
-                    {
-                        push_back_impl(ch);
-                    }
-                }
-
-                return std::make_pair(std::move(result), it);
-            }
-            else if(ch == U'\'')
-            {
-                break;
-            }
-        }
-
-        if(it == stop) [[unlikely]]
-            throw_error(script_error_code::invalid_string, it);
-
-        return std::make_pair(
-            string_container_type(start, it),
-            std::next(it) // +1 to skip '\''
-        );
-    }
-
-    static std::pair<indexing_value_type, iterator> parse_indexing_value(iterator start, iterator stop)
-    {
-        if(start == stop) [[unlikely]]
-            throw_end_of_string();
-
-        char32_t first_ch = *start;
-        if(first_ch == U'\'')
-        {
-            ++start;
-            auto [str, next_it] = parse_string(start, stop);
-
-            return std::make_pair(std::move(str), next_it);
-        }
-        else if(first_ch == U'-' || utf::is_digit(first_ch))
-        {
-            auto [idx, next_it] = parse_integer<ssize_t>(
-                start, stop
-            );
-
-            if(next_it != stop && *next_it == U':')
-            {
-                ++next_it;
-                if(next_it == stop) [[unlikely]]
-                    throw_end_of_string();
-
-                char32_t next_ch = *next_it;
-                ssize_t next_idx = index_range::npos;
-                if(next_ch == U'-' || utf::is_digit(next_ch))
-                {
-                    std::tie(next_idx, next_it) = parse_integer<ssize_t>(
-                        next_it, stop
-                    );
-                }
-
-                return std::make_pair(index_range(idx, next_idx), next_it);
-            }
-
-            return std::make_pair(idx, next_it);
-        }
-        else if(first_ch == U':')
-        {
-            ++start;
-            if(start == stop) [[unlikely]]
-                throw_end_of_string();
-
-            char32_t next_ch = *start;
-            if(next_ch == U'-' || PAPILIO_NS utf::is_digit(next_ch))
-            {
-                auto [idx, next_it] = parse_integer<ssize_t>(
-                    start, stop
-                );
-                return std::make_pair(index_range(0, idx), next_it);
-            }
-            else
-            {
-                return std::make_pair(index_range(), start);
-            }
-        }
-
-        throw_error(script_error_code::invalid_index, start);
     }
 
 #endif
@@ -4081,7 +4177,7 @@ private:
 
         auto [arg, next_it] = parse_field_name(ctx, start, stop);
 
-        std::tie(arg, next_it) = parse_chained_access(arg, next_it, stop);
+        std::tie(arg, next_it) = parse_chained_access(ctx, arg, next_it, stop);
 
         return std::make_pair(std::move(arg), next_it);
     }
@@ -4115,7 +4211,11 @@ private:
         if(char32_t ch = *start; ch == U'\'')
         {
             ++start;
-            return my_base::skip_string(start, stop);
+            std::size_t pos = my_base::skip_string(
+                parse_ctx.u32_view(),
+                parse_ctx.to_u32_index(start)
+            );
+            return parse_ctx.at_u32(pos);
         }
         else if(ch == U'{')
         {
@@ -4151,12 +4251,22 @@ private:
         {
             ++start;
 
-            string_container_type str;
-            std::tie(str, start) = my_base::parse_string(start, stop);
+            try
+            {
+                auto [str32, pos] = my_base::parse_string(
+                    parse_ctx.u32_view(),
+                    parse_ctx.to_u32_index(start)
+                );
 
-            context_t::append(fmt_ctx, str);
+                std::basic_string<char_type> str = str32.template to_string<char_type>();
+                context_t::append(fmt_ctx, str);
 
-            return start;
+                return parse_ctx.at_u32(pos);
+            }
+            catch(const script_parser_base::pos_error& e)
+            {
+                my_base::throw_error(e.error_code(), parse_ctx.at_u32(e.pos()));
+            }
         }
         else if(ch == U'{')
         {
@@ -4295,29 +4405,36 @@ private:
         else if(first_ch == U'\'')
         {
             ++start;
-            auto [str, next_it] = my_base::parse_string(start, stop);
+            // `parse_string` may throw `script_parser_base::pos_error`,
+            // which is converted to a character-type-specific error
+            // by the caller (`parse_condition`).
+            auto [str32, pos] = my_base::parse_string(
+                ctx.u32_view(),
+                ctx.to_u32_index(start)
+            );
 
-            return std::make_pair(std::move(str), next_it);
+            return std::make_pair(
+                variable_type(str32.template to_string<char_type>()),
+                ctx.at_u32(pos)
+            );
         }
         else if(first_ch == U'-' || PAPILIO_NS utf::is_digit(first_ch) || first_ch == U'.')
         {
-            bool negative = first_ch == U'-';
-
-            iterator int_end = std::find_if_not(
-                negative ? start + 1 : start, stop, PAPILIO_NS utf::is_digit
-            );
             using int_type = typename variable_type::int_type;
-            int_type int_val = my_base::template parse_integer<int_type>(start, int_end).first;
+            std::u32string_view u32 = ctx.u32_view();
+            std::size_t u32_start = ctx.to_u32_index(start);
 
-            if(int_end != stop && *int_end == U'.')
+            auto [int_val, int_end] = my_base::template parse_integer<int_type>(u32, u32_start);
+
+            if(int_end != u32.size() && u32[int_end] == U'.')
             {
                 ++int_end; // Skip the decimal point
 
-                iterator float_end = int_end;
+                std::size_t float_end = int_end;
                 int_type pow10_val = 1;
-                for(; float_end != stop; ++float_end)
+                for(; float_end != u32.size(); ++float_end)
                 {
-                    if(!PAPILIO_NS utf::is_digit(*float_end))
+                    if(!PAPILIO_NS utf::is_digit(u32[float_end]))
                         break;
                     // Stop consuming digits if the denominator would overflow.
                     // The remaining digits are left for the caller to reject.
@@ -4326,17 +4443,22 @@ private:
                     pow10_val *= 10;
                 }
 
-                int_type frac = my_base::template parse_integer<int_type>(int_end, float_end).first;
+                // Only parse the digits that fit in the denominator;
+                // the remaining digits are left for the caller to reject.
+                int_type frac = my_base::template parse_integer<int_type>(
+                    u32.substr(int_end, float_end - int_end),
+                    0
+                ).first;
 
                 using float_type = typename variable_type::float_type;
                 float_type flt_val = static_cast<float_type>(int_val);
                 flt_val += static_cast<float_type>(frac) / static_cast<float_type>(pow10_val);
 
-                return std::make_pair(flt_val, float_end);
+                return std::make_pair(flt_val, ctx.at_u32(float_end));
             }
             else
             {
-                return std::make_pair(int_val, int_end);
+                return std::make_pair(int_val, ctx.at_u32(int_end));
             }
         }
 
@@ -4345,66 +4467,80 @@ private:
 
     static std::pair<bool, iterator> parse_condition(parse_context& ctx, iterator start, iterator stop)
     {
-        start = my_base::skip_ws(start, stop);
-        if(start == stop) [[unlikely]]
-            my_base::throw_end_of_string();
-
-        char32_t first_ch = *start;
-        if(first_ch == U'!')
+        try
         {
-            ++start;
             start = my_base::skip_ws(start, stop);
-
-            auto [var, next_it] = parse_variable(ctx, start, stop);
-            next_it = my_base::skip_ws(next_it, stop);
-            if(next_it == stop) [[unlikely]]
-                my_base::throw_end_of_string();
-            if(*next_it != my_base::condition_end) [[unlikely]]
-                my_base::throw_error(script_error_code::invalid_condition, next_it);
-
-            ++next_it;
-            return std::make_pair(!var.template as<bool>(), next_it);
-        }
-        else if(my_base::is_var_start_ch(first_ch))
-        {
-            auto [var, next_it] = parse_variable(ctx, start, stop);
-
-            next_it = my_base::skip_ws(next_it, stop);
-            if(next_it == stop) [[unlikely]]
+            if(start == stop) [[unlikely]]
                 my_base::throw_end_of_string();
 
-            char32_t ch = *next_it;
-            if(ch == my_base::condition_end)
+            char32_t first_ch = *start;
+            if(first_ch == U'!')
             {
-                ++next_it;
-                return std::make_pair(var.template as<bool>(), next_it);
-            }
-            else if(my_base::is_op_ch(ch))
-            {
-                typename my_base::op_id op{};
-                std::tie(op, next_it) = my_base::parse_op(next_it, stop);
+                ++start;
+                start = my_base::skip_ws(start, stop);
 
+                auto [var, next_it] = parse_variable(ctx, start, stop);
                 next_it = my_base::skip_ws(next_it, stop);
-
-                auto [var_2, next_it_2] = parse_variable(ctx, next_it, stop);
-                next_it = my_base::skip_ws(next_it_2, stop);
-
                 if(next_it == stop) [[unlikely]]
                     my_base::throw_end_of_string();
                 if(*next_it != my_base::condition_end) [[unlikely]]
                     my_base::throw_error(script_error_code::invalid_condition, next_it);
 
                 ++next_it;
-                return std::make_pair(
-                    my_base::execute_op(op, var, var_2),
-                    next_it
-                );
+                return std::make_pair(!var.template as<bool>(), next_it);
+            }
+            else if(my_base::is_var_start_ch(first_ch))
+            {
+                auto [var, next_it] = parse_variable(ctx, start, stop);
+
+                next_it = my_base::skip_ws(next_it, stop);
+                if(next_it == stop) [[unlikely]]
+                    my_base::throw_end_of_string();
+
+                char32_t ch = *next_it;
+                if(ch == my_base::condition_end)
+                {
+                    ++next_it;
+                    return std::make_pair(var.template as<bool>(), next_it);
+                }
+                else if(my_base::is_op_ch(ch))
+                {
+                    typename my_base::op_id op{};
+                    std::size_t u32_after{};
+                    std::tie(op, u32_after) = my_base::parse_op(
+                        ctx.u32_view(),
+                        ctx.to_u32_index(next_it)
+                    );
+                    next_it = ctx.at_u32(u32_after);
+
+                    next_it = my_base::skip_ws(next_it, stop);
+
+                    auto [var_2, next_it_2] = parse_variable(ctx, next_it, stop);
+                    next_it = my_base::skip_ws(next_it_2, stop);
+
+                    if(next_it == stop) [[unlikely]]
+                        my_base::throw_end_of_string();
+                    if(*next_it != my_base::condition_end) [[unlikely]]
+                        my_base::throw_error(script_error_code::invalid_condition, next_it);
+
+                    ++next_it;
+                    return std::make_pair(
+                        my_base::execute_op(op, var, var_2),
+                        next_it
+                    );
+                }
+
+                my_base::throw_error(script_error_code::invalid_condition, next_it);
             }
 
-            my_base::throw_error(script_error_code::invalid_condition, next_it);
+            my_base::throw_error(script_error_code::invalid_condition, start);
         }
-
-        my_base::throw_error(script_error_code::invalid_condition, start);
+        catch(const script_parser_base::pos_error& e)
+        {
+            // Convert the position from the normalized string to the
+            // character-type-specific iterator.
+            my_base::throw_error(e.error_code(), ctx.at_u32(e.pos()));
+        }
     }
 
     static std::pair<format_arg_type, iterator> parse_field_name(
@@ -4456,51 +4592,72 @@ private:
         my_base::throw_error(script_error_code::invalid_field_name, start);
     }
 
+    static indexing_value_type to_char_indexing(const basic_indexing_value<char32_t>& idx32)
+    {
+        if(idx32.holds_index())
+            return indexing_value_type(idx32.as_index());
+        else if(idx32.holds_range())
+            return indexing_value_type(idx32.as_range());
+        else
+            return indexing_value_type(independent, idx32.as_string().template to_string<char_type>());
+    }
+
     static std::pair<format_arg_type, iterator> parse_chained_access(
-        format_arg_type& base_arg, iterator start, iterator stop
+        parse_context& ctx, format_arg_type& base_arg, iterator start, iterator stop
     )
     {
         format_arg_type current = base_arg;
 
-        while(start != stop)
+        try
         {
-            char32_t first_ch = *start;
-            if(first_ch == U'.')
+            while(start != stop)
             {
-                ++start;
-                iterator str_start = start;
+                char32_t first_ch = *start;
+                if(first_ch == U'.')
+                {
+                    ++start;
+                    iterator str_start = start;
 
-                iterator str_end = my_base::find_field_name_end(start, stop);
+                    iterator str_end = my_base::find_field_name_end(start, stop);
 
-                string_ref_type attr_name(str_start, str_end);
-                if(attr_name.empty())
-                    my_base::throw_error(script_error_code::invalid_attribute, str_end);
+                    string_ref_type attr_name(str_start, str_end);
+                    if(attr_name.empty())
+                        my_base::throw_error(script_error_code::invalid_attribute, str_end);
 
-                current = current.attribute(attr_name);
+                    current = current.attribute(attr_name);
 
-                start = str_end;
+                    start = str_end;
+                }
+                else if(first_ch == U'[')
+                {
+                    ++start;
+                    auto [idx32, u32_next] = my_base::parse_indexing_value(
+                        ctx.u32_view(),
+                        ctx.to_u32_index(start)
+                    );
+                    iterator next_it = ctx.at_u32(u32_next);
+                    if(next_it == stop) [[unlikely]]
+                        my_base::throw_end_of_string();
+                    if(*next_it != U']') [[unlikely]]
+                        my_base::throw_error(script_error_code::invalid_index, next_it);
+                    ++next_it;
+
+                    current = current.index(to_char_indexing(idx32));
+
+                    start = next_it;
+                }
+                else
+                {
+                    break;
+                }
             }
-            else if(first_ch == U'[')
-            {
-                ++start;
-                auto [idx, next_it] = my_base::parse_indexing_value(start, stop);
-                if(next_it == stop) [[unlikely]]
-                    my_base::throw_end_of_string();
-                if(*next_it != U']') [[unlikely]]
-                    my_base::throw_error(script_error_code::invalid_index, next_it);
-                ++next_it;
 
-                current = current.index(idx);
-
-                start = next_it;
-            }
-            else
-            {
-                break;
-            }
+            return std::make_pair(std::move(current), start);
         }
-
-        return std::make_pair(std::move(current), start);
+        catch(const script_parser_base::pos_error& e)
+        {
+            my_base::throw_error(e.error_code(), ctx.at_u32(e.pos()));
+        }
     }
 };
 
@@ -6641,6 +6798,43 @@ OutputIt vformat_to(
 } // namespace papilio
 
 #include "core.inl"
+
+// Explicitly instantiate the most common instantiations in the library
+// to reduce binary size and compile time for library users.
+namespace papilio
+{
+extern template class basic_format_arg<format_context>;
+extern template class basic_format_arg<wformat_context>;
+
+extern template class basic_interpreter<format_context, false>;
+extern template class basic_interpreter<wformat_context, false>;
+
+extern template class basic_interpreter_base<char, false>;
+extern template class basic_interpreter_base<wchar_t, false>;
+
+namespace detail
+{
+    extern template format_iterator_for<char> vformat_to_impl<
+        char,
+        format_iterator_for<char>,
+        format_context>(
+        format_iterator_for<char>,
+        locale_ref,
+        std::string_view,
+        const basic_format_args_ref<format_context>&
+    );
+
+    extern template format_iterator_for<wchar_t> vformat_to_impl<
+        wchar_t,
+        format_iterator_for<wchar_t>,
+        wformat_context>(
+        format_iterator_for<wchar_t>,
+        locale_ref,
+        std::wstring_view,
+        const basic_format_args_ref<wformat_context>&
+    );
+} // namespace detail
+} // namespace papilio
 
 #include "detail/suffix.hpp"
 

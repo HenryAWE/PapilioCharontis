@@ -588,6 +588,33 @@ std::wstring format(const std::locale& loc, wformat_string<Args...> fmt, Args&&.
     );
 }
 
+// Explicitly instantiate the most common `vformat_to` paths in the library.
+extern template format_iterator_for<char> vformat_to(
+    format_iterator_for<char>,
+    std::string_view,
+    const format_args_ref&
+);
+
+extern template format_iterator_for<char> vformat_to(
+    format_iterator_for<char>,
+    const std::locale&,
+    std::string_view,
+    const format_args_ref&
+);
+
+extern template format_iterator_for<wchar_t> vformat_to(
+    format_iterator_for<wchar_t>,
+    std::wstring_view,
+    const wformat_args_ref&
+);
+
+extern template format_iterator_for<wchar_t> vformat_to(
+    format_iterator_for<wchar_t>,
+    const std::locale&,
+    std::wstring_view,
+    const wformat_args_ref&
+);
+
 /// @}
 
 /// @addtogroup Formatter
