@@ -4204,9 +4204,8 @@ private:
     static iterator skip_branch(parse_context& parse_ctx)
     {
         auto start = parse_ctx.begin();
-        const auto stop = parse_ctx.end();
 
-        PAPILIO_ASSERT(start != stop);
+        PAPILIO_ASSERT(start != parse_ctx.end());
 
         if(char32_t ch = *start; ch == U'\'')
         {
@@ -4241,9 +4240,8 @@ private:
     static iterator exec_branch(parse_context& parse_ctx, FormatContext& fmt_ctx)
     {
         auto start = parse_ctx.begin();
-        const auto stop = parse_ctx.end();
 
-        PAPILIO_ASSERT(start != stop);
+        PAPILIO_ASSERT(start != parse_ctx.end());
 
         using context_t = format_context_traits<FormatContext>;
 
