@@ -38,16 +38,17 @@ template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::u8string_view fmt,
-    const format_args_ref_for<OutputIt, char8_t>& args
+    const u8format_args_ref& args
 )
 {
-    using context_type = basic_format_context<OutputIt, char8_t>;
-    return detail::vformat_to_impl<char8_t, OutputIt, context_type>(
-        std::move(out),
+    std::u8string buf;
+    detail::vformat_to_impl<char8_t, format_iterator_for<char8_t>, u8format_context>(
+        std::back_inserter(buf),
         nullptr,
         fmt,
         args
     );
+    return std::copy(buf.begin(), buf.end(), std::move(out));
 }
 
 template <typename OutputIt, typename... Args>
@@ -57,12 +58,10 @@ OutputIt format_to(
     Args&&... args
 )
 {
-    using context_type = basic_format_context<OutputIt, char8_t>;
-    return PAPILIO_NS detail::vformat_to_impl<char8_t, OutputIt, context_type>(
-        std::move(out),
-        nullptr,
+    return PAPILIO_NS vformat_to(
+        out,
         fmt,
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_u8format_args(std::forward<Args>(args)...)
     );
 }
 
@@ -92,15 +91,6 @@ format_to_n_result<OutputIt> format_to_n(
         nullptr,
         fmt.get(),
         std::forward<Args>(args)...
-    );
-}
-
-namespace detail
-{
-    std::size_t formatted_size_impl(
-        locale_ref loc,
-        std::u8string_view fmt,
-        const basic_format_args_ref<fmt_size_ctx_type<char8_t>>& args
     );
 }
 
@@ -134,16 +124,17 @@ template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::u16string_view fmt,
-    const format_args_ref_for<OutputIt, char16_t>& args
+    const u16format_args_ref& args
 )
 {
-    using context_type = basic_format_context<OutputIt, char16_t>;
-    return detail::vformat_to_impl<char16_t, OutputIt, context_type>(
-        std::move(out),
+    std::u16string buf;
+    detail::vformat_to_impl<char16_t, format_iterator_for<char16_t>, u16format_context>(
+        std::back_inserter(buf),
         nullptr,
         fmt,
         args
     );
+    return std::copy(buf.begin(), buf.end(), std::move(out));
 }
 
 template <typename OutputIt, typename... Args>
@@ -153,12 +144,10 @@ OutputIt format_to(
     Args&&... args
 )
 {
-    using context_type = basic_format_context<OutputIt, char16_t>;
-    return PAPILIO_NS detail::vformat_to_impl<char16_t, OutputIt, context_type>(
-        std::move(out),
-        nullptr,
+    return PAPILIO_NS vformat_to(
+        out,
         fmt,
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_u16format_args(std::forward<Args>(args)...)
     );
 }
 
@@ -188,15 +177,6 @@ format_to_n_result<OutputIt> format_to_n(
         nullptr,
         fmt.get(),
         std::forward<Args>(args)...
-    );
-}
-
-namespace detail
-{
-    std::size_t formatted_size_impl(
-        locale_ref loc,
-        std::u16string_view fmt,
-        const basic_format_args_ref<fmt_size_ctx_type<char16_t>>& args
     );
 }
 
@@ -231,16 +211,17 @@ template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::u32string_view fmt,
-    const format_args_ref_for<OutputIt, char32_t>& args
+    const u32format_args_ref& args
 )
 {
-    using context_type = basic_format_context<OutputIt, char32_t>;
-    return detail::vformat_to_impl<char32_t, OutputIt, context_type>(
-        std::move(out),
+    std::u32string buf;
+    detail::vformat_to_impl<char32_t, format_iterator_for<char32_t>, u32format_context>(
+        std::back_inserter(buf),
         nullptr,
         fmt,
         args
     );
+    return std::copy(buf.begin(), buf.end(), std::move(out));
 }
 
 template <typename OutputIt, typename... Args>
@@ -250,12 +231,10 @@ OutputIt format_to(
     Args&&... args
 )
 {
-    using context_type = basic_format_context<OutputIt, char32_t>;
-    return PAPILIO_NS detail::vformat_to_impl<char32_t, OutputIt, context_type>(
-        std::move(out),
-        nullptr,
+    return PAPILIO_NS vformat_to(
+        out,
         fmt,
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_u32format_args(std::forward<Args>(args)...)
     );
 }
 
@@ -285,15 +264,6 @@ format_to_n_result<OutputIt> format_to_n(
         nullptr,
         fmt.get(),
         std::forward<Args>(args)...
-    );
-}
-
-namespace detail
-{
-    std::size_t formatted_size_impl(
-        locale_ref loc,
-        std::u32string_view fmt,
-        const basic_format_args_ref<fmt_size_ctx_type<char32_t>>& args
     );
 }
 

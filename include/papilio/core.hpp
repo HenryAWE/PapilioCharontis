@@ -6726,20 +6726,24 @@ namespace detail
     }
 } // namespace detail
 
+// The heavy formatting machinery is instantiated only for the internal
+// buffer context (`format_context` / `wformat_context`). Arbitrary output
+// iterators are handled at the boundary by copying the formatted buffer.
 template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::string_view fmt,
-    const format_args_ref_for<OutputIt, char>& args
+    const format_args_ref& args
 )
 {
-    using context_type = basic_format_context<OutputIt, char>;
-    return detail::vformat_to_impl<char, OutputIt, context_type>(
-        std::move(out),
+    std::basic_string<char> buf;
+    detail::vformat_to_impl<char, format_iterator_for<char>, format_context>(
+        std::back_inserter(buf),
         nullptr,
         fmt,
         args
     );
+    return std::copy(buf.begin(), buf.end(), std::move(out));
 }
 
 template <typename OutputIt>
@@ -6747,32 +6751,34 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::string_view fmt,
-    const format_args_ref_for<OutputIt, char>& args
+    const format_args_ref& args
 )
 {
-    using context_type = basic_format_context<OutputIt, char>;
-    return detail::vformat_to_impl<char, OutputIt, context_type>(
-        std::move(out),
+    std::basic_string<char> buf;
+    detail::vformat_to_impl<char, format_iterator_for<char>, format_context>(
+        std::back_inserter(buf),
         loc,
         fmt,
         args
     );
+    return std::copy(buf.begin(), buf.end(), std::move(out));
 }
 
 template <typename OutputIt>
 OutputIt vformat_to(
     OutputIt out,
     std::wstring_view fmt,
-    const format_args_ref_for<OutputIt, wchar_t>& args
+    const wformat_args_ref& args
 )
 {
-    using context_type = basic_format_context<OutputIt, wchar_t>;
-    return detail::vformat_to_impl<wchar_t, OutputIt, context_type>(
-        std::move(out),
+    std::basic_string<wchar_t> buf;
+    detail::vformat_to_impl<wchar_t, format_iterator_for<wchar_t>, wformat_context>(
+        std::back_inserter(buf),
         nullptr,
         fmt,
         args
     );
+    return std::copy(buf.begin(), buf.end(), std::move(out));
 }
 
 template <typename OutputIt>
@@ -6780,16 +6786,17 @@ OutputIt vformat_to(
     OutputIt out,
     const std::locale& loc,
     std::wstring_view fmt,
-    const format_args_ref_for<OutputIt, wchar_t>& args
+    const wformat_args_ref& args
 )
 {
-    using context_type = basic_format_context<OutputIt, wchar_t>;
-    return detail::vformat_to_impl<wchar_t, OutputIt, context_type>(
-        std::move(out),
+    std::basic_string<wchar_t> buf;
+    detail::vformat_to_impl<wchar_t, format_iterator_for<wchar_t>, wformat_context>(
+        std::back_inserter(buf),
         loc,
         fmt,
         args
     );
+    return std::copy(buf.begin(), buf.end(), std::move(out));
 }
 
 /// @}

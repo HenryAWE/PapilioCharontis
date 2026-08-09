@@ -121,12 +121,11 @@ template <typename... Args>
 void print(std::ostream& os, format_string<Args...> fmt, Args&&... args)
 {
     using iter_t = std::ostream_iterator<char>;
-    using context_type = basic_format_context<iter_t>;
     PAPILIO_NS vformat_to(
         iter_t(os),
         os.getloc(),
         fmt.get(),
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_format_args(std::forward<Args>(args)...)
     );
 }
 

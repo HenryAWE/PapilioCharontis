@@ -164,11 +164,10 @@ std::wstring vformat(const std::locale& loc, std::wstring_view fmt, const wforma
 template <typename OutputIt, typename... Args>
 OutputIt format_to(OutputIt out, format_string<Args...> fmt, Args&&... args)
 {
-    using context_type = basic_format_context<OutputIt, char>;
     return PAPILIO_NS vformat_to(
         out,
         fmt.get(),
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_format_args(std::forward<Args>(args)...)
     );
 }
 
@@ -180,12 +179,11 @@ OutputIt format_to(
     Args&&... args
 )
 {
-    using context_type = basic_format_context<OutputIt, char>;
     return PAPILIO_NS vformat_to(
         out,
         loc,
         fmt.get(),
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_format_args(std::forward<Args>(args)...)
     );
 }
 
@@ -196,11 +194,10 @@ OutputIt format_to(
     Args&&... args
 )
 {
-    using context_type = basic_format_context<OutputIt, wchar_t>;
     return PAPILIO_NS vformat_to(
         out,
         fmt.get(),
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_wformat_args(std::forward<Args>(args)...)
     );
 }
 
@@ -212,12 +209,11 @@ OutputIt format_to(
     Args&&... args
 )
 {
-    using context_type = basic_format_context<OutputIt, wchar_t>;
     return PAPILIO_NS vformat_to(
         out,
         loc,
         fmt.get(),
-        PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        PAPILIO_NS make_wformat_args(std::forward<Args>(args)...)
     );
 }
 
@@ -230,74 +226,6 @@ struct format_to_n_result
 
 namespace detail
 {
-    template <typename OutputIt, typename CharT>
-    class format_to_n_wrapper
-    {
-    public:
-        using iterator_category = std::output_iterator_tag;
-        using value_type = std::iter_value_t<OutputIt>;
-        using difference_type = std::iter_difference_t<OutputIt>;
-        using pointer = void;
-        using reference = void;
-
-        format_to_n_wrapper(const format_to_n_wrapper&) noexcept(std::is_nothrow_copy_constructible_v<OutputIt>) = default;
-        format_to_n_wrapper(format_to_n_wrapper&&) noexcept(std::is_nothrow_move_constructible_v<OutputIt>) = default;
-
-        format_to_n_wrapper(OutputIt it, difference_type n) noexcept(std::is_nothrow_move_constructible_v<OutputIt>)
-            : m_out(std::move(it)), m_max_count(n), m_counter(0) {}
-
-        format_to_n_wrapper& operator*() noexcept
-        {
-            return *this;
-        }
-
-        format_to_n_wrapper& operator=(const CharT& ch)
-        {
-            PAPILIO_ASSERT(m_counter <= m_max_count);
-
-            if(m_counter == m_max_count)
-                return *this;
-            *m_out = ch;
-            ++m_out;
-            ++m_counter;
-            return *this;
-        }
-
-        format_to_n_wrapper& operator=(const format_to_n_wrapper&) noexcept(std::is_nothrow_copy_assignable_v<OutputIt>) = default;
-        format_to_n_wrapper& operator=(format_to_n_wrapper&&) noexcept(std::is_nothrow_move_assignable_v<OutputIt>) = default;
-
-        format_to_n_wrapper& operator++() noexcept
-        {
-            return *this;
-        }
-
-        format_to_n_wrapper operator++(int) noexcept
-        {
-            return *this;
-        }
-
-        [[nodiscard]]
-        format_to_n_result<OutputIt> get_result() const noexcept(std::is_nothrow_copy_constructible_v<OutputIt>)
-        {
-            return format_to_n_result<OutputIt>{.out = m_out, .size = m_counter};
-        }
-
-        difference_type get_max_count() const noexcept
-        {
-            return m_max_count;
-        }
-
-        difference_type get_count() const noexcept
-        {
-            return m_counter;
-        }
-
-    private:
-        OutputIt m_out;
-        difference_type m_max_count;
-        difference_type m_counter;
-    };
-
     template <typename CharT, typename OutputIt, typename... Args>
     format_to_n_result<OutputIt> format_to_n_impl(
         OutputIt out,
@@ -307,28 +235,26 @@ namespace detail
         Args&&... args
     )
     {
-        using iter_t = detail::format_to_n_wrapper<OutputIt, CharT>;
-        using context_type = basic_format_context<iter_t, CharT>;
+        using context_type = basic_format_context<format_iterator_for<CharT>, CharT>;
 
-        return [&](const auto& fmt_args)
-        {
-            basic_format_parse_context<context_type> parse_ctx(fmt, fmt_args);
-            context_type fmt_ctx(loc, iter_t(out, n), fmt_args);
+        std::basic_string<CharT> buf;
+        detail::vformat_to_impl<CharT, format_iterator_for<CharT>, context_type>(
+            std::back_inserter(buf),
+            loc,
+            fmt,
+            PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...)
+        );
 
-            basic_interpreter<context_type> intp;
-            auto intp_ctx = intp.create_context(parse_ctx, fmt_ctx);
+        std::size_t count = buf.size();
+        if(n >= 0)
+            count = std::min(count, static_cast<std::size_t>(n));
 
-            intp.run_if(
-                intp_ctx,
-                [&intp_ctx]() -> bool
-                {
-                    const iter_t& it = intp_ctx.output_context().out_ref();
-                    return it.get_count() < it.get_max_count();
-                }
-            );
-
-            return intp_ctx.output_context().out_ref().get_result();
-        }(PAPILIO_NS make_format_args<context_type>(std::forward<Args>(args)...));
+        using diff_t = std::iter_difference_t<OutputIt>;
+        out = std::copy_n(buf.begin(), static_cast<diff_t>(count), std::move(out));
+        return format_to_n_result<OutputIt>{
+            .out = std::move(out),
+            .size = static_cast<diff_t>(count)
+        };
     }
 } // namespace detail
 
@@ -404,77 +330,34 @@ format_to_n_result<OutputIt> format_to_n(
 
 namespace detail
 {
-    class formatted_size_counter_base
-    {
-    public:
-        [[nodiscard]]
-        constexpr std::size_t get_result() const noexcept
-        {
-            return m_counter;
-        }
-
-    protected:
-        constexpr void count() noexcept
-        {
-            ++m_counter;
-        }
-
-    private:
-        std::size_t m_counter = 0;
-    };
-
-    template <typename CharT>
-    class formatted_size_counter : public formatted_size_counter_base
-    {
-    public:
-        using iterator_category = std::output_iterator_tag;
-        using value_type = CharT;
-        using difference_type = std::ptrdiff_t;
-        using pointer = void;
-        using reference = void;
-
-        constexpr formatted_size_counter() noexcept = default;
-        constexpr formatted_size_counter(const formatted_size_counter&) noexcept = default;
-
-        constexpr formatted_size_counter& operator=(const formatted_size_counter&) noexcept = default;
-
-        constexpr formatted_size_counter& operator=(const value_type&) noexcept
-        {
-            count();
-            return *this;
-        }
-
-        constexpr formatted_size_counter& operator*() noexcept
-        {
-            return *this;
-        }
-
-        constexpr formatted_size_counter& operator++() noexcept
-        {
-            return *this;
-        }
-
-        constexpr formatted_size_counter operator++(int) noexcept
-        {
-            formatted_size_counter tmp(*this);
-            ++(*this);
-            return tmp;
-        }
-    };
-
-    template <typename CharT>
-    using fmt_size_ctx_type = basic_format_context<formatted_size_counter<CharT>, CharT>;
-
     std::size_t formatted_size_impl(
         locale_ref loc,
         std::string_view fmt,
-        const basic_format_args_ref<fmt_size_ctx_type<char>>& args
+        const format_args_ref& args
     );
     std::size_t formatted_size_impl(
         locale_ref loc,
         std::wstring_view fmt,
-        const basic_format_args_ref<fmt_size_ctx_type<wchar_t>>& args
+        const wformat_args_ref& args
     );
+
+#ifdef PAPILIO_ENABLE_XCHAR
+    std::size_t formatted_size_impl(
+        locale_ref loc,
+        std::u8string_view fmt,
+        const basic_format_args_ref<basic_format_context<format_iterator_for<char8_t>, char8_t>>& args
+    );
+    std::size_t formatted_size_impl(
+        locale_ref loc,
+        std::u16string_view fmt,
+        const basic_format_args_ref<basic_format_context<format_iterator_for<char16_t>, char16_t>>& args
+    );
+    std::size_t formatted_size_impl(
+        locale_ref loc,
+        std::u32string_view fmt,
+        const basic_format_args_ref<basic_format_context<format_iterator_for<char32_t>, char32_t>>& args
+    );
+#endif
 
     template <typename CharT, typename... Args>
     std::size_t formatted_size_helper(
@@ -483,8 +366,7 @@ namespace detail
         Args&&... args
     )
     {
-        using iter_t = detail::formatted_size_counter<CharT>;
-        using context_type = basic_format_context<iter_t, CharT>;
+        using context_type = basic_format_context<format_iterator_for<CharT>, CharT>;
 
         return formatted_size_impl(
             loc,
